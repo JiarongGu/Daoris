@@ -6,7 +6,9 @@ namespace Daoris.Driver;
 /// <summary>
 /// A tree's <c>status --porcelain</c> (v1, with or without <c>-z</c>) answered in process as git prints it: each changed path's two
 /// columns, the head against the index (<see cref="GitIndexFile"/>) and the index against the working tree, sorted by its bytes, then
-/// its untracked paths (<c>--untracked-files</c> <c>all</c>, <c>normal</c> or <c>no</c>), each <c>?? </c>. Null where git must answer.
+/// its untracked paths (<c>--untracked-files</c> <c>all</c>, <c>normal</c> or <c>no</c>), each <c>?? </c>. Null where git must answer. The
+/// same walk is printed as <c>--porcelain=v2</c> (each entry with its modes and blob ids, an untracked path as <c>? name</c>), and with
+/// <c>--branch</c> its two headers where the branch has no upstream configured.
 /// </summary>
 /// <remarks>
 /// <para><b>The working tree as git reads it.</b> An entry whose size moved is changed; one whose size and write time are what the index
@@ -20,7 +22,7 @@ namespace Daoris.Driver;
 /// <para><b>Git's where it could differ:</b> a rename git may pair (a staged addition beside a staged deletion, or beside a staged
 /// change where copies are asked) unless <c>--no-renames</c>; whatever the index reader refuses (a submodule, a sparse or intent-to-add
 /// entry, a conflict); a gitlink or a link in the head; a link or junction in the tree, a folder standing at an entry's path; a subfolder, a
-/// bare repository or <c>core.worktree</c> (<see cref="GitLibraryLayout.Top"/>); <c>--ignored</c>, a path given, any other option; and
+/// bare repository or <c>core.worktree</c> (<see cref="GitLibraryLayout.Top"/>); <c>--ignored</c>, a path given, any other option, a branch with an upstream under <c>--branch</c>; and
 /// in the newline form a path git would quote (a space, a quote, a backslash, a control character or a byte past ASCII).</para>
 /// </remarks>
 internal static class GitLibraryStatus
@@ -31,19 +33,25 @@ internal static class GitLibraryStatus
     private static readonly string[] Moved = ["GIT_INDEX_FILE", "GIT_OBJECT_DIRECTORY", "GIT_ALTERNATE_OBJECT_DIRECTORIES"];
     private static readonly string[] Converting = ["filter", "ident", "encoding"];
 
-    private sealed record Shape(bool Nul, string? Untracked, bool Renames);
+    private sealed record Shape(bool Nul, string? Untracked, bool Renames, bool V2, bool Branch);
+
+    private sealed record Cell(char X, char Y, int HeadMode, string HeadId, int IndexMode, string IndexId, int TreeMode);
+
+    private const string NoId = "0000000000000000000000000000000000000000";
 
     /// <summary>A refusal deep in a walk: the whole read is git's.</summary>
     private sealed class StatusRefusal : Exception;
 
     internal static (GitLibraryQuestion, Func<GitLibraryCall, GitLibraryAnswer?>)? Asked(List<string> rest)
     {
-        var (porcelain, nul, untracked, renames) = (false, false, (string?)null, true);
+        var (porcelain, nul, untracked, renames, v1, v2, branch) = (false, false, (string?)null, true, false, false, false);
         foreach (var each in rest)
         {
             switch (each)
             {
-                case "--porcelain" or "--porcelain=v1": porcelain = true; break;
+                case "--porcelain" or "--porcelain=v1": porcelain = v1 = true; break;
+                case "--porcelain=v2": porcelain = v2 = true; break;
+                case "--branch": branch = true; break;
                 case "-z": nul = true; break;
                 case "--untracked-files=all" or "-uall": untracked = "all"; break;
                 case "--untracked-files=normal" or "-unormal": untracked = "normal"; break;
@@ -54,7 +62,8 @@ internal static class GitLibraryStatus
             }
         }
 
-        return porcelain ? (GitLibraryQuestion.Status, call => Answer(call, new Shape(nul, untracked, renames))) : null;
+        if (!porcelain || (v1 && v2) || (branch && !v2)) return null;
+        return (GitLibraryQuestion.Status, call => Answer(call, new Shape(nul, untracked, renames, v2, branch)));
     }
 
     private static GitLibraryAnswer? Answer(GitLibraryCall call, Shape shape)
@@ -72,13 +81,16 @@ internal static class GitLibraryStatus
             var reader = new WorkingFiles(call, top, index.Entries, settings);
             foreach (var entry in index.Entries)
             {
-                if (reader.Worktree(entry, index.Written) is { } y) columns[entry.Path] = (columns.TryGetValue(entry.Path, out var staged) ? staged.X : ' ', y);
+                if (reader.Worktree(entry, index.Written) is not { } y) continue;
+                var staged = columns.TryGetValue(entry.Path, out var held) ? held : new Cell(' ', ' ', entry.Mode, entry.Id, entry.Mode, entry.Id, entry.Mode);
+                columns[entry.Path] = staged with { Y = y, TreeMode = y == 'D' ? 0 : reader.ModeOf(entry) };
             }
 
             var listed = untracked == "no" ? [] : reader.Untracked(all: untracked == "all");
             var text = new StringBuilder();
-            foreach (var (path, (x, y)) in Sorted(columns.Select(each => (each.Key, each.Value)))) Line(text, $"{x}{y}", path, shape.Nul);
-            foreach (var (path, _) in Sorted(listed.Select(each => (each, 0)))) Line(text, "??", path, shape.Nul);
+            if (shape.Branch && !Branch(call, text, shape.Nul)) return null;
+            foreach (var (path, cell) in Sorted(columns.Select(each => (each.Key, each.Value)))) Line(text, shape, cell, path);
+            foreach (var (path, _) in Sorted(listed.Select(each => (each, 0)))) Line(text, shape, null, path);
             return new GitLibraryAnswer(0, text.ToString());
         }
         catch (StatusRefusal)
@@ -87,12 +99,37 @@ internal static class GitLibraryStatus
         }
     }
 
-    private static void Line(StringBuilder text, string columns, string path, bool nul)
+    private static void Line(StringBuilder text, Shape shape, Cell? cell, string path)
     {
-        if (!nul && path.Any(Quoted)) throw new StatusRefusal();
-        text.Append(columns).Append(' ').Append(path).Append(nul ? '\0' : '\n');
+        if (!shape.Nul && path.Any(Quoted)) throw new StatusRefusal();
+        if (!shape.V2) text.Append(cell is null ? "??" : $"{cell.X}{cell.Y}").Append(' ');
+        else if (cell is null) text.Append("? ");
+        else
+        {
+            text.Append($"1 {Dot(cell.X)}{Dot(cell.Y)} N... {Octal(cell.HeadMode)} {Octal(cell.IndexMode)} {Octal(cell.TreeMode)} {cell.HeadId} {cell.IndexId} ");
+        }
+
+        text.Append(path).Append(shape.Nul ? '\0' : '\n');
+
+        static char Dot(char each) => each == ' ' ? '.' : each;
+        static string Octal(int mode) => Convert.ToString(mode, 8).PadLeft(6, '0');
 
         static bool Quoted(char each) => each <= ' ' || each > '~' || each is '"' or '\\';
+    }
+
+    private static bool Branch(GitLibraryCall call, StringBuilder text, bool nul)
+    {
+        var repository = call.Repository;
+        var detached = repository.Info.IsHeadDetached;
+        var head = repository.Head.CanonicalName;
+        if (!detached && !head.StartsWith("refs/heads/", StringComparison.Ordinal)) return false;
+        var name = detached ? "(detached)" : head["refs/heads/".Length..];
+        if (!detached && !GitLibraryUpstream.NoneConfigured(call, name)) return false;
+        var oid = repository.Info.IsHeadUnborn ? "(initial)" : repository.Head.Tip?.Sha;
+        if (oid is null) return false;
+        var end = nul ? '\0' : '\n';
+        text.Append("# branch.oid ").Append(oid).Append(end).Append("# branch.head ").Append(name).Append(end);
+        return true;
     }
 
     private static IEnumerable<(string Path, T Value)> Sorted<T>(IEnumerable<(string Path, T Value)> paths)
@@ -103,7 +140,7 @@ internal static class GitLibraryStatus
     }
 
     /// <summary>The head against the index: each path's first column; null where a rename could pair or the head holds what is not a file.</summary>
-    private static Dictionary<string, (char X, char Y)>? Staged(GitLibraryCall call, IReadOnlyList<GitIndexEntry> entries, bool renames, bool copies)
+    private static Dictionary<string, Cell>? Staged(GitLibraryCall call, IReadOnlyList<GitIndexEntry> entries, bool renames, bool copies)
     {
         var head = new Dictionary<string, (string Id, int Mode)>(StringComparer.Ordinal);
         if (!call.Repository.Info.IsHeadUnborn)
@@ -111,16 +148,16 @@ internal static class GitLibraryStatus
             if (call.Repository.Head.Tip is not { } tip || !Flatten(tip.Tree, "", head)) return null;
         }
 
-        var columns = new Dictionary<string, (char X, char Y)>(StringComparer.Ordinal);
+        var columns = new Dictionary<string, Cell>(StringComparer.Ordinal);
         var indexed = new HashSet<string>(StringComparer.Ordinal);
         foreach (var entry in entries)
         {
             indexed.Add(entry.Path);
-            if (!head.TryGetValue(entry.Path, out var held)) columns[entry.Path] = ('A', ' ');
-            else if (held.Id != entry.Id || held.Mode != entry.Mode) columns[entry.Path] = ('M', ' ');
+            if (!head.TryGetValue(entry.Path, out var held)) columns[entry.Path] = new Cell('A', ' ', 0, NoId, entry.Mode, entry.Id, entry.Mode);
+            else if (held.Id != entry.Id || held.Mode != entry.Mode) columns[entry.Path] = new Cell('M', ' ', held.Mode, held.Id, entry.Mode, entry.Id, entry.Mode);
         }
 
-        foreach (var path in head.Keys.Where(path => !indexed.Contains(path))) columns[path] = ('D', ' ');
+        foreach (var path in head.Keys.Where(path => !indexed.Contains(path))) columns[path] = new Cell('D', ' ', head[path].Mode, head[path].Id, 0, NoId, 0);
         var added = columns.Values.Any(each => each.X == 'A');
         if (renames && added && columns.Values.Any(each => each.X == 'D' || (copies && each.X == 'M'))) return null;
         return columns;
@@ -179,6 +216,9 @@ internal static class GitLibraryStatus
                 for (var slash = entry.Path.IndexOf('/'); slash > 0; slash = entry.Path.IndexOf('/', slash + 1)) _folders.Add(entry.Path[..slash]);
             }
         }
+
+        /// <summary>The mode the tree's file holds as git reads it: the index's where the executable bit is not trusted.</summary>
+        public int ModeOf(GitIndexEntry entry) => !_settings.FileMode ? entry.Mode : Executable(Full(entry.Path)) ? GitIndexFile.Executable : GitIndexFile.Regular;
 
         /// <summary>The entry's second column where the tree changed it; null where it did not.</summary>
         public char? Worktree(GitIndexEntry entry, DateTime indexWritten)

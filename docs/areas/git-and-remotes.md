@@ -274,8 +274,15 @@ a path the repository's rules leave, and where it alone ignores one a repository
 that changes the answer send it to git; so does a status asked before any stamp learned the system file's path, since it starts nothing to learn it. Git's: a rename git may pair (a staged addition beside a deletion, or a change where copies are
 asked), a submodule, a sparse, intent-to-add, assume-unchanged or unmerged entry, a split index, a content holding a carriage return or
 one an attribute file may filter, a link, `core.excludesFile`, `core.attributesFile`, `core.checkStat` or `core.trustCtime`, an index or
-object store the process names (`GIT_INDEX_FILE`, `GIT_OBJECT_DIRECTORY`), `--ignored`, a path given, the `--porcelain=v2`
-forms, and in the newline form a name git would quote (`GitLibraryStatusTests`, on real git).
+object store the process names (`GIT_INDEX_FILE`, `GIT_OBJECT_DIRECTORY`), `--ignored`, a path given, `--show-stash`, `--branch` of version 1,
+and in the newline form a name git would quote (`GitLibraryStatusTests`, on real git).
+
+`--porcelain=v2` (with or without `-z`, `--untracked-files` and `--no-renames`) is the same walk printed as version 2: each changed path's
+`1` line with its two columns (a dot for none), `N...`, the modes and blob ids the head, the index and the tree hold (a mode of none is
+`000000` and its id zeros; the tree's mode is the index's where the executable bit is not trusted, and none for a deleted file), then each untracked path
+as `? name`. With `--branch` the two headers `# branch.oid` (`(initial)` before a first commit) and `# branch.head` (`(detached)` off a branch)
+come first; a branch that has an upstream configured is git's, as is every read the version 1 form leaves to git, since git then prints its
+name and its distance (`GitLibraryStatusV2Tests`, on real git, the tree walk's read and the Changes view's among its forms).
 
 Every git ask of the desktop goes through one service (`Platform/GitService`, D357): the scheduler's runs, the library's in-process
 reads and nothing else reach `GitScheduler` or `GitLibraryReads` (`GitKeepersCensusTests` holds it, and holds that only `GitLibrary*`
