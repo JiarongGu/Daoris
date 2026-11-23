@@ -76,6 +76,8 @@ internal static class GitLibraryStatus
         if (untracked is null || GitIndexFile.Read(Path.Combine(call.GitDir, "index"), out _) is not { } index) return null;
         try
         {
+            var text = new StringBuilder();
+            if (shape.Branch && !Branch(call, settings, text, shape.Nul)) return null;
             var columns = Staged(call, index.Entries, shape.Renames, settings.Copies);
             if (columns is null) return null;
             var reader = new WorkingFiles(call, top, index.Entries, settings);
@@ -87,8 +89,6 @@ internal static class GitLibraryStatus
             }
 
             var listed = untracked == "no" ? [] : reader.Untracked(all: untracked == "all");
-            var text = new StringBuilder();
-            if (shape.Branch && !Branch(call, text, shape.Nul)) return null;
             foreach (var (path, cell) in Sorted(columns.Select(each => (each.Key, each.Value)))) Line(text, shape, cell, path);
             foreach (var (path, _) in Sorted(listed.Select(each => (each, 0)))) Line(text, shape, null, path);
             return new GitLibraryAnswer(0, text.ToString());
@@ -117,8 +117,9 @@ internal static class GitLibraryStatus
         static bool Quoted(char each) => each <= ' ' || each > '~' || each is '"' or '\\';
     }
 
-    private static bool Branch(GitLibraryCall call, StringBuilder text, bool nul)
+    private static bool Branch(GitLibraryCall call, StatusSettings settings, StringBuilder text, bool nul)
     {
+        if (settings.ForeignBranches) return false;
         var repository = call.Repository;
         var detached = repository.Info.IsHeadDetached;
         var head = repository.Head.CanonicalName;
@@ -428,16 +429,20 @@ internal static class GitLibraryStatus
     }
 
     /// <summary>What git's configuration says that changes a status, read from every file git reads; null where they disagree or say what is git's.</summary>
-    private sealed record StatusSettings(bool FileMode, bool IgnoreCase, bool UntrackedSet, bool Copies, IReadOnlyList<string>? PersonalIgnore, IReadOnlyList<string> Attributes)
+    private sealed record StatusSettings(bool FileMode, bool IgnoreCase, bool UntrackedSet, bool Copies, IReadOnlyList<string>? PersonalIgnore, IReadOnlyList<string> Attributes, bool ForeignBranches)
     {
         public static StatusSettings? Of(string top, GitLibraryCall call)
         {
             if (GitStamp.ConfigurationFilesOf(top) is not { } files || GitSystemFiles.Shared.Of(GitRuns.GitInUse(ProgramHome.Named) ?? "") is not { } system) return null;
             var values = new List<(string Name, string Value)>();
+            var own = Path.GetFullPath(Path.Combine(call.CommonDir, "config"));
+            var foreign = Environment.GetEnvironmentVariable("GIT_CONFIG_PARAMETERS") is { } given && given.Contains("branch.", StringComparison.OrdinalIgnoreCase);
             foreach (var file in files.Where(File.Exists))
             {
-                var read = GitConfigFile.Parse(File.ReadAllLines(file));
+                var lines = File.ReadAllLines(file);
+                var read = GitConfigFile.Parse(lines);
                 foreach (var name in Names) values.AddRange(read.All(name).Select(value => (name, value)));
+                foreign |= !Path.GetFullPath(file).Equals(own, StringComparison.OrdinalIgnoreCase) && lines.Any(line => line.TrimStart().StartsWith("[branch", StringComparison.OrdinalIgnoreCase));
             }
 
             if (int.TryParse(Environment.GetEnvironmentVariable("GIT_CONFIG_COUNT"), out var count))
@@ -445,6 +450,7 @@ internal static class GitLibraryStatus
                 for (var at = 0; at < count; at++)
                 {
                     var key = Environment.GetEnvironmentVariable($"GIT_CONFIG_KEY_{at}") ?? "";
+                    foreign |= key.StartsWith("branch.", StringComparison.OrdinalIgnoreCase);
                     if (Names.FirstOrDefault(name => name.Equals(key, StringComparison.OrdinalIgnoreCase)) is { } named) values.Add((named, Environment.GetEnvironmentVariable($"GIT_CONFIG_VALUE_{at}") ?? ""));
                 }
             }
@@ -479,7 +485,7 @@ internal static class GitLibraryStatus
                 return null;
             }
 
-            return new StatusSettings(fileMode, ignoreCase, Of("status.showUntrackedFiles").Count > 0, copies, ignore, attributes);
+            return new StatusSettings(fileMode, ignoreCase, Of("status.showUntrackedFiles").Count > 0, copies, ignore, attributes, foreign);
         }
 
         private static readonly string[] Names =

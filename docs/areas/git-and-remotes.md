@@ -281,7 +281,8 @@ and in the newline form a name git would quote (`GitLibraryStatusTests`, on real
 `1` line with its two columns (a dot for none), `N...`, the modes and blob ids the head, the index and the tree hold (a mode of none is
 `000000` and its id zeros; the tree's mode is the index's where the executable bit is not trusted, and none for a deleted file), then each untracked path
 as `? name`. With `--branch` the two headers `# branch.oid` (`(initial)` before a first commit) and `# branch.head` (`(detached)` off a branch)
-come first; a branch that has an upstream configured is git's, as is every read the version 1 form leaves to git, since git then prints its
+come first, settled before the tree is walked; a branch that has an upstream configured, or any `[branch` section in a file other than the
+repository's own or a `branch.` variable the process hands git, is git's, as is every read the version 1 form leaves to git, since git then prints its
 name and its distance (`GitLibraryStatusV2Tests`, on real git, the tree walk's read and the Changes view's among its forms).
 
 Every git ask of the desktop goes through one service (`Platform/GitService`, D357): the scheduler's runs, the library's in-process
