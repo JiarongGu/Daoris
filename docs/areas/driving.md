@@ -627,8 +627,13 @@ built, but nothing outside tests makes, takes or ends one; `LinePlaces` answers 
     untracked work keeps it, and so does an ignored folder of more than 5,000 files,
     counted by name before any file is read. A tidy or removal the repository's lock refuses says a session was starting only where
     a start holds it; a writer that has not said what it is reads as a write (`TreeLock.RefusedBy`). The look's tidy judges and last looks at every tree with
-    the repository free, and holds it alone only around the git writes that remove one tree or one landed branch, reading that tree
-    again under the hold and keeping it where it changed (`TidyHold`, `TreeSweeps.SweepAsync`, `LandedCleanups.CleanLandedAsync`), so a
+    the repository free, and holds it alone only around the git writes that remove one tree or one landed branch. Under the hold a tree is
+    read again by what can have changed since its judgement and walks nothing: the branch's tip, the worktree list, the sessions asked
+    again, and the tree's stamps, one listing of its top and its index and `HEAD` (`TreeStamp`, `HoldLooks`); the folder is moved aside,
+    its stamps read once more in the moved folder, and a change keeps the tree, put back (`TreeSetAside.MoveAsideAsync`). A file written
+    in place deeper down is read by no hold: the judgement's walk saw it before, and the folder moved aside is deleted only where nothing
+    in it is written after the judgement's moment (`SetAsideKeeps`). The reads that need no hold (what holds the tip, the recovery ref's
+    name) are made before it (`TidyHold`, `TreeSweeps.SweepAsync`, `LandedCleanups.CleanLandedAsync`), so a
     promotion or a person's removal takes the lock between trees; one refused stops the walk's later removals and says so. A refusal
     names the holder and, past a minute, how long it has held (`TreeLock.HeldFor`, `TreeLock.HeldNow`). A copy of a machine-local file
     Daoris made into the tree (the files record's `Copies`, by the hash it wrote) and the half-made copy a cut-off open left

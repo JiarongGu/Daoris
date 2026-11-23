@@ -1013,6 +1013,7 @@
     "src/Daoris.Desktop/Daoris.Desktop.Driver/Workplace/TreeLock.cs": 1,
     "src/Daoris.Desktop/Daoris.Desktop.Driver/Workplace/TreeReadMemo.cs": 1,
     "src/Daoris.Desktop/Daoris.Desktop.Driver/Workplace/TreeReturns.cs": 1,
+    "src/Daoris.Desktop/Daoris.Desktop.Driver/Workplace/TreeStamp.cs": 1,
     "src/Daoris.Desktop/Daoris.Desktop.Driver/Workplace/TreeStrays.cs": 1,
     "src/Daoris.Desktop/Daoris.Desktop.Driver/Workplace/UntrackedPatches.cs": 1,
     "src/Daoris.Desktop/Daoris.Desktop.Driver/Workplace/WorkingTree.cs": 2,

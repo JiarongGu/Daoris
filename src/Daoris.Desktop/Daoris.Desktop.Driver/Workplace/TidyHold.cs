@@ -10,6 +10,7 @@ internal sealed class TidyHold(
     TreeLock? held, string code, string said, Func<Task<(IReadOnlySet<string>? Busy, string? Why)>>? sessions = null) : IDisposable
 {
     private IReadOnlySet<string>? _busy;
+    private readonly System.Diagnostics.Stopwatch _since = System.Diagnostics.Stopwatch.StartNew();
 
     /// <summary>Whether the repository is held.</summary>
     public bool Held => held is not null;
@@ -37,6 +38,8 @@ internal sealed class TidyHold(
         _busy = busy;
         return true;
     }
+
+    public void ReadsDone() => SetAsideFaults.Current?.HoldRead?.Invoke(_since.Elapsed);
 
     public void Dispose() => held?.Dispose();
 }
