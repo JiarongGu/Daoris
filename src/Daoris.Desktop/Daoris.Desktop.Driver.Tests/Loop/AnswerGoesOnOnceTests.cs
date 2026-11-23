@@ -74,8 +74,8 @@ public sealed class AnswerGoesOnOnceTests : IDisposable
 
     /// <summary>
     /// 🔴 The moment before the move: a run that took the park up has not moved the record yet when a look comes, so the look
-    /// still reads it parked with the answer and plans it to go on. The look begins no second run
-    /// on that record, and says why; the first moves it to working once and carries on.
+    /// still reads it parked with the answer. The plan reads it busy with the run that holds it and begins no second run
+    /// on that record; the first moves it to working once and carries on.
     /// </summary>
     [Fact]
     public async Task A_look_before_the_resumed_run_moved_its_record_begins_no_second_run_on_it()
@@ -93,8 +93,8 @@ public sealed class AnswerGoesOnOnceTests : IDisposable
         await driver.Running.EndedAsync(_closing.Token).WaitAsync(Bound);
 
         Assert.True(runs.Began == 1, Seen());
-        Assert.Contains(
-            "going on  session s1 (#q1 → engine): a run of this machine's already goes on with the person's words in it.", between.Events);
+        var held = Assert.Single(between.Considerations);
+        Assert.Equal((StartVerdict.RepositoryBusy, SittingFact.Serving, "s1"), (held.Verdict, held.Said?.Code, held.Said?.Session));
         Assert.True(_ledger.MovesOf("s1").SequenceEqual(["working", "completed"]), Seen());
         Assert.Equal("completed", State("s1"));
     }
