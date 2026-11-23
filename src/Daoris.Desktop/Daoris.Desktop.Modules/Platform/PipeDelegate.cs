@@ -47,8 +47,8 @@ public sealed record PipeDelegateSession(IReadOnlyList<byte[]> Hashes, string? H
     /// <summary>The place an Ask Daoris press named, against its conversation's focus now; null for every other kind.</summary>
     public Func<IpcRequest, CancellationToken, Task<HelpPressPlace?>>? PlaceOf { get; init; }
 
-    /// <summary>A working session's press the risk policy judges, its verdict read and journaled now (<see cref="DelegateRisk.Of"/>); null for a press it does not class.</summary>
-    public Func<IpcRequest, RiskVerdict?>? Risk { get; init; }
+    /// <summary>A working session's press the risk policy judges, its verdict read now (<see cref="DelegateRisk.Of"/>); null for a press it does not class.</summary>
+    public Func<IpcRequest, PressRisk?>? Risk { get; init; }
 }
 
 /// <summary>How a proved press is taken: run as the person's own with no card, put to the person on a card, or refused.</summary>
@@ -65,7 +65,7 @@ internal sealed record PipeDelegateJudgement(
     string? Repository = null, Func<IpcRequest, CancellationToken, Task<HelpPressPlace?>>? PlaceOf = null, bool Terminal = false, string? Agent = null)
 {
     /// <summary>The risk policy's verdict on the press, where it classes it: a pass runs it as the session's own, a gate puts it on the owner's card.</summary>
-    public RiskVerdict? Risk { get; init; }
+    public PressRisk? Risk { get; init; }
 }
 
 /// <summary>
@@ -118,9 +118,9 @@ public sealed class PipeDelegate(InstancePipe pipe)
             HelpModes.Full => new(PipeDelegateTier.Covered, Session: claim.Session, Say: session.Say, PlaceOf: session.PlaceOf),
             HelpModes.Restricted when granted => new(PipeDelegateTier.Covered, Session: claim.Session, Say: session.Say, PlaceOf: session.PlaceOf),
             HelpModes.Restricted => new(PipeDelegateTier.Asked, asker with { Help = true }, PlaceOf: session.PlaceOf),
-            null when session.Risk?.Invoke(request) is { } verdict => verdict.Outcome == RiskVerdict.Pass
-                ? new(PipeDelegateTier.Covered, Session: claim.Session, Own: true, Repository: session.Repository, Agent: session.Agent) { Risk = verdict }
-                : new(PipeDelegateTier.Asked, asker, claim.Session, Repository: session.Repository, Agent: session.Agent) { Risk = verdict },
+            null when session.Risk?.Invoke(request) is { } risk => risk.Verdict.Outcome == RiskVerdict.Pass
+                ? new(PipeDelegateTier.Covered, Session: claim.Session, Own: true, Repository: session.Repository, Agent: session.Agent) { Risk = risk }
+                : new(PipeDelegateTier.Asked, asker, claim.Session, Repository: session.Repository, Agent: session.Agent) { Risk = risk },
             null when session.Permissions == AccessRules.Unrestricted =>
                 new(PipeDelegateTier.Covered, Session: claim.Session, Own: true, Repository: session.Repository, Agent: session.Agent),
             null => new(PipeDelegateTier.Asked, asker, claim.Session, Repository: session.Repository, Agent: session.Agent),
@@ -153,7 +153,7 @@ public sealed class PipeDelegate(InstancePipe pipe)
         var route = $"{request.Module}.{request.Type}";
         if (judgement.Own)
         {
-            if (judgement.Risk is { } verdict)
+            if (judgement.Risk?.Verdict is { } verdict)
             {
                 pipe.Log.Info(SessionPressedEvent, ("session", judgement.Session ?? ""), ("route", route), ("by", By(judgement.Session)), ("act", verdict.Kind),
                     ("rule", $"{verdict.Source} at {verdict.Revision}"), ("door", PipeDoor.Terminal));

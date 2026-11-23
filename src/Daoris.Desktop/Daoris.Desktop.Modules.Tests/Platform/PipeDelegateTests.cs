@@ -430,13 +430,16 @@ public sealed class PipeDelegateTests : PipeDelegateHarness
         await UntilAsync(() => pipe.Confirmations.Now().Waiting.Count == 1);
         var card = Assert.Single(pipe.Confirmations.Now().Waiting);
 
-        Assert.Equal((StandingWhy.Risk, "s-quest"), (card.Standing, card.Asker.Session));
+        Assert.Equal((StandingWhy.RiskOwner, "s-quest"), (card.Standing, card.Asker.Session));
         Assert.Equal(0, driver.Ran("HARNESS_ACTION"));
         var line = Assert.Single(RiskJournal.Read(Home));
         Assert.Equal((RiskVerdict.OwnerOutcome, "machine", RiskJudged.Opened), (line.Outcome, line.Source, line.Stage));
         Assert.Equal(PipeAnswered.Answered, (await pipe.Confirmations.AnswerAsync(card.Id, confirm: true)).Outcome);
         Assert.True((await client.AnswerAsync(id)).GetProperty("success").GetBoolean());
         Assert.Equal(1, driver.Ran("HARNESS_ACTION"));
+        await UntilAsync(() => RiskJournal.Read(Home).Count == 2);
+        var released = RiskJournal.Read(Home)[1];
+        Assert.Equal((RiskJudged.Released, line.Key, "released: ran on the owner's yes"), (released.Stage, released.Key, released.Today));
     }
 
     /// <summary>Under asking or the judged default, a working session's press is put on a card naming it, and runs on the person's yes.</summary>

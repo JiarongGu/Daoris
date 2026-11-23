@@ -206,6 +206,8 @@ internal sealed class PipeAdmission(InstancePipe pipe)
         }
 
         if (mine is null) return (null, Held(answer));
+        // Journaled once the id is this press's own, so the same request sent again is not a second hold.
+        if (delegated?.Risk is { } risk) Journaled(() => DelegateRisk.Opened(pipe.Home, risk, id, _clock.GetUtcNow()));
         if (fields is null)
         {
             if (delegated is { Tier: PipeDelegateTier.Covered }) pipe.Delegate.Pressed(delegated, request, answer);
@@ -214,8 +216,8 @@ internal sealed class PipeAdmission(InstancePipe pipe)
             return (null, answer);
         }
 
-        var gated = delegated is { Tier: PipeDelegateTier.Asked, Risk: { Outcome: not RiskVerdict.Pass } };
-        var why = placeSaid ?? (gated ? StandingWhy.Risk : null);
+        var held = delegated is { Tier: PipeDelegateTier.Asked, Risk: { Verdict.Outcome: not RiskVerdict.Pass } risked } ? risked : null;
+        var why = placeSaid ?? (held is null ? null : held.Verdict.Class == RiskClasses.Owner ? StandingWhy.RiskOwner : StandingWhy.RiskRole);
 
         // A person's press whose route names no grounds is refused at once, no read made; then a place among the ten is held, told to no
         // window yet, so one past them is refused before any read. The grounds are read in the press's own task, outside every lock.
@@ -235,17 +237,19 @@ internal sealed class PipeAdmission(InstancePipe pipe)
         var reserved = new PipeReserved(request, binding, mine, connection, place, _clock.GetUtcNow(), holding, delegated?.Asker)
         {
             PlaceOf = delegated?.PlaceOf,
+            Risk = held,
         };
         lock (_state.Gate)
         {
             _state.Reserved[id] = reserved;
         }
 
-        _ = connection.WriteAsync(Waits(id, why, checking: true));
+        _ = connection.WriteAsync(Waits(id, why, checking: true, held is null ? null : AgentVersionAct.HeldSaid(held.Verdict, null)));
+        if (held is not null) _ = mine.Task.ContinueWith(done => ReleaseRisk(reserved, held, done), TaskScheduler.Default);
         Task Card() => pipe.Asking.AskThenRunAsync(reserved, row, fields, why);
 
         _ = stewardsAsk is not null ? pipe.StewardAllows.RaiseAsync(reserved, Card, stewardsAct!, stewardsAsk, connection.Client)
-            : delegated is { Tier: PipeDelegateTier.Asked, Repository: { } repository, Session: { } session } && delegated.Risk?.Outcome is not RiskVerdict.OwnerOutcome
+            : delegated is { Tier: PipeDelegateTier.Asked, Repository: { } repository, Session: { } session } && held?.Verdict.Outcome is not RiskVerdict.OwnerOutcome
                 ? pipe.SessionPresses.RaiseAsync(reserved, Card, session, repository, delegated.Agent)
             : Card();
         return (null, Held(answer));
@@ -294,13 +298,48 @@ internal sealed class PipeAdmission(InstancePipe pipe)
     /// <param name="checking">
     /// That its grounds are being read before its card: the terminal hears its id then, before any read.
     /// </param>
-    private static string Waits(string id, string? standing, bool checking = false) => (standing, checking) switch
+    private static string Waits(string id, string? standing, bool checking = false, string? verdict = null) => (standing, checking) switch
     {
+        _ when verdict is not null => Told(InstancePipe.Confirming, new { id, standing, checking, verdict }),
         (null, false) => Told(InstancePipe.Confirming, new { id }),
         (null, true) => Told(InstancePipe.Confirming, new { id, checking }),
         (_, false) => Told(InstancePipe.Confirming, new { id, standing }),
         _ => Told(InstancePipe.Confirming, new { id, standing, checking }),
     };
+
+    /// <summary>A held press's release as it ends: run on the role's or the owner's yes, or ended unrun, the policy read again then.</summary>
+    private void ReleaseRisk(PipeReserved reserved, PressRisk risk, Task<string> done)
+    {
+        var ran = done.IsCompletedSuccessfully && Ran(done.Result);
+        var today = ran ? $"released: ran on {reserved.AllowedBy ?? "the owner"}'s yes" : "released: ended unrun";
+        Journaled(() => DelegateRisk.Released(pipe.Home, risk, reserved.Request.Id!, today, _clock.GetUtcNow()));
+    }
+
+    private static bool Ran(string answer)
+    {
+        try
+        {
+            using var read = JsonDocument.Parse(answer);
+            return read.RootElement.TryGetProperty("success", out var success) && success.ValueKind == JsonValueKind.True;
+        }
+        catch (JsonException)
+        {
+            return false;
+        }
+    }
+
+    /// <summary>A risk line written; the journal's own fault is logged, never the press's.</summary>
+    private void Journaled(Action write)
+    {
+        try
+        {
+            write();
+        }
+        catch (Exception fault) when (fault is IOException or UnauthorizedAccessException)
+        {
+            _log.Info("risk.unjournaled", ("error", fault.GetType().Name), ("door", PipeDoor.Terminal));
+        }
+    }
 
     /// <summary>A notification of the pipe's own to the terminal that sent a press.</summary>
     private static string Told(string type, object payload) => JsonSerializer.Serialize(

@@ -358,7 +358,8 @@ public static class InstanceDoor
     public static string? StandingWhy(string? code) => code switch
     {
         "untold" => "Daoris could not tell this terminal is outside every agent it runs",
-        "risk" => "the risk policy classes this act at the owner or a role here, so it waits on that yes (`daoris settings risk` names the rule)",
+        "risk-owner" => "the risk policy classes this act `owner` here, so it waits on the owner's yes (`daoris settings risk` names the rule)",
+        "risk-role" => "the risk policy classes this act for a role here, so it waits on that role's yes (`daoris settings risk` names the rule)",
         _ => null,
     };
 
@@ -638,8 +639,9 @@ public static class InstanceDoor
             if (!each.TryGetProperty("payload", out var status) || InstanceClient.Text(status, "id") != id) continue;
             if (InstanceClient.Text(each, "module") == InstanceClient.PipeModule && InstanceClient.Text(each, "type") == Confirming)
             {
-                // Where the pipe could not place the terminal, the wait says so.
-                var why = StandingWhy(InstanceClient.Text(status, "standing")) is { } standing ? $"; {standing}" : "";
+                // Where the pipe could not place the terminal, or the risk policy holds the act, the wait says so, the verdict whole.
+                var why = InstanceClient.Text(status, "verdict") is { Length: > 0 } verdict ? $"; {verdict}"
+                    : StandingWhy(InstanceClient.Text(status, "standing")) is { } standing ? $"; {standing}" : "";
                 world.Error.WriteLine(
                     $"{world.Verb}: waiting for you to confirm this in Daoris's window (request {id}{why}); `daoris press result {id}` says "
                     + $"how it ended, and `daoris press withdraw {id}` takes it back…");

@@ -4,23 +4,23 @@ namespace Daoris.Driver;
 
 /// <summary>
 /// The risk policy a version move reads (<see cref="IAgentVersionRisk"/>), installed when the driver loads: <c>agent.version</c> judged at the
-/// workspace's place or the machine's, a <c>driver.json</c> that does not read reading it at the owner, and the verdict journaled once, a pass as
-/// the move's release and a gate where it would hold, never released there.
+/// workspace's place or the machine's, a <c>driver.json</c> that does not read reading it at the owner, and each line journaled under the key
+/// the move gives it, so a hold's open and its release are one hold.
 /// </summary>
 internal sealed class AgentVersionRiskOperations : IAgentVersionRisk
 {
     [ModuleInitializer]
     internal static void Install() => AgentVersionRisk.Current = new AgentVersionRiskOperations();
 
-    public RiskVerdict Judged(string home, string? workspace, string actor, string subject, DateTimeOffset at)
+    public RiskVerdict Verdict(string home, string? workspace, string actor, string subject) => Judge(home, workspace, actor, subject).Verdict;
+
+    public void Journal(string home, string? workspace, RiskVerdict verdict, RiskLine line)
     {
-        var (verdict, place) = Judge(home, workspace, actor, subject);
-        var passed = verdict.Outcome == RiskVerdict.Pass;
+        var place = Judge(home, workspace, line.Actor, line.Subject).Place;
         RiskJournal.Append(home, new RiskJudged(
-            at, passed ? RiskJudged.Released : RiskJudged.Opened, $"{AgentVersionAct.Domain}:{actor}/{subject}#{at.UtcTicks}", RiskActs.AgentVersion,
-            verdict.Kind, verdict.Qualifier, actor, place.Workspace, place.Repository, place.Mode, null, null, subject, verdict.Outcome, verdict.Class,
-            verdict.By, verdict.Source, verdict.Revision, verdict.Reason, passed ? AgentVersionAct.Passed : AgentVersionAct.Waits, !passed));
-        return verdict;
+            line.At, line.Release ? RiskJudged.Released : RiskJudged.Opened, line.Key, RiskActs.AgentVersion, verdict.Kind, verdict.Qualifier, line.Actor,
+            place.Workspace, place.Repository, place.Mode, null, null, line.Subject, verdict.Outcome, verdict.Class, verdict.By, verdict.Source,
+            verdict.Revision, verdict.Reason, line.Today, line.Held));
     }
 
     private static (RiskVerdict Verdict, RiskPlace Place) Judge(string home, string? workspace, string actor, string subject)

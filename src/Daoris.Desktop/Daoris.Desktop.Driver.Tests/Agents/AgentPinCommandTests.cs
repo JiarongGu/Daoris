@@ -243,7 +243,7 @@ public sealed class AgentPinCommandTests : IDisposable
         Assert.Empty(transport.Asked);
         Assert.Equal("0.156.0", HarnessSettings.Load(Wiring).Versions["codex"]);
         var line = Assert.Single(RiskJournal.Read(Home));
-        Assert.Equal((RiskActs.AgentVersion, RiskVerdict.OwnerOutcome, place, RiskJudged.Opened, true), (line.Kind, line.Outcome, line.Source, line.Stage, line.TodayHeld));
+        Assert.Equal((RiskActs.AgentVersion, RiskVerdict.OwnerOutcome, place, RiskJudged.Released, true), (line.Kind, line.Outcome, line.Source, line.Stage, line.TodayHeld));
     }
 
     [Fact]

@@ -79,7 +79,7 @@ public abstract class PipeDelegateHarness : Bridge
                 Agent = _agents.GetValueOrDefault(session),
                 Families = _families.GetValueOrDefault(session) ?? [],
                 PlaceOf = _places.TryGetValue(session, out var place) ? (_, _) => Task.FromResult<HelpPressPlace?>(place) : null,
-                Risk = _modes.ContainsKey(session) ? null : request => DelegateRisk.Of(Home, session, request, new DateTimeOffset(2026, 11, 23, 9, 0, 0, TimeSpan.Zero)),
+                Risk = _modes.ContainsKey(session) ? null : request => DelegateRisk.Of(Home, session, request),
             };
         }
 

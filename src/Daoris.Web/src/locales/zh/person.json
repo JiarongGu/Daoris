@@ -518,5 +518,6 @@
   "person.route.REMOTES.REMOVE": "将一个工作区从所接的远端断开",
   "person.route.PIPE.HOLD": "持有一段对话",
   "person.standing.untold": "Daoris 无法判断这个终端是否运行在它自己启动的智能体里。只有这个智能体是你自己启动的，才确认。",
-  "person.standing.risk": "风险策略在这里把这个动作归给所有者或某个角色，所以它等待那一方的同意；`daoris settings risk` 列出规则。"
+  "person.standing.risk-owner": "风险策略在这里把这个动作归为 `owner`，所以它等待你的同意；`daoris settings risk` 列出规则。",
+  "person.standing.risk-role": "风险策略在这里把这个动作归给某个角色，而该角色无人应答，所以它来问你；`daoris settings risk` 列出规则。"
 }

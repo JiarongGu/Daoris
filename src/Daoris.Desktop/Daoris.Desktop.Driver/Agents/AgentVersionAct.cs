@@ -23,9 +23,19 @@ public static class AgentVersionAct
     /// <summary>Whether <paramref name="action"/>, an Agents place action, moves a version.</summary>
     public static bool Moves(string? action) => action is "pin" or "update";
 
-    /// <summary>The verdict on a version move at <paramref name="workspace"/>'s place (the machine's where none is named), read at <paramref name="home"/> now and journaled once.</summary>
-    public static RiskVerdict Judged(string home, string? workspace, string actor, string subject, DateTimeOffset at) =>
-        AgentVersionRisk.Current.Judged(home, workspace?.Trim() is { Length: > 0 } named ? named : null, actor, subject, at);
+    /// <summary>The verdict on a version move at <paramref name="workspace"/>'s place (the machine's where none is named), read at <paramref name="home"/> now.</summary>
+    public static RiskVerdict Verdict(string home, string? workspace, string actor, string subject) =>
+        AgentVersionRisk.Current.Verdict(home, Named(workspace), actor, subject);
+
+    /// <summary>One <c>risk.judged</c> line for a version move: its key the move's own, so a hold's open and its release share it.</summary>
+    public static void Journal(string home, string? workspace, RiskVerdict verdict, RiskLine line) =>
+        AgentVersionRisk.Current.Journal(home, Named(workspace), verdict, line);
+
+    private static string? Named(string? workspace) => workspace?.Trim() is { Length: > 0 } named ? named : null;
+
+    /// <summary>The verdict said where it holds the move: its class, its place, whom it waits on, and its rule at its revision.</summary>
+    public static string HeldSaid(RiskVerdict verdict, string? workspace) =>
+        $"the risk policy classes `{RiskActs.AgentVersion}` `{verdict.Class}` at {Where(workspace)}: it waits on {Holder(verdict)}'s yes — {verdict.Why}";
 
     /// <summary>Whom a gated verdict waits on, as its words name them.</summary>
     public static string Holder(RiskVerdict verdict) => verdict.Outcome == RiskVerdict.Gate ? $"`{verdict.By}`" : "the owner";
@@ -36,8 +46,7 @@ public static class AgentVersionAct
 
     /// <summary>The words a session's terminal says where the policy gates the move: whom it waits on, and the verdict with its rule.</summary>
     public static string WaitSaid(RiskVerdict verdict, string? workspace) =>
-        $"this terminal is a session's, and the risk policy classes `{RiskActs.AgentVersion}` `{verdict.Class}` at {Where(workspace)}: it waits on "
-        + $"{Holder(verdict)}'s yes — {verdict.Why}. Nothing was done here: make it in Daoris's window, or from the owner's own terminal.";
+        $"this terminal is a session's, and {HeldSaid(verdict, workspace)}. Nothing was done here: make it in Daoris's window, or from the owner's own terminal.";
 
     private static string Where(string? workspace) => workspace?.Trim() is { Length: > 0 } named ? $"the `{named}` workspace" : "this machine";
 
@@ -50,7 +59,12 @@ public static class AgentVersionAct
         if (world.Instance.Environment(DriverChoicesCommand.SessionVariable) is not { Length: > 0 } session) return false;
         var home = HarnessSettings.HomeOf(AgentsCommand.WiringPath(world));
         var subject = $"{verb} {agent}{(version is { } v ? $" {v}" : "")}{(workspace is { Length: > 0 } w ? $" --workspace {w}" : "")}";
-        var verdict = Judged(home, workspace, PipeSessionActor(session), subject, world.Now());
+        var actor = PipeSessionActor(session);
+        var verdict = Verdict(home, workspace, actor, subject);
+        var at = world.Now();
+        // Nothing stays held at a terminal alone, so its one line is the move's end, a gate's as well as a pass's.
+        Journal(home, workspace, verdict, new RiskLine($"{Domain}:{actor}/{subject}#{at.UtcTicks}", Release: true, actor, subject,
+            verdict.Outcome == RiskVerdict.Pass ? Passed : Waits, verdict.Outcome != RiskVerdict.Pass, at));
         if (verdict.Outcome == RiskVerdict.Pass)
         {
             await world.Instance.Out.WriteLineAsync($"daoris: {PassSaid(verdict, workspace)}").ConfigureAwait(false);
@@ -65,10 +79,15 @@ public static class AgentVersionAct
     public static string PipeSessionActor(string session) => $"session {session}";
 }
 
-/// <summary>What a version move asks of the risk policy, which Workflows keeps: the verdict at its place, journaled once. Workflows installs it when the driver loads.</summary>
+/// <summary>One journal line of a version move: its key, the hold's release or its open, the actor, the subject, what it did, whether it held, and when.</summary>
+public sealed record RiskLine(string Key, bool Release, string Actor, string Subject, string Today, bool Held, DateTimeOffset At);
+
+/// <summary>What a version move asks of the risk policy, which Workflows keeps: the verdict at its place, and its journal line. Workflows installs it when the driver loads.</summary>
 public interface IAgentVersionRisk
 {
-    RiskVerdict Judged(string home, string? workspace, string actor, string subject, DateTimeOffset at);
+    RiskVerdict Verdict(string home, string? workspace, string actor, string subject);
+
+    void Journal(string home, string? workspace, RiskVerdict verdict, RiskLine line);
 }
 
 /// <summary>The Workflows operation; unwired, it reads no judge, so a version move from a session waits on the owner.</summary>
@@ -86,8 +105,12 @@ public static class AgentVersionRisk
 
     private sealed class UnwiredRisk : IAgentVersionRisk
     {
-        public RiskVerdict Judged(string home, string? workspace, string actor, string subject, DateTimeOffset at) =>
+        public RiskVerdict Verdict(string home, string? workspace, string actor, string subject) =>
             new(RiskActs.AgentVersion, null, RiskVerdict.OwnerOutcome, RiskClasses.Owner, null, RiskVerdict.Unreadable, "unwired",
                 "no judge of the risk policy is wired in this process, so it reads at the owner");
+
+        public void Journal(string home, string? workspace, RiskVerdict verdict, RiskLine line)
+        {
+        }
     }
 }

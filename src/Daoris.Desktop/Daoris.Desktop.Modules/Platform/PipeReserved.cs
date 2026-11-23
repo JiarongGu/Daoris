@@ -14,6 +14,10 @@ internal sealed class PipeReserved(
 
     public Func<IpcRequest, CancellationToken, Task<Daoris.Driver.HelpPressPlace?>>? PlaceOf { get; init; }
 
+    public PressRisk? Risk { get; init; }
+
+    public string? AllowedBy { get; set; }
+
     public IpcRequest Request { get; } = request;
 
     public PipeBinding Binding { get; } = binding;
