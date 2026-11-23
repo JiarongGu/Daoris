@@ -82,6 +82,111 @@ public sealed class TidyLockGitTests : LandedFixture
         Assert.Contains(changedBranch, (await GitAsync(root, "branch", "--list")));
     }
 
+    /// <summary>A look slowed to 1.5 s is made once for each tree with the repository free, and the hold's reads before its writes (git processes, whose cost is the machine's) take under a second.</summary>
+    [Fact]
+    public async Task A_tree_is_read_again_under_the_hold_in_well_under_a_second_however_long_its_look_takes()
+    {
+        var root = await RepositoryAsync("engine");
+        var trees = new SessionTrees(Home);
+        foreach (var file in new[] { "a.txt", "b.txt" }) await FinishedAsync(trees, root, file);
+        using var lease = HomeLease.TryAcquire(Home, LeaseKind.Headless, out _);
+
+        var looks = 0;
+        var holds = new List<TimeSpan>();
+        var totals = new List<TimeSpan>();
+        TidyPass pass;
+        using (SetAsideFaults.Within(new SetAsideFault
+        {
+            WhileLooking = async _ =>
+            {
+                Interlocked.Increment(ref looks);
+                await Task.Delay(TimeSpan.FromMilliseconds(1500));
+            },
+            HoldRead = holds.Add,
+            HoldEnded = totals.Add,
+        }))
+        {
+            pass = await trees.TidyEmptyAsync(root, "engine", "aurora", NoneAsync);
+        }
+
+        Assert.Equal(2, pass.Results.Count(result => result.Removed));
+        Assert.Equal(2, looks);
+        Assert.Equal(2, holds.Count);
+        Assert.All(holds, held => Assert.True(held < TimeSpan.FromSeconds(1), $"read under the hold for {held.TotalMilliseconds:0} ms"));
+        // The whole hold, its git writes included, is a second and what this machine's git costs for the processes those writes start.
+        var start = new[] { 0, 1, 2 }.Select(async _ => { var watch = System.Diagnostics.Stopwatch.StartNew(); await GitAsync(root, "rev-parse", "HEAD"); return watch.Elapsed; });
+        var process = (await Task.WhenAll(start)).Max();
+        Assert.Equal(2, totals.Count);
+        Assert.All(totals, held => Assert.True(held < TimeSpan.FromSeconds(1) + 25 * process, $"held for {held.TotalMilliseconds:0} ms, a git process taking {process.TotalMilliseconds:0} ms"));
+    }
+
+    [Fact]
+    public async Task A_file_edited_in_place_below_the_top_between_the_judgement_and_the_hold_keeps_the_tree()
+    {
+        var root = await RepositoryAsync("engine");
+        var trees = new SessionTrees(Home);
+        var opened = await trees.OpenAsync(root, "engine", "aurora");
+        Directory.CreateDirectory(Path.Combine(opened.Path, "src", "Module"));
+        await CommitAsync(opened.Path, Path.Combine("src", "Module", "file.cs"), "one\n", "module");
+        await GitAsync(root, "merge", "--no-ff", "--quiet", "-m", "merge", opened.Branch);
+        var file = Path.Combine(opened.Path, "src", "Module", "file.cs");
+        using var lease = HomeLease.TryAcquire(Home, LeaseKind.Headless, out _);
+
+        TidyPass pass;
+        using (SetAsideFaults.Within(new SetAsideFault { WhileJudging = _ => File.WriteAllTextAsync(file, "two\n") }))
+        {
+            pass = await trees.TidyEmptyAsync(root, "engine", "aurora", NoneAsync);
+        }
+
+        Assert.DoesNotContain(pass.Results, result => result.Removed);
+        Assert.Equal("two\n", await File.ReadAllTextAsync(file));
+        Assert.Contains(opened.Branch, await GitAsync(root, "branch", "--list"));
+    }
+
+    [Fact]
+    public async Task A_tree_whose_top_could_not_be_stamped_is_kept()
+    {
+        var root = await RepositoryAsync("engine");
+        var trees = new SessionTrees(Home);
+        var (tree, branch) = await FinishedAsync(trees, root, "a.txt");
+        using var lease = HomeLease.TryAcquire(Home, LeaseKind.Headless, out _);
+
+        TidyPass pass;
+        using (SetAsideFaults.Within(new SetAsideFault { NoStamp = true }))
+        {
+            pass = await trees.TidyEmptyAsync(root, "engine", "aurora", NoneAsync);
+        }
+
+        Assert.DoesNotContain(pass.Results, result => result.Removed);
+        Assert.True(Directory.Exists(tree));
+        Assert.Contains(branch, await GitAsync(root, "branch", "--list"));
+    }
+
+    [Fact]
+    public async Task A_branch_that_moved_between_its_judgement_and_the_hold_is_kept()
+    {
+        var root = await RepositoryAsync("engine");
+        var trees = new SessionTrees(Home);
+        var (moved, movedBranch) = await FinishedAsync(trees, root, "a.txt");
+        using var lease = HomeLease.TryAcquire(Home, LeaseKind.Headless, out _);
+
+        TidyPass pass;
+        using (SetAsideFaults.Within(new SetAsideFault
+        {
+            WhileJudging = async tree =>
+            {
+                if (Path.GetFullPath(tree) == Path.GetFullPath(moved)) await GitAsync(tree, "commit", "--allow-empty", "--quiet", "-m", "meanwhile");
+            },
+        }))
+        {
+            pass = await trees.TidyEmptyAsync(root, "engine", "aurora", NoneAsync);
+        }
+
+        Assert.DoesNotContain(pass.Results, result => result.Removed);
+        Assert.True(Directory.Exists(moved));
+        Assert.Contains(movedBranch, await GitAsync(root, "branch", "--list"));
+    }
+
     [Fact]
     public async Task A_refused_hold_says_who_holds_it_and_for_how_long()
     {

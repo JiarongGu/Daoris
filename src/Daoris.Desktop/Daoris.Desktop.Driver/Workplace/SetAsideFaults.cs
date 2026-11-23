@@ -36,6 +36,15 @@ internal sealed class SetAsideFault
 
     public Func<string, Task>? WhileJudging { get; init; }
 
+    public bool NoStamp { get; init; }
+
+    public Action<TimeSpan>? HoldEnded { get; init; }
+
+    public Func<string, Task>? WhileLooking { get; init; }
+
+    /// <summary>Run when the tidy has read a tree again under a repository's hold and is about to write, with how long it held the repository so far.</summary>
+    public Action<TimeSpan>? HoldRead { get; init; }
+
     /// <summary>Run right before the tree's folder is renamed aside, with the tree's path.</summary>
     public Action<string>? BeforeMove { get; init; }
 

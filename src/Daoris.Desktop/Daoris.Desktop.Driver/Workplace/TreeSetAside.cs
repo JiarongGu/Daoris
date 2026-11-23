@@ -153,13 +153,13 @@ internal sealed class TreeSetAside(TreeContext context)
     /// and a manifest it cannot write keeps the tree: nothing moves, and the caller drops the tip's ref.</para>
     /// </remarks>
     internal Task<(bool Gone, string? To, string? Code, string Sentence)> MoveAsideAsync(
-        string root, SweepItem item, CancellationToken ct, IReadOnlyList<string>? slim = null, FinishedTree? finished = null) =>
-        MoveAsideAsync(root, item.Tree!, item.Workspace, item.Repository, ct, slim, item.Branch, finished);
+        string root, SweepItem item, CancellationToken ct, IReadOnlyList<string>? slim = null, FinishedTree? finished = null, TreeStamp? stamped = null) =>
+        MoveAsideAsync(root, item.Tree!, item.Workspace, item.Repository, ct, slim, item.Branch, finished, stamped);
 
-    /// <inheritdoc cref="MoveAsideAsync(string, SweepItem, CancellationToken, IReadOnlyList{string}, FinishedTree)"/>
+    /// <inheritdoc cref="MoveAsideAsync(string, SweepItem, CancellationToken, IReadOnlyList{string}, FinishedTree, TreeStamp)"/>
     internal async Task<(bool Gone, string? To, string? Code, string Sentence)> MoveAsideAsync(
         string root, string treePath, string workspace, string repository, CancellationToken ct, IReadOnlyList<string>? slim = null, string branch = "",
-        FinishedTree? finished = null)
+        FinishedTree? finished = null, TreeStamp? stamped = null)
     {
         var tree = Path.TrimEndingDirectorySeparator(Path.GetFullPath(treePath));
         string? to = null;
@@ -182,6 +182,7 @@ internal sealed class TreeSetAside(TreeContext context)
                 manifest = Judged(named, repository, branch, slim);
             }
 
+            if (finished is not null && stamped is null) return (false, null, TidyKept.Unread, "its tree's top was not stamped before its judgement, so it is kept");
             SetAsideFaults.Current?.BeforeMove?.Invoke(tree);
             var moved = MoveFolderAside(tree, workspace, repository, "its tree", "its folder", named);
             if (moved.Code is { } kept)
@@ -192,12 +193,13 @@ internal sealed class TreeSetAside(TreeContext context)
 
             to = moved.To;
 
-            // 🔴 What the tree holds read again in the moved folder, while git still knows it, so a change
-            // made between the judgement's read and the move (a tracked file deleted at the top, which leaves no later time on anything that
-            // stays) keeps the tree: put back, as git's refusal below puts it back.
-            if (finished is not null && await UncommittedAsync(to!, ct).ConfigureAwait(false) is { } dirty)
+            // 🔴 The moved folder's stamps read against those taken before the judgement, which nothing writes to once it is moved: a change
+            // keeps the tree, put back as git's refusal below puts it back (a tracked file deleted at the top leaves no later time, but its
+            // name is gone). The top alone: no file is walked under the hold.
+            if (stamped is not null)
             {
-                return PutBackWithShares(to!, tree, manifest, TidyKept.Refused, dirty, shares);
+                var changed = TreeStamp.Take(to!) is { } after ? after.Differences(stamped) : "its folder could not be read once moved";
+                if (changed is not null) return PutBackWithShares(to!, tree, manifest, TidyKept.Refused, changed, shares);
             }
 
             // A set-aside folder holding a share's link would let a hand's recursive delete of it reach the shared place, so the links come

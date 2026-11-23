@@ -5,7 +5,7 @@ using static Daoris.Driver.SetAsideMarks;
 
 namespace Daoris.Driver;
 
-/// <summary>What a move aside reads and puts back around the move: the nested repositories, what is uncommitted, what is held now.</summary>
+/// <summary>What a move aside reads and puts back around the move: the nested repositories, the put-back, what is held now.</summary>
 internal static class SetAsideReads
 {
     /// <summary>
@@ -104,19 +104,6 @@ internal static class SetAsideReads
         {
             return (false, to, code, $"{why}, and its folder, moved aside to {to}, could not be put back ({error.Message.Trim()})");
         }
-    }
-
-    /// <summary>
-    /// What the moved tree holds that no commit does, tracked or untracked and not ignored, read by git in the moved folder with no optional
-    /// lock: a clause where it holds something or git could not say, else null.
-    /// </summary>
-    internal static async Task<string?> UncommittedAsync(string folder, CancellationToken ct)
-    {
-        var (code, porcelain, err) = await WorkingTree.GitAsync(
-            folder, ["--no-optional-locks", "status", "--porcelain", "-z", "--untracked-files=all", "--ignore-submodules=none"], ct).ConfigureAwait(false);
-        if (code != 0) return $"git could not read its tree again once moved ({FirstLine(err)})";
-        var paths = porcelain.Split('\0', StringSplitOptions.RemoveEmptyEntries);
-        return paths.Length == 0 ? null : $"{paths.Length} path(s) changed between the judgement and the move: {string.Join(", ", paths.Take(3).Select(each => each.Length > 3 ? each[3..] : each))}";
     }
 
     /// <summary>

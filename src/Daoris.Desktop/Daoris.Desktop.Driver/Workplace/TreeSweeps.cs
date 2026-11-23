@@ -148,6 +148,15 @@ internal sealed class TreeSweeps(
                 continue;
             }
 
+            // The tree watched and its top stamped before anything of it is read: the hold reads both again, and a change since keeps the tree.
+            using var watch = item.Tree is { } top && Directory.Exists(top) ? TreeWatch.Start(top) : null;
+            var stamp = item.Tree is { } stamped && Directory.Exists(stamped) ? TreeStamp.Take(stamped) : null;
+            if (stamp is null && item.Tree is { } unread && Directory.Exists(unread))
+            {
+                results.Add(new(item, false, "its tree's top could not be read before its judgement, so it is kept") { Kept = TidyKept.Unread, Cause = TidyCause.Folders });
+                continue;
+            }
+
             // Judged and last looked at with no hold, so a slow read of a large tree never keeps the repository's writers out.
             var (first, said) = await LookAsync(item, busy).ConfigureAwait(false);
             if (first is null)
@@ -156,35 +165,7 @@ internal sealed class TreeSweeps(
                 continue;
             }
 
-            // Held for this tree's writes alone, the tree read again under it, and let go at the end of its turn.
-            if (SetAsideFaults.Current?.WhileJudging is { } slow && first.Now.Tree is { } judging) await slow(judging).ConfigureAwait(false);
-            using var hold = alone?.Invoke();
-            var look1 = first;
-            if (hold is not null)
-            {
-                if (!hold.Held || !await hold.AskAsync().ConfigureAwait(false))
-                {
-                    refused = hold;
-                    results.Add(new(first.Now, false, hold.Said) { Kept = hold.Code });
-                    continue;
-                }
-
-                (look1, said) = await LookAsync(item, hold.Busy!).ConfigureAwait(false);
-                if (look1 is null)
-                {
-                    results.Add(said!);
-                    continue;
-                }
-
-                // The tree stands as judged, or it is kept.
-                if (look1.Judged != first.Judged)
-                {
-                    results.Add(new(look1.Now, false, "it changed since the list, and is kept"));
-                    continue;
-                }
-            }
-
-            var (root, now, judged, line, rests, read, seen, slim) = look1;
+            var (root, now, judged, line, rests, read, seen, slim) = first;
 
             // The delete refuses a judgement that rested on nothing, but the tip's holder appended below would
             // hide that, so the branch is kept here, said, before any ref is written or anything moves.
@@ -197,30 +178,41 @@ internal sealed class TreeSweeps(
             // From here each step removes, or finishes a removal: none is cancelled halfway.
             var done = CancellationToken.None;
 
-            // Held by content: its commits are kept on a ref of their own, named here and made in the delete's own act,
-            // and wherever the line's own branch does not hold the tip by ancestry, a squash's, a carried branch's,
-            // a landing branch's and origin's form of the line included, on both paths: the exact tip is held by a ref that stays.
-            string? kept = null;
-            RecoveryName? keep = null;
-            var lineAt = now.HeldBy is null ? await LineOwnHoldsAsync(root, line, judged, done).ConfigureAwait(false) : null;
-            if (lineAt is null)
+            // Read before the hold: the delete verifies each ref it rests on in its own transaction (TipKeeps).
+            var (keep, kept, notKept) = await TipKeeps.HoldAsync(root, now, line, judged, rests).ConfigureAwait(false);
+            if (notKept is not null)
             {
-                var (name, why) = await RecoveryKeeps.NameAsync(root, now.Branch, judged, done).ConfigureAwait(false);
-                if (name is null)
+                results.Add(new(now, false, $"Daoris could not keep its commits on a ref of their own ({notKept}), so it is kept"));
+                continue;
+            }
+
+            if (SetAsideFaults.Current?.AfterTipHeld is { } afterHeld) await afterHeld(root).ConfigureAwait(false);
+
+            // Held for this tree's writes alone, and let go at the end of its turn. Under it only what can have changed since the look above
+            // is read, and no file is walked: the tip, the worktree list, the sessions and the tree's stamps (HoldLooks).
+            if (SetAsideFaults.Current?.WhileJudging is { } slow && now.Tree is { } judging) await slow(judging).ConfigureAwait(false);
+            using var hold = alone?.Invoke();
+            if (hold is not null)
+            {
+                if (!hold.Held || !await hold.AskAsync().ConfigureAwait(false))
                 {
-                    results.Add(new(now, false, $"Daoris could not keep its commits on a ref of their own ({why}), so it is kept"));
+                    refused = hold;
+                    results.Add(new(now, false, hold.Said) { Kept = hold.Code });
                     continue;
                 }
 
-                (keep, kept) = (name, name.Ref);
-            }
+                // A branch with no tree has only its folder's absence to read again, which the last look's own first guard reads.
+                var changed = now.Tree is null
+                    ? await setAside.LastLookAsync(root, now, ct).ConfigureAwait(false)
+                    : await HoldLooks.AskAsync(context, root, now, judged, stamp, watch, hold.Busy!, ct).ConfigureAwait(false);
+                if (changed is { } why)
+                {
+                    results.Add(new(now, false, why.Sentence) { Kept = why.Code, Cause = why.Cause });
+                    continue;
+                }
 
-            // 🔴 The exact tip's holder rests in the delete's own transaction,
-            // at the commit read, beside what the judgement rested on: the recovery ref made or verified there at the tip, or the line's own
-            // branch at the commit that held it. That holder moved or gone between here and the delete refuses the delete.
-            // One verify for each ref: git refuses two for one ref in a transaction, and one the judgement already rests on is verified already.
-            if (lineAt is not null && !rests.Any(rest => rest.Ref == $"refs/heads/{line}")) rests.Add(($"refs/heads/{line}", lineAt));
-            if (SetAsideFaults.Current?.AfterTipHeld is { } afterHeld) await afterHeld(root).ConfigureAwait(false);
+                hold.ReadsDone();
+            }
 
             string? left = null;
             string? movedTo = null;
@@ -238,7 +230,7 @@ internal sealed class TreeSweeps(
                     LandingWhy = landingWhy,
                 };
                 // The look never deletes a tree's folder: a write that lands after its last look lands in the folder moved aside.
-                var moved = await setAside.MoveAsideAsync(root, now, done, slim, finished).ConfigureAwait(false);
+                var moved = await setAside.MoveAsideAsync(root, now, done, slim, finished, stamp).ConfigureAwait(false);
                 if (!moved.Gone)
                 {
                     // A branch kept makes no recovery ref, which only the delete's act makes. Where its folder could not be put back, its
@@ -347,6 +339,7 @@ internal sealed class TreeSweeps(
             // The moment before the judgement reads what the tree holds, the finished
             // folder's threshold, and what it held that no commit holds, which its record names.
             var read = DateTimeOffset.UtcNow;
+            if (SetAsideFaults.Current?.WhileLooking is { } looking && item.Tree is { } looked) await looking(looked).ConfigureAwait(false);
             var seen = new List<ContentHolds.TreeHolds>();
             var (now, judged) = await JudgeAsync(
                     root, item.Repository, item.Workspace, item.Branch, worktrees.GetValueOrDefault(item.Branch), line,
@@ -573,20 +566,6 @@ internal sealed class TreeSweeps(
         }
 
         return null;
-    }
-
-    /// <summary>
-    /// Whether the line's own branch, <c>refs/heads/&lt;line&gt;</c>, holds <paramref name="tip"/> by ancestry: the one hold
-    /// that needs no recovery ref. Any other answer, origin's copy alone included, writes one.
-    /// </summary>
-    /// <returns>The commit the line's own branch is read at, where it holds the tip; null where it does not, or git could not say.</returns>
-    private static async Task<string?> LineOwnHoldsAsync(string root, string? line, string tip, CancellationToken ct)
-    {
-        if (line is null) return null;
-        var (readCode, at, _) = await WorkingTree.GitAsync(root, ["rev-parse", "--verify", "--quiet", $"refs/heads/{line}^{{commit}}"], ct).ConfigureAwait(false);
-        if (readCode != 0 || at.Trim() is not { Length: > 0 } commit) return null;
-        var (code, _, _) = await WorkingTree.GitAsync(root, ["merge-base", "--is-ancestor", tip, commit], ct).ConfigureAwait(false);
-        return code == 0 ? commit : null;
     }
 
     /// <summary>
