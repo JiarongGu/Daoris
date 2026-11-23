@@ -166,7 +166,7 @@ public sealed class PolicyChanges(string home, Func<DateTimeOffset> clock, Owner
         if (!File.Exists(ProposalsPath)) return [];
         try
         {
-            return JsonSerializer.Deserialize<List<PolicyProposal>>(File.ReadAllText(ProposalsPath), Wire) ?? [];
+            return JsonSerializer.Deserialize<List<PolicyProposal>>(AtomicFile.ReadText(ProposalsPath), Wire) ?? [];
         }
         catch (JsonException)
         {
@@ -177,6 +177,6 @@ public sealed class PolicyChanges(string home, Func<DateTimeOffset> clock, Owner
     private void Write(List<PolicyProposal> all)
     {
         Directory.CreateDirectory(Path.GetDirectoryName(ProposalsPath)!);
-        File.WriteAllText(ProposalsPath, JsonSerializer.Serialize(all, Wire));
+        AtomicFile.WriteText(ProposalsPath, JsonSerializer.Serialize(all, Wire));
     }
 }
