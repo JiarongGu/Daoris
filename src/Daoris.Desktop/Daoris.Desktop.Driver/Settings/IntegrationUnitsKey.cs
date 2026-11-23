@@ -42,7 +42,7 @@ public static class IntegrationUnitsKey
     {
         if (value.ValueKind != JsonValueKind.Object
             || !value.TryGetProperty("blob", out var blob) || blob.ValueKind != JsonValueKind.String || blob.GetString() is not { } id
-            || !IntegrationGatesKey.IsAcceptance(id) || id == IntegrationAcceptance.None
+            || !IntegrationGatesKey.IsAcceptance(id) || id == WorkflowKey.NoGates
             || !value.TryGetProperty("units", out var units) || units.ValueKind != JsonValueKind.Object)
         {
             return null;

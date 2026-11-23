@@ -184,7 +184,7 @@ internal static class DriverConfigEdits
             return config with { IntegrationUnits = next };
         }
 
-        if (!IntegrationGatesKey.IsAcceptance(record.Blob) || record.Blob == IntegrationAcceptance.None || !config.IntegrationGates.TryGetValue(named, out var accepted) || accepted != record.Blob)
+        if (!IntegrationGatesKey.IsAcceptance(record.Blob) || record.Blob == WorkflowKey.NoGates || !config.IntegrationGates.TryGetValue(named, out var accepted) || accepted != record.Blob)
         {
             throw new DriverException("an integration's accepted units are those of the blob its acceptance names.");
         }
