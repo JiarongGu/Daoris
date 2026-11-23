@@ -205,6 +205,78 @@ public sealed class PolicyChangeTests : IDisposable
         Assert.Equal((PolicyChangeLine.Pressed, PolicyChangeLine.Pressed, Conversation), (line.Door, line.Turn, line.Session));
     }
 
+    [Theory]
+    [InlineData("Do not apply {0} {1}; explain it first")]
+    [InlineData("what does {0} ({1}) change?")]
+    [InlineData("you may say: apply {0} {1}, but not yet")]
+    [InlineData("> apply {0} {1}")]
+    public void Words_that_mention_the_proposal_without_confirming_it_are_not_a_confirmation(string form)
+    {
+        var door = Open();
+        var proposal = Proposed(door);
+        _now = _now.AddMinutes(1);
+        Say(Conversation, string.Format(form, proposal.Id, proposal.Digest));
+
+        Assert.Equal(PolicyRefusals.NoOwnerTurn, door.Apply(PolicyChannel.Of(Conversation), proposal.Id, proposal.Digest).Code);
+        Assert.Equal("{}", File.ReadAllText(ConfigPath));
+    }
+
+    [Fact]
+    public void A_later_turn_naming_the_proposal_withdraws_an_earlier_yes()
+    {
+        var door = Open();
+        var proposal = Proposed(door);
+        _now = _now.AddMinutes(1);
+        Say(Conversation, $"yes, apply {proposal.Id} ({proposal.Digest})");
+        _now = _now.AddMinutes(1);
+        Say(Conversation, $"wait, do not apply {proposal.Id}");
+
+        Assert.Equal(PolicyRefusals.NoOwnerTurn, door.Apply(PolicyChannel.Of(Conversation), proposal.Id, proposal.Digest).Code);
+    }
+
+    [Fact]
+    public void A_repository_proposal_is_previewed_at_the_place_its_workspace_makes()
+    {
+        var door = Open("""{"risk":{"workspace/W":[{"kind":"line.land","class":"owner"}],"repository/R":[{"kind":"line.land","class":"none"}]}}""");
+
+        var proposed = door.Propose(PolicyChannel.Of(Conversation), [new("repository/R", "line.land", null, null, null)], repository => repository == "R" ? "W" : null);
+        var blind = door.Propose(PolicyChannel.Of(Conversation), [new("repository/R", "line.land", null, null, null)]);
+
+        Assert.Contains(proposed.Proposal!.Shifts, shift => shift.Act == "line.land" && shift.From == RiskClasses.None && shift.To == RiskClasses.Owner && shift.Effect == PolicyShift.Opens);
+        Assert.Empty(blind.Proposal!.Shifts);
+    }
+
+    [Fact]
+    public void A_place_written_in_other_capitalization_is_edited_not_duplicated()
+    {
+        var door = Open("""{"risk":{"repository/Aurora":[{"kind":"line.land","class":"owner"},{"kind":"spend.money","class":"owner"}]}}""");
+        var proposal = Proposed(door, new PolicyEdit("repository/aurora", "line.land", RiskClasses.None, null, null));
+        _now = _now.AddMinutes(1);
+        Say(Conversation, $"apply {proposal.Id} {proposal.Digest}");
+
+        Assert.True(door.Apply(PolicyChannel.Of(Conversation), proposal.Id, proposal.Digest).Done);
+
+        var risk = JsonNode.Parse(File.ReadAllText(ConfigPath))!["risk"]!.AsObject();
+        Assert.Equal(["repository/Aurora"], risk.Select(pair => pair.Key));
+        Assert.Equal(RiskClasses.None, RiskGate.Judge(Policy(), RiskAct.Of("line.land"), "", new RiskPlace(null, "Aurora", true), "").Class);
+        Assert.Equal(RiskClasses.Owner, RiskGate.Judge(Policy(), RiskAct.Of("spend.money"), "", new RiskPlace(null, "Aurora", true), "").Class);
+    }
+
+    [Fact]
+    public void Pending_proposals_are_named_by_their_id_or_digest_and_applied_ones_are_not()
+    {
+        var door = Open();
+        var proposal = Proposed(door);
+
+        Assert.True(door.Mentions($"apply {proposal.Id} x"));
+        Assert.True(door.Mentions(proposal.Digest.ToUpperInvariant()));
+        Assert.False(door.Mentions("nothing to see"));
+        _now = _now.AddMinutes(1);
+        Say(Conversation, $"apply {proposal.Id} {proposal.Digest}");
+        Assert.True(door.Apply(PolicyChannel.Of(Conversation), proposal.Id, proposal.Digest).Done);
+        Assert.False(door.Mentions(proposal.Id));
+    }
+
     [Fact]
     public void A_policy_already_written_with_its_own_layout_applies_the_proposal_read_from_it()
     {
@@ -212,7 +284,7 @@ public sealed class PolicyChangeTests : IDisposable
         var proposal = Proposed(door);
         Assert.NotEqual(RiskPolicy.SeedRevision, proposal.BaseRevision);
         _now = _now.AddMinutes(1);
-        Say(Conversation, $"{proposal.Id} {proposal.Digest}");
+        Say(Conversation, $"apply {proposal.Id} {proposal.Digest}");
 
         var applied = door.Apply(PolicyChannel.Of(Conversation), proposal.Id, proposal.Digest);
 
@@ -250,7 +322,7 @@ public sealed class PolicyChangeTests : IDisposable
         Assert.Contains(proposal.Shifts, shift => shift.Act == "work.accept" && shift.From == RiskClasses.Role && shift.To == RiskClasses.None && shift.Effect == PolicyShift.Releases);
 
         _now = _now.AddMinutes(1);
-        Say(Conversation, $"{proposal.Id} {proposal.Digest}");
+        Say(Conversation, $"apply {proposal.Id} {proposal.Digest}");
         Assert.True(door.Apply(PolicyChannel.Of(Conversation), proposal.Id, proposal.Digest).Done);
 
         var written = JsonNode.Parse(File.ReadAllText(ConfigPath))!.AsObject();

@@ -26,8 +26,18 @@ public sealed class PolicyChanges(string home, Func<DateTimeOffset> clock, Owner
         lock (Gate) return Read();
     }
 
+    /// <summary>Whether <paramref name="text"/> names a proposal still waiting, by its id or its digest: words only the owner's own door may carry.</summary>
+    public bool Mentions(string text)
+    {
+        lock (Gate)
+        {
+            return Read().Any(each => each.State == PolicyProposal.Pending
+                && (text.Contains(each.Id, StringComparison.OrdinalIgnoreCase) || text.Contains(each.Digest, StringComparison.OrdinalIgnoreCase)));
+        }
+    }
+
     /// <summary>The assistant's proposal of <paramref name="edits"/>: kept pending, with the waits it would open or release, and nothing changed.</summary>
-    public PolicyOutcome Propose(PolicyChannel channel, IReadOnlyList<PolicyEdit> edits)
+    public PolicyOutcome Propose(PolicyChannel channel, IReadOnlyList<PolicyEdit> edits, Func<string, string?>? workspaceOf = null)
     {
         if (channel.Worker) return Refuse(PolicyRefusals.Agent, AgentSentence);
         if (channel.Session is not { } session) return Refuse(PolicyRefusals.Keyless, "a proposal comes from a conversation whose session key the press proves; this process proves none, so nothing was proposed");
@@ -51,7 +61,7 @@ public sealed class PolicyChanges(string home, Func<DateTimeOffset> clock, Owner
             var after = After(config, edits);
             var at = clock();
             var proposal = new PolicyProposal(
-                $"pc-{Guid.NewGuid():N}"[..11], PolicyProposal.DigestOf(session, before.Revision, edits), session, at, before.Revision, edits, Shifts(config, before, after, edits));
+                $"pc-{Guid.NewGuid():N}"[..11], PolicyProposal.DigestOf(session, before.Revision, edits), session, at, before.Revision, edits, Shifts(config, before, after, edits, workspaceOf));
             var all = Read();
             all.Add(proposal);
             Write(all);
@@ -129,14 +139,15 @@ public sealed class PolicyChanges(string home, Func<DateTimeOffset> clock, Owner
 
     /// <summary>
     /// The waits each edit would open or release or move to another answerer, at its place, under each access mode: the act judged before and after.
-    /// A place's workspace is not known from a repository's key, so a repository place is read at its own access.
+    /// A repository place is read with the workspace the registry names it in, so the rows it inherits from the workspace are judged.
     /// </summary>
-    private static IReadOnlyList<PolicyShift> Shifts(DriverConfig config, RiskPolicy before, RiskPolicy after, IReadOnlyList<PolicyEdit> edits)
+    private static IReadOnlyList<PolicyShift> Shifts(
+        DriverConfig config, RiskPolicy before, RiskPolicy after, IReadOnlyList<PolicyEdit> edits, Func<string, string?>? workspaceOf)
     {
         var shifts = new List<PolicyShift>();
         foreach (var edit in edits)
         {
-            var place = PlaceOf(config, edit.Place);
+            var place = PlaceOf(config, edit.Place, workspaceOf);
             var act = RiskAct.Of(edit.Act);
             foreach (var full in new[] { true, false })
             {
@@ -156,8 +167,8 @@ public sealed class PolicyChanges(string home, Func<DateTimeOffset> clock, Owner
 
     private static int Strictness(string riskClass) => riskClass switch { RiskClasses.None => 0, RiskClasses.Role => 1, _ => 2 };
 
-    private static RiskPlace PlaceOf(DriverConfig config, string key) =>
-        key.StartsWith("repository/", StringComparison.Ordinal) ? RiskPlace.Of(config, null, key["repository/".Length..])
+    private static RiskPlace PlaceOf(DriverConfig config, string key, Func<string, string?>? workspaceOf) =>
+        key.StartsWith("repository/", StringComparison.Ordinal) ? RiskPlace.Of(config, workspaceOf?.Invoke(key["repository/".Length..]), key["repository/".Length..])
         : key.StartsWith("workspace/", StringComparison.Ordinal) ? RiskPlace.Of(config, key["workspace/".Length..], null)
         : RiskPlace.Of(config, null, null);
 

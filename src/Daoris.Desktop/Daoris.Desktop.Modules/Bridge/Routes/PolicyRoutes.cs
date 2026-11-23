@@ -24,10 +24,14 @@ public sealed class PolicyRoutes(DriverContext context)
     [GroundRead("POLICY_PROPOSE", nameof(PipeReads.PolicyRevision))]
     [NotAlready("POLICY_PROPOSE", "each proposal is a new id, so the same edits proposed again are a second proposal")]
     [Publishes("POLICY_PROPOSE", StateScopes.Driver)]
-    private object? Propose(ProposePolicy press)
+    private async Task<object?> ProposeAsync(ProposePolicy press, CancellationToken cancellationToken)
     {
         var edits = (press.Edits ?? []).Select(edit => new PolicyEdit(edit.Place ?? "", edit.Act ?? "", edit.Class, edit.By, edit.Mode)).ToList();
-        var outcome = Changes().Propose(ChannelOf(press.Conversation), edits);
+        // A repository's workspace is the registry's, so a proposal is previewed at the place the runtime judges it at.
+        var snapshot = _loop.Service is { } service ? await service.SnapshotAsync(cancellationToken).ConfigureAwait(false) : null;
+        string? WorkspaceOf(string repository) => snapshot?.Repositories
+            .FirstOrDefault(each => string.Equals(each.Repository, repository, StringComparison.OrdinalIgnoreCase))?.Workspace;
+        var outcome = Changes().Propose(ChannelOf(press.Conversation), edits, WorkspaceOf);
         return Said(outcome);
     }
 

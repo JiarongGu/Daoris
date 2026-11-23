@@ -16,14 +16,14 @@ public sealed class PolicyVerbTests : IDisposable
 
     public void Dispose() => GitSeed.Discard(_home);
 
-    private DriverChoicesWorld World() => new()
+    private DriverChoicesWorld World(string? session = null) => new()
     {
         Verbs = DriverChoiceVerbs.All,
-        Instance = new InstanceWorld { Home = _home, Environment = _ => null, Out = _out, Error = new StringWriter(), Verb = "daoris" },
+        Instance = new InstanceWorld { Home = _home, Environment = name => name == DriverChoicesCommand.SessionVariable ? session : null, Out = _out, Error = new StringWriter(), Verb = "daoris" },
         ConfigPath = DaorisHome.Entry(_home, HomeEntry.DriverConfig),
     };
 
-    private ChoicePress Plan(string words) => DriverChoicesCommand.Plan(words.Split(' '), DriverConfig.Empty, World());
+    private ChoicePress Plan(string words, string? session = null) => DriverChoicesCommand.Plan(words.Split(' '), DriverConfig.Empty, World(session));
 
     [Fact]
     public void Propose_presses_one_edit_to_its_route()
@@ -34,6 +34,18 @@ public sealed class PolicyVerbTests : IDisposable
         var edit = Assert.Single(JsonSerializer.SerializeToElement(press.Payload).GetProperty("edits").EnumerateArray());
         Assert.Equal(("repository/Aurora", "release.start", "owner", "restricted"),
             (edit.GetProperty("place").GetString(), edit.GetProperty("act").GetString(), edit.GetProperty("class").GetString(), edit.GetProperty("mode").GetString()));
+    }
+
+    [Fact]
+    public void Propose_carries_the_terminals_own_session_so_a_card_press_names_the_proposing_conversation()
+    {
+        var named = JsonSerializer.SerializeToElement(Plan("risk propose machine line.land owner", "s-ask").Payload);
+        var alone = JsonSerializer.SerializeToElement(Plan("risk propose machine line.land owner").Payload);
+        var explicitly = JsonSerializer.SerializeToElement(Plan("risk propose machine line.land owner --conversation s-other", "s-ask").Payload);
+
+        Assert.Equal("s-ask", named.GetProperty("conversation").GetString());
+        Assert.False(alone.TryGetProperty("conversation", out _));
+        Assert.Equal("s-other", explicitly.GetProperty("conversation").GetString());
     }
 
     [Fact]

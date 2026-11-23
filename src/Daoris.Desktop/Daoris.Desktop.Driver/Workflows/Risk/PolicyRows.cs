@@ -14,7 +14,9 @@ public static class PolicyRows
         foreach (var edit in edits)
         {
             var risk = root[RiskPolicy.Key] as JsonObject ?? new JsonObject();
-            var rows = risk[edit.Place] as JsonArray ?? [];
+            // A place is one logical key whatever its capitalization, as the reader reads it: its existing spelling is edited, never a second one added.
+            var place = risk.Select(pair => pair.Key).FirstOrDefault(key => string.Equals(key, edit.Place, StringComparison.OrdinalIgnoreCase)) ?? edit.Place;
+            var rows = risk[place] as JsonArray ?? [];
             var kept = new JsonArray();
             foreach (var row in rows)
             {
@@ -30,8 +32,8 @@ public static class PolicyRows
                 kept.Add(written);
             }
 
-            risk.Remove(edit.Place);
-            if (kept.Count > 0) risk[edit.Place] = kept;
+            risk.Remove(place);
+            if (kept.Count > 0) risk[place] = kept;
             root.Remove(RiskPolicy.Key);
             if (risk.Count > 0) root[RiskPolicy.Key] = risk;
         }

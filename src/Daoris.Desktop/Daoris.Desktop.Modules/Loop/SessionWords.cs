@@ -257,6 +257,11 @@ public sealed class SessionWords : IDisposable
         string id, string text, IReadOnlyList<ChatUpload> files, string? preface, string door, CancellationToken ct,
         MessageLevel level, string? key, string? choice, string? question, HeadWalk walk)
     {
+        if (PolicyWordsGuard.Refuses(PipeDoor.By.By, new PolicyChanges(_loop.Home, () => DateTimeOffset.UtcNow, new OwnerTurns(_ => [])), text))
+        {
+            return WordsAnswer.Refused(PolicyWordsGuard.Refusal, PolicyWordsGuard.Sentence);
+        }
+
         // A conversation whose agent refused its choice at the open is answered by its replacement, and while
         // that opens a word joins the words moving to it, so it reaches the replacement once.
         if (_loop.Chat is { } replaced)

@@ -31,4 +31,28 @@ public sealed class PolicyChannelTests
     [InlineData("POLICY_APPLY")]
     [InlineData("POLICY_PROPOSALS")]
     public void The_policys_doors_are_answered_by_the_driver_module(string route) => Assert.Contains(route, DriverModule.Routes);
+
+    [Theory]
+    [InlineData(TerminalTierBy.AskDaoris, true)]
+    [InlineData(TerminalTierBy.Session, true)]
+    [InlineData(TerminalTierBy.Terminal, true)]
+    [InlineData(TerminalTierBy.Window, false)]
+    [InlineData(TerminalTierBy.Card, false)]
+    public void Words_naming_a_waiting_proposal_are_refused_to_every_press_but_the_owners_own(string by, bool refused)
+    {
+        var home = Path.Combine(WorkspaceRoot.Folder, "_fixtures", "policy-words", Guid.NewGuid().ToString("N")[..8]);
+        try
+        {
+            Directory.CreateDirectory(Path.GetDirectoryName(DaorisHome.Entry(home, HomeEntry.DriverConfig))!);
+            var changes = new PolicyChanges(home, () => DateTimeOffset.UnixEpoch, new OwnerTurns(_ => []));
+            var proposal = changes.Propose(PolicyChannel.Of("s-ask"), [new("machine", "line.land", RiskClasses.Owner, null, null)]).Proposal!;
+
+            Assert.Equal(refused, PolicyWordsGuard.Refuses(by, changes, $"apply {proposal.Id} {proposal.Digest}"));
+            Assert.False(PolicyWordsGuard.Refuses(by, changes, "an ordinary instruction"));
+        }
+        finally
+        {
+            GitSeed.Discard(home);
+        }
+    }
 }

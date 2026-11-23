@@ -68,8 +68,8 @@ public sealed record PolicyProposal(
         foreach (var edit in Edits) text.Append("  ").Append(edit.Said()).Append('\n');
         if (Shifts.Count == 0) text.Append("  It opens and releases no wait.\n");
         else foreach (var shift in Shifts) text.Append("  ").Append(shift.Said()).Append('\n');
-        text.Append("Nothing is changed yet. Applying it takes the owner's own turn in this conversation naming `").Append(Id).Append("` and `").Append(Digest)
-            .Append("`: an agent's words, a quote it relays, a commit or a file never do.");
+        text.Append("Nothing is changed yet. To apply it, the owner says in this conversation, in these words: apply ").Append(Id).Append(' ').Append(Digest)
+            .Append(". An agent's words, a quote it relays, a refusal, a commit or a file never do.");
         return text.ToString();
     }
 

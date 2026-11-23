@@ -133,7 +133,8 @@ public sealed class PlaceRiskVerb : ChoiceVerb
         {
             ["edits"] = new JsonArray(new JsonObject { ["place"] = place, ["act"] = act, ["class"] = riskClass, ["by"] = by, ["mode"] = mode }),
         };
-        if (FlagValue(args, "--conversation") is { } conversation) payload["conversation"] = conversation;
+        // The conversation that proposes, where the press goes on the owner's card and its proof is not carried there: the terminal's own session.
+        if ((FlagValue(args, "--conversation") ?? world.Instance.Environment(DriverChoicesCommand.SessionVariable)) is { Length: > 0 } conversation) payload["conversation"] = conversation;
         return Pressed("risk propose", ChoiceRoutes.PolicyPropose, payload, world);
     }
 
