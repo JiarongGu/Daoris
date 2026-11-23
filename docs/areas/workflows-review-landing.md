@@ -166,19 +166,27 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
    --accept|--withdraw [--plan]`), Setup saying the mode that decided, shown as checks added, removed and changed by name with their commands
    (`DeclarationChange`), the row ending at the press; its row in *What needs you* names the checks added, removed and changed and
    opens that press on Setup. A landed change that adds or alters no command keeps the acceptance as it lands, said in one sentence
-   naming what it set aside (`IntegrationOwed.Kept`): two declarations run the same where they are equal once their inert parts are set
-   aside (`DeclarationCommands`, read strictly, so a member written twice, a comment or a trailing comma waits: every member named with a
-   leading `_` at the top or directly inside a check; each check's `paths`, `timeoutMinutes`, `timeoutWhy` and `memoryGb`; the top-level
-   `tests`, `tiers` and `docs`), and a check's name, command, folder, hand-back or flags, a check added, removed or moved, and any other
-   part wait for the person; the change shown names command changes alone. A change the look cannot judge waits and is said once, and
+   naming what it set aside (`IntegrationOwed.Kept`): a declaration is a set of units (`DeclarationUnits`, read strictly, so a member
+   written twice, a comment or a trailing comma waits): each gate, `generated`, `reached`, `doctrine`, each other part by its key, and the
+   gates' order. A unit's digest is its canonical form with only the inert members set aside: a member named with a leading `_` directly
+   inside it, and a gate's `paths`, `timeoutMinutes`, `timeoutWhy` and `memoryGb`; the top-level `tests`, `tiers`, `docs` and
+   `verifyBudget` are no unit. Two declarations run the same where no unit differs (`DeclarationCommands.Keeps`), so a gate's name,
+   command, folder, hand-back or flags, a gate added, removed or moved, a member nobody named and any other part wait for the person; the
+   change shown names command changes alone. The home keeps each unit's accepted digest per repository (`integrationUnits` beside
+   `integrationGates`, ended with the blob it was computed from): an acceptance given as a whole file's blob is converted at the first
+   look (`IntegrationOwed.Unconverted`, `DeclarationAcceptance.ConvertAsync`), owing no press, and a change is judged against the digests.
+   A change that drops a gate's `paths` or a test set's files is a keep like any other and says what it dropped in its one sentence
+   (`DeclaredNarrowing`). A change the look cannot judge waits and is said once, and
    never ends the look. In full access a check runs the work's own declaration as its commit carries it, a command change of its own
    included, as the work's agents run any command in their own sessions anyway, also before any acceptance (said in one line); its result
    names that blob and nothing holds. The workspace its mode resolves through is the work's bound one. A driver file that does not
    read is restricted. In
    restricted access a check runs under the accepted declaration, read from its blob, never the work's file (`CheckDeclaration`): a
    work whose declaration runs only what the accepted one runs, or whose own change against where it left the line (the merge base with
-   the local branch of the line the look reads) alters no command, is checked as accepted, so a declaration change on the line holds no
-   run; only a work whose own change alters a command, or one whose line or merge base git cannot name, holds `changed`, saying which,
+   the local branch of the line the look reads) alters no unit its run reads, is checked as accepted, so a declaration change on the line
+   holds no run; a run reads the gates it runs, `generated` and every part nobody named, a run of every gate also their order, and the
+   hand-back run `reached` (`DeclarationUnits.Run`; `doctrine` is read by none), so a change to one gate holds only the runs of that gate.
+   Only a work whose own change alters a unit its run reads, or one whose line or merge base git cannot name, holds `changed`, saying which,
    that restricted access decided, and what the person can do (land the change and accept it, or answer the check *It happened*).
    Daoris starts only the commands the person accepted; they run the work's own code. Once the acceptance moves, or the repository takes
    full access, each check so held is run again by itself (`ChangedChecks`, its held attempt's *Run again*). The set-up review
@@ -1065,7 +1073,7 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
   row rewrites the one it moves.
 - **GATESPLIT1** (D355): the declaration split into what travels (a `daoris/` folder, one file per gate, accepted per unit by a
   digest under D354's `command.change`), the machine's values in the home, learned from green wall times, and one resolved reading
-  for every reader. Today `daoris.gates.json` and its acceptance stand as rule 4 says (D350).
+  for every reader. Today `daoris.gates.json` stands as one file whose acceptance is by unit, as rule 4 says (D355 point 3).
 - **TEAMWORK1f** (`docs/2026-11-12-teamwork-design.md` §7): the train, the `parts` kind, the tagged landing, the two shipped workflows, the
   line's tip merged into the ask's branch, its batch refs and the ask-keyed delivery run (rule 39b) are built; left are the person's one item
   for the run's Accept (today a run is placed in Sessions and *What needs you* by a quest's session, which the delivery run has none of, and
