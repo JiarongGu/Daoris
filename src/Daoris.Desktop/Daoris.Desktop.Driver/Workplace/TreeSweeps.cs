@@ -216,6 +216,7 @@ internal sealed class TreeSweeps(
 
             string? left = null;
             string? movedTo = null;
+            string Went() => ScratchSaid.Went(byItself, now, seen);
             if (now.Tree is { } tree && byItself)
             {
                 // Every finished tree's manifest carries the record's inputs; one not written keeps the tree.
@@ -284,7 +285,7 @@ internal sealed class TreeSweeps(
             if (stays is not null)
             {
                 var treeSaid = movedTo is not null ? $"; its tree's folder was moved aside to {movedTo}"
-                    : now.Tree is null ? "" : "; its tree was removed";
+                    : now.Tree is null ? "" : "; its tree was removed" + Went();
                 results.Add(new(now, false, stays == ContentHolds.MovedSince
                     ? $"{ContentHolds.MovedSince}, and is kept" + treeSaid
                     : $"git would not delete the branch: {stays}" + (movedTo is null ? "" : treeSaid))
@@ -298,6 +299,7 @@ internal sealed class TreeSweeps(
             var removed = movedTo is not null ? $"removed; its tree's folder was moved aside to {movedTo}"
                 : now.TreeOn is { } on ? $"removed; its tree stays, on `{on}`, where the session's work is"
                 : (now.Tree is null ? "removed" : "removed, with its tree") + (left is null ? "" : $". {left}");
+            if (Went() is { Length: > 0 } went) removed = $"{Sentence(removed)}{went}";
             results.Add(new(now, true, kept is null ? removed : $"{Sentence(removed)} {ContentHold.KeptAt(now.Branch, kept)}")
             {
                 MovedTo = movedTo,

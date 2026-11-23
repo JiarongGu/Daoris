@@ -411,9 +411,11 @@ internal sealed class ContentHolds(TreeContext context)
     /// 🔴 <b>An ignored path the registered checkout holds too goes with the tree</b>: it is what the repository leaves in any
     /// checkout it is built in (installed dependencies, a build's output), and the checkout keeps its own. One only the session's
     /// tree holds (a local database, an export) exists there alone, and nothing says it can be made again, so it keeps the
-    /// tree, named. Null is git unable to say, which keeps the tree too. 🔴 <b>Except a session's own scratch in such a folder</b>:
+    /// tree, named. Null is git unable to say, which keeps the tree too. 🔴 <b>A session's own scratch in such a folder goes too, said</b>:
     /// under a build folder (<see cref="TreeScratch.BuildFolders"/>) the path goes as ever; under any other, each file the tree
-    /// wrote after it opened that the checkout does not hold as written (absent, or different bytes) is the tree's own, as an ignored path only it holds is.
+    /// wrote after it opened that the checkout does not hold as written (absent, or different bytes) is the session's scratch
+    /// (<see cref="TreeHolds.Scratch"/>, <see cref="TreeScratch.SessionWrote"/>), unless it is an edited copy of Daoris's or the folder holds
+    /// another repository; those, and an ignored path only the tree holds outside any such folder, keep the tree.
     /// 🔴 <b>Output goes either way</b>: a path the repository declares in <c>integration.scratch</c>
     /// (<paramref name="declared"/>), and a build's <c>bin</c>, <c>obj</c> and <c>node_modules</c>
     /// (<see cref="TreeScratch.UnderMadeFolder"/>), go with the tree though the checkout holds none; and inside a folder looked into, a file
@@ -452,6 +454,8 @@ internal sealed class ContentHolds(TreeContext context)
         var shared = new List<string>();
         var written = new List<string>();
         var tooLarge = new List<string>();
+        var scratch = new List<string>();
+        var folders = new Dictionary<string, string?>(StringComparer.Ordinal);
         var opened = OpenedAt(tree, slot);
         foreach (var (path, state) in status)
         {
@@ -480,8 +484,21 @@ internal sealed class ContentHolds(TreeContext context)
                         // No file of it is the checkout's: what is neither declared output nor a build's is the tree's own, named by file.
                         var own = TreeScratch.OwnFilesIn(tree, path, [], out var wide, DaorisOwn);
                         if (wide) tooLarge.Add(path);
-                        else if (own.Count > 0) ignored.AddRange(own);
+                        else if (own.Count > 0)
+                        {
+                            // What the session wrote after the tree opened goes with it; any other file is the tree's own.
+                            var (made, other) = TreeScratch.SessionWrote(tree, root, path, own, opened, files, dated: true, remade);
+                            scratch.AddRange(made);
+                            ignored.AddRange(other);
+                        }
                         else shared.Add(path);
+                    }
+                    else if (await ScratchSaid.IgnoredFolderAboveAsync(tree, path, folders, ct).ConfigureAwait(false) is { } folder)
+                    {
+                        // Git lists a file alone where its ignored folder also holds a tracked path: it is still under an ignored folder.
+                        var (made, other) = TreeScratch.SessionWrote(tree, root, folder, [path], opened, files, dated: true, remade);
+                        scratch.AddRange(made);
+                        ignored.AddRange(other);
                     }
                     else
                     {
@@ -493,7 +510,12 @@ internal sealed class ContentHolds(TreeContext context)
                     // Not a build's folder: what the session wrote in it is its own, unless the checkout holds it as written.
                     var mine = TreeScratch.WrittenSince(tree, root, path, opened, out var large, [], DaorisOwn);
                     if (large) tooLarge.Add(path);
-                    else if (mine.Count > 0) written.AddRange(mine);
+                    else if (mine.Count > 0)
+                    {
+                        var (made, other) = TreeScratch.SessionWrote(tree, root, path, mine, opened, files, dated: false, remade);
+                        scratch.AddRange(made);
+                        written.AddRange(other);
+                    }
                     else shared.Add(path);
                 }
                 else
@@ -507,7 +529,7 @@ internal sealed class ContentHolds(TreeContext context)
             uncommitted.Add(path);
         }
 
-        return new(uncommitted, ignored, shared, written, tooLarge);
+        return new(uncommitted, ignored, shared, written, tooLarge) { Scratch = scratch };
     }
 
     /// <summary>
@@ -516,15 +538,23 @@ internal sealed class ContentHolds(TreeContext context)
     /// it no ignored path keeps the tree.
     /// </summary>
     /// <remarks>
-    /// <paramref name="Written"/> and <paramref name="TooLarge"/> are a shared ignored folder's own part: files the
-    /// session wrote there after the tree opened that the checkout does not hold as written, and folders too large to look through. They
-    /// are no longer in <paramref name="Shared"/>: they keep the tree like <paramref name="Ignored"/> does, which is
-    /// <see cref="OwnSaid"/>.
+    /// <paramref name="Written"/> and <paramref name="TooLarge"/> are a shared ignored folder's own part that is not scratch: a file the
+    /// session wrote there that is a copy of Daoris's it edited, or that lies in a folder holding another repository, and folders too large
+    /// to look through. They are no longer in <paramref name="Shared"/>: they keep the tree like <paramref name="Ignored"/> does, which is
+    /// <see cref="OwnSaid"/>. The rest of what the session wrote there is <see cref="Scratch"/>, which keeps nothing.
     /// </remarks>
     internal sealed record TreeHolds(
         IReadOnlyList<string> Uncommitted, IReadOnlyList<string> Ignored, IReadOnlyList<string> Shared,
         IReadOnlyList<string> Written, IReadOnlyList<string> TooLarge)
     {
+        /// <summary>The session's own scratch (<see cref="TreeScratch.SessionWrote"/>): it keeps no tree and goes with it, said in the removal.</summary>
+        public IReadOnlyList<string> Scratch { get; init; } = [];
+
+        /// <summary>The scratch that went, the first three named; null where none.</summary>
+        public string? ScratchWent => Scratch.Count == 0 ? null
+            : $"Its {Scratch.Count} scratch file(s), written in the tree after it opened, went with it: "
+              + string.Join(", ", Scratch.Take(3)) + (Scratch.Count > 3 ? $" and {Scratch.Count - 3} more." : ".");
+
         /// <summary>The ignored paths, the first three named, in a clause.</summary>
         public string IgnoredSaid => $"{Ignored.Count} ignored path(s) your checkout does not have: "
             + string.Join(", ", Ignored.Take(3)) + (Ignored.Count > 3 ? $" and {Ignored.Count - 3} more" : "");

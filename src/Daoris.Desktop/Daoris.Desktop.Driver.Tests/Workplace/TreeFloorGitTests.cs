@@ -56,19 +56,6 @@ public sealed class TreeFloorGitTests : LandedFixture
     }
 
     [Fact]
-    public async Task The_same_file_under_no_rule_keeps_the_tree()
-    {
-        var (trees, tree) = await LandedAsync(await RepositoryWithLocalAsync());
-        WriteLater(tree.Path, "local/quick-base.json");
-
-        var removal = await trees.RemoveAsync(tree.Path);
-
-        Assert.False(removal.Removed, removal.Message);
-        Assert.Contains("local/quick-base.json", removal.Message);
-        Assert.True(Directory.Exists(tree.Path));
-    }
-
-    [Fact]
     public async Task A_rule_that_reaches_a_real_nested_repository_in_the_tree_leaves_it_and_the_tree_is_kept()
     {
         var (trees, tree) = await LandedAsync(await RepositoryWithLocalAsync());

@@ -265,6 +265,65 @@ public sealed class TreeScratchTests : IDisposable
     }
 
     [Fact]
+    public void The_scratch_that_went_is_named_up_to_three_and_keeps_no_tree()
+    {
+        var holds = new ContentHolds.TreeHolds([], [], [], [], []) { Scratch = ["local/a.log", "local/b.log", "local/c.log", "local/d.log"] };
+
+        Assert.Equal(
+            "Its 4 scratch file(s), written in the tree after it opened, went with it: local/a.log, local/b.log, local/c.log and 1 more.",
+            holds.ScratchWent);
+        Assert.Null(holds.OwnSaid);
+        Assert.Null(holds.KeepSaid);
+        Assert.Null(new ContentHolds.TreeHolds([], [], [], [], []).ScratchWent);
+    }
+
+    [Fact]
+    public void A_copy_the_session_edited_and_a_file_the_person_keeps_are_not_scratch()
+    {
+        var opened = new DateTime(2026, 10, 1, 0, 0, 0, DateTimeKind.Utc);
+        Write(Tree, "local/copied.md", opened.AddHours(1));
+        Write(Tree, "local/mine.md", opened.AddHours(1));
+        Write(Tree, "local/run.log", opened.AddHours(1));
+        var record = new TreeFilesState(false, false, []) { Copies = new Dictionary<string, string> { ["local/copied.md"] = "hash" } };
+
+        var (scratch, kept) = TreeScratch.SessionWrote(
+            Tree, Checkout, "local/", ["local/copied.md", "local/mine.md", "local/run.log"], opened, record, dated: true,
+            path => path == "local/mine.md" ? false : null);
+
+        Assert.Equal(["local/run.log"], scratch);
+        Assert.Equal(["local/copied.md", "local/mine.md"], kept);
+    }
+
+    [Fact]
+    public void An_edited_copy_renamed_in_case_alone_is_still_that_copy()
+    {
+        var opened = new DateTime(2026, 10, 1, 0, 0, 0, DateTimeKind.Utc);
+        Write(Tree, "local/NOTE.md", opened.AddHours(1));
+        var record = new TreeFilesState(false, false, []) { Copies = new Dictionary<string, string> { ["local/note.md"] = "hash" } };
+
+        var (scratch, kept) = TreeScratch.SessionWrote(Tree, Checkout, "local/", ["local/NOTE.md"], opened, record, dated: true);
+
+        Assert.Empty(scratch);
+        Assert.Equal(["local/NOTE.md"], kept);
+    }
+
+    [Fact]
+    public void A_file_written_no_later_than_the_opening_or_a_name_the_checkout_holds_in_a_tree_with_no_record_is_not_scratch()
+    {
+        var opened = new DateTime(2026, 10, 1, 0, 0, 0, DateTimeKind.Utc);
+        Write(Tree, "local/old.log", opened.AddHours(-1));
+        Write(Tree, "local/note.md", opened.AddHours(1));
+        Write(Tree, "local/new.log", opened.AddHours(1));
+        Write(Checkout, "local/note.md", opened.AddDays(-5), "the checkout's\n");
+
+        var (scratch, kept) = TreeScratch.SessionWrote(
+            Tree, Checkout, "local/", ["local/old.log", "local/note.md", "local/new.log"], opened, record: null, dated: true);
+
+        Assert.Equal(["local/new.log"], scratch);
+        Assert.Equal(["local/old.log", "local/note.md"], kept);
+    }
+
+    [Fact]
     public void A_tree_holding_neither_says_nothing() =>
         Assert.Null(new ContentHolds.TreeHolds([], [], ["node_modules/"], [], []).OwnSaid);
 }

@@ -183,11 +183,11 @@ public sealed class ContentProofLossTests : LandedFixture
 
     /// <summary>
     /// A file the session wrote after the tree opened, in an ignored folder that is no build's and that the checkout
-    /// holds too (a session's prepared requests in <c>devtools/.tmp</c>), is its own: the tree stays, the
-    /// file named.
+    /// holds too (a session's prepared requests in <c>devtools/.tmp</c>), is its scratch: it goes with the tree, the
+    /// removal naming it.
     /// </summary>
     [Fact]
-    public async Task A_file_written_in_a_shared_ignored_scratch_folder_after_the_tree_opened_keeps_the_tree_named()
+    public async Task A_file_written_in_a_shared_ignored_scratch_folder_after_the_tree_opened_goes_with_the_tree_named()
     {
         var root = await RepositoryAsync("engine");
         await CommitAsync(root, ".gitignore", ".tmp/\n", "ignore scratch");
@@ -204,16 +204,16 @@ public sealed class ContentProofLossTests : LandedFixture
 
         var removal = await trees.RemoveAsync(tree.Path);
 
-        Assert.False(removal.Removed, removal.Message);
+        Assert.True(removal.Removed, removal.Message);
         Assert.Contains(".tmp/requests.json", removal.Message);
-        Assert.Contains("written in the tree after it opened", removal.Message);
-        Assert.True(File.Exists(requests));
-        Assert.Contains(tree.Branch, await GitAsync(root, "branch", "--list", "daoris/*"));
+        Assert.Contains("scratch file(s), written in the tree after it opened, went with it", removal.Message);
+        Assert.False(Directory.Exists(tree.Path));
+        Assert.DoesNotContain(tree.Branch, await GitAsync(root, "branch", "--list", "daoris/*"));
     }
 
-    /// <summary>A scratch file the checkout holds at the same path but differently is the session's edit, and keeps the tree.</summary>
+    /// <summary>A scratch file the checkout holds differently, which Daoris never copied into the tree, is the session's own and goes.</summary>
     [Fact]
-    public async Task A_scratch_file_the_checkout_holds_differently_keeps_the_tree_named()
+    public async Task A_scratch_file_the_checkout_holds_differently_and_daoris_never_copied_goes_with_the_tree()
     {
         var root = await RepositoryAsync("engine");
         await CommitAsync(root, ".gitignore", ".tmp/\n", "ignore scratch");
@@ -230,10 +230,9 @@ public sealed class ContentProofLossTests : LandedFixture
 
         var removal = await trees.RemoveAsync(tree.Path);
 
-        Assert.False(removal.Removed, removal.Message);
+        Assert.True(removal.Removed, removal.Message);
         Assert.Contains(".tmp/notes.txt", removal.Message);
-        Assert.Contains("does not hold as written", removal.Message);
-        Assert.True(File.Exists(edited));
+        Assert.False(Directory.Exists(tree.Path));
     }
 
     /// <summary>A dependency folder is what an install writes and re-makes, so a file under one still goes with the tree.</summary>
@@ -382,12 +381,9 @@ public sealed class ContentProofLossTests : LandedFixture
         Assert.False(Directory.Exists(tree.Path));
     }
 
-    /// <summary>
-    /// The same declaration on the line, never accepted for integration, declares nothing, so the tree keeps
-    /// the declared output and names it; a project's <c>bin</c> and <c>obj</c> still go, since a tool names those.
-    /// </summary>
+    /// <summary>The same declaration on the line, never accepted for integration, declares nothing: its output is scratch, and goes named.</summary>
     [Fact]
-    public async Task Declared_output_under_a_declaration_never_accepted_keeps_the_tree_while_a_builds_folders_go()
+    public async Task Declared_output_under_a_declaration_never_accepted_goes_with_the_tree_as_scratch_named()
     {
         var root = await RepositoryAsync("engine");
         await CommitAsync(root, ".gitignore", "devtools/_*\nbin/\nobj/\n", "ignore output");
@@ -400,19 +396,16 @@ public sealed class ContentProofLossTests : LandedFixture
 
         var removal = await trees.RemoveAsync(tree.Path);
 
-        Assert.False(removal.Removed, removal.Message);
+        Assert.True(removal.Removed, removal.Message);
         Assert.Contains("devtools/_test-results/run.xml", removal.Message);
         Assert.DoesNotContain("Samples.dll", removal.Message, StringComparison.Ordinal);
         Assert.DoesNotContain("project.assets.json", removal.Message, StringComparison.Ordinal);
-        Assert.True(File.Exists(Path.Combine(tree.Path, "devtools", "_test-results", "run.xml")));
+        Assert.False(Directory.Exists(tree.Path));
     }
 
-    /// <summary>
-    /// Accepted, and the line's declaration changed since: the new one waits for the owner, and the tidy reads none, so the
-    /// tree is kept and named as with no acceptance.
-    /// </summary>
+    /// <summary>Accepted, and the line's declaration changed since: it declares nothing, so its output is scratch, and goes named.</summary>
     [Fact]
-    public async Task Declared_output_under_a_declaration_changed_since_its_acceptance_keeps_the_tree()
+    public async Task Declared_output_under_a_declaration_changed_since_its_acceptance_goes_with_the_tree_as_scratch()
     {
         var root = await RepositoryAsync("engine");
         await CommitAsync(root, ".gitignore", "devtools/_*\nbin/\nobj/\n", "ignore output");
@@ -428,9 +421,9 @@ public sealed class ContentProofLossTests : LandedFixture
 
         var removal = await trees.RemoveAsync(tree.Path);
 
-        Assert.False(removal.Removed, removal.Message);
+        Assert.True(removal.Removed, removal.Message);
         Assert.Contains("devtools/_test-results/run.xml", removal.Message);
-        Assert.True(File.Exists(Path.Combine(tree.Path, "devtools", "_test-results", "run.xml")));
+        Assert.False(Directory.Exists(tree.Path));
     }
 
     /// <summary>
@@ -459,10 +452,10 @@ public sealed class ContentProofLossTests : LandedFixture
 
     /// <summary>
     /// Beside declared output and a build's folders, an ignored file the repository declares nothing about, written
-    /// after the tree opened, keeps the tree, and the words name that file, not the output.
+    /// after the tree opened, is the session's scratch: it goes with the tree, and the words name that file, not the output.
     /// </summary>
     [Fact]
-    public async Task An_undeclared_ignored_file_written_beside_declared_output_keeps_the_tree_named()
+    public async Task An_undeclared_ignored_file_written_beside_declared_output_goes_with_the_tree_named_as_scratch()
     {
         var root = await RepositoryAsync("engine");
         await CommitAsync(root, ".gitignore", "devtools/_*\nbin/\nobj/\n", "ignore output");
@@ -481,20 +474,17 @@ public sealed class ContentProofLossTests : LandedFixture
 
         var removal = await trees.RemoveAsync(tree.Path);
 
-        Assert.False(removal.Removed, removal.Message);
+        Assert.True(removal.Removed, removal.Message);
         Assert.Contains("devtools/_extra/export.csv", removal.Message);
-        Assert.Contains("1 file(s) written in the tree after it opened", removal.Message);
+        Assert.Contains("1 scratch file(s), written in the tree after it opened", removal.Message);
         Assert.DoesNotContain("run.xml", removal.Message, StringComparison.Ordinal);
         Assert.DoesNotContain("Samples.dll", removal.Message, StringComparison.Ordinal);
-        Assert.True(File.Exists(export));
+        Assert.False(Directory.Exists(tree.Path));
     }
 
-    /// <summary>
-    /// A note a session wrote under <c>local/</c> is never removed, though the tree's other extras are output, and
-    /// though the repository declares output of its own.
-    /// </summary>
+    /// <summary>A note a session wrote under <c>local/</c> is its scratch and goes with the tree, named, beside declared output.</summary>
     [Fact]
-    public async Task A_note_a_session_wrote_in_local_keeps_the_tree_whatever_the_output_beside_it()
+    public async Task A_note_a_session_wrote_in_local_goes_with_the_tree_named_beside_the_output()
     {
         var root = await RepositoryAsync("engine");
         await CommitAsync(root, ".gitignore", "local/\ndevtools/_*\nbin/\nobj/\n", "ignore local and output");
@@ -512,9 +502,9 @@ public sealed class ContentProofLossTests : LandedFixture
 
         var removal = await trees.RemoveAsync(tree.Path);
 
-        Assert.False(removal.Removed, removal.Message);
+        Assert.True(removal.Removed, removal.Message);
         Assert.Contains("local/session-note.md", removal.Message);
-        Assert.True(File.Exists(note));
+        Assert.False(Directory.Exists(tree.Path));
     }
 
     /// <summary>

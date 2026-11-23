@@ -317,10 +317,10 @@ internal sealed record FinishedHold(string Kind, string? Where, string? Form);
 /// <summary>What the tree held that no commit holds, by name, at most <see cref="TreeScratch.ScratchWalkLimit"/>, the rest counted.</summary>
 internal sealed record FinishedLeft(IReadOnlyList<string> Names, int Count, bool Cut)
 {
-    /// <summary>The judgement's <c>Ignored</c>, <c>Written</c> and <c>TooLarge</c>, a build folder's contents unnamed, bounded.</summary>
+    /// <summary>The judgement's <c>Ignored</c>, <c>Written</c>, <c>Scratch</c> and <c>TooLarge</c>, a build folder's contents unnamed, bounded.</summary>
     internal static FinishedLeft Of(ContentHolds.TreeHolds? holds)
     {
-        var all = holds is null ? [] : holds.Ignored.Concat(holds.Written).Concat(holds.TooLarge)
+        var all = holds is null ? [] : holds.Ignored.Concat(holds.Written).Concat(holds.Scratch).Concat(holds.TooLarge)
             .Where(path => !TreeScratch.UnderBuildFolder(path)).Distinct(StringComparer.Ordinal).ToList();
         return new([.. all.Take(TreeScratch.ScratchWalkLimit)], all.Count, all.Count > TreeScratch.ScratchWalkLimit);
     }

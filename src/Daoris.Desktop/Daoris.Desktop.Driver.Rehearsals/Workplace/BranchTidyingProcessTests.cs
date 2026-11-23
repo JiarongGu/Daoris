@@ -414,10 +414,9 @@ public sealed class BranchTidyingProcessTests : BranchTidyingFixture
     }
 
     /// <summary>
-    /// A tree whose only holdings are ignored paths goes by the look, the tree's own scratch included: an ignored
-    /// file only it holds, and a file it wrote in an ignored folder the checkout also has (a session's <c>.tmp/*.log</c>), each
-    /// kept in the folder moved aside. The press, which deletes the folder, keeps refusing the tree's own scratch, and an
-    /// untracked path that is not ignored keeps the tree at both doors.
+    /// A tree whose only holdings are ignored paths goes by the look, each kept in the folder moved aside. The press, which
+    /// deletes the folder, still refuses an ignored file only the tree holds outside an ignored folder (the session's <c>.tmp</c> log is
+    /// scratch and no reason), and an untracked path that is not ignored keeps the tree at both doors.
     /// </summary>
     [Fact]
     public async Task A_tree_holding_only_ignored_paths_goes_by_the_look_and_stays_at_the_press()
@@ -444,7 +443,7 @@ public sealed class BranchTidyingProcessTests : BranchTidyingFixture
         var row = plan.Single(item => item.Branch == scratch.Branch);
         Assert.Equal(SweepKind.Dirty, row.Kind);
         Assert.Contains("1 ignored path(s) your checkout does not have: session.db", row.Detail, StringComparison.Ordinal);
-        Assert.Contains(".tmp/run.log", row.Detail, StringComparison.Ordinal);
+        Assert.DoesNotContain(".tmp/run.log", row.Detail, StringComparison.Ordinal);
         Assert.DoesNotContain(pressed, result => result.Removed);
         Assert.True(Directory.Exists(scratch.Path));
 
