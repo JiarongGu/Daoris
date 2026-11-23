@@ -133,15 +133,14 @@ public sealed class QuestDeparturesTests : TestHome
         Assert.Empty(await AnswerAsync(role, Missing()));
         Assert.Empty(await AnswerAsync(owner, Missing()));
         Assert.Empty(_posted);
-        Assert.Contains("role `supervisor`", QuestHoldsReading.Held(Missing(), judge: QuestDepartures.JudgeAt(DriverConfig.Parse(role), Missing())), StringComparison.Ordinal);
+        Assert.Contains("held for your yes", QuestHoldsReading.Held(Missing(), judge: QuestDepartures.JudgeAt(DriverConfig.Parse(role), Missing())), StringComparison.Ordinal);
         Assert.Contains("held for your yes", QuestHoldsReading.Held(Missing(), judge: QuestDepartures.JudgeAt(DriverConfig.Parse(owner), Missing())), StringComparison.Ordinal);
         Assert.Contains("risk policy's yes", QuestHoldsReading.Held(Missing(), judge: QuestDepartures.JudgeAt(DriverConfig.Parse("""{"risk":{}}"""), Missing())), StringComparison.Ordinal);
-        // No policy read: the evidence's verdict holds it as it did.
         Assert.Contains("evidence's verdict", QuestHoldsReading.Held(Missing()), StringComparison.Ordinal);
     }
 
     [Fact]
-    public void A_departure_or_missing_evidence_the_policy_classes_role_is_its_holders_and_no_other_quest_is()
+    public void A_departure_the_policy_classes_role_is_its_holders_and_no_other_hold_is()
     {
         const string role = """{"risk":{"machine":[{"kind":"work.done","class":"role","by":"supervisor"}]}}""";
         var quests = new[]
@@ -149,7 +148,11 @@ public sealed class QuestDeparturesTests : TestHome
             Departed(), Missing() with { Id = "q2" }, Missing() with { Id = "q3", Hold = EvidenceCodes.Unread }, Departed() with { Id = "q4", Hold = null, Held = false },
         };
 
-        Assert.Equal(["q1", "q2"], QuestDepartures.RoleHeld(DriverConfig.Parse(role), quests).Order().ToArray());
+        Assert.Equal(["q1"], QuestDepartures.RoleHeld(DriverConfig.Parse(role), quests).Order().ToArray());
+        const string high = """{"placeRisk":{"machine":{"risk":"high"}},"risk":{"repository/engine":[{"kind":"work.done","class":"role","by":"supervisor"}]}}""";
+        Assert.Empty(QuestDepartures.RoleHeld(DriverConfig.Parse(high), quests));
+        Assert.Equal(["q1"], QuestRoleHolds.Of(DriverConfig.Parse(role), quests, [("q1", "departed", Departed().Updated), ("q2", "evidence-missing", null)]).ToArray());
+        Assert.Empty(QuestRoleHolds.Of(DriverConfig.Parse(role), quests.Select(each => each with { Updated = Now }), [("q1", "departed", Now.AddMinutes(-1))]));
         Assert.Empty(QuestDepartures.RoleHeld(DriverConfig.Parse("""{"risk":{}}"""), quests));
         Assert.Empty(QuestDepartures.RoleHeld(DriverConfig.Parse("""{"risk":{"machine":[{"kind":"work.done","class":"owner"}]}}"""), quests));
     }

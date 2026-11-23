@@ -301,7 +301,7 @@ public static class AttentionStateSlice
         var roster = await loop.Harnesses.RosterAsync(config, refresh: false, ct).ConfigureAwait(false);
         return facts with
         {
-            RoleHeld = whole is null ? facts.RoleHeld : QuestRoleHolds.Of(config, whole.Snapshot.Quests),
+            RoleHeld = whole is null ? facts.RoleHeld : QuestRoleHolds.Of(config, whole.Snapshot.Quests, QuestReadings(facts.Quests)),
             Untrusted = Written(loop.Trust.Latest),
             Considered = Written(loop.Considered ?? []),
             Proposals = Written(RulesRoutes.Proposals(loop.Home)),
@@ -344,6 +344,11 @@ public static class AttentionStateSlice
             Takers = AttentionTakers.Of(loop.Pipe?.StandingConfirmation),
         };
     }
+
+    /// <summary>Each quest row's id, hold and last move, which the machine snapshot's view must still read as before it speaks for the row.</summary>
+    public static IEnumerable<(string Id, string? Hold, DateTimeOffset? Updated)> QuestReadings(IEnumerable<JsonObject> quests) =>
+        quests.Select(quest => ((string?)quest["id"] ?? "", (string?)quest["hold"],
+            DateTimeOffset.TryParse((string?)quest["updated"], System.Globalization.CultureInfo.InvariantCulture, out var at) ? (DateTimeOffset?)at : null));
 
     /// <summary>
     /// How each agent's accounts are used, as <c>ACCOUNTS</c> answers it (<c>{agents}</c>), from the accounts slice's memory, a partition

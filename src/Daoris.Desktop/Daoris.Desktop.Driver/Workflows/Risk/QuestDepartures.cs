@@ -32,10 +32,14 @@ internal static class QuestDepartures
         return act => RiskStepGates.Verdict(judge, act.Kind, null);
     }
 
-    /// <summary>The quests of <paramref name="quests"/> whose hold the policy gates on a role: theirs to answer by the role's tool, never the person's row.</summary>
-    public static IReadOnlySet<string> RoleHeld(DriverConfig config, IEnumerable<QuestView> quests) =>
-        quests.Where(quest => ActOf(quest) is not null && Verdict(quest, JudgeAt(config, quest)) is { Outcome: RiskVerdict.Gate })
+    /// <summary>The departures of <paramref name="quests"/> the policy gates on a role whose tool can answer them (the door refuses a role where <c>placeRisk</c> is high).</summary>
+    public static IReadOnlySet<string> RoleHeld(DriverConfig config, IEnumerable<QuestView> quests)
+    {
+        var levels = RiskPolicy.Of(config).PlaceRisk;
+        return quests.Where(quest => quest.Hold == Hold && ActOf(quest) is not null && levels.At(quest.Workspace, quest.To).RoleMayHold()
+                && Verdict(quest, JudgeAt(config, quest)) is { Outcome: RiskVerdict.Gate })
             .Select(quest => quest.Id).ToHashSet(StringComparer.Ordinal);
+    }
 
     /// <summary>The verdict on <paramref name="quest"/>'s hold, or null where none holds it or no judge is read.</summary>
     public static RiskVerdict? Verdict(QuestView quest, Func<RiskAct, RiskVerdict?>? judge) => judge is not null && ActOf(quest) is { } act ? judge(act) : null;

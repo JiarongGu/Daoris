@@ -29,7 +29,7 @@ internal static class QuestHoldsReading
         { Held: true, Hold: null or EvidenceCodes.Departed or EvidenceCodes.MissingHold } when yes && (quest.Hold is not EvidenceCodes.MissingHold || judge is not null) => QuestDepartures.Verdict(quest, judge) switch
         {
             { Outcome: RiskVerdict.Pass } verdict => $"{Policy}, which Daoris gives at its next look: {verdict.Why}",
-            { Outcome: RiskVerdict.Gate } verdict => $"{Roles} `{verdict.By}`, not yours: {verdict.Why}",
+            { Outcome: RiskVerdict.Gate } verdict when quest.Hold is not EvidenceCodes.MissingHold => $"{Roles} `{verdict.By}`, not yours: {verdict.Why}",
             { } verdict => $"{Yours}: {verdict.Why}",
             null => Yours,
         },

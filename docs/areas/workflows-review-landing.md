@@ -251,9 +251,10 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     `policy:<act> · rule <rule> at <revision>` (`RiskPassWire`, whose act is one of those two and whose rule and revision are one line each, refused
     otherwise by the door), journals one `risk.judged` line and says it, a refusal of the service said once per quest and revision and asked again at each look, so with nothing configured a
     departure goes on with nobody asked; where it gates, `quest.holds` names the role whose yes it waits for, and where it classes the act
-    `owner`, or no policy is read, the person's yes and press as before. A hold the policy gates on a role is the role's alone: *What needs you* and
-    the attention band offer the person no row for it (`QuestRoleHolds`, `AttentionFacts.RoleHeld`), and the role answers it with its tool
-    (the `departure` kind, rule 49) or the policy's lowering passes it. The service keeps the yes and judges nothing; a role's yes takes a
+    `owner`, or no policy is read, the person's yes and press as before. A departure the policy gates on a role is the role's alone: *What needs you* and
+    the attention band offer the person no row for it (`QuestRoleHolds`, `AttentionFacts.RoleHeld`, read from the quest revision the row is built from, and only
+    where `placeRisk` is not high, which the door still refuses a role at), and the role answers it with its tool (the `departure` kind, rule 49) or the
+    policy's lowering passes it; missing evidence classed `role` or `owner` stays the person's row, no role's tool answering it yet. The service keeps the yes and judges nothing; a role's yes takes a
     departure alone, and the policy's takes a departure or evidence read and not found (`QuestAcceptOperation.YesTakes`), so evidence still
     awaited, unread or beside a departure, waits on its check. A held quest is
     closed only where the person passed over the run's `quest.holds` with words, which is their yes to a departure or its evidence, kept on
