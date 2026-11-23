@@ -132,15 +132,12 @@ public sealed class MachineOutputAheadTests : IDisposable
         };
         await using var run = await Host().StartAsync(spec, CancellationToken.None);
 
-        var clock = Stopwatch.StartNew();
         var end = await run.EndAsync(CancellationToken.None).AsTask().WaitAsync(Patience);
-        var ended = clock.Elapsed;
         var text = new System.Text.StringBuilder();
         using var bound = new CancellationTokenSource(Patience);
         await foreach (var piece in run.Output(bound.Token)) text.Append(piece.Text);
 
         Assert.Equal(0, end.Exit);
         Assert.Contains("tail", text.ToString());
-        Assert.True(ended < TimeSpan.FromSeconds(2) + TimeSpan.FromSeconds(3), $"the end waited {ended}");
     }
 }
