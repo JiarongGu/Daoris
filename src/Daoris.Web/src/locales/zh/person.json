@@ -168,6 +168,8 @@
   "person.view.policy-apply-set": "{{place}}：{{act}}（在 {{mode}} 访问下）设为 {{class}}，由 {{by}} 回答。",
   "person.view.policy-apply-remove": "{{place}}：移除 {{act}}（在 {{mode}} 访问下）的规则行，改由下一级位置或默认值决定。",
   "person.view.policy-apply-none": "它不会产生也不会解除任何等待。",
+  "person.view.policy-apply-cast": "{{place}}：角色 {{role}} 改由 {{holder}} 担任。",
+  "person.view.policy-apply-access": "{{place}}：访问设置变为 {{setting}}。",
   "person.view.policy-apply-opens": "在 {{place}} 产生一个等待：{{act}} 在 {{mode}} 访问下由 {{from}} 变为 {{to}}。",
   "person.view.policy-apply-releases": "在 {{place}} 解除一个等待：{{act}} 在 {{mode}} 访问下由 {{from}} 变为 {{to}}。",
   "person.view.policy-apply-moves": "在 {{place}} 更改回答者：{{act}} 在 {{mode}} 访问下由 {{from}} 变为 {{to}}。",

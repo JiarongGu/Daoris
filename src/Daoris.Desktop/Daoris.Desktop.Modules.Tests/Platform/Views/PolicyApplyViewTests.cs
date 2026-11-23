@@ -41,6 +41,18 @@ public sealed class PolicyApplyViewTests : IDisposable
     }
 
     [Fact]
+    public async Task A_cast_and_an_access_mode_are_shown_by_their_own_sentences()
+    {
+        var proposal = Proposed(PolicyEdit.Cast("repository/Aurora", "reviewer", "agent"), PolicyEdit.Access("machine", "full"));
+
+        var viewed = await View(proposal.Id, proposal.Digest);
+
+        Assert.Contains(viewed.View!.Also!, said => said.Kind == "policy-apply-cast" && said.Facts["role"] == "reviewer" && said.Facts["holder"] == "agent");
+        Assert.Contains(viewed.View.Also!, said => said.Kind == "policy-apply-access" && said.Facts["setting"] == "full");
+        Assert.Contains(viewed.View.Also!, said => said.Kind == "policy-apply-releases" && said.Facts["act"] == "command.change");
+    }
+
+    [Fact]
     public async Task A_proposal_that_opens_and_releases_nothing_says_so()
     {
         var proposal = Proposed(new PolicyEdit("machine", "spend.money", RiskClasses.None, null, null));

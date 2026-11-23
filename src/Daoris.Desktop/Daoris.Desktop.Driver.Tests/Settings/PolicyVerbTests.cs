@@ -49,6 +49,19 @@ public sealed class PolicyVerbTests : IDisposable
     }
 
     [Fact]
+    public void A_cast_and_an_access_mode_are_proposed_by_their_own_words()
+    {
+        var cast = JsonSerializer.SerializeToElement(Plan("risk propose repository/Aurora cast reviewer agent:codex").Payload).GetProperty("edits")[0];
+        var back = JsonSerializer.SerializeToElement(Plan("risk propose repository/Aurora cast reviewer default").Payload).GetProperty("edits")[0];
+        var access = JsonSerializer.SerializeToElement(Plan("risk propose machine access permissions=auto routing=intake").Payload).GetProperty("edits")[0];
+
+        Assert.Equal(("cast", "reviewer", "agent:codex"), (cast.GetProperty("subject").GetString(), cast.GetProperty("act").GetString(), cast.GetProperty("by").GetString()));
+        Assert.Equal(JsonValueKind.Null, back.GetProperty("by").ValueKind);
+        Assert.Equal(("access", "permissions=auto;routing=intake"), (access.GetProperty("subject").GetString(), access.GetProperty("class").GetString()));
+        Assert.Throws<ChoiceWords>(() => Plan("risk propose machine cast reviewer"));
+    }
+
+    [Fact]
     public void Remove_takes_a_row_away_and_a_role_row_names_its_role()
     {
         var removed = JsonSerializer.SerializeToElement(Plan("risk propose machine line.land remove").Payload).GetProperty("edits")[0];

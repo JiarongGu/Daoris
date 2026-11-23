@@ -34,7 +34,7 @@ public sealed class PolicyChangeTests : IDisposable
         Directory.CreateDirectory(Path.GetDirectoryName(ConfigPath)!);
         if (driverJson is not null) File.WriteAllText(ConfigPath, driverJson);
         var turns = new OwnerTurns(session => _events.Where(each => each.Session == session).Select(each => each.Event));
-        return new PolicyChanges(_home, () => _now, turns);
+        return new PolicyChanges(_home, () => _now, turns, new PlaceCastFiles(_home, () => true));
     }
 
     private static readonly PolicyEdit RaiseRelease = new("repository/Aurora", "release.start", RiskClasses.Owner, null, null);
@@ -244,6 +244,41 @@ public sealed class PolicyChangeTests : IDisposable
 
         Assert.Contains(proposed.Proposal!.Shifts, shift => shift.Act == "line.land" && shift.From == RiskClasses.None && shift.To == RiskClasses.Owner && shift.Effect == PolicyShift.Opens);
         Assert.Empty(blind.Proposal!.Shifts);
+    }
+
+    [Fact]
+    public void An_access_mode_change_is_previewed_by_the_waits_it_moves_and_written_through_the_access_rules()
+    {
+        var door = Open();
+        var proposal = Proposed(door, PolicyEdit.Access("machine", "full"));
+
+        Assert.Contains(proposal.Shifts, shift => shift.Act == "command.change" && shift.From == RiskClasses.Owner && shift.To == RiskClasses.None && shift.Effect == PolicyShift.Releases);
+        Assert.Contains(proposal.Shifts, shift => shift.Act == "reach.widen" && shift.From == RiskClasses.Role && shift.To == RiskClasses.None);
+        Assert.Null(DriverConfig.Load(ConfigPath).MachineAccess);
+
+        _now = _now.AddMinutes(1);
+        Say(Conversation, $"apply {proposal.Id} {proposal.Digest}");
+        Assert.True(door.Apply(PolicyChannel.Of(Conversation), proposal.Id, proposal.Digest).Done);
+
+        Assert.True(DriverConfig.Load(ConfigPath).MachineAccess!.Full);
+        Assert.Equal(PolicyEdit.AccessSubject, Assert.Single(PolicyChangeJournal.Read(_home)).Edits[0].Subject);
+    }
+
+    [Fact]
+    public void A_cast_change_is_written_through_the_cast_door_and_a_refused_one_is_refused_at_the_proposal()
+    {
+        var door = Open();
+        var proposal = Proposed(door, PolicyEdit.Cast("repository/Aurora", "reviewer", "agent:codex"));
+        _now = _now.AddMinutes(1);
+        Say(Conversation, $"apply {proposal.Id} {proposal.Digest}");
+
+        Assert.True(door.Apply(PolicyChannel.Of(Conversation), proposal.Id, proposal.Digest).Done);
+
+        var cast = new PlaceCastFiles(_home, () => true).Book().Places["repository/Aurora"]["reviewer"];
+        Assert.Equal("agent:codex", cast.Holder);
+        Assert.Equal(PolicyRefusals.Shape, door.Propose(PolicyChannel.Of(Conversation), [PolicyEdit.Cast("repository/Aurora", "reviewer", "somebody")]).Code);
+        Assert.Equal(PolicyRefusals.Shape, door.Propose(PolicyChannel.Of(Conversation), [PolicyEdit.Cast("repository/Aurora", StepRoles.Owner, "person")]).Code);
+        Assert.Equal(PolicyRefusals.Shape, door.Propose(PolicyChannel.Of(Conversation), [PolicyEdit.Access("machine", "permissions=nonsense")]).Code);
     }
 
     [Fact]

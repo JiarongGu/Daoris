@@ -5,14 +5,16 @@ namespace Daoris.Driver;
 
 /// <summary>
 /// The owner's change of the policy through Daoris's assistant. The assistant's session proposes edits of the policy's
-/// rows (<see cref="Propose"/>): a proposal with an id and a digest, its before and after and the waits it opens or releases, which changes nothing.
+/// rows, a place's cast of a role or its access mode (<see cref="Propose"/>): a proposal with an id and a digest, its before and after and the waits it opens or releases, which changes nothing.
 /// It is applied (<see cref="Apply"/>) only where a turn of the owner's own in that same conversation, noted by <see cref="OwnerTurns"/>
-/// from the person's door alone, comes after the proposal and names both its id and its digest, and the policy has not moved since. An agent's
+/// from the person's door alone, comes after the proposal in the form its card says, naming both its id and its digest, as the owner's latest word on it, and the policy has not moved since. An agent's
 /// words, a quote an agent relays, another conversation's turn, a process that proves no session, a commit or a file never apply it. Each applied
 /// change is appended to the home's change journal, naming the turn.
 /// </summary>
-public sealed class PolicyChanges(string home, Func<DateTimeOffset> clock, OwnerTurns turns)
+public sealed class PolicyChanges(string home, Func<DateTimeOffset> clock, OwnerTurns turns, PlaceCastFiles? casts = null)
 {
+    private PlaceCastFiles Casts => casts ?? new PlaceCastFiles(home);
+
     private static readonly JsonSerializerOptions Wire = new(JsonSerializerDefaults.Web);
     private static readonly object Gate = new();
 
@@ -44,7 +46,7 @@ public sealed class PolicyChanges(string home, Func<DateTimeOffset> clock, Owner
         if (edits.Count == 0) return Refuse(PolicyRefusals.Shape, "a proposal names at least one edit");
         foreach (var edit in edits)
         {
-            if (edit.Act.StartsWith(RiskActs.PolicyChange, StringComparison.Ordinal)
+            if (edit.Subject == PolicyEdit.RowSubject && edit.Act.StartsWith(RiskActs.PolicyChange, StringComparison.Ordinal)
                 && (edit.Act.Length == RiskActs.PolicyChange.Length || edit.Act[RiskActs.PolicyChange.Length] == '/'))
             {
                 return Refuse(PolicyRefusals.Fixed, PolicyRefusals.FixedSentence);
@@ -61,7 +63,7 @@ public sealed class PolicyChanges(string home, Func<DateTimeOffset> clock, Owner
             var after = After(config, edits);
             var at = clock();
             var proposal = new PolicyProposal(
-                $"pc-{Guid.NewGuid():N}"[..11], PolicyProposal.DigestOf(session, before.Revision, edits), session, at, before.Revision, edits, Shifts(config, before, after, edits, workspaceOf));
+                $"pc-{Guid.NewGuid():N}"[..11], PolicyProposal.DigestOf(session, before.Revision, edits), session, at, before.Revision, edits, Shifts(config, AfterConfig(config, edits), before, after, edits, workspaceOf));
             var all = Read();
             all.Add(proposal);
             Write(all);
@@ -99,19 +101,45 @@ public sealed class PolicyChanges(string home, Func<DateTimeOffset> clock, Owner
                 return Refuse(PolicyRefusals.Stale, $"the policy moved from revision {proposal.BaseRevision} to {before.Revision} since `{proposal.Id}` was proposed; it is proposed again on the policy as it stands. Nothing was changed.");
             }
 
-            DriverConfigWrites.Change(ConfigPath, text =>
+            try
             {
-                // The lock is held: the revision is read again from the file as it stands, so a writer that came between is not written over.
-                var current = text ?? "{}";
-                if (RiskPolicy.Read(JsonDocument.Parse(current).RootElement).Revision != proposal.BaseRevision)
+                if (proposal.Edits.Any(each => each.Subject == PolicyEdit.RowSubject))
                 {
-                    throw new DriverException($"policy: the policy moved since `{proposal.Id}` was proposed, so nothing was changed ({PolicyRefusals.Stale})");
+                    DriverConfigWrites.Change(ConfigPath, text =>
+                    {
+                        // The lock is held: the revision is read again from the file as it stands, so a writer that came between is not written over.
+                        var current = text ?? "{}";
+                        if (RiskPolicy.Read(JsonDocument.Parse(current).RootElement).Revision != proposal.BaseRevision)
+                        {
+                            throw new DriverException($"policy: the policy moved since `{proposal.Id}` was proposed, so nothing was changed ({PolicyRefusals.Stale})");
+                        }
+
+                        var root = JsonNode.Parse(current) as JsonObject ?? throw new DriverException($"policy: {ConfigPath} is not an object, so nothing was changed");
+                        PolicyRows.Apply(root, proposal.Edits);
+                        return JsonFile.Serialize(root);
+                    });
                 }
 
-                var root = JsonNode.Parse(current) as JsonObject ?? throw new DriverException($"policy: {ConfigPath} is not an object, so nothing was changed");
-                PolicyRows.Apply(root, proposal.Edits);
-                return JsonFile.Serialize(root);
-            });
+                // A mode and a cast are written through the doors that validate them, each edit as the proposal named it.
+                foreach (var edit in proposal.Edits.Where(each => each.Subject == PolicyEdit.AccessSubject))
+                {
+                    StandingChoices.Write(ConfigPath, standing => AccessRules.Apply(standing, edit.AccessEdit()));
+                }
+
+                foreach (var edit in proposal.Edits.Where(each => each.Subject == PolicyEdit.CastSubject))
+                {
+                    var why = $"the owner's change `{proposal.Id}`, confirmed on turn {turn.Id}";
+                    if (AgentSettles.CastAt(Casts, edit.Place, edit.Act, edit.By, why, clock()) is { } refused)
+                    {
+                        return Refuse(PolicyRefusals.Shape, $"the cast of `{edit.Act}` was refused: {refused}; the edits before it were made");
+                    }
+                }
+            }
+            catch (DriverException refused)
+            {
+                return Refuse(refused.Message.Contains(PolicyRefusals.Stale, StringComparison.Ordinal) ? PolicyRefusals.Stale : PolicyRefusals.Shape, refused.Message);
+            }
+
             // Read back as written: the revision is of the file's own text, which the writer lays out.
             var revisionAfter = RiskPolicy.Of(DriverConfig.Load(ConfigPath)).Revision;
             PolicyChangeJournal.Append(home, new PolicyChangeLine(
@@ -130,6 +158,10 @@ public sealed class PolicyChanges(string home, Func<DateTimeOffset> clock, Owner
 
     private static PolicyOutcome Refuse(string code, string said) => new(false, code, said);
 
+    /// <summary>The config with the edits' access modes made, as the access rules make them.</summary>
+    private static DriverConfig AfterConfig(DriverConfig config, IReadOnlyList<PolicyEdit> edits) =>
+        edits.Where(each => each.Subject == PolicyEdit.AccessSubject).Aggregate(config, (standing, edit) => AccessRules.Apply(standing, edit.AccessEdit()));
+
     private static RiskPolicy After(DriverConfig config, IReadOnlyList<PolicyEdit> edits)
     {
         var root = JsonNode.Parse(config.Source ?? config.ToJson()) as JsonObject ?? new JsonObject();
@@ -142,11 +174,28 @@ public sealed class PolicyChanges(string home, Func<DateTimeOffset> clock, Owner
     /// A repository place is read with the workspace the registry names it in, so the rows it inherits from the workspace are judged.
     /// </summary>
     private static IReadOnlyList<PolicyShift> Shifts(
-        DriverConfig config, RiskPolicy before, RiskPolicy after, IReadOnlyList<PolicyEdit> edits, Func<string, string?>? workspaceOf)
+        DriverConfig config, DriverConfig changed, RiskPolicy before, RiskPolicy after, IReadOnlyList<PolicyEdit> edits, Func<string, string?>? workspaceOf)
     {
         var shifts = new List<PolicyShift>();
-        foreach (var edit in edits)
+        foreach (var edit in edits.Where(each => each.Subject != PolicyEdit.CastSubject))
         {
+            if (edit.Subject == PolicyEdit.AccessSubject)
+            {
+                // The mode moves what the seed and the rows keyed by it say: every kind judged at the place as it stands and as it would.
+                var was = PlaceOf(config, edit.Place, workspaceOf);
+                var now = PlaceOf(changed, edit.Place, workspaceOf);
+                foreach (var kind in RiskActs.All.Where(kind => kind != RiskActs.PolicyChange))
+                {
+                    var from = RiskGate.Judge(before, new RiskAct(kind, null), "", was, "");
+                    var to = RiskGate.Judge(after, new RiskAct(kind, null), "", now, "");
+                    if (from.Class == to.Class && from.By == to.By) continue;
+                    shifts.Add(new(edit.Place, kind, now.Mode, from.Class, to.Class,
+                        Strictness(to.Class) > Strictness(from.Class) ? PolicyShift.Opens : Strictness(to.Class) < Strictness(from.Class) ? PolicyShift.Releases : PolicyShift.Moves));
+                }
+
+                continue;
+            }
+
             var place = PlaceOf(config, edit.Place, workspaceOf);
             var act = RiskAct.Of(edit.Act);
             foreach (var full in new[] { true, false })

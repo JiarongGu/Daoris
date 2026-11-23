@@ -36,6 +36,18 @@ public sealed class PolicyApplyView : IPressView
         List<PressSaid> also = [];
         foreach (var edit in proposal.Edits)
         {
+            if (edit.Subject == PolicyEdit.CastSubject)
+            {
+                also.Add(new PressSaid("policy-apply-cast", ("place", edit.Place), ("role", edit.Act), ("holder", edit.By ?? "default")));
+                continue;
+            }
+
+            if (edit.Subject == PolicyEdit.AccessSubject)
+            {
+                also.Add(new PressSaid("policy-apply-access", ("place", edit.Place), ("setting", edit.Class ?? "")));
+                continue;
+            }
+
             also.Add(edit.Class is null
                 ? new PressSaid("policy-apply-remove", ("place", edit.Place), ("act", edit.Act), ("mode", edit.Mode ?? "either"))
                 : new PressSaid("policy-apply-set", ("place", edit.Place), ("act", edit.Act), ("mode", edit.Mode ?? "either"), ("class", edit.Class), ("by", edit.By ?? "default")));

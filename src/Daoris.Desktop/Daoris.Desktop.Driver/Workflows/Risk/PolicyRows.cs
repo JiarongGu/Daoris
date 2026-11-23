@@ -11,7 +11,7 @@ public static class PolicyRows
 {
     public static void Apply(JsonObject root, IReadOnlyList<PolicyEdit> edits)
     {
-        foreach (var edit in edits)
+        foreach (var edit in edits.Where(each => each.Subject == PolicyEdit.RowSubject))
         {
             var risk = root[RiskPolicy.Key] as JsonObject ?? new JsonObject();
             // A place is one logical key whatever its capitalization, as the reader reads it: its existing spelling is edited, never a second one added.

@@ -49,7 +49,7 @@ public sealed class PlaceRiskVerb : ChoiceVerb
     private const string Propose = "propose";
     private const string Apply = "apply";
 
-    private const string ProposeUsage = "usage: daoris settings risk propose <place> <act> none|role|owner|remove [--by <role>] [--mode full|restricted] [--conversation <session>] — "
+    private const string ProposeUsage = "usage: daoris settings risk propose <place> <act> none|role|owner|remove [--by <role>] [--mode full|restricted] [--conversation <session>], or <place> cast <role> <holder>|default, or <place> access full|clear|<pause>=<value>… — "
         + "<place> is machine, workspace/<name> or repository/<name>; <act> is a kind of the census (policy.change is fixed at the owner); it proposes and changes nothing; "
         + "daoris settings risk apply <proposal> <digest> applies it on the owner's own turn naming both.";
 
@@ -109,6 +109,18 @@ public sealed class PlaceRiskVerb : ChoiceVerb
     {
         Flags(args, ProposeValued, [], "settings risk propose", ProposeUsage);
         var words = Operands(args, ProposeValued).Skip(2).ToList();
+        if (words.Count >= 3 && words[1] is "cast" or "access")
+        {
+            var cast = words[1] == "cast";
+            if (cast ? words.Count != 4 : words.Count < 3) throw new ChoiceWords($"`settings risk propose` takes a place, then cast <role> <holder> or access <setting> — {ProposeUsage}");
+            var edit = cast
+                ? new JsonObject { ["subject"] = "cast", ["place"] = words[0], ["act"] = words[2], ["by"] = words[3] == "default" ? null : words[3] }
+                : new JsonObject { ["subject"] = "access", ["place"] = words[0], ["act"] = "access", ["class"] = string.Join(';', words.Skip(2)) };
+            var body = new JsonObject { ["edits"] = new JsonArray(edit) };
+            if ((FlagValue(args, "--conversation") ?? world.Instance.Environment(DriverChoicesCommand.SessionVariable)) is { Length: > 0 } named) body["conversation"] = named;
+            return Pressed("risk propose", ChoiceRoutes.PolicyPropose, body, world);
+        }
+
         if (words.Count != 3) throw new ChoiceWords($"`settings risk propose` takes a place, an act and a class — {ProposeUsage}");
         var riskClass = words[2] == "remove" ? null : words[2];
         if (riskClass is not null && !RiskClasses.Is(riskClass)) throw new ChoiceWords($"`{riskClass}` is no class (none, role, owner or remove) — {ProposeUsage}");

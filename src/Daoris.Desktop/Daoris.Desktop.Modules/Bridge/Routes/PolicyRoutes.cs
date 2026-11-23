@@ -26,7 +26,7 @@ public sealed class PolicyRoutes(DriverContext context)
     [Publishes("POLICY_PROPOSE", StateScopes.Driver)]
     private async Task<object?> ProposeAsync(ProposePolicy press, CancellationToken cancellationToken)
     {
-        var edits = (press.Edits ?? []).Select(edit => new PolicyEdit(edit.Place ?? "", edit.Act ?? "", edit.Class, edit.By, edit.Mode)).ToList();
+        var edits = (press.Edits ?? []).Select(edit => new PolicyEdit(edit.Place ?? "", edit.Act ?? "", edit.Class, edit.By, edit.Mode) { Subject = edit.Subject ?? PolicyEdit.RowSubject }).ToList();
         // A repository's workspace is the registry's, so a proposal is previewed at the place the runtime judges it at.
         var snapshot = _loop.Service is { } service ? await service.SnapshotAsync(cancellationToken).ConfigureAwait(false) : null;
         string? WorkspaceOf(string repository) => snapshot?.Repositories
@@ -85,8 +85,8 @@ public sealed class PolicyRoutes(DriverContext context)
     };
 }
 
-/// <summary>One edit of a place's row: <c>class</c> none to take the row away.</summary>
-public sealed record PolicyEditPress(string? Place, string? Act, string? Class, string? By, string? Mode);
+/// <summary>One edit of a place: a row (<c>class</c> null takes it away), or by <c>subject</c> a role's cast (<c>act</c> the role, <c>by</c> the holder) or its access mode (<c>class</c>).</summary>
+public sealed record PolicyEditPress(string? Place, string? Act, string? Class, string? By, string? Mode, string? Subject = null);
 
 /// <summary>The rows a proposal edits; <c>conversation</c> names the conversation a window or card press concerns, and is read from the proof otherwise.</summary>
 public sealed record ProposePolicy(IReadOnlyList<PolicyEditPress>? Edits, string? Conversation);

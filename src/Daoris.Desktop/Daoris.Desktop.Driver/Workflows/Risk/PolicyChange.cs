@@ -3,7 +3,11 @@ using System.Text;
 
 namespace Daoris.Driver;
 
-/// <summary>One edit of the risk policy at a place: a row set (<see cref="Class"/>) or taken away (null), as <c>driver.json</c>'s <c>risk</c> keeps it.</summary>
+/// <summary>
+/// One edit of the policy at a place: a row of the risk policy set (<see cref="Class"/>) or taken away (null), as <c>driver.json</c>'s <c>risk</c> keeps it; or, by
+/// <see cref="Subject"/>, a cast of a role (<see cref="Act"/> the role, <see cref="By"/> the holder, null for its default) or a place's access mode
+/// (<see cref="Class"/> <c>full</c>, <c>clear</c> or <c>pause=value;…</c>), each written through the door that already validates it.
+/// </summary>
 /// <param name="Place"><c>machine</c>, <c>workspace/&lt;name&gt;</c> or <c>repository/&lt;name&gt;</c>.</param>
 /// <param name="Act">The act, <c>kind[/qualifier]</c>.</param>
 /// <param name="Class"><c>none</c>, <c>role</c> or <c>owner</c>; null takes the row away, so the next place or the seed decides.</param>
@@ -11,10 +15,59 @@ namespace Daoris.Driver;
 /// <param name="Mode">The access mode the row applies under; null under either.</param>
 public sealed record PolicyEdit(string Place, string Act, string? Class, string? By, string? Mode)
 {
-    /// <summary>The refusal of the edit's shape, or null where it is a row this build can write.</summary>
+    public const string RowSubject = "row";
+    public const string CastSubject = "cast";
+    public const string AccessSubject = "access";
+
+    /// <summary>What the edit changes: a <see cref="RowSubject"/> of the risk policy, a <see cref="CastSubject"/> or a place's <see cref="AccessSubject"/> mode.</summary>
+    public string Subject { get; init; } = RowSubject;
+
+    /// <summary>The cast of <paramref name="role"/> at <paramref name="place"/> to <paramref name="holder"/>, or back to its default where null.</summary>
+    public static PolicyEdit Cast(string place, string role, string? holder) => new(place, role, null, holder, null) { Subject = CastSubject };
+
+    /// <summary>The access mode at <paramref name="place"/>: <c>full</c>, <c>clear</c> or <c>pause=value;pause=value</c>.</summary>
+    public static PolicyEdit Access(string place, string setting) => new(place, AccessSubject, setting, null, null) { Subject = AccessSubject };
+
+    /// <summary>The access rules' edit this edit makes, or the refusal's words thrown by them.</summary>
+    public AccessEdit AccessEdit()
+    {
+        var repository = Place.StartsWith("repository/", StringComparison.Ordinal) ? Place["repository/".Length..] : null;
+        var workspace = Place.StartsWith("workspace/", StringComparison.Ordinal) ? Place["workspace/".Length..] : null;
+        var setting = Class?.Trim() ?? "";
+        return new AccessEdit
+        {
+            Repository = repository, Workspace = workspace, Machine = repository is null && workspace is null,
+            Full = setting == "full", Clear = setting == "clear",
+            Set = setting is "full" or "clear" or "" ? null : [.. setting.Split(';', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                .Select(each => each.Split('=', 2)).Select(pair => new KeyValuePair<string, string?>(pair[0], pair.Length > 1 ? pair[1] : null))],
+        };
+    }
+
+    /// <summary>The refusal of the edit's shape, or null where it is an edit this build can write.</summary>
     public string? Fault()
     {
         if (!RiskPolicy.IsPlace(Place)) return $"`{Place}` is no place (`machine`, `workspace/<name>` or `repository/<name>`)";
+        if (Subject == CastSubject)
+        {
+            if (!StepRoles.Shape.IsMatch(Act)) return $"`{Act}` is no role";
+            if (Act == StepRoles.Owner) return "the owner role has no cast";
+            if (By is not null && !CastHolders.Is(By)) return $"`{By}` is no holder (person, agent or agent:<name>)";
+            return AgentSettles.Cast(Act, By);
+        }
+
+        if (Subject == AccessSubject)
+        {
+            try
+            {
+                AccessRules.Apply(DriverConfig.Empty, AccessEdit());
+                return null;
+            }
+            catch (DriverException refused)
+            {
+                return refused.Message;
+            }
+        }
+
         RiskAct act;
         try
         {
@@ -34,7 +87,14 @@ public sealed record PolicyEdit(string Place, string Act, string? Class, string?
     }
 
     /// <summary>The edit as a line: what a card and a journal line say.</summary>
-    public string Said() =>
+    public string Said() => Subject switch
+    {
+        CastSubject => $"{Place}: the cast of {Act} → {By ?? "its default"}",
+        AccessSubject => $"{Place}: access → {Class}",
+        _ => RowSaid(),
+    };
+
+    private string RowSaid() =>
         $"{Place}: {Act}{(Mode is { } mode ? $" under {mode} access" : "")} → {(Class is null ? "no row" : Class + (By is { } role ? $" by {role}" : ""))}";
 }
 

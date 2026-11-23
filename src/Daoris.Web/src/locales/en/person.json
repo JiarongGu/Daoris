@@ -168,6 +168,8 @@
   "person.view.policy-apply-set": "{{place}}: {{act}} (under {{mode}} access) is set to {{class}}, answered by {{by}}.",
   "person.view.policy-apply-remove": "{{place}}: the row for {{act}} (under {{mode}} access) is taken away, so the next place or the seed decides.",
   "person.view.policy-apply-none": "It opens and releases no wait.",
+  "person.view.policy-apply-cast": "{{place}}: the role {{role}} is cast to {{holder}}.",
+  "person.view.policy-apply-access": "{{place}}: access becomes {{setting}}.",
   "person.view.policy-apply-opens": "Opens a wait at {{place}}: {{act}} under {{mode}} access goes from {{from}} to {{to}}.",
   "person.view.policy-apply-releases": "Releases a wait at {{place}}: {{act}} under {{mode}} access goes from {{from}} to {{to}}.",
   "person.view.policy-apply-moves": "Moves who answers at {{place}}: {{act}} under {{mode}} access goes from {{from}} to {{to}}.",
