@@ -484,7 +484,7 @@ public sealed class ContentProofLossTests : LandedFixture
 
     /// <summary>A note a session wrote under <c>local/</c> is its scratch and goes with the tree, named, beside declared output.</summary>
     [Fact]
-    public async Task A_note_a_session_wrote_in_local_goes_with_the_tree_named_beside_the_output
+    public async Task A_note_a_session_wrote_in_local_goes_with_the_tree_named_beside_the_output()
     {
         var root = await RepositoryAsync("engine");
         await CommitAsync(root, ".gitignore", "local/\ndevtools/_*\nbin/\nobj/\n", "ignore local and output");
