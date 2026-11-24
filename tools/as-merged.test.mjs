@@ -282,9 +282,7 @@ test("this repository's gates that run the devkit's docs gate run it through thi
 });
 
 test("the devkit's own docs gate fails the merge TOOL4e made, bare and through it, and passes it once the README is fixed", { timeout: 600_000 }, () => {
-  const devkit = JSON.parse(readFileSync(join(root, 'daoris.gates.json'), 'utf8')).devkit;
   const declaration = {
-    devkit,
     gates: [],
     disabled: ['sensitive', 'links'],
     docs: { tracked: [{ document: 'README.md', describes: ['src'] }] },
