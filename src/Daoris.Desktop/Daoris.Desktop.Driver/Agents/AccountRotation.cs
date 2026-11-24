@@ -305,7 +305,8 @@ public static class AccountRotation
         if (x.Running != y.Running) return (WalkStep.Fewest, x.Running.CompareTo(y.Running));
 
         // Step 5. An account that says no number ranks as one on its curve, between those with room and those over, and as
-        // on pace under `off` (absent is never zero).        var (spareX, spareY) = use.Switch == "off"
+        // on pace under `off` (absent is never zero).
+        var (spareX, spareY) = use.Switch == "off"
             ? (AccountReadings.Behind(x.Said, now) ?? 0, AccountReadings.Behind(y.Said, now) ?? 0)
             : ((UsageCurves.TightestSaid(use, x.Said, now)?.Room ?? 0) * x.Units, (UsageCurves.TightestSaid(use, y.Said, now)?.Room ?? 0) * y.Units);
         if (spareX != spareY) return (WalkStep.Pace, spareY.CompareTo(spareX));

@@ -88,6 +88,19 @@ describe('an account’s row (ACCTUX1)', () => {
     expect(screen.queryByLabelText('API key for Claude Code')).toBeNull();
   });
 
+  it('says the plan its agent named beside the account, in the soft ink, and none for a key', () => {
+    page([
+      { name: 'acct-0000000a', home: `${HOME}a`, login: 'in', account: 'one@example.invalid', plan: 'max_20x', read: READ },
+      { name: 'acct-0000000b', home: `${HOME}b`, login: 'in', account: 'two@example.invalid', plan: null, read: READ },
+      { name: 'acct-0000abcd', home: `${HOME}k`, login: 'out', key: '…abcd', plan: 'max_5x', read: READ },
+    ]);
+
+    const planned = screen.getByRole('listitem', { name: 'one@example.invalid' });
+    expect(within(planned).getByText('max_20x').className).toContain('text-ink-soft');
+    expect(screen.getByRole('listitem', { name: 'two@example.invalid' }).querySelector('[data-plan]')).toBeNull();
+    expect(screen.getByRole('listitem', { name: 'API key …abcd' }).querySelector('[data-plan]')).toBeNull();
+  });
+
   /** The page half: the owner names each account by its email, so the row says that email once. */
   it('says a name that is its identity once', () => {
     page([{

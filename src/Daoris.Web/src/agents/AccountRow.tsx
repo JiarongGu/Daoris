@@ -181,7 +181,7 @@ export function AccountRow({ name, label = name, who, plan, id, home, why, state
         {why && <span className="self-center"><WhyGlyph why={why} /></span>}
         {/* Who signed in, whole, wrapping where the column is narrow: in a tip it would be cut, and no key reaches it. */}
         {who && <span className="min-w-0 text-small text-ink-soft [overflow-wrap:anywhere]">{who}</span>}
-        {plan && <span data-plan className="min-w-0 text-small text-ink-faint [overflow-wrap:anywhere]">{plan}</span>}
+        {plan && <span data-plan className="min-w-0 text-small text-ink-soft [overflow-wrap:anywhere]">{plan}</span>}
       </span>
 
       {/* Its state: one line under the name when the row stacks, a cell of the row when it does not. */}
