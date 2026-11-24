@@ -76,7 +76,7 @@ public sealed class HeavyStepRetryTests
         }
         finally
         {
-            Directory.Delete(Path.GetDirectoryName(log)!, recursive: true);
+            GitSeed.Discard(Path.GetDirectoryName(log)!);
         }
     }
 
@@ -94,7 +94,7 @@ public sealed class HeavyStepRetryTests
         }
         finally
         {
-            Directory.Delete(Path.GetDirectoryName(log)!, recursive: true);
+            GitSeed.Discard(Path.GetDirectoryName(log)!);
         }
     }
 
