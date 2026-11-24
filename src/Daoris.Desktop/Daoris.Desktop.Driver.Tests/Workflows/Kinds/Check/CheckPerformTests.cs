@@ -234,15 +234,16 @@ public sealed class CheckPerformTests : IDisposable
     }
 
     [Fact]
-    public async Task A_check_that_came_back_unrun_is_asked_again_as_neither_a_red_round_nor_a_pass_and_given_up_as_said_once_its_asks_are_spent()
+    public async Task A_check_that_came_back_unrun_is_asked_again_as_neither_a_red_round_nor_a_pass_and_held_as_given_up_once_its_asks_are_spent()
     {
         var performer = Performer();
         _checks.Answer = attempt => CheckExecution.AnswerOf(Result(VerifyVerdicts.Unknown, attempt.Call.Invocation) with { Code = VerifyResult.Unrun });
+        IReadOnlyList<WorkPerformed> last = [];
         for (var ask = 1; ask <= UnrunChecks.Bound; ask++)
         {
             await StartAsync(performer);
             _checks.Answers.Add(Record().Attempts.Last().Call.Invocation);
-            await performer.ReconcileAsync(Declared, CancellationToken.None);
+            last = await performer.ReconcileAsync(Declared, CancellationToken.None);
 
             if (ask < UnrunChecks.Bound)
             {
@@ -252,7 +253,7 @@ public sealed class CheckPerformTests : IDisposable
             }
         }
 
-        AssertGivenUp();
+        await AssertGivenUpAsync(performer, last);
     }
 
     [Fact]
@@ -280,30 +281,49 @@ public sealed class CheckPerformTests : IDisposable
     }
 
     [Fact]
-    public async Task A_check_that_stays_unknown_past_its_bound_is_given_up_with_its_reason_and_no_row_waits_on_the_person()
+    public async Task A_check_that_stays_unknown_past_its_bound_is_given_up_with_its_reason_and_its_run_waits_for_a_new_attempt_never_ending()
     {
         var performer = Performer();
         _checks.Answer = _ => CheckExecution.AnswerOf(new VerifyAnswer(VerifyAnswers.Unknown) { Why = "its result does not read" });
+        IReadOnlyList<WorkPerformed> last = [];
         for (var ask = 1; ask <= UnrunChecks.Bound; ask++)
         {
             await StartAsync(performer);
             _checks.Answers.Add(Record().Attempts.Last().Call.Invocation);
-            await performer.ReconcileAsync(Declared, CancellationToken.None);
+            last = await performer.ReconcileAsync(Declared, CancellationToken.None);
         }
 
-        Assert.Contains("its result does not read", Status().Words, StringComparison.Ordinal);
-        AssertGivenUp();
+        Assert.Contains("its result does not read", Assert.Single(last).Detail, StringComparison.Ordinal);
+        await AssertGivenUpAsync(performer, last);
     }
 
-    private void AssertGivenUp()
+    private async Task AssertGivenUpAsync(WorkPerformer performer, IReadOnlyList<WorkPerformed> last)
     {
         var record = Record();
-        Assert.Equal((NodeStates.Stopped, NodeSource.Daoris), (Status().State, Status().By));
+        var gave = Assert.Single(last);
+        Assert.Equal((PerformedWhat.Held, UnrunChecks.GaveUp), (gave.What, gave.Code));
+        Assert.Contains("the run waits for a new attempt", gave.Detail, StringComparison.Ordinal);
+        Assert.Equal(NodeStates.Unknown, Status().State);
         Assert.Equal(UnrunChecks.Bound, record.Attempts.Count);
-        Assert.All(record.Attempts, attempt => Assert.Equal(AttemptStates.Settled, attempt.State));
-        Assert.Empty(HeldAttempts.Read(Files));
-        Assert.Null(StepWaiting.Read(record, Check, Status()));
+        Assert.All(record.Attempts.SkipLast(1), attempt => Assert.Equal(AttemptStates.Settled, attempt.State));
+        Assert.Equal((AttemptStates.Held, UnrunChecks.GaveUp), (record.Attempts.Last().State, record.Attempts.Last().Code));
         Assert.Empty(CheckRounds.Reds(record));
+        var sent = _checks.Sent.Count;
+        var asked = _checks.Asked.Count;
+        Assert.Empty(await performer.ReconcileAsync(Declared, CancellationToken.None));
+        Assert.Equal((sent, asked), (_checks.Sent.Count, _checks.Asked.Count));
+
+        var (refused, kept) = Files.Edit<bool>(Unit, each =>
+        {
+            var (next, _) = UnknownChecks.Again(each, Status(), _now);
+            return (next, next is not null);
+        });
+        Assert.Null(refused);
+        Assert.True(kept);
+        performer.Resolve(Declared);
+        Assert.Equal(NodeStates.Ready, Status().State);
+        await StartAsync(performer);
+        Assert.Equal((NodeStates.Active, UnrunChecks.Bound + 1), (Status().State, Record().Attempts.Count));
     }
 
     [Fact]
