@@ -43,7 +43,7 @@ public static class BusTypes
     /// <summary>Where the service's ledger is heard (its change stream), the node runtime's records, and this process's standing choices.</summary>
     public const string Ledger = "driver/ledger", Nodes = "driver/nodes", Choices = "driver/choices", Sessions = "driver/sessions";
 
-    /// <summary>The build the install's measures were read at (BUS2b2): every figure a measured deadline names is of it.</summary>
+    /// <summary>The commit the install ran when its measures were read; the days they cover ran earlier builds too, so it dates the reading, not the figures.</summary>
     public const string MeasuredAt = "99ce8edc60";
 
     private const string Unmeasured = "no handling time of it is measured yet: the install's `daoris bus stats` at " + MeasuredAt
@@ -64,7 +64,7 @@ public static class BusTypes
     public static readonly BusType CheckStarted = new(
         "check.started", 1, BusClasses.Fact, Checks, Checks,
         BusDeadline.Measured(TimeSpan.FromMinutes(105),
-            "the checks' start-to-verdict times at " + MeasuredAt + ", 2026-11-21 to 23: n=214 (passed 154, failed 53, unknown 7), the means 9 to 27 minutes a day, the most 3,091,955 ms (51.5 minutes); "
+            "the checks' start-to-verdict times, read at " + MeasuredAt + ", 2026-11-21 to 23: n=214 (passed 154, failed 53, unknown 7), the means 9 to 27 minutes a day, the most 3,091,955 ms (51.5 minutes); "
             + "twice the most, to a quarter hour. A check runs under its node's bound, two hours where it declares none, past which its executor settles it unknown, which ends the timer; "
             + "one running longer than any measured is stalled once, said on Stalls, and tried again"),
         1, BusGiveUps.FinalExit,
@@ -98,7 +98,7 @@ public static class BusTypes
     public static readonly BusType OpinionAsked = new(
         "opinion.asked", 1, BusClasses.Request, Opinions, Reviewer,
         BusDeadline.Measured(TimeSpan.FromMinutes(30),
-            "the passes' times at " + MeasuredAt + ", 2026-11-21 to 23: n=81, the means 8 to 9 minutes a day, the most 867,000 ms (14.5 minutes); twice the most, to five minutes. "
+            "the passes' times, read at " + MeasuredAt + ", 2026-11-21 to 23: n=81, the means 8 to 9 minutes a day, the most 867,000 ms (14.5 minutes); twice the most, to five minutes. "
             + "A pass runs under its rule's bound, twenty minutes where the rule names none (5 to 120); a rule's longer bound outlasts it, which the watchdog counts"),
         1, BusGiveUps.Refused,
         [new("session", BusShapes.Id), new("occasion", BusShapes.Code), new("pass", BusShapes.Code)]);

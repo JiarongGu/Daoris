@@ -3,7 +3,7 @@ namespace Daoris.Knowledge;
 /// <summary>
 /// The schema of the service's event journal, <c>event_journal</c>, and
 /// the triggers on <c>sessions</c> that mint it. One row per raw transition of a record this machine owns, in the order the statements
-/// committed (<c>position</c>, never reused), read by nothing yet.
+/// committed (<c>position</c>, never reused); the families are sessions, quests, asks, channel, memory and opinions (<see cref="OpinionsSchema"/>).
 /// </summary>
 /// <remarks>
 /// <para><b>Minted by trigger</b>, in the statement that writes the record, so every writer mints it: the host, the driver through it, each

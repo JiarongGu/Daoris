@@ -313,8 +313,8 @@ built, but nothing outside tests makes, takes or ends one; `LinePlaces` answers 
     list: `refused` (the bus answers the request itself), `held` (the gate stays shut), `dropped` (an observation counted) or
     `final-exit` (the subject reaches the owner's final exit, D354 point 4). No silent give-up is in the list: a `refused` request
     or a `held` gate leaves its step a wait, which a vacancy bounds and the final exit ends. A deadline is measured where the install
-    measured its handling and names the build its figures are of (`BusTypes.MeasuredAt`, the census holding it): a check's start,
-    105 minutes, twice the longest of 214 start-to-verdict times at 99ce8edc60 (51.5 minutes), and a pass's asking, 30, twice the
+    measured its handling and names the commit its days were read at (`BusTypes.MeasuredAt`, the census holding it; those days ran earlier builds too): a check's start,
+    105 minutes, twice the longest of 214 start-to-verdict times read at 99ce8edc60 (51.5 minutes), and a pass's asking, 30, twice the
     longest of 81 (14.5). Every other is stated provisional with what it stands on (a busy runner's offer, a consumer's ten
     minutes) until the `handled` measure, each acknowledgement's append-to-acknowledgement time by kind, holds its days (BUS2b3), and the
     watchdog runs against it in shadow (below) before any give-up acts. `BusTypesCensusTests` holds that every type names its obligations, that its give-up
@@ -337,8 +337,8 @@ built, but nothing outside tests makes, takes or ends one; `LinePlaces` answers 
     counted, then dropped. Measured by the day: entries by kind,
     each kind's handling time where known, the flushes' count, entries and time (a write that first opened the store is no
     flush's time), the rows' own bytes beside the pages each write put on disk (the write-ahead log's frames, as the engine counts
-    them), the misses, the dropped values, each consumer's handling time by kind (`handled`) and each look stage's time, which `daoris bus stats` reads. The bytes
-    the writes put on disk in a UTC day are held to 128 MiB (`BusLog.DiskBudget`, a third above the install's worst day at 99ce8edc60, 76.8 MB for 0.95 MB of rows), a day
+    them), the misses, the dropped values, each consumer's handling time by kind (`handled`, a handled entry from its append or its consumer's start if later, never a give-up's or a replay's wait) and each look stage's time, which `daoris bus stats` reads. The bytes
+    the writes put on disk in a UTC day are measured against a budget of 128 MiB (`BusLog.DiskBudget`, nothing caps them; a third above the install's worst day at 99ce8edc60, 76.8 MB for 0.95 MB of rows; a restart counts what the day's stored measures hold), a day
     past it said once as `bus.over-budget`, and the stats say each day's share. The log keeps its newest 50,000 rows (about 13 MiB of rows at the 270 bytes a row a check's facts
     measure) and 90 days of measures; nothing reads behind the cut yet. The history reset empties `bus_log` and `bus_timers` and
     keeps `bus_measures`, which are evidence. A second close waits for the first's write, and a writer's loop that failed is counted and

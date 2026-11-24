@@ -702,6 +702,8 @@ public sealed class BusLog : IAsyncDisposable
         }
 
         (string Day, long Bytes)? overBudget = null;
+        var today = DesktopBusLogStore.Day(_clock.GetUtcNow());
+        var stored = today != _diskDay ? StoredDiskBytes(today) : 0;
         lock (_gate)
         {
             _retries = 0;
@@ -728,7 +730,7 @@ public sealed class BusLog : IAsyncDisposable
             {
                 _measures.Add(day, BusMeasures.Disk, BusMeasures.Pages, pages, owing: entries.Count > 0);
                 _measures.Add(day, BusMeasures.Disk, BusMeasures.Bytes, pages * written.PageSize, owing: entries.Count > 0);
-                if (day != _diskDay) (_diskDay, _diskBytes) = (day, 0);
+                if (day != _diskDay) (_diskDay, _diskBytes) = (day, day == today ? stored : 0);
                 _diskBytes += pages * written.PageSize;
                 if (_diskBytes > _options.DiskBudget) overBudget = (day, _diskBytes);
             }
@@ -738,6 +740,18 @@ public sealed class BusLog : IAsyncDisposable
 
         if (entries.Count > 0) Tell(written.Shift > 0 ? [.. entries.Select(entry => entry with { Seq = entry.Seq + written.Shift })] : entries);
         Fated(entries, kept: true);
+    }
+
+    private long StoredDiskBytes(string day)
+    {
+        try
+        {
+            return _store.Measures(day).Where(row => row is { Day: var d, Measure: BusMeasures.Disk, Name: BusMeasures.Bytes } && d == day).Sum(row => row.Total);
+        }
+        catch (Exception error) when (error is not OutOfMemoryException)
+        {
+            return 0;
+        }
     }
 
     private void Fated(List<BusEnvelope> entries, bool kept)

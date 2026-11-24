@@ -234,7 +234,7 @@ public sealed class BusQueueTests : IDisposable
         Assert.Contains(measures, row => row is { Measure: "middleware", Name: "drop:dropped" } && row.Total >= 1);
     }
 
-    /// <summary>🔴 Each acknowledgement measures its entry's handling time, append to acknowledgement, by kind and day.</summary>
+    /// <summary>🔴 Each handled entry measures its handling time, from its append or its consumer's start if later, by consumer, kind and day.</summary>
     [Fact]
     public async Task An_acknowledgement_measures_the_entrys_handling_time_by_kind()
     {
@@ -250,7 +250,7 @@ public sealed class BusQueueTests : IDisposable
         await bus.FlushAsync();
         using var store = new DesktopBusLogStore(_home);
         var measures = store.Measures("2000-01-01");
-        var given = Assert.Single(measures, row => row is { Measure: "handled" } && row.Name == BusTypes.OpinionGiven.Kind);
+        var given = Assert.Single(measures, row => row is { Measure: "handled" } && row.Name == "timed:" + BusTypes.OpinionGiven.Kind);
         Assert.Equal(1, given.Count);
         Assert.InRange(given.Total, 0, 60_000);
     }

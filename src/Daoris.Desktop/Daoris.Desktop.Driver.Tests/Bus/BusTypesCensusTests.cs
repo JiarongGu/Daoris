@@ -40,7 +40,7 @@ public sealed partial class BusTypesCensusTests
             (sound with { Deadline = BusDeadline.Stated(TimeSpan.FromMinutes(5), "") }, "says nothing of what set it"),
             (sound with { GiveUp = "gave-up" }, "give-up `gave-up` is outside the list"),
             (sound with { GiveUp = "ignored" }, "give-up `ignored` is outside the list"),
-            (sound with { Deadline = BusDeadline.Measured(TimeSpan.FromMinutes(5), "n=3, the most 1 s") }, "names no build"),
+            (sound with { Deadline = BusDeadline.Measured(TimeSpan.FromMinutes(5), "n=3, the most 1 s") }, "names no commit it was read at"),
             (sound with { Retries = -1 }, "retries"),
             (sound with { Emitter = "" }, "names no emitter"),
             (sound with { Class = "event" }, "class `event`"),
@@ -124,7 +124,7 @@ public sealed partial class BusTypesCensusTests
 
             if (type.Deadline is not { Within.Ticks: > 0 }) faults.Add($"{at}: it names no deadline");
             else if (string.IsNullOrWhiteSpace(type.Deadline.Basis)) faults.Add($"{at}: its deadline says nothing of what set it");
-            else if (!type.Deadline.Provisional && !BuiltAt().IsMatch(type.Deadline.Basis)) faults.Add($"{at}: its measured deadline names no build (a commit) its figures are of");
+            else if (!type.Deadline.Provisional && !BuiltAt().IsMatch(type.Deadline.Basis)) faults.Add($"{at}: its measured deadline names no commit it was read at");
             if (type.Retries < 0) faults.Add($"{at}: its retries are under none");
             if (!BusGiveUps.All.Contains(type.GiveUp))
             {
