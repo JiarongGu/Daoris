@@ -28,8 +28,19 @@ const gitAt = (root: string, args: string[]): string | null => {
   return run.status === 0 ? run.stdout.trim() : null;
 };
 
-/** The name of the folder holding the repository's main checkout: a linked tree's git folder is inside it. */
+const named = new Map<string, string>();
+
+/** The name of the folder holding the repository's main checkout: a linked tree's git folder is inside it. Asked of git once per folder in a process. */
 function mainCheckoutName(root: string): string {
+  const key = resolve(root);
+  const known = named.get(key);
+  if (known !== undefined) return known;
+  const name = nameOf(root);
+  named.set(key, name);
+  return name;
+}
+
+function nameOf(root: string): string {
   const top = gitAt(root, ['rev-parse', '--show-toplevel']);
   const common = gitAt(root, ['rev-parse', '--path-format=absolute', '--git-common-dir']);
   if (top === null || common === null || resolve(top) !== resolve(root)) return basename(resolve(root));

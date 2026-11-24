@@ -86,7 +86,7 @@ test('the repository is named by the folder of its main checkout, from a linked 
   mkdirSync(main);
   const git = (cwd: string, ...args: string[]) => spawnSync('git', args, { cwd, encoding: 'utf8', windowsHide: true });
   git(main, 'init', '-q');
-  git(main, '-c', 'user.name=t', '-c', 'user.email=t@t', 'commit', '--allow-empty', '-q', '-m', 'x');
+  git(main, '-c', 'user.name=t', '-c', 'user.email=t@t', 'commit', '--no-verify', '--allow-empty', '-q', '-m', 'x');
   const linked = join(base, 'tree-one');
   git(main, 'worktree', 'add', '-q', '--detach', linked);
   mkdirSync(join(main, 'inside'));

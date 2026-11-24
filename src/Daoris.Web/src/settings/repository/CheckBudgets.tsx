@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Button, SettingRow } from '../../design/ui';
 import { shellWord } from '../../lib/shellWord';
-import type { Answered } from '../../work/InlineConfirm';
+import { type Answered, Refused } from '../../work/InlineConfirm';
 
 /** One gate's budget as the driver read it (`CHECK_BUDGETS`): where its timeout comes from, and what this machine keeps for it. */
 export type GateBudgetView = {
@@ -157,7 +157,7 @@ export function CheckBudgetsRow({ repository, view, busy = false, onChange }: {
             </Button>
           </div>
         ))}
-        {refused && <p role="alert" className="m-0 text-small text-danger">{refused}</p>}
+        {refused && <Refused sentence={refused} />}
       </div>
     </SettingRow>
   );
