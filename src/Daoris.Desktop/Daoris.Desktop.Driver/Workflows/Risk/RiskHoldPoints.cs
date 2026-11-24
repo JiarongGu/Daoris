@@ -114,38 +114,42 @@ public static class RiskStepHolds
 }
 
 /// <summary>
-/// The declaration acceptance as the judge's shadow reads it: each changed <c>daoris.gates.json</c> owed acceptance is a
-/// <c>command.change</c> at its repository; today one waits on the owner's Accept, and one in full access is accepted as it lands
-/// (<see cref="IntegrationOwed.ByMode"/>). A change that alters no command is no change of what runs, and no act.
+/// Each changed <c>daoris.gates.json</c> owed acceptance is a <c>command.change</c> at its repository, judged on each changed unit's digest
+/// (<see cref="DeclarationVerdicts"/>): where every unit passes it is accepted as it lands (<see cref="IntegrationOwed.Passed"/>).
 /// </summary>
 public static class RiskDeclarationHolds
 {
     public const string Domain = "declaration";
 
-    /// <summary>What today did with a declaration's hold once it is no longer owed.</summary>
+    /// <summary>What a declaration's hold did once it is no longer owed.</summary>
     public const string Released = "released: accepted, or the line moved past it";
 
-    public static IReadOnlyList<RiskHold> Of(IReadOnlyList<DeclarationOwed> owed, IReadOnlyList<DeclarationOwed> byMode, DriverConfig config)
+    public static IReadOnlyList<RiskHold> Of(IReadOnlyList<DeclarationOwed> owed, IReadOnlyList<DeclarationOwed> passed, DriverConfig config)
     {
         RiskHold Hold(DeclarationOwed each, bool held) =>
-            new($"{Domain}:{each.Repository}@{each.Blob}", "declaration", new RiskAct(RiskActs.CommandChange, null), $"line:{each.Line}",
-                RiskPlace.Of(config, each.Workspace, each.Repository), $"{each.Repository}'s daoris.gates.json at {each.Blob[..Math.Min(12, each.Blob.Length)]}",
-                held ? "Waiting on the owner's Accept of the gates." : "Accepted as it lands: its repository runs in full access.", held);
+            new($"{Domain}:{each.Repository}@{each.Blob}", "declaration", DeclarationVerdicts.Act, $"line:{each.Line}",
+                RiskPlace.Of(config, each.Workspace, each.Repository), $"{each.Repository}'s daoris.gates.json at {each.Blob[..Math.Min(12, each.Blob.Length)]}{Units(each)}",
+                held ? "Waiting on the yes its verdict names." : "Accepted as it lands: the risk policy passes it.", held);
 
-        var automatic = byMode.Select(each => $"{Domain}:{each.Repository}@{each.Blob}").ToHashSet(StringComparer.Ordinal);
-        return [.. owed.Where(each => !automatic.Contains($"{Domain}:{each.Repository}@{each.Blob}")).Select(each => Hold(each, true)), .. byMode.Select(each => Hold(each, false))];
+        var automatic = passed.Select(each => $"{Domain}:{each.Repository}@{each.Blob}").ToHashSet(StringComparer.Ordinal);
+        return [.. owed.Where(each => !automatic.Contains($"{Domain}:{each.Repository}@{each.Blob}")).Select(each => Hold(each, true)), .. passed.Select(each => Hold(each, false))];
     }
 
-    /// <summary>The look's hold point (<c>DriverWatch</c>'s read of the declarations owed), journaled in shadow before full access accepts any.</summary>
+    private static string Units(DeclarationOwed each) =>
+        each.Verdicts.Where(unit => unit.Unit.Length > 0).Select(unit => $"{DeclarationUnits.Said(unit.Unit)} {unit.Digest[..Math.Min(12, unit.Digest.Length)]}").ToList() is { Count: > 0 } named
+            ? $" ({string.Join(", ", named)})"
+            : "";
+
+    /// <summary>The look's hold point: each declaration owed or taken journaled with its verdict.</summary>
     internal static void Shadow(RiskShadow shadow, IntegrationOwed owed, DriverConfig config)
     {
         try
         {
-            shadow.Look(Domain, RiskPolicy.Of(config), Of(owed.Under(config), owed.ByMode(config), config), _ => Released);
+            shadow.Look(Domain, RiskPolicy.Of(config), Of(owed.Under(config), owed.Passed(config), config), _ => Released);
         }
         catch (Exception fault) when (fault is not OperationCanceledException)
         {
-            // The shadow decides nothing: its fault never keeps a declaration from its acceptance.
+            // The journal decides nothing: its fault never keeps a declaration from its acceptance.
         }
     }
 }

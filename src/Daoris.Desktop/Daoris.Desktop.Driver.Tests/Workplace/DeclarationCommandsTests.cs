@@ -128,7 +128,29 @@ public sealed class DeclarationCommandsTests
 
         Assert.True(DeclarationMode.Waits(DriverConfig.Empty, "engine", null));
         Assert.False(DeclarationMode.Waits(machine, "engine", null));
-        Assert.Equal("full access: taken without asking", DeclarationMode.Said(DeclarationMode.Full));
-        Assert.Equal("restricted: waits for you", DeclarationMode.Said(DeclarationMode.Restricted));
+        Assert.Equal("the risk policy passes it: taken without asking", DeclarationMode.Said(DeclarationMode.Full));
+        Assert.Equal("the risk policy asks for it: waits for you", DeclarationMode.Said(DeclarationMode.Restricted));
+    }
+
+    /// <summary>The mode is the judge's verdict on <c>command.change</c> at the place, not the access setup.</summary>
+    [Fact]
+    public void The_mode_is_the_verdict_on_command_change_at_the_place_not_the_access_setup()
+    {
+        static DriverConfig With(DriverConfig config, string risk)
+        {
+            var node = System.Text.Json.Nodes.JsonNode.Parse(config.ToJson())!.AsObject();
+            node["risk"] = System.Text.Json.Nodes.JsonNode.Parse(risk);
+            return DriverConfig.Parse(node.ToJsonString());
+        }
+
+        var restricted = DriverConfig.Empty;
+        var full = DriverConfig.Empty.WithAccess(new AccessEdit { Repository = "engine", Full = true });
+
+        Assert.Equal(DeclarationMode.Full, DeclarationMode.Of(With(restricted, """{ "repository/engine": [ { "kind": "command.change", "class": "none" } ] }"""), "engine", null));
+        Assert.Equal(DeclarationMode.Full, DeclarationMode.Of(With(restricted, """{ "machine": [ { "kind": "command.change", "class": "none", "mode": "restricted" } ] }"""), "engine", null));
+        Assert.Equal(DeclarationMode.Restricted, DeclarationMode.Of(With(full, """{ "workspace/aurora": [ { "kind": "command.change", "class": "owner" } ] }"""), "engine", "aurora"));
+        Assert.Equal(DeclarationMode.Restricted, DeclarationMode.Of(With(full, """{ "repository/engine": [ { "kind": "command.change", "class": "role" } ] }"""), "engine", null));
+        Assert.Equal(DeclarationMode.Full, DeclarationMode.Of(With(full, """{ "repository/other": [ { "kind": "command.change", "class": "owner" } ] }"""), "engine", null));
+        Assert.Equal(DeclarationMode.Restricted, DeclarationMode.Of(With(full, """{ "nowhere": [] }"""), "engine", null));
     }
 }

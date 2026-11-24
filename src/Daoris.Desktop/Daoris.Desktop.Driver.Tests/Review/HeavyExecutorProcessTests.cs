@@ -545,7 +545,7 @@ public sealed class HeavyExecutorProcessTests : IAsyncLifetime
         var ran = await SettledAsync("v-0000000000000002", "i-b");
 
         Assert.True(ran.Verdict == VerifyVerdicts.Reached, ran.Why);
-        Assert.Contains("nothing was accepted yet, so the work's own declaration ran (full access: taken without asking)", ran.Why);
+        Assert.Contains("nothing was accepted yet, so the work's own declaration ran (the risk policy passes it: taken without asking)", ran.Why);
         Assert.Equal(engine.Blob, ran.Declaration);
         Assert.Equal([("start", "a"), ("end", "a")], Intervals());
     }

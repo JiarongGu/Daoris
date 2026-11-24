@@ -1,7 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>Where an act happens, as the judge reads it: its workspace and repository (none: a wider place), and the place's access mode.</summary>
-/// <param name="Full">Whether the place's sessions run in full access (<see cref="AccessRules.Resolve"/>): the mode rows keyed by one apply under.</param>
+/// <param name="Full">Whether the place's harness reaches anything: its permission prompts resolve unrestricted (<see cref="AccessRules.Resolve"/>, as full access gives, or those alone): the mode rows keyed by one apply under, and the seeds of the acts that read reach.</param>
 public sealed record RiskPlace(string? Workspace, string? Repository, bool Full)
 {
     public const string FullMode = "full";
@@ -16,7 +16,7 @@ public sealed record RiskPlace(string? Workspace, string? Repository, bool Full)
         var access = named is not null
             ? AccessRules.Resolve(config, named, workspace)
             : AccessRules.ResolveLevels(null, workspace is { Length: > 0 } w && config.WorkspaceAccess.TryGetValue(w, out var shared) ? shared : null, config.MachineAccess);
-        return new(workspace is { Length: > 0 } ? workspace : null, named, access.Full);
+        return new(workspace is { Length: > 0 } ? workspace : null, named, access.Value(AccessRules.Permissions) == AccessRules.Unrestricted);
     }
 
     /// <summary>The policy's place keys from this place up to the machine, narrowest first.</summary>

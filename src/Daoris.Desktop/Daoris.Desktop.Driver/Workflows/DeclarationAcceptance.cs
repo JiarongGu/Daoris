@@ -8,26 +8,31 @@ namespace Daoris.Driver;
 public static class DeclarationAcceptance
 {
     /// <summary>
-    /// What full access (<see cref="DeclarationMode"/>) accepts as the line's declaration lands: <paramref name="owed"/>'s blob accepted in
-    /// the file at <paramref name="configPath"/>, and the one line telling the person what changed and the mode that took it; null where it
-    /// is accepted meanwhile, the repository left full access, or its checkout is gone. Both are judged again on the file as its writer
-    /// reads it under its lock (<see cref="DriverConfigDisk.Edit"/>), so a choice another writer made meanwhile is never written over.
+    /// What the risk policy takes as the line's declaration lands (<see cref="IntegrationOwed.Passed"/>): <paramref name="owed"/>'s blob accepted in
+    /// the file at <paramref name="configPath"/>, and the one line telling the person what changed and the rule that passed it; null where it
+    /// is accepted meanwhile, the policy no longer passes it, or its checkout is gone. Both are judged again on the file as its writer
+    /// reads it under its lock (<see cref="DriverConfigDisk.Edit"/>), the verdicts asked of the policy that file holds, so a choice another
+    /// writer made meanwhile, a raised row included, is never written over.
     /// </summary>
-    internal static async Task<string?> AcceptByModeAsync(string home, string configPath, DeclarationOwed owed, CancellationToken ct)
+    internal static async Task<string?> AcceptPassedAsync(string home, string configPath, DeclarationOwed owed, CancellationToken ct)
     {
         if (owed.Root is not { } root) return null;
         var before = Before(DriverConfig.Load(configPath), owed);
         var was = before is { } blob ? await IntegrationAcceptance.TextAsync(root, blob, ct).ConfigureAwait(false) : null;
         var now = await IntegrationAcceptance.TextAsync(root, owed.Blob, ct).ConfigureAwait(false);
         var accepted = false;
+        RiskVerdict? by = null;
         DriverConfigDisk.Edit(configPath, current =>
         {
-            if (DeclarationMode.Waits(current, owed.Repository, owed.Workspace) || Before(current, owed) != before) return current;
+            if (Before(current, owed) != before) return current;
+            var verdicts = DeclarationVerdicts.Of(current, owed.Repository, owed.Workspace, owed.Line, owed.Blob, owed.ChangedUnits, owed.Verdicts.ToDictionary(each => each.Unit, each => each.Digest, StringComparer.Ordinal));
+            if (!DeclarationVerdicts.Passes(verdicts)) return current;
             accepted = true;
+            by = DeclarationVerdicts.Deciding(verdicts);
             return Accept(home, current, owed.Repository, owed.Workspace, owed.Blob);
         });
         return accepted
-            ? $"{owed.Repository}'s {DeclarationChange.Between(was, now).Words(owed.Line).TrimEnd('.')} ({DeclarationMode.Said(DeclarationMode.Full)})."
+            ? $"{owed.Repository}'s {DeclarationChange.Between(was, now).Words(owed.Line).TrimEnd('.')} (passed by the risk policy: {by!.Why})."
             : null;
     }
 
