@@ -46,8 +46,6 @@ export type RepositoryKept = {
   devkit?: string;
   localInputs?: string[];
   patternsFile?: string;
-  /** The verification budget's overruns journal, newest last. */
-  overruns?: unknown[];
 };
 
 export type Budgets = { schema: 1; repositories: Record<string, RepositoryKept> };
@@ -135,4 +133,10 @@ export function setGate(home: string | null | undefined, repository: string, gat
     if (values.alone !== undefined) { if (values.alone === null || values.alone === false) delete each.alone; else each.alone = true; }
     if (values.pin !== undefined) { if (values.pin === null) delete each.pin; else each.pin = values.pin; }
   });
+}
+
+/** A test set's per-test timeout in milliseconds: the home's for the set, else the declaration's, else none. */
+export function setTimeoutOf(kept: RepositoryKept, name: string, declared: number | undefined): number | undefined {
+  const own = kept.sets?.[name]?.timeoutMs;
+  return positive(own) ? own : declared;
 }

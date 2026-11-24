@@ -5,12 +5,14 @@ import { createHash } from 'node:crypto';
 import { existsSync, mkdirSync, readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { writeAtomic } from './fsx.mjs';
+import { budgetSourceOf, keptOf } from './merge/budget-overlay.ts';
 
 /**
- * The private files a tree is handed, read as the driver's `TreeLocalInputs.Declared` reads them: `localInputs` in order, then
- * `sensitive.patternsFile` (the devkit's default where undeclared), each once. Only paths under `local/`, none climbing out.
+ * The private files a tree is handed, read as the driver's `TreeLocalInputs.Declared` reads them: the local inputs in order, then
+ * the sensitive patterns file (the devkit's default where none is named), each once. The home's record of the repository names them
+ * (`source`), the declaration's members where it names none. Only paths under `local/`, none climbing out.
  */
-export function privateGateFiles(checkout) {
+export function privateGateFiles(checkout, source = budgetSourceOf(checkout)) {
   let declared = [];
   let patterns = 'local/sensitive-patterns.txt';
   try {
@@ -20,6 +22,9 @@ export function privateGateFiles(checkout) {
   } catch {
     // No readable declaration: the plan's own reading refuses it, with its reason.
   }
+  const kept = keptOf(source);
+  if (kept.localInputs) declared = kept.localInputs.filter((each) => typeof each === 'string' && each.length > 0);
+  if (typeof kept.patternsFile === 'string' && kept.patternsFile.length > 0) patterns = kept.patternsFile;
   const paths = [...declared, patterns].map((each) => each.replace(/\\/g, '/')).filter((path) => path.startsWith('local/') && !path.split('/').includes('..'));
   return [...new Set(paths)];
 }

@@ -7,7 +7,7 @@
 import { spawnSync } from 'node:child_process';
 import { basename, dirname, resolve } from 'node:path';
 import { daorisHome } from '../../src/Daoris.Cli/src/platform/home.ts';
-import { budgetOf, readBudgets, recordGreen, saidRise, type Budget } from './check-budgets.ts';
+import { budgetOf, readBudgets, recordGreen, saidRise, type Budget, type RepositoryKept } from './check-budgets.ts';
 
 /** Where a run reads its repository's budgets: the Daoris home, and the repository's name in it. */
 export type BudgetSource = { home: string | null; repository: string };
@@ -27,6 +27,11 @@ function mainCheckoutName(root: string): string {
   const common = spawnSync('git', ['rev-parse', '--path-format=absolute', '--git-common-dir'], { cwd: root, encoding: 'utf8', windowsHide: true });
   const folder = common.status === 0 ? dirname(resolve(common.stdout.trim())) : resolve(root);
   return basename(folder);
+}
+
+/** What the home keeps of the repository, nothing where it names no home or keeps no record. */
+export function keptOf(source: BudgetSource | null): RepositoryKept {
+  return source?.home ? readBudgets(source.home).repositories[source.repository] ?? {} : {};
 }
 
 /** The gates with the home's values laid over: a pin or a learned timeout, and the memory and load settings. Answers the gates themselves where `source` names no home. */
