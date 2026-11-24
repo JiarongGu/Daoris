@@ -127,4 +127,4 @@ async function main() {
   }
 }
 
-if (isMain(import.meta.url)) process.exitCode = await main();
+if (isMain(import.meta.url)) main().then((code) => { process.exitCode = code; });
