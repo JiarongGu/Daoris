@@ -3,12 +3,16 @@
  *
  *   node tools/size-ratchet.mjs           check the tree against tools/size-ratchet.json (exit 0 clean, 1 breach, 2 tool error)
  *   node tools/size-ratchet.mjs --write   rewrite tools/size-ratchet.json from the tree (the first list, or after a split)
- *   node tools/size-ratchet.mjs --shrink  only lower the list to the tree (the merge's, and the commit hook's, writer; growth is never written)
+ *   node tools/size-ratchet.mjs --shrink  only lower the list to the tree (the merge's writer; growth is never written)
  *
  * The list names each source file over `BUDGET` bytes and the size it stands at. A listed file may shrink but never grow
- * past its entry, and a file not listed may not pass the budget: new behaviour goes in a unit of its own. A listed file
+ * past its entry (nor past the size main's list gives it), and a file not listed may not pass the budget: new behaviour goes in a unit of its own. A listed file
  * that shrank is a breach until its entry is cut down to it, so the list only tightens; a file that fell under the budget
  * leaves the list. Sizes are bytes with LF endings, so a checkout's line endings change nothing.
+ *
+ * The check judges every listed file of the tree. A breach main's own tree stands in at the same size is said as main's red and
+ * does not fail a tree that only carries it, since sending it back as that branch's own would fail every branch begun before the
+ * landing that broke it; it stays owed to main, and a run on main itself (CI's `verify:checks`) fails on it.
  */
 import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
@@ -61,8 +65,6 @@ export function breaches(found, list, base = null) {
   return problems;
 }
 
-export const checkSizes = (found, list, base = null) => breaches(found, list, base).map((each) => each.text);
-
 /** `list` cut down to the tree (`found`, the files over the budget): a shrunk entry takes its size, one under the budget or gone leaves; growth and new files stay for the check. */
 export function lowered(list, found) {
   const out = {};
@@ -74,7 +76,7 @@ export function lowered(list, found) {
 
 /**
  * The staged files settled against the list at a commit: `sizes` maps each staged source path to its size (null where it is deleted).
- * Returns the list with every shrink written, and the refusals: a file past the size main's list gives it, or new over the budget.
+ * Returns the list with every entry set to its file's size, a shrink or a rise within what main's list gives it, and the refusals: a file past the size main's list gives it, or new over the budget.
  */
 export function settleStaged(sizes, list, base = null) {
   const settled = { ...list };
@@ -102,7 +104,64 @@ export function baseList(root) {
   return JSON.parse(git(['show', `${base}:tools/size-ratchet.json`]));
 }
 
-async function main() {
+const MAIN = 'main';
+
+const git = (root, args) => execGit(args, { cwd: root, encoding: 'utf8', maxBuffer: 256 * 1024 * 1024, stdio: ['ignore', 'pipe', 'pipe'] });
+const gitOrNull = (root, args) => {
+  try {
+    return git(root, args);
+  } catch {
+    return null;
+  }
+};
+
+/** Whether `root` is main itself: the `main` branch checked out at its own tip with no merge open, which no excuse reaches. */
+export function onMain(root) {
+  const tip = gitOrNull(root, ['rev-parse', '-q', '--verify', MAIN])?.trim();
+  if (!tip) return false;
+  return gitOrNull(root, ['symbolic-ref', '-q', '--short', 'HEAD'])?.trim() === MAIN
+    && gitOrNull(root, ['rev-parse', '-q', '--verify', 'HEAD'])?.trim() === tip && gitOrNull(root, ['rev-parse', '-q', '--verify', 'MERGE_HEAD']) === null;
+}
+
+/** Main's own sizes (over the budget only) and list, for `paths`; null where main has no list to hold them to. */
+export function mainStands(root, paths) {
+  const listText = gitOrNull(root, ['show', `${MAIN}:tools/size-ratchet.json`]);
+  if (listText === null) return null;
+  const list = JSON.parse(listText);
+  const found = {};
+  for (const path of paths) {
+    const text = sized(path) ? gitOrNull(root, ['show', `${MAIN}:${path}`]) : null;
+    if (text !== null && sizeOf(text) > BUDGET) found[path] = sizeOf(text);
+  }
+  return { found, list };
+}
+
+/** The `problems` (from `breaches`) split into those main stands in as they are and those it does not. */
+export function attribute(problems, found, main) {
+  const own = { main: [], tree: [] };
+  for (const problem of problems) {
+    const { path } = problem;
+    const there = main && breaches(
+      main.found[path] === undefined ? {} : { [path]: main.found[path] },
+      main.list[path] === undefined ? {} : { [path]: main.list[path] },
+    ).some((each) => each.path === path);
+    (there && main.found[path] === found[path] ? own.main : own.tree).push(problem);
+  }
+  return own;
+}
+
+/** Checks the tree at `root` against its list; the exit code (0 clean or only main's, 1 a breach of this tree's own). */
+export function checkTree(root, found, { say = console.log, err = console.error } = {}) {
+  const problems = breaches(found, JSON.parse(readFileSync(join(root, 'tools', 'size-ratchet.json'), 'utf8')), baseList(root));
+  const split = problems.length && !onMain(root) ? attribute(problems, found, mainStands(root, problems.map((each) => each.path))) : { main: [], tree: problems };
+  for (const each of split.tree) err(`size-ratchet: ${each.text}`);
+  for (const each of split.main) say(`size-ratchet: main's red, not this tree's: ${each.text}; main stands in it at this size, so it does not fail this tree and stays owed to main`);
+  if (split.tree.length) return 1;
+  say(`size-ratchet: ${split.main.length ? `main's red only (${split.main.length})` : 'clean'} (${Object.keys(found).length} files over the budget, none grown)`);
+  return 0;
+}
+
+function main() {
   const root = dirname(dirname(fileURLToPath(import.meta.url)));
   const listFile = join(root, 'tools', 'size-ratchet.json');
   try {
@@ -120,11 +179,11 @@ async function main() {
       console.log(`size-ratchet: lowered ${cut} entr${cut === 1 ? 'y' : 'ies'} of tools/size-ratchet.json to the tree`);
       return 0;
     }
-    return (await import('./size-ratchet-check.mjs')).checkTree(root, found);
+    return checkTree(root, found);
   } catch (e) {
     console.error(`size-ratchet: ${e.message}`);
     return 2;
   }
 }
 
-if (isMain(import.meta.url)) main().then((code) => { process.exitCode = code; });
+if (isMain(import.meta.url)) process.exitCode = main();

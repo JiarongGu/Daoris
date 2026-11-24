@@ -1,18 +1,15 @@
 /**
- * The size ratchet's check of a merged tree, in scratch repositories on `main` (`tools/size-ratchet-check.mjs`): a landing
+ * The size ratchet's check of a merged tree, in scratch repositories on `main` (`checkTree` in `tools/size-ratchet.mjs`): a landing
  * that leaves a file over its entry is refused, and a red main itself carries is told to a branch begun before it as main's.
  *
- *   node --test tools/size-ratchet-check.test.mjs
+ *   node --test tools/size-ratchet-main.test.mjs
  */
 import assert from 'node:assert/strict';
-import { spawnSync } from 'node:child_process';
-import { fileURLToPath } from 'node:url';
 import { test } from 'node:test';
 import { commitKit, plain } from './commit-checks-kit.mjs';
-import { BUDGET, scanSizes } from './size-ratchet.mjs';
-import { checkTree } from './size-ratchet-check.mjs';
+import { BUDGET, checkTree, scanSizes } from './size-ratchet.mjs';
 
-const { git, put, repository, commit } = commitKit('size-ratchet-check-test');
+const { git, put, repository, commit } = commitKit('size-ratchet-main-test');
 const bigAt = (size) => `${'x'.repeat(size - 1)}\n`;
 const list = (entries) => `${JSON.stringify(entries)}\n`;
 const ok = (done) => assert.equal(done.status, 0, done.stderr);
@@ -94,8 +91,10 @@ test('a landing on a red main that adds nothing to it passes with main\'s red sa
   assert.match(done.said, /main's red, not this tree's: src\/big\.ts/);
 });
 
-test('the tool run as a command settles with a verdict, never hangs on its own import', () => {
-  const ran = spawnSync(process.execPath, [fileURLToPath(new URL('./size-ratchet.mjs', import.meta.url))], { encoding: 'utf8', windowsHide: true });
-  assert.ok(ran.status === 0 || ran.status === 1, `exit ${ran.status}: ${ran.stderr}`);
-  assert.match(ran.stdout + ran.stderr, /^size-ratchet: /m);
+test('a tree begun on a red main, with no commit of its own, is told the red is main\'s too', () => {
+  const dir = brokenMain();
+  ok(git(dir, 'checkout', '-q', '-b', 'fresh'));
+  const done = check(dir);
+  assert.equal(done.code, 0, done.refused);
+  assert.match(done.said, /main's red, not this tree's: src\/big\.ts/);
 });

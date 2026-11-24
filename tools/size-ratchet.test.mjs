@@ -1,8 +1,9 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { BUDGET, checkSizes, lowered, scanSizes, settleStaged, sizeOf } from './size-ratchet.mjs';
+import { BUDGET, breaches, lowered, scanSizes, settleStaged, sizeOf } from './size-ratchet.mjs';
 
 const big = 'x'.repeat(BUDGET + 10);
+const checkSizes = (found, list, base) => breaches(found, list, base).map((each) => each.text);
 
 test('CODESHAPE1: a source file over the budget is found, with its LF size, and the rest are not', () => {
   const files = { 'src/a/Big.cs': big, 'src/a/Small.cs': 'x', 'docs/Big.md': big, 'src/a/obj/Gen.cs': big };
