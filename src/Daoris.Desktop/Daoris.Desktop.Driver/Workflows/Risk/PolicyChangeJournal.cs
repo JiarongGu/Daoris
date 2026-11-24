@@ -18,6 +18,10 @@ public sealed record PolicyChangeLine(
 
     /// <summary>The door and the turn of a change the owner confirmed on their own card in the window.</summary>
     public const string Pressed = "card";
+
+    public const string Window = "window";
+
+    public const string Cli = "cli";
 }
 
 /// <summary>

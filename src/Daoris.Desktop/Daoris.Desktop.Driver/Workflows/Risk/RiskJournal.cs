@@ -88,7 +88,7 @@ public sealed record RiskJudged(
         var by = By is { } role ? $" by `{role}`" : "";
         var differs = Agrees ? "" : " — differs from today";
         var at = At.UtcDateTime.ToString("yyyy-MM-dd HH:mm'Z'", CultureInfo.InvariantCulture);
-        return $"{at} {Stage} {Step ?? Subject} {act}: {Outcome} ({Class}{by}; {Source}, revision {Revision}) — today: {Today}{differs}";
+        return $"{at} {Stage} {Step ?? Subject} {act}: {Outcome} ({Class}{by}) — rule {Source} at {Revision}: {Reason} — today: {Today}{differs}";
     }
 }
 

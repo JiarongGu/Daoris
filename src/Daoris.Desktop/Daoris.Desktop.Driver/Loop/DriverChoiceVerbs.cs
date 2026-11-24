@@ -22,7 +22,7 @@ public static class DriverChoiceVerbs
         new HelpersVerb(),
         new HandOverVerb(),
         new GrowthVerb(),
-        new PlaceRiskVerb { Acts = RiskTable.Of, Verdicts = RiskWhy.Said },
+        new PlaceRiskVerb { Acts = (config, home, now, workspace, repository) => RiskActTable.Lines(RiskActTable.Of(config, home, now, workspace, repository)), Verdicts = RiskWhy.Said },
         new PlaceCastVerb(),
         new RoleVerb(),
         new WorkflowVerb(),
