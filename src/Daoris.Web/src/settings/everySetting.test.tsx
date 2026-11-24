@@ -42,8 +42,8 @@ describe('every machine setting', () => {
     render(
       <Tooltip.Provider>
         <DriverCards
-          facts={{ pluginsFolder: null, notify: true, coolOff: 60, quiet: 10, drain: 10, checks: null, vacancy: 24, manifestFiles: 250000, manifestMinutes: 5, cap: 2, terminal: 'ask' }}
-          minutes={{ cooloff: settingOf('cooloff'), quiet: settingOf('quiet'), drain: settingOf('drain'), manifest: settingOf('manifest'), checks: settingOf('checks'), vacancy: settingOf('vacancy') }}
+          facts={{ pluginsFolder: null, notify: true, coolOff: 60, quiet: 10, drain: 10, checks: null, vacancy: 24, reserve: { gb: null, kept: 21, total: 64, freeCommit: 20, daoris: 3 }, manifestFiles: 250000, manifestMinutes: 5, cap: 2, terminal: 'ask' }}
+          minutes={{ cooloff: settingOf('cooloff'), quiet: settingOf('quiet'), drain: settingOf('drain'), manifest: settingOf('manifest'), checks: settingOf('checks'), vacancy: settingOf('vacancy'), reserve: settingOf('reserve') }}
           busy={{ access: false }}
           onGo={vi.fn()}
           onNotify={vi.fn()}
@@ -52,6 +52,7 @@ describe('every machine setting', () => {
           onDrain={vi.fn()}
           onChecks={vi.fn()}
           onVacancy={vi.fn()}
+          onReserve={vi.fn()}
           onManifest={vi.fn()}
           onCap={vi.fn()}
           onTerminal={vi.fn()}

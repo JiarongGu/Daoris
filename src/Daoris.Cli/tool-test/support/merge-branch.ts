@@ -71,7 +71,7 @@ export interface GateResult {
 /** What a reading of the machine's memory answers, in bytes; null where it cannot be read, and why. */
 export interface Reading { physical: number | null; commit: number | null; total?: number | null; why?: string }
 /** What a run's memory reading is made of, each a stand-in in a test. */
-interface MemoryOptions { read?: () => Reading; sleep?: (ms: number) => Promise<void>; now?: () => number; pollMs?: number; boundMs?: number }
+interface MemoryOptions { read?: () => Reading; reserve?: (total: number | null) => number; sleep?: (ms: number) => Promise<void>; now?: () => number; pollMs?: number; boundMs?: number }
 /** A run's wait for a gate's need of memory, before it starts or runs again. */
 export type MemoryWait = (gate: Gate, options?: { again?: boolean; halted?: () => boolean }) => Promise<void>;
 /** The step trees a run has running, by each step's own pid; `ended` says why once the run ended them. */
@@ -147,6 +147,7 @@ export const tool = await import(
     platform?: string; run?: (command: string, args: string[], options: object) => { status: number | null; stdout?: string; stderr?: string; error?: Error };
     freemem?: () => number; totalmem?: () => number; read?: (path: string) => string;
   }) => Reading;
+  reserveGb: (options?: { total?: number | null; home?: string | null; read?: (path: string) => string }) => number;
   parseWindowsMemory: (text: string) => { physical: number | null; commit: number | null };
   parseMeminfo: (text: string) => { commit: number | null };
   flakeNote: (flakes: GateResult[]) => string;

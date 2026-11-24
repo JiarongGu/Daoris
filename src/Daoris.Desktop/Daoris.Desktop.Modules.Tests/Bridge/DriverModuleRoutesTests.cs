@@ -133,17 +133,17 @@ public sealed partial class DriverModuleRoutesTests
     private static string? DomainOf(string file) =>
         HandlerClass().Match(file) is { Success: true } named ? named.Groups["domain"].Value : null;
 
-    /// <summary>A bridge file that carries a part of its domain's sends under a name of its own, by the domain that answers them.</summary>
-    private static readonly Dictionary<string, string> BridgeSplits = new(StringComparer.OrdinalIgnoreCase)
+    /// <summary>A bridge file that carries a part of its domain's sends under a name of its own, by the domains that answer them.</summary>
+    private static readonly Dictionary<string, string[]> BridgeSplits = new(StringComparer.OrdinalIgnoreCase)
     {
-        ["driverConsiderations.ts"] = "Driver",
-        ["sessionGroups.ts"] = "Sessions",
-        ["sessionHelpers.ts"] = "Sessions",
-        ["gitPush.ts"] = "Git",
-        ["lines.ts"] = "SessionGitAccess",
-        ["supervision.ts"] = "Sessions",
-        ["registry.ts"] = "RegistryPerson", // a folder's excludes, pressed beside the registry's other page calls
-        ["driver.ts"] = "TerminalTier", // the terminal's tier, a machine setting pressed beside the driver's others
+        ["driverConsiderations.ts"] = ["Driver"],
+        ["sessionGroups.ts"] = ["Sessions"],
+        ["sessionHelpers.ts"] = ["Sessions"],
+        ["gitPush.ts"] = ["Git"],
+        ["lines.ts"] = ["SessionGitAccess"],
+        ["supervision.ts"] = ["Sessions"],
+        ["registry.ts"] = ["RegistryPerson"], // a folder's excludes, pressed beside the registry's other page calls
+        ["driver.ts"] = ["TerminalTier", "Reserve"], // the terminal's tier, a machine setting pressed beside the driver's others
     };
 
     [Fact]
@@ -199,7 +199,7 @@ public sealed partial class DriverModuleRoutesTests
             .Where(call => call.File != "shell.ts")
             .Where(call => fileOf.TryGetValue(call.Route, out var file)
                 && !string.Equals($"{DomainOf(file)}.ts", call.File, StringComparison.OrdinalIgnoreCase)
-                && !(BridgeSplits.TryGetValue(call.File, out var split) && string.Equals(split, DomainOf(file), StringComparison.OrdinalIgnoreCase))
+                && !(BridgeSplits.TryGetValue(call.File, out var split) && split.Contains(DomainOf(file)!, StringComparer.OrdinalIgnoreCase))
                 && !(call.File == "help.ts" && string.Equals(DomainOf(file), "HelpFocus", StringComparison.OrdinalIgnoreCase)))
             .Select(call => $"bridge/{call.File} sends `{call.Route}`, answered in {fileOf[call.Route]}");
         Assert.Empty(astray);

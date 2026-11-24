@@ -20,6 +20,8 @@
         "  terminal   ask  (a terminal's press waits for your Confirm in the window, the default — `daoris settings terminal act` runs it at once)",
         "  checks     auto  (as many at once as the memory admits, the default — `daoris settings checks <n>` pins a number)",
         "  vacancy    24 hours before Daoris gives up a step nobody's session answers  (the default — `daoris settings vacancy <hours>` changes it)",
+        "  reserve    21 GB kept free for your own work  (the default, a third of the machine's memory — `daoris settings reserve <gb>|auto` changes it; 0 keeps none)",
+        "             now: 64 GB of memory, 20 GB free commit, Daoris's own processes hold 3 GB",
         "  drivable   nothing — this machine drives no repository, which is the default (D46 §2).",
         "             `daoris place drive <repository>` opts one in.",
         "  language   none set — sessions are asked for no language; `daoris place language <repository> en|zh` sets one",
@@ -51,6 +53,8 @@
         "  terminal   ask  (a terminal's press waits for your Confirm in the window, the default — `daoris settings terminal act` runs it at once)",
         "  checks     auto  (as many at once as the memory admits, the default — `daoris settings checks <n>` pins a number)",
         "  vacancy    24 hours before Daoris gives up a step nobody's session answers  (the default — `daoris settings vacancy <hours>` changes it)",
+        "  reserve    21 GB kept free for your own work  (the default, a third of the machine's memory — `daoris settings reserve <gb>|auto` changes it; 0 keeps none)",
+        "             now: 64 GB of memory, 20 GB free commit, Daoris's own processes hold 3 GB",
         "  drivable   nothing — this machine drives no repository, which is the default (D46 §2).",
         "             `daoris place drive <repository>` opts one in.",
         "  language   none set — sessions are asked for no language; `daoris place language <repository> en|zh` sets one",
@@ -88,6 +92,8 @@
         "  terminal   ask  (a terminal's press waits for your Confirm in the window, the default — `daoris settings terminal act` runs it at once)",
         "  checks     auto  (as many at once as the memory admits, the default — `daoris settings checks <n>` pins a number)",
         "  vacancy    24 hours before Daoris gives up a step nobody's session answers  (the default — `daoris settings vacancy <hours>` changes it)",
+        "  reserve    21 GB kept free for your own work  (the default, a third of the machine's memory — `daoris settings reserve <gb>|auto` changes it; 0 keeps none)",
+        "             now: 64 GB of memory, 20 GB free commit, Daoris's own processes hold 3 GB",
         "  drivable   engine",
         "  drivable   game  (held by you — `daoris place resume` releases it)",
         "  line       engine  develop",
@@ -354,7 +360,9 @@
         "  floor      below the smaller of 10% of a volume and 100 GB free, Daoris tells you  (the default — `daoris settings keep floor …` changes it)",
         "  terminal   ask  (a terminal's press waits for your Confirm in the window, the default — `daoris settings terminal act` runs it at once)",
         "  checks     auto  (as many at once as the memory admits, the default — `daoris settings checks <n>` pins a number)",
-        "  vacancy    24 hours before Daoris gives up a step nobody's session answers  (the default — `daoris settings vacancy <hours>` changes it)"
+        "  vacancy    24 hours before Daoris gives up a step nobody's session answers  (the default — `daoris settings vacancy <hours>` changes it)",
+        "  reserve    21 GB kept free for your own work  (the default, a third of the machine's memory — `daoris settings reserve <gb>|auto` changes it; 0 keeps none)",
+        "             now: 64 GB of memory, 20 GB free commit, Daoris's own processes hold 3 GB"
       ],
       "err": [],
       "after": null,
@@ -384,7 +392,9 @@
         "  floor      below the smaller of 10% of a volume and 100 GB free, Daoris tells you  (the default — `daoris settings keep floor …` changes it)",
         "  terminal   act  (a terminal's press runs at once as yours, listed in Notifications — `daoris settings terminal ask` asks again)",
         "  checks     auto  (as many at once as the memory admits, the default — `daoris settings checks <n>` pins a number)",
-        "  vacancy    24 hours before Daoris gives up a step nobody's session answers  (the default — `daoris settings vacancy <hours>` changes it)"
+        "  vacancy    24 hours before Daoris gives up a step nobody's session answers  (the default — `daoris settings vacancy <hours>` changes it)",
+        "  reserve    21 GB kept free for your own work  (the default, a third of the machine's memory — `daoris settings reserve <gb>|auto` changes it; 0 keeps none)",
+        "             now: 64 GB of memory, 20 GB free commit, Daoris's own processes hold 3 GB"
       ],
       "err": [],
       "after": "{\n  \"cap\": 3,\n  \"notify\": false,\n  \"cooloff\": 45,\n  \"quietMinutes\": 15,\n  \"drainMinutes\": 20,\n  \"manifest\": {\n    \"files\": 5000,\n    \"minutes\": 2\n  },\n  \"terminal\": \"act\"\n}\n",
@@ -759,6 +769,80 @@
       "out": [],
       "err": [
         "daoris: how long a step may stand vacant is a whole number of hours from 1 to 720 — e.g. `daoris settings vacancy 24`."
+      ],
+      "after": null
+    },
+    {
+      "name": "reserve",
+      "argv": [
+        "reserve",
+        "24"
+      ],
+      "before": null,
+      "exit": 0,
+      "out": [
+        "daoris: a heavy run, a check or a build starts only while 24 GB stays free for your own work after its own need.",
+        "  Written to <config> — read at the next look, so nothing restarts."
+      ],
+      "err": [],
+      "after": "{\n  \"reserveGb\": 24\n}\n"
+    },
+    {
+      "name": "reserve with no value says it and how the machine stands",
+      "argv": [
+        "reserve"
+      ],
+      "before": "{\n  \"reserveGb\": 24\n}\n",
+      "exit": 0,
+      "out": [
+        "daoris: <config>",
+        "  reserve    24 GB kept free for your own work  (set — `daoris settings reserve <gb>|auto` changes it; 0 keeps none)",
+        "             now: 64 GB of memory, 20 GB free commit, Daoris's own processes hold 3 GB"
+      ],
+      "err": [],
+      "after": "{\n  \"reserveGb\": 24\n}\n"
+    },
+    {
+      "name": "reserve auto",
+      "argv": [
+        "reserve",
+        "auto"
+      ],
+      "before": "{\n  \"reserveGb\": 24\n}\n",
+      "exit": 0,
+      "out": [
+        "daoris: a heavy run, a check or a build starts only while a third of this machine's memory stays free for your own work after its own need.",
+        "  Written to <config> — read at the next look, so nothing restarts."
+      ],
+      "err": [],
+      "after": "{}\n"
+    },
+    {
+      "name": "reserve 0",
+      "argv": [
+        "reserve",
+        "0"
+      ],
+      "before": null,
+      "exit": 0,
+      "out": [
+        "daoris: this machine keeps no memory back for your own work: a heavy run, a check or a build waits only for its own need.",
+        "  Written to <config> — read at the next look, so nothing restarts."
+      ],
+      "err": [],
+      "after": "{\n  \"reserveGb\": 0\n}\n"
+    },
+    {
+      "name": "reserve out of its bounds",
+      "argv": [
+        "reserve",
+        "-3"
+      ],
+      "before": null,
+      "exit": 2,
+      "out": [],
+      "err": [
+        "daoris: what the machine keeps free for your own work is auto or a whole number of GB from 0 to 1024 — e.g. `daoris settings reserve auto` or `daoris settings reserve 24`."
       ],
       "after": null
     },

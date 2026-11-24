@@ -2,8 +2,8 @@ using System.Runtime.InteropServices;
 
 namespace Daoris.Driver;
 
-/// <summary>The machine's free memory, read once, in bytes: free physical memory and free commit, each null where it cannot be read.</summary>
-public sealed record MemoryReading(long? Physical, long? Commit)
+/// <summary>The machine's memory, read once, in bytes: free physical memory, free commit (each null where unread) and the total physical memory.</summary>
+public sealed record MemoryReading(long? Physical, long? Commit, long? Total = null)
 {
     /// <summary>The lower of the two read, or null where neither reads.</summary>
     public long? Least => Physical is { } physical && Commit is { } commit ? Math.Min(physical, commit) : Physical ?? Commit;
@@ -25,7 +25,7 @@ public static class MachineMemory
             if (OperatingSystem.IsWindows())
             {
                 var status = new MemoryStatusEx { Length = (uint)Marshal.SizeOf<MemoryStatusEx>() };
-                return GlobalMemoryStatusEx(ref status) ? new MemoryReading((long)status.AvailPhys, (long)status.AvailPageFile) : null;
+                return GlobalMemoryStatusEx(ref status) ? new MemoryReading((long)status.AvailPhys, (long)status.AvailPageFile, (long)status.TotalPhys) : null;
             }
 
             if (OperatingSystem.IsLinux()) return Meminfo(File.ReadAllText("/proc/meminfo"), Strict(() => File.ReadAllText("/proc/sys/vm/overcommit_memory")));
@@ -64,8 +64,9 @@ public static class MachineMemory
         }
 
         var physical = Field("MemAvailable");
+        var total = Field("MemTotal");
         var commit = strict && Field("CommitLimit") is { } limit && Field("Committed_AS") is { } committed ? Math.Max(0, limit - committed) : (long?)null;
-        return physical is null && commit is null ? null : new MemoryReading(physical, commit);
+        return physical is null && commit is null ? null : new MemoryReading(physical, commit, total);
     }
 
     [StructLayout(LayoutKind.Sequential)]
