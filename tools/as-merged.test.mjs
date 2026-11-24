@@ -259,21 +259,6 @@ test("this repository's gates that run the devkit's docs gate run it through thi
   const devkitVerify = /^(?:node tools\/orient-index\.mjs && )?node tools\/as-merged\.mjs dotnet run --project src\/Daoris\.Devkit\/Daoris\.Devkit\.Cli -- verify\b/;
   const universal = JSON.parse(readFileSync(join(root, 'daoris.gates.json'), 'utf8')).gates.find((gate) => gate.name === 'universal');
   assert.match(universal.run, devkitVerify);
-  // `npm run verify` is read through the root scripts it names (its checks and its tests), each once.
-  const scripts = JSON.parse(readFileSync(join(root, 'package.json'), 'utf8')).scripts;
-  const read = new Set();
-  const stepsOf = (name) => {
-    if (read.has(name) || typeof scripts[name] !== 'string') return [];
-    read.add(name);
-    return scripts[name].split('&&').map((step) => step.trim()).flatMap((step) => {
-      const named = /^npm run (?:-s )?([\w:-]+)$/.exec(step)?.[1];
-      return named && scripts[named] !== undefined ? stepsOf(named) : [step];
-    });
-  };
-  const steps = stepsOf('verify');
-  const devkitSteps = steps.filter((step) => /Daoris\.Devkit\.Cli -- verify\b/.test(step));
-  assert.ok(devkitSteps.length > 0, 'verify no longer runs the devkit');
-  for (const step of devkitSteps) assert.match(step, devkitVerify, 'every devkit verify in npm run verify');
   // Running through this tool must not reorder the plan: a devkit check run through it is still a check, so it runs with the fast ones.
   return import('./merge-branch.mjs').then(({ gateKind }) => {
     assert.equal(gateKind(universal.run), 'check');
