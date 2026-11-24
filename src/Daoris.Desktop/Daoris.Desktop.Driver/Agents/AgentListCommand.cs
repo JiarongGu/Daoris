@@ -171,7 +171,7 @@ internal static class AgentListCommand
     /// and last reading under it, the tool's own sign-in's cool-off and reading, each list with how it is used and its next
     /// start, and, where a start would otherwise reach the person's own sign-in, that Daoris starts none there.
     /// </summary>
-    private static List<string> AccountLines(
+    internal static List<string> AccountLines(
         string name, AccountAgent toolchain, HarnessReport report, HarnessSettings settings, string home, ProviderRegistry set,
         DateTimeOffset now, TimeZoneInfo zone)
     {
@@ -198,6 +198,13 @@ internal static class AgentListCommand
             foreach (var cooled in AgentAccountLines.CoolingLinesOf(cooling, owner, profile.Name, now, zone))
             {
                 lines.Add($"{Under}{gap} {cooled}");
+            }
+
+            // A sign-out a write of its store made says who held the account, where the watch could tell.
+            if (profile.Key is null && profile.Login == LoginState.Out
+                && AccountReads.Of(home, owner).Accounts.GetValueOrDefault(profile.Name) is { By: { } by, Login: LoginState.Out } signedOut)
+            {
+                lines.Add($"{Under}{gap} {AgentAccountLines.SignedOutBy(by, signedOut.Since ?? signedOut.At, zone)}");
             }
 
             // What its agent last said about its windows, and how long ago: a reading, never a judgement.

@@ -14785,3 +14785,28 @@ write in flight holds a start until it is gone; each write to a real Claude stor
 the rule; a store open for writing still reads. Run filtered with `SignInRefreshTests` and `LookAccountTests`: 12 passed.
 `LookAccountTests.A_look_over_many_runs_is_said_whole_by_its_stages_and_reads_each_run_once` failed once in the reached-checks
 run on parsing a stage word (`other:3/9837ms[...]`), not touched by this change, and passed alone.
+
+## A store emptied by a write read signed in for hours on the page and the list (2026-11-24, SIGNOUTSEEN1)
+
+**Symptom.** On 2026-11-24 at 05:10:15Z the credentials watch logged account-1's store renamed with its access and refresh tokens
+empty (running 0, no session on it), yet the Agents page and `daoris agent list` read the account signed in from an hours-old
+reading until the person found it out and signed in again at 06:54Z.
+
+**Root cause.** A sign-out was only ever made by a reader: a look's `StoredSignIns.Read` (95227f0361, CREDRACE1's renewal) or a
+status question. The watch that saw the write (SIGNOUTRACE1, 7cd3514fd0) only logged it, so every place that shows the state waited
+for a reader that did not come in time. The install's log for the window shows the looks after 05:10:15Z ran (`watch.looked` with a
+`stored-sign-ins` stage, none failed) and says no `read signed out` event all day, so the look's read did not mark the account; why
+is not established. Its writes of the store each show a `deleted` line then a `renamed` one within 5 ms, and the sign-in at 06:54Z
+wrote full tokens at once with no empty store first.
+
+**Fix.** A write of the store is a reading when it lands (`CredentialWrites.Marked`, through `StoredSignIns.MarkOut` and `MarkIn`):
+both tokens empty marks the account signed out and claims its notice, a store filled after the watch saw it cleared marks it signed
+in, a refresh into a store that had tokens and a file with no bytes mark nothing. The reading (`AccountRead.By`, `reads.json`'s `by`)
+and the `credentials.written` line (`by`, `marked`) say who was at the account (`SignInCause`: Daoris's sign-in by `SignInMarks`, a
+probe by its lock, a session running or starting, else outside Daoris); the page's row and the CLI list word it. Left: see it on the
+install's next sign-out.
+
+**Verification.** `SignOutSeenTests` (8, written first, red before the code): a store emptied by a write reads signed out with a cause
+and a notice; the four causes; the cause kept in `reads.json`; a filled store reads signed in; a refresh's write undoes no refusal;
+an empty file marks nothing; the look's read names no cause. `SignOutRaceTests` and the sign-in, reads, probe and look tests (145)
+pass; `signInState.test.ts` (9) passes.

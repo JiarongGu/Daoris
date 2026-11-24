@@ -37,6 +37,13 @@ public static class SignOutNotices
         return occurrences;
     }
 
+    /// <summary>Tell every sign-out within <see cref="Reach"/> not told yet, for the look and the credentials watch; how many.</summary>
+    public static int Claim(string home, DateTimeOffset now)
+    {
+        var occurrences = Occurrences(home, now);
+        return occurrences.Count == 0 ? 0 : new News(home).Claim(Teller, occurrences, null, now).Told.Count;
+    }
+
     /// <summary>
     /// The notice a state makes, or null for one that is no sign-out the person did not make, or older than the reach. Its
     /// <see cref="Notice.Act"/> is the person's name for the account where they gave one, as the page names it.

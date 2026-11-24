@@ -15,11 +15,17 @@ namespace Daoris.Driver;
 /// <para><b>How</b>: one watcher per account home, kept by each look (<see cref="Follow"/>), each on the home's own folder alone (an
 /// agent's home holds its transcripts, which a recursive watch would drown in). A provider declares the store's name and the files of
 /// its writes (<see cref="IStoredSignIn.FileName"/>, <see cref="IStoredSignIn.LeftoverPattern"/>); one that declares none is not watched.</para>
+/// <para>🔴 <b>A write is a reading</b>: both tokens empty marks the account signed out at once, a fill of a store this watch saw cleared
+/// marks it signed in (<see cref="StoredSignIns"/>), naming who held the account (<see cref="SignInCause"/>); a file with no bytes marks nothing.</para>
 /// </remarks>
 internal sealed class CredentialWrites(HarnessRoster roster, Action<AccountLine> say) : IDisposable
 {
     private readonly object _gate = new();
     private readonly Dictionary<string, FileSystemWatcher> _watchers = new(StringComparer.OrdinalIgnoreCase);
+
+    // Whether each home's store read cleared at the last sight: a fill is a sign-in only after a clear.
+    private readonly Dictionary<string, bool> _cleared = new(StringComparer.OrdinalIgnoreCase);
+    private readonly object _mark = new();
     private bool _said;
     private bool _disposed;
 
@@ -58,12 +64,16 @@ internal sealed class CredentialWrites(HarnessRoster roster, Action<AccountLine>
             {
                 _watchers[home].Dispose();
                 _watchers.Remove(home);
+                lock (_mark) _cleared.Remove(home);
             }
 
             foreach (var (home, each) in wanted)
             {
-                if (_watchers.ContainsKey(home) || Watch(home, each.Agent, each.Account, each.Store) is not { } watcher) continue;
+                if (_watchers.ContainsKey(home)) continue;
+                var seen = each.Store.Read(home)?.Cleared;
+                if (Watch(home, each.Agent, each.Account, each.Store) is not { } watcher) continue;
                 _watchers[home] = watcher;
+                if (seen is { } cleared) lock (_mark) _cleared[home] = cleared;
             }
 
             if (_watchers.Count > 0 && !_said) first = _said = true;
@@ -113,14 +123,27 @@ internal sealed class CredentialWrites(HarnessRoster roster, Action<AccountLine>
     private void Said(string folder, string agent, string account, IStoredSignIn store, string? name, string change)
     {
         if (Kind(store, name) is not { } file) return;
-        bool? empty = null, access = null, refresh = null;
+        try
+        {
+            Write(folder, agent, account, store, name!, file, change);
+        }
+        catch (Exception error) when (error is IOException or UnauthorizedAccessException or TimeoutException or InvalidOperationException)
+        {
+            // A watcher's thread never throws: a write not read is read at the look, as before.
+        }
+    }
+
+    private void Write(string folder, string agent, string account, IStoredSignIn store, string name, string file, string change)
+    {
+        bool? empty = null;
+        StoredSignInShape? shape = null;
         if (change is not ("deleted" or "renamed-away"))
         {
             try
             {
-                var path = Path.Combine(folder, name!);
+                var path = Path.Combine(folder, name);
                 empty = new FileInfo(path).Length == 0;
-                if (empty == false && store.ReadFile(path) is { } shape) (access, refresh) = (shape.Access, shape.Refresh);
+                if (empty == false) shape = store.ReadFile(path);
             }
             catch (Exception error) when (error is IOException or UnauthorizedAccessException)
             {
@@ -134,7 +157,28 @@ internal sealed class CredentialWrites(HarnessRoster roster, Action<AccountLine>
             if (_disposed) return;
         }
 
-        say(AccountLine.CredentialsWritten(agent, account, file, change, empty, access, refresh, running, starting));
+        var by = SignInCause.Of(roster, agent, account, running.Count, starting);
+        var marked = file == "store" && shape is not null ? Marked(folder, agent, account, shape, by) : null;
+        say(AccountLine.CredentialsWritten(agent, account, file, change, empty, shape?.Access, shape?.Refresh, running, starting, by, marked));
+    }
+
+    /// <summary>The store as a write left it, read as the account's sign-in: <c>out</c> or <c>in</c> where it marked one, else null.</summary>
+    private string? Marked(string folder, string agent, string account, StoredSignInShape shape, string by)
+    {
+        lock (_mark)
+        {
+            var wasCleared = _cleared.TryGetValue(folder, out var seen) && seen;
+            _cleared[folder] = shape.Cleared;
+            if (shape.Cleared)
+            {
+                if (!StoredSignIns.MarkOut(roster, agent, account, shape, by)) return null;
+                // Told now, not at the next look; one made during Daoris's own sign-in waits to see whether the sign-in fills it.
+                if (by != SignInCause.SignIn) SignOutNotices.Claim(roster.Home, roster.Clock());
+                return "out";
+            }
+
+            return wasCleared && shape is { Access: true, Refresh: true } && StoredSignIns.MarkIn(roster, agent, account) ? "in" : null;
+        }
     }
 
     public void Dispose()

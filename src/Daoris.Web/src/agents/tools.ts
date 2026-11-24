@@ -173,8 +173,11 @@ export interface Account {
   settings?: AccountSettings | null;
   /** When its state is last read; null where it never is, and left out where it has none. */
   read?: string | null;
-  signIn?: { state: 'in' | 'out' | 'unanswered' | 'unread'; since: string | null; notByPerson: boolean } | null;
+  signIn?: { state: 'in' | 'out' | 'unanswered' | 'unread'; since: string | null; notByPerson: boolean; by?: SignOutCause | null } | null;
 }
+
+/** Who held an account when a write emptied its store: the driver's `SignInCause`. */
+export type SignOutCause = 'session' | 'probe' | 'sign-in' | 'outside';
 
 /** How a sheet's row is known: absent is a statement, and its fallback applies. */
 export type SheetSource = 'declared' | 'negotiated' | 'measured' | 'absent';

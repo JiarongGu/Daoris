@@ -224,6 +224,7 @@ internal static class AgentLoginCommand
         private async Task<int> RunAsync(string where)
         {
             int code;
+            using var marked = SignInMarks.Begin(where);
             try
             {
                 code = await HarnessActions.TerminalRunAsync(

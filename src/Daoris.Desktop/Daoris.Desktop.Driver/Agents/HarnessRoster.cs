@@ -217,7 +217,7 @@ public sealed class HarnessRoster(ProviderRegistry adapters, string? settingsPat
     public Task BinaryChangedAsync(string adapter, DriverConfig config, CancellationToken ct = default)
         => Reporting.BinaryChangedAsync(adapter, config, ct);
 
-    internal void Keep(string owner, string? account, LoginRead said, DateTimeOffset at) => Cooling.Keep(owner, account, said, at);
+    internal void Keep(string owner, string? account, LoginRead said, DateTimeOffset at, string? by = null) => Cooling.Keep(owner, account, said, at, by);
 
     /// <inheritdoc cref="RosterCooling.Removed"/>
     public void Removed(string agent, string account) => Cooling.Removed(agent, account);

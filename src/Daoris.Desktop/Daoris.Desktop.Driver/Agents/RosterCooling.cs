@@ -274,7 +274,7 @@ internal sealed class RosterCooling(HarnessRoster roster)
     /// restart starts from it; who, the organisation and the plan, in memory alone. A reading not
     /// written costs a restart's knowledge, never the answer.
     /// </summary>
-    internal void Keep(string owner, string? account, LoginRead said, DateTimeOffset at)
+    internal void Keep(string owner, string? account, LoginRead said, DateTimeOffset at, string? by = null)
     {
         var login = said.Login;
         roster._who[HarnessRoster.AccountKey(owner, account)] = (at, login == LoginState.In ? said : new LoginRead(login, null));
@@ -284,7 +284,7 @@ internal sealed class RosterCooling(HarnessRoster roster)
         if (login == LoginState.In && said.Plan is { Length: > 0 } plan) AccountWindows.Planned(roster.Home, owner, account ?? AccountWindows.Own, plan);
         try
         {
-            AccountReads.Keep(roster.Home, owner, account, login, at);
+            AccountReads.Keep(roster.Home, owner, account, login, at, by);
         }
         catch (Exception error) when (error is IOException or UnauthorizedAccessException)
         {
