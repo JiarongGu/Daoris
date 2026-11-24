@@ -50,8 +50,8 @@ test('the tree baseline is the home\'s, the declaration\'s where the home keeps 
 });
 
 test('a test set\'s per-test timeout is the home\'s, the declaration\'s where the home keeps none, none where neither does', () => {
-  assert.equal(setTimeoutOf({ sets: { 'merge-unit': { timeoutMs: 4000 } } }, 'merge-unit', 10_000), 4000);
-  assert.equal(setTimeoutOf({}, 'merge-unit', 10_000), 10_000);
+  assert.equal(setTimeoutOf({ sets: { 'merge-unit': { timeoutMs: 123_456 } } }, 'merge-unit', 9_999), 123_456);
+  assert.equal(setTimeoutOf({}, 'merge-unit', 9_999), 9_999);
   assert.equal(setTimeoutOf({ sets: { other: { timeoutMs: 1 } } }, 'merge-unit', undefined), undefined);
   assert.equal(setTimeoutOf({ sets: { 'merge-unit': { timeoutMs: -1 } } }, 'merge-unit', 7), 7, 'a value that is no positive number is none');
 });
