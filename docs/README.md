@@ -55,6 +55,7 @@ holds remaining work (D127/D159). Paths are relative to this file. Historical do
 |`2026-11-19-window-design.md`|Design (decided, D330 to D345): the window redesign (UIDS, UISH, UISE, UIWF, UIRP, UIST), one frame contract, six places, the owner's waits on one card, acts any actor can be given, the design language and library, every screen group, and 117 rows in ten waves
 |`2026-11-18-session-view-design.md`|Design (proposed, D320): SESSIONVIEW1, a session's whole surface as one panel: one timeline between its state and track above and its live band and waits dock below; the event envelope its sub-agents and background tasks need
 |`2026-11-13-layers-design.md`|Design (settled, D286): LAYERS1, ports and adapters: the application on ports, each adapter a package pinned by fingerprint, its dependency tests run only when it moves
+|`2026-11-24-account-plan-evidence.md`|Evidence: ACCOUNTPLAN1, what Claude Code and Codex each say of an account's plan and its size, measured 2026-11-24
 |`2026-11-13-performance-matrix.md`|Specification: PERFMATRIX1 performance budgets and receipts; RCASE1 installed real-case catalogue
 
 ## Driver, sessions, sharing and landing contracts
