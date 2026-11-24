@@ -128,7 +128,7 @@ public static class RiskDeclarationHolds
     {
         RiskHold Hold(DeclarationOwed each, bool held) =>
             new($"{Domain}:{each.Repository}@{each.Blob}", "declaration", DeclarationVerdicts.Act, $"line:{each.Line}",
-                RiskPlace.Of(config, each.Workspace, each.Repository), $"{each.Repository}'s daoris.gates.json at {each.Blob[..Math.Min(12, each.Blob.Length)]}{Units(each)}",
+                DeclarationVerdicts.Place(config, each.Workspace, each.Repository), $"{each.Repository}'s daoris.gates.json at {each.Blob[..Math.Min(12, each.Blob.Length)]}{Units(each)}",
                 held ? "Waiting on the yes its verdict names." : "Accepted as it lands: the risk policy passes it.", held);
 
         var automatic = passed.Select(each => $"{Domain}:{each.Repository}@{each.Blob}").ToHashSet(StringComparer.Ordinal);

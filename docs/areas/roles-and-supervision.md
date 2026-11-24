@@ -321,7 +321,7 @@ in a file of its name; `docs/index/README.md` says where a seam, route, verb or 
     (`Settings/`), so the review's second opinion speaks them and reaches the judge through a port Workflows installs (`IOpinionRisk`). For an act the narrowest place with a row decides, a qualified row over its kind's and a row keyed
     by the place's access mode over one keyed by none; then `placeRisk` read through (a place whose level stands at `high` reads every
     kind at `owner`, a `release.production` mark `release.start/production` at `owner`); then the seed: `none`, but `reach.widen` (`role`
-    by the place's approver under restricted access), `command.change` (`owner` under restricted access), `history.rewrite`, `data.delete`
+    by the place's approver under restricted access), `command.change` (`owner` under restricted access; it reads its place by its reach, whether the permission prompts resolve `unrestricted`, which full access gives and that pause alone does too, `RiskPlace.Reaching`; every other act reads the place by full access alone), `history.rewrite`, `data.delete`
     and `policy.change` (`owner`); `policy.change` is fixed whatever a row says. An absent record reads as the seed; one that does not read
     reads every act at `owner` with its fault said; a class the build does not know reads `owner`; a row naming no kind of the census is
     named and not read. Beside each hold today's gates open and release (a run step's unchecked done, Accept, approval, go-ahead and

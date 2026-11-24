@@ -19,7 +19,10 @@ public static class DeclarationVerdicts
 
     /// <summary>The verdict on a command change at <paramref name="repository"/>'s place under <paramref name="config"/>, <paramref name="subject"/> what changes.</summary>
     public static RiskVerdict Judge(DriverConfig config, string repository, string? workspace, string actor, string subject) =>
-        RiskGate.Judge(RiskPolicy.Of(config), Act, actor, RiskPlace.Of(config, workspace, repository), subject);
+        RiskGate.Judge(RiskPolicy.Of(config), Act, actor, Place(config, workspace, repository), subject);
+
+    /// <summary>The place a command change is judged at: read by its reach, the permission prompts.</summary>
+    public static RiskPlace Place(DriverConfig config, string? workspace, string? repository) => RiskPlace.Of(config, workspace, repository).Reaching();
 
     /// <summary>
     /// The verdicts on <paramref name="changed"/>, each with its digest in <paramref name="digests"/> (the line's units), asked of the policy

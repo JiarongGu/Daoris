@@ -91,6 +91,23 @@ public sealed class RiskGateTests
     }
 
     [Fact]
+    public void A_place_with_only_its_prompts_unrestricted_is_restricted_for_every_act_but_a_command_change()
+    {
+        var config = DriverConfig.Empty.WithAccess(new AccessEdit { Repository = "app", Set = [new(AccessRules.Permissions, AccessRules.Unrestricted)] });
+        var place = RiskPlace.Of(config, "work", "app");
+        var policy = Policy("""
+            { "risk": { "repository/app": [
+              { "kind": "work.done", "class": "owner", "mode": "restricted" }, { "kind": "work.accept", "class": "owner", "mode": "full" } ] } }
+            """);
+
+        Assert.Equal(("restricted", RiskClasses.Owner), (place.Mode, Judge(policy, RiskActs.WorkDone, place).Class));
+        Assert.Equal(RiskClasses.None, Judge(policy, RiskActs.WorkAccept, place).Class);
+        Assert.Equal(RiskClasses.Role, Judge(policy, RiskActs.ReachWiden, place).Class);
+        Assert.Equal(RiskClasses.None, Judge(policy, RiskActs.CommandChange, place.Reaching()).Class);
+        Assert.Equal(RiskClasses.Owner, Judge(policy, RiskActs.CommandChange, RiskPlace.Of(DriverConfig.Empty, "work", "app").Reaching()).Class);
+    }
+
+    [Fact]
     public void An_unreadable_record_reads_every_act_at_the_owner_and_says_its_fault()
     {
         foreach (var broken in new[] { """{ "risk": [] }""", """{ "risk": { "machine": { "kind": "work.done" } } }""", """{ "risk": { "machine": [ { "kind": "work.done" } ] } }""", """{ "risk": { "galaxy/far": [] } }""", """{ "risk": { "machine": [ { "kind": "work.done", "class": "none", "mode": "sideways" } ] } }""" })

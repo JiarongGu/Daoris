@@ -170,12 +170,12 @@ public static class AccessRules
         var sources = access.Pauses.Select(pause => pause.Source).Distinct(StringComparer.Ordinal).ToList();
         if (access.Today && sources is [DefaultSource]) return $"Access setup: today's defaults — {values}.";
         if (access.Full && sources is [var one]) return $"Access setup: full access, set for {Whose(one)} — {values}.";
-        if (TakesDeclarations(access)) return "Access setup: " + string.Join(", ", access.Pauses.Select(pause => $"{pause.Pause} {pause.Value} ({Whose(pause.Source)})")) + "; its declaration's commands are taken without asking.";
+        if (PromptsOnlyUnrestricted(access)) return "Access setup: " + string.Join(", ", access.Pauses.Select(pause => $"{pause.Pause} {pause.Value} ({Whose(pause.Source)})")) + "; its permission prompts are unrestricted.";
         return "Access setup: " + string.Join(", ", access.Pauses.Select(pause => $"{pause.Pause} {pause.Value} ({Whose(pause.Source)})")) + ".";
     }
 
-    /// <summary>Whether the setup is not full access but its permissions are unrestricted, so a declaration's commands are taken without asking (<see cref="DeclarationMode"/>).</summary>
-    public static bool TakesDeclarations(ResolvedAccess access) => !access.Full && access.Value(Permissions) == Unrestricted;
+    /// <summary>Whether the setup is not full access but its permission prompts are unrestricted, which is the reach a command change reads (<see cref="DeclarationMode"/>).</summary>
+    public static bool PromptsOnlyUnrestricted(ResolvedAccess access) => !access.Full && access.Value(Permissions) == Unrestricted;
 
     /// <summary>
     /// What a driven start's transcript notes of its setup, once its record is open: nothing where every pause is today's behaviour, so

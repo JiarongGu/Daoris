@@ -119,7 +119,7 @@ public sealed class IntegrationOwedGitTests : IAsyncLifetime
         var said = await DeclarationAcceptance.AcceptPassedAsync(_home, configPath, byMode, CancellationToken.None);
 
         Assert.Equal(
-            "engine's checks changed on main: added `comments`; they run from now on (passed by the risk policy: under full access the seed classes it `none` (rule seed at seed)).",
+            "engine's checks changed on main: added `comments`; they run from now on (passed by the risk policy: where its harness's reach is full the seed classes it `none` (rule seed at seed)).",
             said);
         Assert.Equal(second, IntegrationAcceptance.Of(DriverConfig.Load(configPath), "engine"));
         var restricted = Choices(first);
@@ -151,7 +151,7 @@ public sealed class IntegrationOwedGitTests : IAsyncLifetime
         unrestricted.Save(configPath);
         var said = await DeclarationAcceptance.AcceptPassedAsync(_home, configPath, taken, CancellationToken.None);
         Assert.Equal(
-            "engine's checks changed on main: changed `build`; they run from now on (passed by the risk policy: under full access the seed classes it `none` (rule seed at seed)).",
+            "engine's checks changed on main: changed `build`; they run from now on (passed by the risk policy: where its harness's reach is full the seed classes it `none` (rule seed at seed)).",
             said);
         Assert.Equal(second, IntegrationAcceptance.Of(DriverConfig.Load(configPath), "engine"));
     }
@@ -218,6 +218,47 @@ public sealed class IntegrationOwedGitTests : IAsyncLifetime
         Assert.Equal(["gate:build"], row.ChangedUnits);
         Assert.Equal(("gate:build", RiskVerdict.OwnerOutcome), (one.Unit, one.Verdict.Outcome));
         Assert.Equal(DeclarationUnits.Of(Moved)!["gate:build"], one.Digest);
+    }
+
+    /// <summary>The journal holds the verdict of a taken declaration and of a held one, each naming its unit and digest.</summary>
+    [Fact]
+    public async Task The_journal_names_the_verdict_and_the_unit_digest_of_a_taken_and_of_a_held_declaration()
+    {
+        const string Command = """{ "gates": [ { "name": "build", "run": "dotnet build -c Release" } ], "integration": { "by": "daoris" } }""";
+        var first = await CommitAsync(Build);
+        await CommitAsync(Command);
+        var digest = DeclarationUnits.Of(Command)!["gate:build"][..12];
+        var owed = new IntegrationOwed();
+        await owed.LookAsync(Choices(first), Registry, _now, CancellationToken.None);
+        var shadow = new RiskShadow(_home, () => _now);
+
+        RiskDeclarationHolds.Shadow(shadow, owed, Choices(first));
+        var held = Assert.Single(RiskJournal.Read(_home));
+        Assert.Equal((RiskVerdict.OwnerOutcome, true), (held.Outcome, held.TodayHeld));
+        Assert.Contains($"`build` {digest}", held.Subject, StringComparison.Ordinal);
+
+        var elsewhere = Path.Combine(_home, "taken");
+        var passing = WithRisk(Choices(first), """{ "repository/engine": [ { "kind": "command.change", "class": "none" } ] }""");
+        RiskDeclarationHolds.Shadow(new RiskShadow(elsewhere, () => _now), owed, passing);
+        var taken = Assert.Single(RiskJournal.Read(elsewhere));
+        Assert.Equal((RiskVerdict.Pass, false, "repository/engine"), (taken.Outcome, taken.TodayHeld, taken.Source));
+        Assert.Contains($"`build` {digest}", taken.Subject, StringComparison.Ordinal);
+    }
+
+    /// <summary>A path-only change on a full-access line is kept as it lands, in the keep's sentence, never taken or owed.</summary>
+    [Fact]
+    public async Task A_change_of_no_command_on_a_full_access_line_is_kept_and_not_taken()
+    {
+        var first = await CommitAsync(Build);
+        await CommitAsync("""{ "gates": [ { "name": "build", "run": "dotnet build", "paths": ["src/"] } ], "integration": { "by": "daoris" } }""");
+        var full = Choices(first).WithAccess(new AccessEdit { Repository = "engine", Full = true });
+        var owed = new IntegrationOwed();
+
+        await owed.LookAsync(full, Registry, _now, CancellationToken.None);
+
+        Assert.Empty(owed.Under(full));
+        Assert.Empty(owed.Passed(full));
+        Assert.Single(owed.Kept(full));
     }
 
     [Fact]

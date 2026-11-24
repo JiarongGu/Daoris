@@ -162,7 +162,7 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
    waits only where the risk policy classes `command.change` at the repository's place (D354 point 9): the judge's verdict on each changed
    unit's digest (`DeclarationVerdicts`, one per unit, subject the unit and its digest), the seed `none` where the place's permission
    prompts resolve `unrestricted` (full access gives that, at whichever level) and `owner` otherwise, a row of the policy changing either
-   (`RiskPlace.Full` is that reach, so a row keyed by a mode reads it). The check, the line's acceptance, the held checks' rerun and the
+   (a command change reads its place by that reach, `RiskPlace.Reaching`, so a row keyed by a mode reads it there; every other act reads full access alone). The check, the line's acceptance, the held checks' rerun and the
    window ask the one verdict (`DeclarationMode`, through the port `IDeclarationRisk` the judge's side installs; a driver file that does
    not read, or a policy that does not, reads at the owner). Where every unit passes, the declaration is accepted as it lands (`IntegrationOwed.Passed`,
    `DeclarationAcceptance.AcceptPassedAsync`, judged again under the file's lock against the policy it holds: the look says the checks
