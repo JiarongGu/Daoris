@@ -203,8 +203,9 @@ where a seam, route, verb or fixture is. Which folder owns which job:
     ahead of any other account's room), then most room in the tightest window the provider reported
     (rooms within five points tie; no number ranks as no room; not under `switch: off`), then fewest of Daoris's sessions running,
     then most room under the curve, then least recently started, then the order. Every room there is in the plan's own units
-    (`AccountFacts.Units`: points times the plan's declared size, one where its agent declares none), so the same share of a larger
-    plan is more room; a near account's standing stays the pace curve's, which is a share of the window. Under `order` the
+    (`AccountFacts.Units`: points times the plan's declared size, one where its agent declares none; the five-point band is of the
+    share, then scaled), so the same share of a larger plan is more room; a near account's standing stays the pace curve's, which is
+    a share of the window. A running session's move by the curve picks its target in the same units (`SwitchCandidate.Units`). Under `order` the
     list is the walk, a near account last. The cap is one number per machine. (D130, D165, D197)
 30. A cooling account is held first, by a file read, before any probe. A model family's cool-off holds a start whose model names
     that family (`opus` in `claude-opus-4-5`) or runs at account default, and passes one naming another (`held.cooling-model`);
@@ -254,8 +255,8 @@ where a seam, route, verb or fixture is. Which folder owns which job:
     over. (D57, D165)
     The plan is one field of every usage reading (`UsageAnswer.Plan`), the agent's own word and never a credential's value or who
     signed in: Claude's `subscription_type` and the status's tier (`max_5x`, `max_20x`), Codex's `planType`; an agent that names none
-    leaves it unknown. It is kept beside the account's windows (`AccountWindows.Planned`; a bare type never replaces the tier that
-    names it more exactly), shown beside the account in `agent list` and the roster, and sized by the provider's `PlanSizes` where its
+    leaves it unknown. A tier and its type are one plan (`PlanWords`): the history's binding epoch does not turn on them, and a bare
+    type never replaces the tier that names it more exactly. It is kept beside the account's windows (`AccountWindows.Planned`), shown beside the account in `agent list` and the roster, and sized by the provider's `PlanSizes` where its
     word states one (`ClaudePlans`; Codex states none, so its plans weigh as the base). The person's own use of an account outside
     Daoris is not read: an account they do not want used is switched off. (ACCOUNTPLAN1,
     docs/2026-11-24-account-plan-evidence.md)

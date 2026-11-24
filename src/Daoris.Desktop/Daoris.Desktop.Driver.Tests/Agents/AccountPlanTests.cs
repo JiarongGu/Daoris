@@ -130,11 +130,45 @@ public sealed class AccountPlanTests : IDisposable
     [Fact]
     public void A_larger_plan_with_less_of_its_share_left_can_still_have_more_room_than_a_smaller_one()
     {
-        // The smaller plan has 29 points of room under the curve, the larger 4: twenty times four is more than one times 29.
-        var facts = new Dictionary<string, AccountFacts> { ["account-1"] = Account(0.05, size: 1), ["account-2"] = Account(0.30, size: 20) };
+        // The smaller plan has 29 points of room under the curve, the larger 9: twenty times nine is more than one times 29.
+        var facts = new Dictionary<string, AccountFacts> { ["account-1"] = Account(0.05, size: 1), ["account-2"] = Account(0.25, size: 20) };
 
         Assert.Equal("account-2 account-1", Order(facts));
-        Assert.Equal("account-1 account-2", Order(new() { ["account-1"] = Account(0.05), ["account-2"] = Account(0.30) }));
+        Assert.Equal("account-1 account-2", Order(new() { ["account-1"] = Account(0.05), ["account-2"] = Account(0.25) }));
+    }
+
+    [Fact]
+    public void A_room_inside_the_noise_band_is_no_room_whatever_the_plan_s_size()
+    {
+        // Four points of a plan twenty times the base are inside the band of whole-percent readings, so they tie at none.
+        var facts = new Dictionary<string, AccountFacts> { ["account-1"] = Account(0.05, size: 1), ["account-2"] = Account(0.30, size: 20) };
+
+        Assert.Equal("account-1 account-2", Order(facts));
+    }
+
+    [Fact]
+    public void Within_one_plan_a_point_of_share_ties_and_the_band_is_scaled_by_the_plan_s_units()
+    {
+        var use = AccountRotationWalkTests.Scope("account-1 account-2").Use;
+        AccountSaid Said(double used) => new([Week(used)]);
+
+        Assert.Equal(RoomLeft.BandOf(use, Said(0.20), Now, 20), RoomLeft.BandOf(use, Said(0.21), Now, 20));
+        Assert.Equal(RoomLeft.BandOf(use, Said(0.20), Now) * 20, RoomLeft.BandOf(use, Said(0.20), Now, 20));
+    }
+
+    private static SwitchChoice Move(params SwitchCandidate[] candidates) =>
+        SwitchDecision.Decide(
+            AccountRotationWalkTests.Scope("account-1 account-2 account-3").Use, "account-3", new AccountSaid([Week(0.90)]), candidates, Now,
+            lastMove: null, othersRead: true);
+
+    [Fact]
+    public void A_session_over_its_curve_moves_to_the_account_with_the_most_room_in_plan_units_as_a_start_does()
+    {
+        SwitchCandidate Candidate(string name, double used, double? size) => new(name, new AccountSaid([Week(used)]), Ready: true, Size: size);
+
+        // 24 points of room on the base plan against 14 on one twenty times it: a start prefers the larger plan, so does the move.
+        Assert.Equal("account-2", Assert.IsType<SwitchChoice.MoveTo>(Move(Candidate("account-1", 0.10, 1), Candidate("account-2", 0.20, 20))).Account);
+        Assert.Equal("account-1", Assert.IsType<SwitchChoice.MoveTo>(Move(Candidate("account-1", 0.10, null), Candidate("account-2", 0.20, null))).Account);
     }
 
     // ——— Through the roster.

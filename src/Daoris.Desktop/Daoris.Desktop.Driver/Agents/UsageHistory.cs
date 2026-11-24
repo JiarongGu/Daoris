@@ -298,7 +298,7 @@ public static class UsageHistory
     private static bool Rebound(JsonObject entry, string? plan, DateTimeOffset at)
     {
         var kept = Json.NonEmpty(entry, "plan");
-        if (Json.Flag(entry, "out") || (plan is not null && kept is not null && !string.Equals(plan, kept, StringComparison.OrdinalIgnoreCase)))
+        if (Json.Flag(entry, "out") || (plan is not null && kept is not null && !PlanWords.Same(plan, kept)))
         {
             entry["epoch"] = (EpochIn(entry) ?? 0) + 1;
             entry["plan"] = plan;
@@ -307,7 +307,7 @@ public static class UsageHistory
             return true;
         }
 
-        if (plan is null || kept is not null) return false;
+        if (plan is null || (kept is not null && !PlanWords.Refines(plan, kept))) return false;
         entry["plan"] = plan;
         return true;
     }

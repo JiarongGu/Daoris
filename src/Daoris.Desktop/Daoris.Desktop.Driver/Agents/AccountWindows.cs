@@ -205,8 +205,7 @@ public static class AccountWindows
                 using var locked = KeepLock.Take(PathOf(home));
                 var root = Load(home);
                 var held = Made(Made(root, agent), account);
-                if (Json.NonEmpty(held, PlanKey) is { } kept
-                    && (string.Equals(kept, plan, StringComparison.OrdinalIgnoreCase) || kept.StartsWith(plan + "_", StringComparison.OrdinalIgnoreCase)))
+                if (Json.NonEmpty(held, PlanKey) is { } kept && (PlanWords.Same(kept, plan) && !PlanWords.Refines(plan, kept)))
                 {
                     return;
                 }
