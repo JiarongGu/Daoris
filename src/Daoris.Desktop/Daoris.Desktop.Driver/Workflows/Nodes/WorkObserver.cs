@@ -213,6 +213,9 @@ public static class NodeTips
     public static Task<IReadOnlyDictionary<string, string>> ReadAsync(string root, IReadOnlyCollection<string> branches, CancellationToken ct) =>
         RefsAsync(root, "refs/heads/", branches, absentIsEmpty: false, ct);
 
+    public static Task<IReadOnlyDictionary<string, string>> HeadsAsync(string root, IReadOnlyCollection<string> branches, CancellationToken ct) =>
+        RefsAsync(root, "refs/heads/", branches, absentIsEmpty: true, ct);
+
     /// <summary>
     /// The commit origin's remote-tracking ref holds for each of <paramref name="branches"/> in <paramref name="root"/>
     /// (what <c>pushed</c> reads): <c>refs/remotes/origin/&lt;branch&gt;</c>, read as the tips are. Empty where git says the ref is
