@@ -151,7 +151,7 @@ Each type is in a file of its name; `docs/index/README.md` says where a seam, ve
     verbs are refused there too: a stage drains the install, so it is the person's. Before the web bundle it regenerates the
     page's generated contracts where the checkout's are missing or stale (`tools/desktop-publish/contracts.mjs`, the merge's
     `contracts.mjs --if-stale`), never trusting the page's `prebuild` alone, and says whether they were fresh or it regenerated
-    them; a generator that fails stops the publish before anything is written. (from D115, D180)
+    them; a generator that fails stops the publish before the bundle, so nothing is published. (from D115, D180)
 36. `--stage` builds the same build into `update/staged/`, with `build.json` (schema 1: id, version, commit, time, every file's
     size and SHA-256). It refuses a non-install, a swap under way, and a missing `--service` where the install carries its HTTP
     host. A running install is never refused. A publish in place removes anything staged. Every publish takes its own version

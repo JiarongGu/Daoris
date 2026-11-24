@@ -64,6 +64,14 @@ test('a publish whose generated contracts are fresh builds none, and says they a
   assert.deepEqual(said, ['desktop-publish: the page\'s generated contracts are fresh.']);
 });
 
+test('the publish asks the contracts before it builds the bundle, and stops on a failed generator', () => {
+  const source = readFileSync(new URL('../../../tools/desktop-publish.mjs', import.meta.url), 'utf8');
+  const asked = source.indexOf('const contracts = freshContracts(repoRoot);');
+  const stopped = source.indexOf('if (contracts !== 0) process.exit(contracts);');
+  const bundle = source.indexOf('run(`npm --prefix ${WEB} run build`);');
+  assert.ok(asked > 0 && stopped > asked && bundle > stopped, 'main() runs freshContracts, then stops on its failure, then builds the bundle');
+});
+
 test('a generator that fails stops the publish before the bundle, with the generator\'s exit code', async (t) => {
   const fx = makeFixture('publish-contracts-failed');
   t.after(() => fx.cleanup());
