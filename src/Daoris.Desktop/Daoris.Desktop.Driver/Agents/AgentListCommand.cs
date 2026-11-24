@@ -367,12 +367,14 @@ internal static class AgentListCommand
         var apart = ApartBy(profile, profiles);
         var said = apart is not null && profile.Account is { Length: > 0 } email ? AccountNames.Beside(email.Trim(), apart) : null;
         var named = said is not null && Same(said, name);
-        string[] words =
+        List<string> words =
         [
             .. profile.Account is { Length: > 0 } who && !Same(who, name) && !named ? [who] : Array.Empty<string>(),
             .. apart is not null && !named ? [apart] : Array.Empty<string>(),
         ];
-        return words.Length > 0 ? $" {string.Join(" · ", words)}" : "";
+
+        if (profile.Plan is { Length: > 0 } plan && !words.Any(word => Same(word, plan))) words.Add(plan);
+        return words.Count > 0 ? $" {string.Join(" · ", words)}" : "";
     }
 
     /// <summary>

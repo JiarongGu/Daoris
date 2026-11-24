@@ -247,7 +247,8 @@ internal sealed class RosterNext(HarnessRoster roster)
         var reads = AccountReads.Of(roster.Home, owner).Accounts;
         foreach (var account in list)
         {
-            facts[account] = facts[account] with { SignIn = SignInStates.Of(reads.GetValueOrDefault(account)) };
+            var plan = AccountWindows.PlanOf(roster.Home, owner, account);
+            facts[account] = facts[account] with { SignIn = SignInStates.Of(reads.GetValueOrDefault(account)), Plan = plan, Size = roster.PlanSizeOf(owner, plan) };
             try
             {
                 // A weekly reset a limit told is not read here: it says when, not how much would lapse, which
