@@ -5,6 +5,7 @@ with the version and date at release.
 
 ## Unreleased
 
+- A gate's timeout is learned on this machine from its green runs and no longer lives in the repository's `daoris.gates.json`: the Daoris home keeps each gate's recent green wall times and sets its timeout from the slowest of them with room to spare (never under five minutes), a pin you set with its reason stands over it, and a gate that has grown slower is said once in the next merge. A repository's Setup shows each gate's timeout and where it comes from, and `daoris settings checks <repository>` does the same from a terminal; both also set a gate's memory need and whether it runs alone, a test set's timeout, the tree baseline, the devkit version, the local inputs and the patterns file, which are kept on this machine and never written into the repository. A repository that still declares them keeps working: the home's value wins and the declaration's is read where the home has none.
 - `daoris declaration split --dry-run` converts a repository's `daoris.gates.json` in scratch to the folder of small files the declaration is moving to (one file per gate
   with the test sets it runs, a small file per other concern) and the values that belong to one machine, then proves the folder resolves to the old file: each gate's
   commands, its expanded reach, the set holding each test file and the gates' order. A difference, a member nobody sorted and a test file held by two sets are named, exit 1.

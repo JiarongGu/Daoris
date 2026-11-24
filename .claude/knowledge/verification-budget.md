@@ -20,7 +20,7 @@ longer than its change's reach is a scope defect, not a cost of safety; a budget
 ## How it is kept
 
 - **The rule is data.** `daoris.gates.json`'s `verifyBudget` holds the budget (`budgetMinutes`), the findings file
-  (`overruns`, `local/verify-overruns.jsonl`, a path inside the checkout) and the full run's reasons (`fullRunReasons`): the
+  (`local/verify-overruns.jsonl`, a fixed file in the checkout, no setting) and the full run's reasons (`fullRunReasons`): the
   declared wide paths (the gates and the test tools, dependency files and lockfiles, build files, the shared contracts, what is
   tracked and the helpers every rehearsal imports), a reach of the declared share or more, and the runs that are a reason by
   their kind (the run after a landing, a release). The lane table's every-gate rule reads the same wide paths, its one source,
