@@ -25,6 +25,10 @@ public sealed record NodeRuntimeLook(DriverConfig Config, bool Whole)
     public Func<string, IReadOnlyCollection<string>, CancellationToken, Task<IReadOnlyDictionary<string, string>>> Tips { get; init; } =
         (_, _, _) => Task.FromResult<IReadOnlyDictionary<string, string>>(new Dictionary<string, string>());
 
+    /// <summary>Branch tips read fresh, never the pass's cache (<see cref="NodeTips.HeadsAsync"/>): empty where git says the branch is not there, absent where the read failed.</summary>
+    public Func<string, IReadOnlyCollection<string>, CancellationToken, Task<IReadOnlyDictionary<string, string>>> Heads { get; init; } =
+        (_, _, _) => Task.FromResult<IReadOnlyDictionary<string, string>>(new Dictionary<string, string>());
+
     /// <summary>
     /// Each named branch's remote-tracking ref in one checkout (<see cref="NodeTips.RemotesAsync"/>): what <c>pushed</c> reads, once per
     /// checkout per pass, and only where a <c>pushed</c> node waits on a landing a plugin answered it pushed. Empty where the ref is not

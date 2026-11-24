@@ -363,7 +363,7 @@ public sealed class NodeRuntime(
             // waits on them; the gates likewise, once a pass for a unit whose opinion or look waits on them.
             var git = new PassReads(new PassGit(look.Remotes,NodeEvaluations.Pushing(governed.Values)), new PassGates(look.Gates), NodeEvaluations.Once(look.Content))
             {
-                Lacks = look.Lacks,
+                Lacks = look.Lacks, Heads = look.Heads,
             };
 
             // One count of calls for the whole pass, reconciliation's first, so four is the pass's bound and not its starts' alone.
@@ -593,7 +593,7 @@ public sealed class NodeRuntime(
         if (governed.Scope is { } run)
         {
             if (!atEnd) await Keeping.AfterRoundsAsync(governed, run, _config, said, ct).ConfigureAwait(false);
-            await Keeping.EndAsync(governed, run, said, git.Lacks, tip, tips.TipAsync, ct).ConfigureAwait(false);
+            await Keeping.EndAsync(governed, run, said, git.Lacks, tip, git.Heads, ct).ConfigureAwait(false);
             await Keeping.ReleaseStepsAsync(governed, run, ct).ConfigureAwait(false);
             Keeping.OwnTrees(run);
             AttemptTenures.KeepAt(records, governed.Unit.Id, governed.Graph.Nodes, run.Run.Binding.Workspace, run.Run.Binding.Repository, _config, clock());

@@ -24,19 +24,24 @@ internal static class UnlandedRunEnds
             && string.Equals(entry.Repository, scope.Run.Binding.Repository, StringComparison.OrdinalIgnoreCase))];
 
     /// <summary>
-    /// The branches among <paramref name="owned"/> whose commits the line lacks, with those commits; a branch whose tip or lacking commits git
-    /// could not say is held with none named, since an end that cannot tell loses work where a held one is judged again.
+    /// The branches among <paramref name="owned"/> whose commits the line lacks, with those commits. A branch git says is not there holds nothing to
+    /// land; one whose tip git could not read, or whose lacking commits it could not say, is held with none named, since an end that cannot tell
+    /// loses work where a held one is judged again.
     /// </summary>
     public static async Task<IReadOnlyList<(string Branch, IReadOnlyList<LandingCommit>? Commits)>> HeldAsync(
-        IReadOnlyList<GrownBranch> owned, Func<string, CancellationToken, Task<string?>> tipOf,
+        IReadOnlyList<GrownBranch> owned, IReadOnlyDictionary<string, string> heads,
         Func<string, CancellationToken, Task<IReadOnlyList<LandingCommit>?>> lacks, CancellationToken ct)
     {
         var held = new List<(string, IReadOnlyList<LandingCommit>?)>();
         foreach (var entry in owned)
         {
-            var tip = await tipOf(entry.Branch, ct).ConfigureAwait(false);
-            // A branch git no longer has holds nothing to land.
-            if (tip is null) continue;
+            if (!heads.TryGetValue(entry.Branch, out var tip))
+            {
+                held.Add((entry.Branch, null));
+                continue;
+            }
+
+            if (tip.Length == 0) continue;
             var commits = await lacks(tip, ct).ConfigureAwait(false);
             if (commits is null || commits.Count > 0) held.Add((entry.Branch, commits));
         }
@@ -45,19 +50,21 @@ internal static class UnlandedRunEnds
     }
 
     /// <summary>
-    /// Whether the end is held: a branch the home records for the run holds commits the line lacks, said to <paramref name="say"/> as an error line
-    /// once per change. <paramref name="tipOf"/> reads a branch's tip in the run's checkout.
+    /// Whether the end is held: a branch the home records for the run holds commits the line lacks. The branches' tips are read fresh
+    /// (<paramref name="heads"/>, never the pass's cached read, which holds only the branches the look governed). It is said to <paramref name="say"/>
+    /// as an error line once per change, where the caller holds the home's lease.
     /// </summary>
     public static async Task<bool> HoldsAsync(
-        string home, RunScope scope, Func<string, string, CancellationToken, Task<string?>> tipOf,
-        Func<string, CancellationToken, Task<IReadOnlyList<LandingCommit>?>> lacks, Action<string, string> say, CancellationToken ct)
+        string home, RunScope scope, Func<string, IReadOnlyCollection<string>, CancellationToken, Task<IReadOnlyDictionary<string, string>>> heads,
+        Func<string, CancellationToken, Task<IReadOnlyList<LandingCommit>?>> lacks, Action<string, string>? say, CancellationToken ct)
     {
         var owned = Owned(home, scope);
         if (owned.Count == 0) return false;
-        var held = await HeldAsync(owned, (branch, token) => tipOf(scope.Root, branch, token), lacks, ct).ConfigureAwait(false);
+        var tips = await heads(scope.Root, [.. owned.Select(entry => entry.Branch)], ct).ConfigureAwait(false);
+        var held = await HeldAsync(owned, tips, lacks, ct).ConfigureAwait(false);
         if (held.Count == 0) return false;
         var sentence = Sentence(scope.Run.Run, held);
-        if (Changed(home, scope.Run.Run, sentence)) say(Event, sentence);
+        if (say is not null && Changed(home, scope.Run.Run, sentence)) say(Event, sentence);
         return true;
     }
 

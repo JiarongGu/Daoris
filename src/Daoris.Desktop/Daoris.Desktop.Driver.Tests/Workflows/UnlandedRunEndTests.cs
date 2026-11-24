@@ -47,9 +47,21 @@ public sealed class UnlandedRunEndTests : NodeRunFixture
         return runtime;
     }
 
+    private bool _headsFail;
+    private bool _tipsCached;
+
+    /// <summary>Each branch's tip read fresh: its tip where one is set, empty where git says it is not there, none where the read failed.</summary>
+    private Task<IReadOnlyDictionary<string, string>> HeadsAsync(IReadOnlyCollection<string> branches) =>
+        Task.FromResult<IReadOnlyDictionary<string, string>>(_headsFail
+            ? new Dictionary<string, string>()
+            : branches.ToDictionary(branch => branch, branch => _branchTips.GetValueOrDefault(branch, "")));
+
     private Task<NodeRuntimePass> PassAsync(NodeRuntime runtime) => runtime.PassAsync(RunLook() with
     {
         Lacks = (_, _, _, _, _) => Task.FromResult(_lacks),
+        Heads = (_, branches, _) => HeadsAsync(branches),
+        // A pass's cached read of the checkout, made before the end without the recorded branch, holds none of its tips.
+        Tips = (_, _, _) => Task.FromResult<IReadOnlyDictionary<string, string>>(_tipsCached ? new Dictionary<string, string>() : new Dictionary<string, string>(_branchTips)),
     }, CancellationToken.None);
 
     /// <summary>The home's record of the run's session branch, standing, as a pass of the run writes it.</summary>
@@ -107,6 +119,34 @@ public sealed class UnlandedRunEndTests : NodeRunFixture
     }
 
     [Fact]
+    public async Task A_recorded_branch_is_read_fresh_so_a_pass_whose_cached_read_of_the_checkout_lacks_it_still_holds_the_run()
+    {
+        BoundTo(Graph);
+        Recorded();
+        BranchUnread();
+        _tipsCached = true;
+
+        await PassAsync(Driving());
+
+        Assert.Null(Files.Read(RunUnit)!.Ended);
+        Assert.Single(_said, each => each.Code == UnlandedRunEnds.Event);
+    }
+
+    [Fact]
+    public async Task A_recorded_branch_whose_tip_git_could_not_read_holds_the_run_and_says_so()
+    {
+        BoundTo(Graph);
+        Recorded();
+        BranchUnread();
+        _headsFail = true;
+
+        await PassAsync(Driving());
+
+        Assert.Null(Files.Read(RunUnit)!.Ended);
+        Assert.Contains("git could not say", Assert.Single(_said, each => each.Code == UnlandedRunEnds.Event).Said, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public async Task A_run_whose_recorded_branch_git_cannot_read_is_held_too_and_says_so()
     {
         BoundTo(Graph);
@@ -147,16 +187,21 @@ public sealed class UnlandedRunEndTests : NodeRunFixture
     }
 
     [Fact]
-    public async Task A_held_run_lands_at_the_first_look_that_reads_its_branch_again_with_its_quest_still_taken()
+    public async Task A_run_whose_landing_is_offered_then_whose_branch_reads_none_stays_held_and_lands_at_the_first_look_that_reads_it_again()
     {
         BoundTo(Graph);
         Recorded();
-        BranchUnread();
         var runtime = Driving();
+
+        // The landing is offered while the branch reads; then the session is told to rebase and the look reads none of its branch.
+        BranchRead();
+        await PassAsync(runtime);
+        Assert.NotEmpty(_door.Starts);
+        BranchUnread();
         await PassAsync(runtime);
         await PassAsync(runtime);
         Assert.Null(Files.Read(RunUnit)!.Ended);
-        Assert.Empty(_door.Starts);
+        Assert.Empty(_finished);
 
         // The session's rebase is done: the look reads its branch again.
         BranchRead();

@@ -412,10 +412,12 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     (a monitor, a plugin's release), since that reads the landing, which a tidied branch and the line's holding the commit leave readable;
     or, with its quest still open, when its work step reached and no branch of it was ever recorded (work done in place, on the line: a
     set-up asked in the checkout): nothing is left for `content.holds` or the `land` to read, so it ends (`in-place`, `InPlaceRunEnds`);
-    never while a standing branch the home records for the run (`session-branches.json`, its `run`) still holds commits the line does not, or
-    git cannot say, whatever this look read of its branches (a tree mid-rebase or an unread unit hides them): the run and its quest stay taken, an
-    error line `run.end.unlanded` names the branch and the commits once per change, and the next look lands the work once the branch reads
-    again (`UnlandedRunEnds`, RUNENDLOST1);
+    never while any standing branch the home records for the run (`session-branches.json`, its `run`, an earlier subject of its chain too) still
+    holds commits the line does not, or git cannot read its tip or say what the line lacks, whatever this look read of its branches (a tree
+    mid-rebase or an unread unit hides them; the tips are read fresh, never from the pass's cache): the run and its quest stay taken, and an error
+    line `run.end.unlanded` in the machine log, written by the home's lease holder alone, names the branch and the commits once per change; the next
+    look lands the work once the branch reads again, and a branch left with commits nobody lands keeps the run open until the person lands or
+    discards it (`UnlandedRunEnds`, RUNENDLOST1);
     it is not governed again until its chain comes back. A `line` is reached by the kept end fact, or where the pass's read of the line
     holds every commit of the branch at its tip (a landing that found its work already there made no landing record).
     A check whose executor could not say what became of it (unknown with the code `unrun`, or with no cause of its own: a result that does

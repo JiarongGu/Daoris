@@ -282,6 +282,7 @@ internal sealed class WatchNodes
                 Resources = plugin => PluginCatalog.Load(home).Contributing.FirstOrDefault(each => each.Manifest.Id == plugin)?.Manifest.Resources,
                 // An observed node's event is bound to its branch's tip read now, once per checkout per pass.
                 Tips = NodeTips.ReadAsync,
+                Heads = NodeTips.HeadsAsync,
                 // The look's git reads for `pushed` and an ahead `pull-request`, asked only where one waits on them.
                 Remotes = NodeTips.RemotesAsync,
                 // The gates for a unit whose opinion or look waits, read as a landing door reads them; and a quest whose run

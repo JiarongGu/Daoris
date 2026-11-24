@@ -158,7 +158,7 @@ internal sealed class NodeRunKeeping(
     /// <param name="tip">The run's branch's tip the pass read; null where it read none.</param>
     public async Task EndAsync(
         GovernedUnit governed, RunScope scope, List<string> said, Func<string, string, string, string, CancellationToken, Task<IReadOnlyList<LandingCommit>?>> lacks,
-        string? tip, Func<string, string, CancellationToken, Task<string?>> tipOf, CancellationToken ct)
+        string? tip, Func<string, IReadOnlyCollection<string>, CancellationToken, Task<IReadOnlyDictionary<string, string>>> heads, CancellationToken ct)
     {
         Task<IReadOnlyList<LandingCommit>?> Lacks(string commit, CancellationToken token) =>
             lacks(scope.Root, scope.Run.Binding.Repository, scope.Run.Binding.Workspace, commit, token);
@@ -208,7 +208,7 @@ internal sealed class NodeRunKeeping(
             if (why is null) return;
         }
 
-        if (why == InPlaceRunEnds.Why && await UnlandedRunEnds.HoldsAsync(records.Home, scope, tipOf, Lacks, doors().Say, ct).ConfigureAwait(false)) return;
+        if (why == InPlaceRunEnds.Why && await UnlandedRunEnds.HoldsAsync(records.Home, scope, heads, Lacks, holdsLease() ? doors().Say : null, ct).ConfigureAwait(false)) return;
 
         var at = clock();
         RunEnd? ended = null;
