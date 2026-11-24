@@ -244,6 +244,16 @@ where a seam, route, verb or fixture is. Which folder owns which job:
     on the account and the starts chosen on it not yet running. The pace is a time, not an acknowledgement: a refresh that takes
     longer than the gap, with no temp file until its response, can still overlap the next session's. The file system names no writer, so the sessions beside the write are
     the attribution; `credentials.watching` and `app.started` mark a restart beside them. (SIGNOUTRACE1)
+    A write of the store is also a reading, made when it lands and not at a look or a status question (`CredentialWrites`, through
+    `StoredSignIns`): both tokens empty reads the account signed out (`MarkOut`, kept in `reads.json` so the roster, Settings, the CLI
+    list and the sign-out notice, claimed at the write, all say it at the next look), a store filled after this watch saw it cleared
+    reads it signed in (`MarkIn`), and one that leaves tokens in a store that had them, a refresh, changes no reading, so a refused
+    account stays refused; a file with no bytes is a write half made and marks nothing. The reading and the `credentials.written` line
+    (`by`, `marked`) say who was at the account (`SignInCause`, never who wrote: the file system does not say): Daoris's own sign-in
+    (`SignInMarks`, a file beside the probe lock, made as a sign-in's flow starts and stale after thirty minutes), else a probe (its
+    lock held), else a session running or starting on it, else outside Daoris, so a sign-out none of Daoris's was at reads as outside;
+    the page's row and `daoris agent list` word it. The look's own read of a cleared store still marks one the watch missed, with no
+    cause. (SIGNOUTSEEN1)
 
 **Usage, limits and errors**
 

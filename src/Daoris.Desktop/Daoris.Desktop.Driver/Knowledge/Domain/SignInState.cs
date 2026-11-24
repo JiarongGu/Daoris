@@ -21,8 +21,7 @@ public enum SignInStanding
 
 /// <summary>
 /// One account's sign-in state: its standing, when it is read, since when it says so, and for a sign-out whether the person
-/// made it. Kept beside the profile report that carries it (<see cref="ProfileReport.SignIn"/>); Agents reads it
-/// (<see cref="SignInStates"/>).
+/// made it. Kept beside the profile report that carries it (<see cref="ProfileReport.SignIn"/>), read by <see cref="SignInStates"/>.
 /// </summary>
 /// <param name="At">When the reading is made; null where it never is.</param>
 /// <param name="Since">When it began saying so: a sign-out's moment, kept across readings that say the same.</param>
@@ -30,7 +29,8 @@ public enum SignInStanding
 /// A sign-out after a reading that said signed in: Daoris never signs an account out and removing one deletes it, so the agent
 /// did, as when a refresh of its sign-in is refused.
 /// </param>
-public sealed record SignInState(SignInStanding Standing, DateTimeOffset? At, DateTimeOffset? Since, bool NotByPerson = false)
+/// <param name="By">Who held the account when a write of its store made this reading (<see cref="SignInCause"/>); null where none saw it.</param>
+public sealed record SignInState(SignInStanding Standing, DateTimeOffset? At, DateTimeOffset? Since, bool NotByPerson = false, string? By = null)
 {
     /// <summary>The state's word on a wire: <c>in</c>, <c>out</c>, <c>unanswered</c>, <c>unread</c>.</summary>
     public string Word => Standing switch

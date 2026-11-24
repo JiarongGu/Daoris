@@ -335,8 +335,14 @@ public static class HarnessActions
         SignInWay way = SignInWay.Browser)
     {
         var info = PrepareLogin(toolchain, run, profileHome, fresh, way);
-        var code = await RunAsync(info, [.. run.Run, .. SignInWays.Arguments(run.Harness, toolchain, way)], write, ct, started)
-            .ConfigureAwait(false);
+        // Marked while it runs, so the credentials watch says the writes it makes are Daoris's own sign-in's (SignInCause.SignIn).
+        int code;
+        using (SignInMarks.Begin(profileHome))
+        {
+            code = await RunAsync(info, [.. run.Run, .. SignInWays.Arguments(run.Harness, toolchain, way)], write, ct, started)
+                .ConfigureAwait(false);
+        }
+
         if (code == 0)
         {
             // And it is marked, so a start held on the account signed out asks it again.

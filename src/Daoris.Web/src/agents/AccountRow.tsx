@@ -89,6 +89,19 @@ function Fact({ label }: { label: string }) {
   return <span className="sr-only">{label}</span>;
 }
 
+/** Why an account reads signed out: who held it when a write emptied its store, else that its agent signed it out; null for the person's own. */
+export function outWhy(t: (key: string, values?: Record<string, string>) => string, state: AccountState, now?: Date): string | null {
+  if (!state.since) return null;
+  const when = clockOf(state.since, now);
+  switch (state.by) {
+    case 'session': return t('harness.login.outBy.session', { when });
+    case 'probe': return t('harness.login.outBy.probe', { when });
+    case 'sign-in': return t('harness.login.outBy.signIn', { when });
+    case 'outside': return t('harness.login.outBy.outside', { when });
+    default: return state.notByPerson ? t('harness.login.outNotByYou', { when }) : null;
+  }
+}
+
 /**
  * Why a state reads as it does, where that is more than its word: a cool-off's end, how long and whose time it is,
  * the agent's reset or Daoris's default; a key the tool says yes to whatever it is; a key its provider refused and what
@@ -101,7 +114,7 @@ function stateWhy(t: (key: string, values?: Record<string, string>) => string, s
     case 'keyed': return t('harness.login.keyedTip');
     case 'refused': return t('harness.login.refusedTip');
     case 'unanswered': return t('harness.login.unansweredTip');
-    case 'out': return state.notByPerson && state.since ? t('harness.login.outNotByYou', { when: clockOf(state.since, now) }) : null;
+    case 'out': return outWhy(t, state, now);
     default: return null;
   }
 }

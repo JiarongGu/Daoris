@@ -616,16 +616,17 @@ public static class AccountLines
 
         /// <summary>
         /// A write to an account's stored sign-in or its temp file: the file, the change, whether it is empty and each token present (null
-        /// where it did not read), the sessions running on the account and the starts not yet running. Never a value.
+        /// where it did not read), the sessions running, the starts not yet running, who held the account and what it marked. Never a value.
         /// </summary>
         public static AccountLine CredentialsWritten(
             string adapter, string account, string file, string change, bool? empty, bool? access, bool? refresh,
-            IReadOnlyList<string> running, int starting) =>
+            IReadOnlyList<string> running, int starting, string? by = null, string? marked = null) =>
             new("credentials.written",
             [
                 ("door", adapter), ("account", Profile(account)), ("file", file), ("change", change), ("empty", empty),
                 ("access", access), ("refresh", refresh), ("running", running.Count),
                 ("sessions", running.Count > 0 ? string.Join(",", running.Take(8)) : null), ("starting", starting),
+                ("by", SignInCause.Known(by) ? by : null), ("marked", marked is "out" or "in" ? marked : null),
             ]);
 
         /// <summary>The first account homes watched by this process: the writes after it are read beside it.</summary>

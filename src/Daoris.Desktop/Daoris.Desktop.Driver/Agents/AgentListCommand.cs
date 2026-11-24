@@ -200,6 +200,13 @@ internal static class AgentListCommand
                 lines.Add($"{Under}{gap} {cooled}");
             }
 
+            // A sign-out a write of its store made says who held the account, where the watch could tell.
+            if (profile.Key is null && profile.Login == LoginState.Out
+                && AccountReads.Of(home, owner).Accounts.GetValueOrDefault(profile.Name) is { By: { } by, Login: LoginState.Out } signedOut)
+            {
+                lines.Add($"{Under}{gap} {AgentAccountLines.SignedOutBy(by, signedOut.Since ?? signedOut.At, zone)}");
+            }
+
             // What its agent last said about its windows, and how long ago: a reading, never a judgement.
             if (AccountWindows.SaidOf(home, owner, profile.Name, now) is { } said)
             {

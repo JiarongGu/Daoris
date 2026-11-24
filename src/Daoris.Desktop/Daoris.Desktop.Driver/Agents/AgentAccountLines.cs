@@ -133,6 +133,19 @@ internal static class AgentAccountLines
             .OrderBy(entry => entry.Model is not null)
             .Select(entry => CoolingLine(entry, now, zone))];
 
+    /// <summary>A sign-out's cause as the terminal says it (<see cref="SignInCause"/>).</summary>
+    public static string SignedOutBy(string by, DateTimeOffset since, TimeZoneInfo zone)
+    {
+        var at = CoolingWords.When(since, zone);
+        return by switch
+        {
+            SignInCause.Session => $"signed out at {at}: its store was emptied while a session of Daoris's ran on it",
+            SignInCause.Probe => $"signed out at {at}: its store was emptied while Daoris was asking its status",
+            SignInCause.SignIn => $"signed out at {at}: its store was emptied during a sign-in Daoris ran into it",
+            _ => $"signed out at {at}: its store was emptied by something outside Daoris (no session, status question or sign-in of Daoris's was at it)",
+        };
+    }
+
     /// <summary>The accounts of <paramref name="owner"/> cooling now, each named once however many entries it holds.</summary>
     public static IReadOnlyList<string> CoolingNow(IEnumerable<CoolingEntry> cooling, string owner) =>
         [.. cooling

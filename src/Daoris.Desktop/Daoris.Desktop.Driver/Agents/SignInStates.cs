@@ -12,7 +12,7 @@ public static class SignInStates
     {
         null => new SignInState(SignInStanding.Unread, null, null),
         { Login: LoginState.In } => new SignInState(SignInStanding.In, read.At, read.Since ?? read.At),
-        { Login: LoginState.Out } => new SignInState(SignInStanding.Out, read.At, read.Since ?? read.At, read.Before == LoginState.In),
+        { Login: LoginState.Out } => new SignInState(SignInStanding.Out, read.At, read.Since ?? read.At, read.Before == LoginState.In, read.By),
         _ => new SignInState(SignInStanding.Unanswered, read.At, read.Since ?? read.At),
     };
 

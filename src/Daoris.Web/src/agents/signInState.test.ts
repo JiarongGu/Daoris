@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import i18n from '../locales/i18n';
 import { clockOf } from '../locales/format';
 import { accountAct, accountState, readLine, stateWhen, stateWord } from './agents';
+import { outWhy } from './AccountRow';
 
 /** An account's sign-in state on its page, from the reading the start's walk ranks by. */
 describe('an account’s sign-in state', () => {
@@ -38,5 +39,27 @@ describe('an account’s sign-in state', () => {
 
   it('reads an older driver, which sends no sign-in state, as before', () => {
     expect(accountState(base, null, true).state).toBe('unknown');
+  });
+
+  it.each(['session', 'probe', 'sign-in', 'outside'] as const)('says a sign-out its store write made by who was at the account: %s', async (by) => {
+    const since = '2026-11-16T08:00:00Z';
+    const state = accountState(
+      { ...base, login: 'out', read: '2026-11-16T09:59:00Z', signIn: { state: 'out', since, notByPerson: true, by } }, null, true);
+    expect(state.by).toBe(by);
+    for (const language of ['en', 'zh']) {
+      await i18n.changeLanguage(language);
+      const why = outWhy((key, values) => i18n.t(key, values) as string, state, now);
+      expect(why).toContain(clockOf(since, now));
+      expect(why).not.toContain('harness.login');
+      expect(why).not.toBe(outWhy((key, values) => i18n.t(key, values) as string, { ...state, by: null }, now));
+    }
+  });
+
+  it('says a sign-out with no writer seen as before, and a sign-out the person made not at all', () => {
+    const since = '2026-11-16T08:00:00Z';
+    const t = (key: string, values?: Record<string, string>) => i18n.t(key, values) as string;
+    const agent = accountState({ ...base, login: 'out', signIn: { state: 'out', since, notByPerson: true } }, null, true);
+    expect(outWhy(t, agent, now)).toContain('not by you');
+    expect(outWhy(t, { ...agent, notByPerson: false }, now)).toBeNull();
   });
 });
