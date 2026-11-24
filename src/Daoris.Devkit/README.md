@@ -123,10 +123,12 @@ is inert data the CLI parses on every invocation, and this file names commands t
 ```
 
 The `devkit` field pins which toolkit the declaration was written against, and is **checked before
-any gate runs** — a different toolkit may read the same declaration differently, which is the failure
+any gate runs**. The Daoris home's record of the repository (`check-budgets`, read by the main checkout's folder name through
+`DAORIS_HOME`) holds this machine's pin, `localInputs` and `sensitive.patternsFile` and wins over the file's members, which
+are read only where the home keeps none; with neither, the pin is not checked. A different toolkit may read the same declaration differently, the failure
 pinning exists to prevent. It is optional: an unpinned declaration is allowed and silent.
 
-`localInputs` names the other machine-local files the gates read: ignored files under `local/` that only
+`localInputs` (the home's, else the file's) names the other machine-local files the gates read: ignored files under `local/` that only
 the owner's checkout holds, as the pattern list is. No gate here reads the key. The desktop does (TREELOCAL1,
 D216): a session's tree, which git checks out without them, opens with each copied from the checkout's file,
 read-only. The pattern list is among them whether `localInputs` names it or not, and the devkit's default

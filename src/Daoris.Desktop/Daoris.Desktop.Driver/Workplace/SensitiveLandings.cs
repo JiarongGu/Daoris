@@ -4,8 +4,8 @@ namespace Daoris.Driver;
 
 /// <summary>
 /// The private-name check a landing makes before anything is made: the lines the session's commits add to the line, read against the
-/// private patterns file its repository declares (<c>sensitive.patternsFile</c>), taken from the repository's own checkout because a session's tree
-/// is a worktree that holds none of the ignored <c>local/</c>. A repository declaring none, or whose checkout lacks the file, is unaffected.
+/// private patterns file its repository names (this machine's, else its declaration's), taken from the repository's own checkout because a
+/// session's tree is a worktree that holds none of the ignored <c>local/</c>. A repository naming none, or lacking the file, is unaffected.
 /// </summary>
 /// <remarks>
 /// 🔴 A hold names the path and the pattern's number in the file, never its text: a private name is not repeated in a sentence, a log or a record.
@@ -13,9 +13,9 @@ namespace Daoris.Driver;
 internal static class SensitiveLandings
 {
     /// <summary>The sentence that refuses the landing, or null where nothing the work adds matches a declared private pattern.</summary>
-    internal static async Task<string?> RefusalAsync(string checkout, string tree, string line, CancellationToken ct)
+    internal static async Task<string?> RefusalAsync(string checkout, string tree, string line, CancellationToken ct, RepositoryBudgets? kept = null)
     {
-        if (TreeLocalInputs.PatternsFile(checkout) is not { } declared) return null;
+        if (TreeLocalInputs.PatternsFile(checkout, kept) is not { } declared) return null;
         var file = Path.Combine(checkout, declared);
         if (!File.Exists(file)) return null;
 

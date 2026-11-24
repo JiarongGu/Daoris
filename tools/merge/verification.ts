@@ -8,7 +8,7 @@
  * checks wire it, until a supervisor actor keeps it.
  */
 import { appendFileSync, existsSync, mkdirSync, readFileSync } from 'node:fs';
-import { dirname, join, posix, win32 } from 'node:path';
+import { dirname, join } from 'node:path';
 import { laneMatcher } from './lanes-file.ts';
 import { stepsLine, type Step } from './reached-steps.ts';
 
@@ -46,7 +46,7 @@ export const RUN_REASONS: Readonly<Record<RunKind, FullReason>> = Object.freeze(
 
 const strings = (value: unknown): string[] => (Array.isArray(value) ? value.filter((each): each is string => typeof each === 'string' && each.length > 0) : []);
 
-type Declared = { budgetMinutes?: unknown; overruns?: unknown; fullRunReasons?: { widePaths?: unknown; reachShare?: unknown; runs?: unknown } };
+type Declared = { budgetMinutes?: unknown; fullRunReasons?: { widePaths?: unknown; reachShare?: unknown; runs?: unknown } };
 
 /** A gates file's `verifyBudget` as written, or undefined where it sets none (or is not JSON). */
 function declaredOf(gatesText: string): Declared | undefined {
@@ -57,9 +57,6 @@ function declaredOf(gatesText: string): Declared | undefined {
   }
 }
 
-/** Whether a declared findings file stays inside the checkout: relative, with no `..` step, on either platform's reading. */
-const insideCheckout = (path: string): boolean => !posix.isAbsolute(path) && !win32.isAbsolute(path) && !/^[a-z]:/i.test(path)
-  && !path.split(/[\\/]/).includes('..');
 
 /**
  * The paths a gates file's text declares wide, read apart from the budget: the lane table's every-gate rule reads them as its
@@ -92,16 +89,12 @@ export function verifyBudgetOf(gatesText: string): Verification | null {
   const minutes = declared?.budgetMinutes;
   if (!declared || typeof minutes !== 'number' || !(minutes > 0)) return null;
   const share = declared.fullRunReasons?.reachShare;
-  const overruns = typeof declared.overruns === 'string' && declared.overruns ? declared.overruns : DEFAULT_OVERRUNS;
-  if (!insideCheckout(overruns)) {
-    throw new Error(`${GATES_FILE}'s verifyBudget.overruns names ${overruns}, outside the checkout: name a path inside it, as ${DEFAULT_OVERRUNS}`);
-  }
   return {
     budgetMs: Math.round(minutes * 60_000),
     widePaths: Object.freeze(strings(declared.fullRunReasons?.widePaths)),
     reachShare: typeof share === 'number' && share > 0 && share <= 1 ? share : 1,
     runs: Object.freeze(strings(declared.fullRunReasons?.runs).filter((run): run is RunKind => Object.hasOwn(RUN_REASONS, run))),
-    overruns,
+    overruns: DEFAULT_OVERRUNS,
   };
 }
 

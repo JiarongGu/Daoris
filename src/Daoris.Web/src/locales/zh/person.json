@@ -471,6 +471,7 @@
   "person.route.SET_READ_ACROSS": "更改一个仓库的会话可以在别处读取什么",
   "person.route.SET_REVIEW": "更改工作落地前如何审阅",
   "person.route.SET_SESSION_OPTION": "更改一段对话的选项",
+  "person.route.SET_CHECK_BUDGETS": "设置仓库的各检查项在本机最长运行多久，或本机为它们保存的取值",
   "person.route.SET_SESSION_CHECKS": "更改一个仓库的会话运行哪些检查",
   "person.route.SET_WORKFLOW_VALUES": "设置仓库在某个工作流步骤上的自有取值，例如发布目标",
   "person.route.SET_STANDING": "更改一个仓库的长期答复",

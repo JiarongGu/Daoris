@@ -27,8 +27,8 @@ public static class FilesLooks
 
     internal static async Task<FilesGathered> GatherAsync(string home, string root, string repository, string commit, CancellationToken ct)
     {
-        var reading = await FileAnalysis.ReadAsync(root, commit, FileSignatures.Shipped, [], ct).ConfigureAwait(false);
-        var own = await RepositoryFilesReader.AtAsync(root, commit, ct).ConfigureAwait(false);
+        var reading = await FileAnalysis.ReadAsync(root, commit, FileSignatures.Shipped, [], ct, kept: CheckBudgets.Of(home, repository)).ConfigureAwait(false);
+        var own =await RepositoryFilesReader.AtAsync(root, commit, ct).ConfigureAwait(false);
         return new FilesGathered(FoundFiles.Read(home, repository), reading, own, PersonFiles.Read(home));
     }
 
@@ -39,7 +39,7 @@ public static class FilesLooks
     /// <summary>The repository read again: the found layer replaced whole, as the analysis writes it; how many found rules it wrote.</summary>
     public static async Task<int> ReadAgainAsync(string home, string root, string repository, string commit, CancellationToken ct)
     {
-        var reading = await FileAnalysis.ReadAsync(root, commit, FileSignatures.Shipped, [], ct).ConfigureAwait(false);
+        var reading = await FileAnalysis.ReadAsync(root, commit, FileSignatures.Shipped, [], ct, kept: CheckBudgets.Of(home, repository)).ConfigureAwait(false);
         FoundFiles.Write(home, repository, reading.Found);
         return reading.Found.Rules.Count;
     }

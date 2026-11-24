@@ -57,6 +57,8 @@ export const keys = {
   lines: ['driver', 'lines'] as const,
   /** Whether a repository's own `daoris.gates.json` marks heavy gates — a read of its checkout's file, so under the driver's key. */
   heavyMarks: (repository: string) => ['driver', 'heavy-marks', repository] as const,
+  /** A repository's check budgets on this machine — a read of the home's record, under the driver's key. */
+  checkBudgets: (repository: string) => ['driver', 'check-budgets', repository] as const,
   /** Who holds a repository's heavy-run slot and who waits — a read of the records beside the slot, under the driver's key. */
   heavySlot: (repository: string) => ['driver', 'heavy-slot', repository] as const,
   /** A run's review at an attempt (0 for its newest record) — read from the run's own records, under the driver's key. */

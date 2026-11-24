@@ -4,6 +4,7 @@ import { type AccessEdit, type ResolvedPause } from '../../settings/repository/A
 import { type RepositoryAcross } from '../../settings/repository/Across';
 import { type RuleListName } from '../../settings/repository/AgentRules';
 import { type CommitEdit, type RepositoryCommits } from '../../settings/repository/Commits';
+import { type BudgetChange, type CheckBudgetsView } from '../../settings/repository/CheckBudgets';
 import { type HeavyGate, type HeavyMarks } from '../../settings/repository/HeavyGates';
 import { type LandedSetup } from '../../settings/repository/LandedRoute';
 import { type SessionChecksValue } from '../../settings/repository/SessionChecks';
@@ -78,6 +79,8 @@ export type HeavySetup = {
     set: SessionChecksValue | null;
     onChange: (checks: SessionChecksValue | null, answered: Answered) => void;
   } | null;
+  /** This machine's check budgets for it, as the driver read them, and the press that changes one; absent until the driver has answered. */
+  budgets?: { view: CheckBudgetsView; onChange: (change: BudgetChange, answered: Answered) => void } | null;
 };
 
 /**

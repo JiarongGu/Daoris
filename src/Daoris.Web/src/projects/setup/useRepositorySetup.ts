@@ -19,6 +19,7 @@ import { doorOf } from '../../agents/tools';
 import { type AccessEdit, accessToast, isFull, resolveAccess } from '../../settings/repository/Access';
 import { type CommitEdit, commitToast } from '../../settings/repository/Commits';
 import { heavyToast } from '../../settings/repository/HeavyGates';
+import { useCheckBudgets, useSetCheckBudgets } from '../../bridge/repositories/checkBudgets';
 import { type HandOverEdit, handOverToast } from '../../settings/repository/HandOver';
 import { type GrowthValue, growthToast } from '../../settings/repository/Growth';
 import { type HelperEdit, helperToast } from '../../settings/repository/Helpers';
@@ -70,6 +71,7 @@ export function useRepositorySetup({ registration, enabled, notify, onOpenGit }:
   const setAccess = useSetAccess();
   const setHeavy = useSetHeavyGates();
   const setChecks = useSetSessionChecks();
+  const setBudgets = useSetCheckBudgets();
   const setRead = useSetReadAcross();
   const setWrite = useSetWriteAcross();
   const ruleAction = useRuleAction();
@@ -228,6 +230,7 @@ export function useRepositorySetup({ registration, enabled, notify, onOpenGit }:
   // This machine's heavy gates for it, where it can be driven, matched without case as the driver keys them; an answer without
   // them has none, and no section is drawn. The whole list goes out, and a refusal is said where Save is pressed.
   const heavyGates = state.heavyGates;
+  const budgets = useCheckBudgets(target ?? '', { enabled: shown });
   const heavy: RepositorySetupProps['heavy'] = driving && Array.isArray(heavyGates) ? {
     gates: heavyGates.find((row) => same(row.repository))?.gates ?? [],
     // Until the driver has answered (or where the answer lacks it) the section says only the general rule.
@@ -250,6 +253,11 @@ export function useRepositorySetup({ registration, enabled, notify, onOpenGit }:
         },
         onError: (error) => answered.refused(sentence(error)),
       }),
+    } : null,
+    // Its check budgets on this machine, drawn once the driver has answered; a press goes out at once and a refusal is said in the row.
+    budgets: budgets.data ? {
+      view: budgets.data,
+      onChange: (change, answered) => setBudgets.mutate({ repository, ...change }, { onSuccess: answered.done, onError: (error) => answered.refused(sentence(error)) }),
     } : null,
   } : null;
 
@@ -418,7 +426,7 @@ export function useRepositorySetup({ registration, enabled, notify, onOpenGit }:
         }
       : null,
     busy: setLine.isPending || setPlaceRisk.isPending || setReview.isPending || setOpinion.isPending || setLanguage.isPending
-      || setCommits.isPending || setHelpers.isPending || setHandOver.isPending || setGrowth.isPending || setAccess.isPending || setHeavy.isPending || setStanding.isPending
+      || setCommits.isPending || setHelpers.isPending || setHandOver.isPending || setGrowth.isPending || setAccess.isPending || setHeavy.isPending || setBudgets.isPending || setStanding.isPending
       || setRead.isPending || setWrite.isPending || ruleAction.isPending || setLanded.isPending || acceptIntegration.isPending
       || setGitAccess.isPending,
   };

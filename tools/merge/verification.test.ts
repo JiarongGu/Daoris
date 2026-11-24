@@ -16,7 +16,7 @@ import {
 
 const RULE = verifyBudgetOf(JSON.stringify({
   verifyBudget: {
-    budgetMinutes: 10, overruns: 'local/verify-overruns.jsonl',
+    budgetMinutes: 10,
     fullRunReasons: { widePaths: ['daoris.gates.json', 'package-lock.json', 'src/Contracts/**'], reachShare: 0.5, runs: ['after-landing', 'release'] },
   },
 }))!;
@@ -52,13 +52,10 @@ test("the lane table's every-gate rule reads the declared wide paths whatever th
   }
 });
 
-test('the rule reads only the runs it knows and keeps its findings inside the checkout', () => {
+test('the rule reads only the runs it knows and keeps its findings in the local folder, whatever the declaration says', () => {
   const of = (verifyBudget: object) => verifyBudgetOf(JSON.stringify({ verifyBudget }));
   assert.deepEqual(of({ budgetMinutes: 10, fullRunReasons: { widePaths: ['a'], runs: ['toString', 'constructor', '__proto__', 'release'] } })!.runs, ['release']);
-  for (const outside of ['../elsewhere.jsonl', 'local/../../x.jsonl', 'local\\..\\..\\x.jsonl', '/tmp/x.jsonl', 'C:\\x.jsonl', 'C:x.jsonl', '\\\\host\\share\\x.jsonl']) {
-    assert.throws(() => of({ budgetMinutes: 10, overruns: outside }), /verifyBudget.overruns names .* outside the checkout/, outside);
-  }
-  assert.equal(of({ budgetMinutes: 10, overruns: 'local/findings/over.jsonl' })!.overruns, 'local/findings/over.jsonl');
+  assert.equal(of({ budgetMinutes: 10, overruns: '../elsewhere.jsonl' })!.overruns, 'local/verify-overruns.jsonl');
   assert.equal(of({ budgetMinutes: 10 })!.overruns, 'local/verify-overruns.jsonl');
 });
 

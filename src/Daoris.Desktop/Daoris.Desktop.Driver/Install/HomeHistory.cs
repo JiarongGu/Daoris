@@ -33,7 +33,7 @@ public static class HomeHistory
         HomeEntry.Files, HomeEntry.FilesAsks, HomeEntry.Tools, HomeEntry.PluginState, HomeEntry.Plugins, HomeEntry.PluginApprovals,
         HomeEntry.Usage, HomeEntry.RegistryFollowed, HomeEntry.Update, HomeEntry.Knowledge, HomeEntry.DesktopDb, HomeEntry.Memory,
         HomeEntry.Setup, HomeEntry.Workflows, HomeEntry.ConfiguredAccess, HomeEntry.BrowserSettings, HomeEntry.BrowserFavorites,
-        HomeEntry.HomeId, HomeEntry.UsageHistory, HomeEntry.GitIdentities, HomeEntry.AgentOffers,
+        HomeEntry.HomeId, HomeEntry.UsageHistory, HomeEntry.CheckBudgets, HomeEntry.GitIdentities, HomeEntry.AgentOffers,
         HomeEntry.ActFiles, HomeEntry.LastBuild, HomeEntry.TerminalActs, HomeEntry.UxTrail,
         HomeEntry.Keys, HomeEntry.Remotes, HomeEntry.AgentHomes, HomeEntry.BrowserEngine, HomeEntry.BrowserEdge, HomeEntry.EdgeCookies,
         HomeEntry.GitKeys, HomeEntry.GitTokens, HomeEntry.PluginPrivate, HomeEntry.GitSshConfig, HomeEntry.GitKnownHosts, HomeEntry.GitConfig,

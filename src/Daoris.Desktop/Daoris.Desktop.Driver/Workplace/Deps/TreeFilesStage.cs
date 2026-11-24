@@ -135,7 +135,7 @@ internal sealed class TreeFilesStage(string home, string root, string tree, stri
         _said.AddRange(based.Said);
         At("files.local");
         await CopyLocalAsync(ct).ConfigureAwait(false);
-        var prepared = unworked ? TreePreparation.Told(root) : null;
+        var prepared = unworked ? TreePreparation.Told(root, CheckBudgets.Of(home, repository)) : null;
         var outcome = Outcome();
         var told = string.Join(' ', new[] { outcome.Told, shared.Told, based.Told, prepared }.OfType<string>());
         return told.Length == 0 ? outcome : outcome with { Told = told };
@@ -145,7 +145,7 @@ internal sealed class TreeFilesStage(string home, string root, string tree, stri
     private async Task<LocalCopy> CopyLocalAsync(CancellationToken ct)
     {
         if (_rules is null) return LocalCopy.None;
-        var copied = await TreeLocalInputs.CopyAsync(root, tree, path => TreeCopyPermit.Judge(home, repository, _rules, path), ct).ConfigureAwait(false);
+        var copied = await TreeLocalInputs.CopyAsync(root, tree, path => TreeCopyPermit.Judge(home, repository, _rules, path), ct, CheckBudgets.Of(home, repository)).ConfigureAwait(false);
         if (copied.Copied.Count > 0) RecordCopies(copied.Copied);
         if (copied.Line() is { } line) _said.Add(line);
         foreach (var each in copied.Declined) _said.Add(each.Line());

@@ -117,8 +117,12 @@ public sealed class GateDeclaration
     /// </remarks>
     public IReadOnlySet<string> Disabled { get; init; } = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
-    public static GateDeclaration Read(string repositoryRoot)
+    public static GateDeclaration Read(string repositoryRoot) => Read(repositoryRoot, Environment.GetEnvironmentVariable("DAORIS_HOME"));
+
+    /// <summary>The declaration, its devkit version, patterns file and local inputs the home's (<paramref name="home"/>, see <see cref="MachineBudgets"/>) where it keeps them.</summary>
+    public static GateDeclaration Read(string repositoryRoot, string? home)
     {
+        var kept = MachineBudgets.Read(home, repositoryRoot);
         var file = Path.Combine(repositoryRoot, FileName);
         if (!File.Exists(file))
         {
@@ -132,13 +136,13 @@ public sealed class GateDeclaration
 
         return new GateDeclaration
         {
-            Devkit = String(root, "devkit"),
+            Devkit = kept.Devkit ?? String(root, "devkit"),
             Gates = ReadGates(root),
-            Sensitive = ReadSensitive(root),
+            Sensitive = ReadSensitive(root, kept.PatternsFile),
             Version = ReadVersion(root),
             Docs = ReadDocs(root),
             Doctrine = ReadDoctrine(root),
-            LocalInputs = Strings(root, "localInputs"),
+            LocalInputs = kept.LocalInputs ?? Strings(root, "localInputs"),
             Disabled = new HashSet<string>(Strings(root, "disabled"), StringComparer.OrdinalIgnoreCase),
         };
     }
@@ -177,12 +181,12 @@ public sealed class GateDeclaration
         return declared;
     }
 
-    private static SensitiveOptions ReadSensitive(JsonElement root) =>
+    private static SensitiveOptions ReadSensitive(JsonElement root, string? machinePatternsFile) =>
         root.TryGetProperty("sensitive", out var element) && element.ValueKind == JsonValueKind.Object
             ? new SensitiveOptions(
-                String(element, "patternsFile") ?? new SensitiveOptions().PatternsFile,
+                machinePatternsFile ?? String(element, "patternsFile") ?? new SensitiveOptions().PatternsFile,
                 Strings(element, "reviewedObjects"))
-            : new SensitiveOptions();
+            : new SensitiveOptions(machinePatternsFile ?? new SensitiveOptions().PatternsFile);
 
     private static VersionOptions ReadVersion(JsonElement root) =>
         root.TryGetProperty("version", out var element) && element.ValueKind == JsonValueKind.Object

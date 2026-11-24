@@ -4,7 +4,7 @@ namespace Daoris.Driver;
 
 /// <summary>What a repository declares a prepared tree runs: the gates' regenerate commands, then one fast gate run whose verdicts are the base.</summary>
 /// <param name="Regenerate">Each distinct <c>regenerate</c> of its gates, in the gates' order.</param>
-/// <param name="Baseline">The top-level <c>treeBaseline</c> command, or null where none is declared.</param>
+/// <param name="Baseline">The <c>treeBaseline</c> command: this machine's, else the declaration's; null where neither is set.</param>
 internal sealed record TreePrepDeclared(IReadOnlyList<string> Regenerate, string? Baseline)
 {
     internal static readonly TreePrepDeclared None = new([], null);
@@ -15,21 +15,27 @@ internal sealed record TreePrepDeclared(IReadOnlyList<string> Regenerate, string
     /// Read from <paramref name="checkout"/>'s gates file, never the tree's: what a session's fresh tree is told is the checkout's say, as
     /// the machine-local inputs are. A file that is absent or does not read declares nothing.
     /// </summary>
-    internal static TreePrepDeclared Read(string checkout)
+    internal static TreePrepDeclared Read(string checkout, RepositoryBudgets? kept = null)
     {
         try
         {
             var file = Path.Combine(checkout, DeclarationNames.Gates);
-            return File.Exists(file) ? Of(File.ReadAllText(file)) : None;
+            return Of(File.Exists(file) ? File.ReadAllText(file) : null, kept);
         }
         catch (Exception error) when (error is IOException or UnauthorizedAccessException)
         {
-            return None;
+            return Of(null, kept);
         }
     }
 
     /// <summary>Read from a declaration's <paramref name="text"/>, as a check reads the gates of the one it runs under; one that does not read declares nothing.</summary>
-    internal static TreePrepDeclared Of(string? text)
+    internal static TreePrepDeclared Of(string? text, RepositoryBudgets? kept = null)
+    {
+        var declared = Declared(text);
+        return kept?.TreeBaseline is { } baseline ? declared with { Baseline = baseline } : declared;
+    }
+
+    private static TreePrepDeclared Declared(string? text)
     {
         if (string.IsNullOrWhiteSpace(text)) return None;
         try
@@ -99,9 +105,9 @@ internal static class TreePreparation
     }
 
     /// <summary>What a session handed a fresh tree is told of its checkout's declaration; null where it declares nothing.</summary>
-    internal static string? Told(string checkout)
+    internal static string? Told(string checkout, RepositoryBudgets? kept = null)
     {
-        var declared = TreePrepDeclared.Read(checkout);
+        var declared = TreePrepDeclared.Read(checkout, kept);
         if (declared.Empty) return null;
         var commands = string.Join(", then ", declared.Regenerate.Concat(declared.Baseline is { } named ? [named] : []).Select(command => $"`{command}`"));
         return $"This tree is fresh and Daoris ran none of the preparation its repository declares, so you started at once: run {commands} "
