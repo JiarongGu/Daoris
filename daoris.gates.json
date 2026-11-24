@@ -346,26 +346,6 @@
     ]
   },
 
-  "unasked": {
-    "_why": "What an agent may do here without asking, accepted once by the owner (2026-11-15) and read by tools: each grant an exact act. The owner calls are named as excluded, so the boundary is visible. A change to this entry takes effect once it has landed and the owner has accepted it.",
-    "may": [
-      "republish the local install when no driven session runs",
-      "merge a finished, checked branch through tools/merge-branch.mjs",
-      "push a landed main whose sensitive scan is clean to origin",
-      "stop a process the agent's own runs started",
-      "ask Codex for a second opinion within its cap",
-      "spend the DeepSeek harness's prepaid key on reviews"
-    ],
-    "ownerOnly": [
-      "money and budgets: raising a cap, a top-up",
-      "sign-ins and credentials",
-      "a production release the owner marked as theirs",
-      "a history rewrite",
-      "deleting the owner's data",
-      "publishing to people outside"
-    ]
-  },
-
   "integration": {
     "merge": [
       { "paths": "docs/README.md", "by": "rows" }

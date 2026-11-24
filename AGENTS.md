@@ -42,16 +42,17 @@ Declared in `daoris.json`; look here before searching.
 
 ## Rules for every session
 
-1. **Ask the owner only owner things,** a closed list: direction and targets, money and budgets, sign-ins and
-   credentials, releases they marked as theirs, history rewrites, deleting their data, and publishing to people
-   outside beyond what the repository declares. The owner owns the outcome, not the steps: decide the rest, alone or
-   with another agent; record why and go on. A question to the owner says what it is, what yes does, what no does
+1. **Ask the owner only what the risk policy puts to them.** Whether an act needs a yes, and whose, is one declared
+   policy: where it declares none nothing waits, and only acts it classes theirs, and changes to the policy itself, go
+   to the owner. With none: direction and targets, money and budgets, sign-ins and credentials, marked releases,
+   history rewrites, deleting their data, publishing outside. The owner owns the outcome, not the steps: decide the rest, alone or with another agent; record
+   why and go on. A question to the owner says what it is, what yes does, what no does
    and where to look. Work you cannot finish is reported as "gave up" with what you tried, never asked about.
 2. **Ownership is local.** Change only this repository. What another needs is a request to whoever works there, with
    the evidence: a quest where a request system exists, a message to its owner where none does. Already touched one?
    Stop and say so (`reaching-in`).
-3. **Delivery follows risk, as the repository declares it:** what may run, land and publish unasked is a declaration
-   its brief names; add no human step it does not name. Before landing come two agent reviews, wide (design, effects
+3. **Delivery follows the risk policy:** what may run, land and publish unasked is declared (a policy,
+   else a declaration beside the gates) and its brief names where; add no human step it does not name. Before landing come two agent reviews, wide (design, effects
    beyond the change) and close (details, edge cases, tests), from different agent families where two are ready.
 4. **One way per job.** A better way deletes the old one in the same change: code, commands, options, words, defaults.
    An older reader kept for records already written names the condition that ends it.
@@ -87,21 +88,18 @@ Declared in `daoris.json`; look here before searching.
 
 ## This repository
 
-- Node 24 and the .NET 10 SDK (the packaged CLI supports Node 22 and later). Install with `npm ci` and
+- Node 24 and the .NET 10 SDK. Install with `npm ci` and
   `npm --prefix src/Daoris.Web ci`; a worktree starts with `node tools/worktree-setup.mjs`.
 - While working: the filtered tests your area names, and `npm run quick`. Before done:
   `node tools/reached-checks.mjs --base main --tier fast` and `npm run verify:checks`.
-- Land with `node tools/merge-branch.mjs <branch>`, never a plain `git merge`. What agents may do unasked, and what
-  stays the owner's, is the `unasked` declaration in `daoris.gates.json`.
+- Land with `node tools/merge-branch.mjs <branch>`, never a plain `git merge`. What agents may do unasked is the
+  risk policy: `daoris settings risk`.
 - `npm run verify` is the baseline; the full set (`node tools/merge-branch.mjs --full`) belongs at an integration
-  boundary. Real-process suites and rehearsals run one at a time and may open windows. `docs/development.md` says how,
-  and how scratch is cleaned.
-- Areas (`docs/areas/`): doctrine-and-cli, knowledge-memory-records, install-home-update, driving,
-  conversations-and-context, agents-and-harnesses, roles-and-supervision, workflows-review-landing,
-  co-working-and-messages, git-and-remotes, desktop-app, plugins, code-structure-and-process.
+  boundary. Real-process suites and rehearsals run one at a time and may open windows. `docs/development.md` says how.
+- Areas: one document per part of the code, in `docs/areas/`.
 - Written by tools, never by hand: the doctrine above and `.claude/` (edit `canon/`, then run
   `node src/Daoris.Cli/bin/daoris.mjs sync` here, in `examples/engine` and in `examples/game`); `docs/code-map.json`
-  (the devkit's `map`); `docs/index/` (`node tools/orient-index.mjs`, never committed); versions and release headings
+ ; `docs/index/` (`node tools/orient-index.mjs`, never committed); versions and release headings
   (the release workflow).
 - `local/` (ignored) holds private context and session scratch; `_fixtures/` is the tests' and tools' scratch.
 

@@ -132,11 +132,12 @@ document already over a ceiling is held where it stands: it may shrink and may n
 over, the read path has grown: move its history to the record that keeps it and what belongs in another
 tier there, then condense, and only then raise the number, deliberately and with the reason.
 
-### What may run unasked is a declaration
+### What may run unasked is declared
 
-What a session may run without asking goes in a declaration a tool reads, beside the gates, and a
-person accepts it once: the checks that are a session's to run, the build and test commands, the
-install from the lockfile. The brief says only where it is.
+What a session may run without asking is declared once: as the repository's risk policy where it keeps one
+(`autonomous-development`), else in a declaration a tool reads, beside the gates, which a person accepts once: the
+checks that are a session's to run, the build and test commands, the install from the lockfile. The brief says only
+where it is.
 
 - **Exact commands, one per entry.** A pattern that admits any argument to a runner admits anything.
 - **The owner calls never enter it** (`autonomous-development`): money and budgets, sign-ins and
