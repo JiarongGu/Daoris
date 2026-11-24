@@ -14,7 +14,8 @@ public static class BusStatsCommand
 {
     public const string Usage =
         "usage: daoris bus stats [--days <1-90>]   the bus log's measures by day (UTC): events by kind, flushes and their time, the rows'\n"
-        + "                                         bytes and the disk's pages, misses, handling and look stage times; changes nothing";
+        + "                                         bytes and the disk's pages, misses, handling and look stage times, then each obliged type's\n"
+        + "                                         deadline beside its kind's handled most; changes nothing";
 
     /// <summary>The days read where none are asked for.</summary>
     public const int Days = 7;
@@ -69,7 +70,29 @@ public static class BusStatsCommand
             Day(day.ToList(), output);
         }
 
+        Deadlines(measures, output);
         return 0;
+    }
+
+    /// <summary>Each obliged type's deadline beside its kind's <c>handled</c> most over the days read, and the deadline that most sets for a provisional one.</summary>
+    private static void Deadlines(IReadOnlyList<BusMeasureRow> measures, StringBuilder output)
+    {
+        output.AppendLine("deadlines, each obliged type's against its kind's handled most over these days:");
+        foreach (var type in BusTypes.All.Where(type => type.GiveUp != BusGiveUps.Dropped))
+        {
+            var deadline = type.Deadline;
+            var minutes = Invariant($"{deadline.Within.TotalMinutes:0.##} min");
+            if (!deadline.Provisional)
+            {
+                output.AppendLine(Invariant($"  {type.Kind}: measured {minutes}"));
+                continue;
+            }
+
+            var handled = measures.Where(row => row.Measure == BusMeasures.Handled && row.Name.EndsWith(":" + type.Kind, StringComparison.Ordinal)).ToList();
+            output.AppendLine(handled.Count == 0
+                ? Invariant($"  {type.Kind}: provisional {minutes}; no handled measure yet")
+                : Invariant($"  {type.Kind}: provisional {minutes}; handled n={handled.Sum(row => row.Count)} most {handled.Max(row => row.Most)} ms, which sets {BusDeadline.Reading(handled.Max(row => row.Most)).TotalMinutes:0.##} min"));
+        }
     }
 
     private static void Day(IReadOnlyList<BusMeasureRow> rows, StringBuilder output)

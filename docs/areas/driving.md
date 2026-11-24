@@ -317,7 +317,10 @@ built, but nothing outside tests makes, takes or ends one; `LinePlaces` answers 
     105 minutes, twice the longest of 214 start-to-verdict times read at 99ce8edc60 (51.5 minutes), and a pass's asking, 30, twice the
     longest of 81 (14.5). Every other is stated provisional with what it stands on (a busy runner's offer, a consumer's ten
     minutes) until the `handled` measure, each acknowledgement's append-to-acknowledgement time by kind, holds its days (BUS2b3), and the
-    watchdog runs against it in shadow (below) before any give-up acts. `BusTypesCensusTests` holds that every type names its obligations, that its give-up
+    watchdog runs against it in shadow (below) before any give-up acts. `daoris bus stats` ends with the read that replaces a provisional
+    deadline: each obliged type's deadline beside the most its kind's `handled` measure holds over the days read, and the deadline that
+    most sets (`BusDeadline.Reading`: twice the most, up to the next five minutes, five at least), a type with no `handled` measure said so;
+    the install that precedes the measure (99ce8edc60) shows none, so every consumer type stays stated until one runs for days. `BusTypesCensusTests` holds that every type names its obligations, that its give-up
     is in the list, and that no desktop source builds a type elsewhere or spells a kind, so a type the registry lacks is never
     emitted; the page gets the types' list with its first reader in the window (BUS2f), not before. A subscription naming
     a type the registry lacks fails as it registers.

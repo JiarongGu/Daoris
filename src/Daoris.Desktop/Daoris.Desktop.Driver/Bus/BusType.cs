@@ -72,6 +72,13 @@ public sealed record BusDeadline(TimeSpan Within, string Basis, bool Provisional
     /// <summary>A deadline set from the handling times <c>daoris bus stats</c> read, which <paramref name="basis"/> names with their commit.</summary>
     public static BusDeadline Measured(TimeSpan within, string basis) => new(within, basis, Provisional: false);
 
+    /// <summary>The deadline the longest handling time measured sets: twice it, up to the next five minutes, five at least.</summary>
+    public static TimeSpan Reading(long mostMs)
+    {
+        var fives = Math.Max(1, (long)Math.Ceiling(Math.Max(0, mostMs) * 2.0 / (5 * 60 * 1000)));
+        return TimeSpan.FromMinutes(fives * 5);
+    }
+
     /// <summary>A deadline no measure set yet: <paramref name="why"/> says what it stands on until one does.</summary>
     public static BusDeadline Stated(TimeSpan within, string why) => new(within, why, Provisional: true);
 }
