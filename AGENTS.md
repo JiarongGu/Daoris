@@ -98,8 +98,8 @@ Declared in `daoris.json`; look here before searching.
   boundary. Real-process suites and rehearsals run one at a time and may open windows. `docs/development.md` says how.
 - Areas: one document per part of the code, in `docs/areas/`.
 - Written by tools, never by hand: the doctrine above and `.claude/` (edit `canon/`, then run
-  `node src/Daoris.Cli/bin/daoris.mjs sync` here, in `examples/engine` and in `examples/game`); `docs/code-map.json`
- ; `docs/index/` (`node tools/orient-index.mjs`, never committed); versions and release headings
+  `node src/Daoris.Cli/bin/daoris.mjs sync` here, in `examples/engine` and in `examples/game`); `docs/code-map.json`;
+  `docs/index/` (`node tools/orient-index.mjs`, never committed); versions and release headings
   (the release workflow).
 - `local/` (ignored) holds private context and session scratch; `_fixtures/` is the tests' and tools' scratch.
 
