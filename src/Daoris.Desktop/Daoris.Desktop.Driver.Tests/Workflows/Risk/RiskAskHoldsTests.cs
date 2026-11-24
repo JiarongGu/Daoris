@@ -67,8 +67,8 @@ public sealed class RiskAskHoldsTests : IDisposable
         var line = Assert.Single(Journal());
         Assert.Equal(("goahead:a1/1", RiskActs.ReleaseStart, "production", "work", "app"), (line.Key, line.Kind, line.Qualifier, line.Workspace, line.Repository));
         Assert.Equal(("session:s-app", true), (line.Actor, line.TodayHeld));
-        // Today a high-risk place keeps it the owner role's; the judge reads `placeRisk`'s high as every act at the owner: they agree.
-        Assert.Contains(SupervisorWhy.HighRisk, line.Today, StringComparison.Ordinal);
+        // A high-risk place keeps it the owner role's by the judge's own verdict: today and the shadow agree.
+        Assert.Contains(SupervisorWhy.PolicyOwner, line.Today, StringComparison.Ordinal);
         Assert.Equal((RiskVerdict.OwnerOutcome, true), (line.Outcome, line.Agrees));
     }
 
@@ -80,7 +80,7 @@ public sealed class RiskAskHoldsTests : IDisposable
         Assert.Empty(RiskAskHolds.GoAheads([Ask(GoAhead(1, "release", "production", session: "s-ended"))], Records, config, WorkspaceOf));
 
         var hold = Assert.Single(RiskAskHolds.GoAheads([Ask(GoAhead(1, "release", "production"))], Records, config, WorkspaceOf));
-        Assert.Contains(SupervisorWhy.Marked, hold.Today, StringComparison.Ordinal);
+        Assert.Contains(SupervisorWhy.PolicyOwner, hold.Today, StringComparison.Ordinal);
         Assert.Equal(RiskVerdict.OwnerOutcome, RiskGate.Judge(RiskPolicy.Of(config), hold.Act, hold.Actor, hold.Place, hold.Subject).Outcome);
     }
 

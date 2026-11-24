@@ -24,15 +24,15 @@ public sealed class GoAheadAnswerTests : IDisposable
 
     private sealed class Holds(params string[] granted) : IDecisionAdmission
     {
-        /// <summary>The place's risk and marks as they stand now; a test raises or marks it inside the window.</summary>
-        public PlaceRiskNow Now { get; set; } = Risk(PlaceRisks.Low);
+        /// <summary>The home's risk record as it stands now; a test raises or marks it inside the window.</summary>
+        public DriverConfig Now { get; set; } = Risk(PlaceRisks.Low);
 
         public DecisionAdmitted Admit(string kind, RolePlace place, string? act) =>
             act is null || granted.Contains(SupervisorKinds.Qualified(kind, act))
                 ? new("g-1", null) { Window = TimeSpan.FromMinutes(10), Role = "reports-supervisor" }
                 : DecisionAdmitted.Refused(SupervisorWhy.NotGranted);
 
-        public PlaceRiskNow RiskAt(RolePlace place) => Now;
+        public string? GoAheadOwners(RolePlace place, string kind, string on) => GoAheadAuthority.OwnersOwn(Now, place, kind, on);
     }
 
     private static DoorRelease Posting(List<SupervisorDoorDue> posted) => new(
@@ -50,13 +50,17 @@ public sealed class GoAheadAnswerTests : IDisposable
         SupervisorSubject.GoAhead("s1", "a7", pin.Number), "reports", "g-1", SupervisorKinds.Answer, choice,
         [new SupervisorReason("The write is the plan's own step on staging.", "the ask's plan")], Claude) { Pin = pin.Said };
 
-    private static PlaceRiskNow Risk(string risk, params string[] marks) => new(risk, "repository/reports", marks);
+    private static DriverConfig Risk(string risk, params string[] marks) => DriverConfig.Parse(
+        $$"""{ "placeRisk": { "repository/reports": { "risk": "{{risk}}", "marks": [{{string.Join(", ", marks.Select(mark => $"\"{mark}\""))}}] } } }""");
+
+    private static string? Refusal(DriverConfig config, GoAheadPin pin) =>
+        GoAheadAuthority.Refusal(RiskPolicy.Of(config), RiskPlace.Of(config, null, "reports"), pin.Kind, pin.On, [[GoAheadAuthority.Act]]);
 
     [Fact]
     public async Task An_appointed_role_answers_a_low_risk_go_ahead_and_it_holds_for_overrule_then_goes_out_as_the_roles()
     {
         var decisions = new QuestionSupervisorDecisions(_home, new Holds(GoAheadAuthority.Act));
-        var refused = GoAheadAuthority.Refusal(Risk(PlaceRisks.Low), Write.Kind, [[GoAheadAuthority.Act]]);
+        var refused = Refusal(Risk(PlaceRisks.Low), Write);
 
         var kept = await decisions.DoorAsync(Answer(Write), refused, At);
 
@@ -79,11 +83,11 @@ public sealed class GoAheadAnswerTests : IDisposable
     {
         var decisions = new QuestionSupervisorDecisions(_home, new Holds(GoAheadAuthority.Act));
         var release = new GoAheadPin(3, GoAheadAuthority.Release, "production", "release 4.2 of the reports app");
-        var refused = GoAheadAuthority.Refusal(Risk(PlaceRisks.Low, PlaceMarks.ProductionReleases), release.Kind, [[GoAheadAuthority.Act]]);
+        var refused = Refusal(Risk(PlaceRisks.Low, PlaceMarks.ProductionReleases), release);
 
         var kept = await decisions.DoorAsync(Answer(release), refused, At);
 
-        Assert.Equal((false, SupervisorWhy.Marked), (kept.Kept, kept.Why));
+        Assert.Equal((false, SupervisorWhy.PolicyOwner), (kept.Kept, kept.Why));
         Assert.True(decisions.RefersDoor(SupervisorSubject.GoAhead("s1", "a7", 3)));
     }
 

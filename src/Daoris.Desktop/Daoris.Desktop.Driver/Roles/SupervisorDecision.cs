@@ -13,6 +13,8 @@ public interface IDecisionAdmission
     DecisionAdmitted Admit(SupervisorSubject subject, RolePlace place, string? act) => Admit(subject.Kind, place, act);
 
     PlaceRiskNow RiskAt(RolePlace place) => new(PlaceRisks.High, PlaceRiskBook.DefaultSource, []);
+
+    string? GoAheadOwners(RolePlace place, string kind, string on) => SupervisorWhy.PolicyOwner;
 }
 
 /// <summary>What <see cref="IDecisionAdmission"/> answers: the effective generation, or why no holder is admitted.</summary>
@@ -102,7 +104,7 @@ public static class SupervisorWhy
 
     public const string HighRisk = "high-risk";
 
-    public const string Marked = "marked";
+    public const string PolicyOwner = "policy-owner";
 
     /// <summary>The hold an act names is not the role's now: its terminal is started again, or its role changed.</summary>
     public const string RoleChanged = "role-changed";

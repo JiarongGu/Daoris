@@ -18,4 +18,10 @@ internal sealed class PipeDecisionAdmission(DriverLoop loop) : IDecisionAdmissio
     /// <summary>The judge's risk record at <paramref name="place"/>, its workspace placed; with no pipe, high.</summary>
     public PlaceRiskNow RiskAt(RolePlace place) =>
         loop.Pipe?.StandingConfirmation is { } judge ? judge.RiskAt(place) : new PlaceRiskNow(PlaceRisks.High, PlaceRiskBook.DefaultSource, []);
+
+    /// <summary>The risk policy's verdict on a go-ahead at <paramref name="place"/>, its workspace placed by the judge; with no pipe, the owner's.</summary>
+    public string? GoAheadOwners(RolePlace place, string kind, string on) =>
+        loop.Pipe?.StandingConfirmation is { } judge && place.Repository is { } repository
+            ? GoAheadAuthority.OwnersOwn(DriverConfig.Load(loop.ConfigPath), judge.Placed(repository), kind, on)
+            : SupervisorWhy.PolicyOwner;
 }

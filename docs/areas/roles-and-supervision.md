@@ -226,17 +226,19 @@ in a file of its name; `docs/index/README.md` says where a seam, route, verb or 
     holder's grants cover. (D208, D233)
 47. It never answers a go-ahead, an owner-class kind, an unrecorded or contradicting question, or one that directs it: its bounds
     are a go-ahead, the seven owner-class kinds and those three. (D208, D304) A go-ahead is the approver's yes, a role act of its own
-    (`goahead.answer`, `GoAheadAuthority`): a role whose every grant on its chain covers it may give it at low and medium risk; it
-    stays the owner role's at high risk (`high-risk`), for a sign-in (`owner-class`), and at a place whose production releases are
-    marked for every kind but a push (`marked`), failing closed: a release, write or run there is the role's only where its release
-    target's stage, as its plugin names it (`ReleaseStage`), is not production, never judged from the asker's words, which may be in
-    any language or name a system by its own name; no go-ahead carries a plugin's stage yet, so each waits on the owner role there.
+    (`goahead.answer`, `GoAheadAuthority`): a role whose every grant on its chain covers it may give it wherever the risk policy does
+    not class its act the owner's. Its act is read from its kind and target (a push `remote.push`; a release, write or run
+    `release.start`, qualified by the destination its target names, `RiskAskHolds.GoAheadAct`) and judged at the asking session's
+    place: a place at high risk, a production-releases mark (every release, write or run there, however its target is worded, never
+    judged from the asker's words, which may be in any language or name a system by its own name) and a row classing the act `owner`
+    keep it the owner role's (`policy-owner`), as does a kind the build does not know; a sign-in is a person in a browser, the owner
+    role's by its kind (`owner-class`).
     The service reads a target's environment in Chinese as in English (`生产`, `线上`, `正式` read as production). The `goahead` kind
     lists each open go-ahead (`{ session, goahead }`: the newest live session that asked it, and `<ask>/<number>`) only where its
     place's supervisor may answer it, reading nothing where no role a terminal or an agent holds is granted `goahead.answer` and
     otherwise one list of the open asks (`GoAheadsOpen`); it holds an `approved` or
     `refused` for the role's window with *Overrule* as a door answer (rule 49's table), pinned to its number, kind, target and act
-    (`GoAheadPin`), judges the place's risk and marks again at the release, a place marked or raised meanwhile going stale, and
+    (`GoAheadPin`), judges it by the policy again at the release, one the policy moved to the owner meanwhile going stale, and
     releases it to the service's go-ahead door with its `role` form, which keeps who answered (`by`, read by an
     older build as the person's), says it in its response sentence (`by the person`, or `by role:<role> · <agent>`) and refuses a keyless
     caller; its leave climbs the line. `daoris ask go-ahead` in a role's terminal is admitted by the role it holds, never by its being a

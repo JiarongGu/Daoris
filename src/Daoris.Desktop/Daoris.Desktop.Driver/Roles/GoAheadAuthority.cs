@@ -9,16 +9,19 @@ public sealed record GoAheadPin(int Number, string Kind, string On, string Act)
     /// <summary>The pin as a held answer keeps it: <c>number|kind|target|act</c>.</summary>
     public string Said => $"{Number}|{Kind}|{On}|{Act}";
 
-    /// <summary>The kind a kept pin names (its number and kind hold no bar); null for one that does not read.</summary>
-    public static string? KindOf(string? said) => said?.Split('|', 3) is [_, { Length: > 0 } kind, _] ? kind : null;
+    /// <summary>The kind and target a kept pin names (its number holds no bar); null for one that does not read.</summary>
+    public static (string Kind, string On)? Read(string? said) =>
+        said?.Split('|', 4) is [_, { Length: > 0 } kind, var on, _] ? (kind, on) : null;
 }
 
 /// <summary>
-/// Who answers a go-ahead: the approver's yes is a role act, <see cref="Act"/>, which an appointed role whose
-/// grants cover it takes at low and medium risk, held for the owner's overrule as <c>landing.accept</c> is. It stays the owner role's at
-/// high risk (<c>high-risk</c>), at a place whose production releases the owner marked (<c>marked</c>, failing closed), and for a sign-in,
-/// an owner-class kind (<c>owner-class</c>, doctrine rule 1). Judged on the place's risk record as it stands at the answer and again at
-/// the release, and on every grant of the caller's chain, never on whether the caller is a person or an agent.
+/// Who answers a go-ahead: the approver's yes is a role act, <see cref="Act"/>, which an appointed role whose grants cover it takes, held
+/// for the owner's overrule as <c>landing.accept</c> is, wherever the risk policy does not class the go-ahead's act the owner's. Its act is
+/// read by <see cref="RiskAskHolds.GoAheadAct"/> and judged at the asking session's place (<see cref="RiskGate"/>): a place at high risk, a
+/// production-releases mark (every release, write or run, however its target is worded) and a row classing the act <c>owner</c> keep it the
+/// owner role's, <c>policy-owner</c>; a kind this build does not know reads the owner's too. A sign-in is a person in a browser, the owner
+/// role's by its kind (<c>owner-class</c>). Judged as the policy stands at the answer and again at the release, and on every grant of the
+/// caller's chain, never on whether the caller is a person or an agent.
 /// </summary>
 public static class GoAheadAuthority
 {
@@ -35,27 +38,26 @@ public static class GoAheadAuthority
     public const string Push = "push";
 
     /// <summary>
-    /// Why the go-ahead of <paramref name="kind"/> stays the owner role's at a place standing at <paramref name="risk"/>: a sign-in
-    /// (<c>owner-class</c>), a high-risk place (<c>high-risk</c>), and at a place whose production releases the owner marked, every kind but a
-    /// push (<c>marked</c>) unless its release target's stage, as its plugin names it, is not production. The asker's words for the target
-    /// never clear it: they may be in any language or name a system by its own name. None where a role may answer it.
+    /// Why the go-ahead of <paramref name="kind"/> on <paramref name="on"/> stays the owner role's at <paramref name="place"/> under
+    /// <paramref name="policy"/>: a sign-in (<c>owner-class</c>), and an act the judge classes the owner's or a kind it cannot read
+    /// (<c>policy-owner</c>). None where a role may answer it.
     /// </summary>
-    /// <param name="stage">The release target's stage its plugin names; null where none is named, which at a marked place fails closed.</param>
-    public static string? OwnersOwn(PlaceRiskNow risk, string kind, ReleaseStage? stage = null)
+    public static string? OwnersOwn(RiskPolicy policy, RiskPlace place, string kind, string on)
     {
         if (kind == SignIn) return SupervisorWhy.OwnerClass;
-        if (!PlaceRisks.RoleMayHold(risk.Risk)) return SupervisorWhy.HighRisk;
-        return risk.Marked(PlaceMarks.ProductionReleases) && kind != Push && stage is not { Production: false } ? SupervisorWhy.Marked : null;
+        if (RiskAskHolds.GoAheadAct(kind, on) is not { } act) return SupervisorWhy.PolicyOwner;
+        return RiskGate.Judge(policy, act, "", place, "").Outcome == RiskVerdict.OwnerOutcome ? SupervisorWhy.PolicyOwner : null;
     }
 
     /// <summary>
-    /// Why a role may not answer the go-ahead of <paramref name="kind"/> at a place standing at <paramref name="risk"/>, by
+    /// Why a role may not answer the go-ahead of <paramref name="kind"/> on <paramref name="on"/> at <paramref name="place"/>, by
     /// <paramref name="chain"/>'s grants (the acting role's, then each delegator's): the owner role's code (<see cref="OwnersOwn"/>), else the
     /// grant missing; none where the role answers it.
     /// </summary>
-    public static string? Refusal(PlaceRiskNow risk, string kind, IReadOnlyList<IReadOnlyCollection<string>> chain, ReleaseStage? stage = null) =>
-        OwnersOwn(risk, kind, stage) ?? (chain.Count > 0 && chain.All(grants => grants.Contains(Act)) ? null : Act);
-}
+    public static string? Refusal(RiskPolicy policy, RiskPlace place, string kind, string on, IReadOnlyList<IReadOnlyCollection<string>> chain) =>
+        OwnersOwn(policy, place, kind, on) ?? (chain.Count > 0 && chain.All(grants => grants.Contains(Act)) ? null : Act);
 
-/// <summary>A release target's stage as the release step's plugin names it: its name and whether it reaches production.</summary>
-public sealed record ReleaseStage(string Name, bool Production);
+    /// <summary><see cref="OwnersOwn"/> with the policy and the place read from <paramref name="config"/>.</summary>
+    public static string? OwnersOwn(DriverConfig config, RolePlace place, string kind, string on) =>
+        OwnersOwn(RiskPolicy.Of(config), RiskPlace.Of(config, place.Workspace, place.Repository), kind, on);
+}
