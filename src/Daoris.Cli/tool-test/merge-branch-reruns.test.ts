@@ -151,18 +151,34 @@ test('a heavy gate starts only while the free memory stays above the reserve kep
 });
 
 
-test('the reserve is the setting in the home driver.json, else a third of the machine memory to the whole GB', () => {
-  const files = (text: string | null) => (path: string) => {
+test('the reserve is the larger of the person floor in the home driver.json and what their own work is measured to take back', () => {
+  const driver = (text: string | null) => (path: string) => {
     if (text === null || !path.includes('data')) throw new Error('no file');
     return text;
   };
-  assert.equal(tool.reserveGb({ total: 64 * GiB, home: 'h', read: files('{"reserveGb":24}') }), 24);
-  assert.equal(tool.reserveGb({ total: 64 * GiB, home: 'h', read: files('{"reserveGb":0}') }), 0, 'none is a choice');
-  assert.equal(tool.reserveGb({ total: 64 * GiB, home: 'h', read: files('{}') }), 21);
-  assert.equal(tool.reserveGb({ total: 64 * GiB, home: 'h', read: files('{"reserveGb":"lots"}') }), 21, 'a value that does not read is auto');
-  assert.equal(tool.reserveGb({ total: 64 * GiB, home: 'h', read: files('{"reserveGb":99999}') }), 21, 'out of its bounds is auto');
-  assert.equal(tool.reserveGb({ total: 64 * GiB, home: null }), 21, 'no home names the default');
+  const NOW = Date.parse('2026-11-25T09:00:00Z');
+  const room = (samples: { at: string; used: number; daoris: number }[]) => (path: string) => {
+    if (!path.endsWith('room.json')) throw new Error('no file');
+    return JSON.stringify({ schema: 1, samples });
+  };
+  const gb = (value: number) => value * GiB;
+  const margin = 64 / 50;
+  assert.equal(tool.reserveGb({ total: 64 * GiB, home: 'h', read: driver('{"reserveGb":24}') }), 24);
+  assert.equal(tool.reserveGb({ total: 64 * GiB, home: 'h', read: driver('{"reserveGb":0}') }), margin, 'none is a floor of none, the margin stays');
+  assert.equal(tool.reserveGb({ total: 64 * GiB, home: 'h', read: driver('{}') }), margin);
+  assert.equal(tool.reserveGb({ total: 64 * GiB, home: 'h', read: driver('{"reserveGb":"lots"}') }), margin, 'a value that does not read is no floor');
+  assert.equal(tool.reserveGb({ total: 64 * GiB, home: 'h', read: driver('{"reserveGb":99999}') }), margin, 'out of its bounds is no floor');
+  assert.equal(tool.reserveGb({ total: 64 * GiB, home: null }), margin, 'no home names the margin alone');
   assert.equal(tool.reserveGb({ total: null, home: null }), 0, 'nothing known keeps nothing');
+  assert.equal(tool.reserveGb({ total: 10 * GiB, home: null }), 1, 'the margin is 1 GB at least');
+  const swung = room([
+    { at: '2026-11-25T08:40:00.000Z', used: gb(60), daoris: 0 },
+    { at: '2026-11-25T08:55:00.000Z', used: gb(40), daoris: gb(2) },
+    { at: '2026-11-25T08:59:00.000Z', used: gb(30), daoris: gb(4) },
+  ]);
+  const both = (floor: number) => (path: string) => (path.endsWith('room.json') ? swung(path) : driver(`{"reserveGb":${floor}}`)(path));
+  assert.equal(tool.reserveGb({ total: 64 * GiB, home: 'h', now: NOW, read: both(0) }), 12 + margin);
+  assert.equal(tool.reserveGb({ total: 64 * GiB, home: 'h', now: NOW, read: both(30) }), 30, 'a floor above the measured room holds');
 });
 
 

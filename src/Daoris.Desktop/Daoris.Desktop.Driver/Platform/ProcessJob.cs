@@ -30,7 +30,7 @@ namespace Daoris.Driver;
 /// all before the harness runs (<see cref="PieceLauncher"/>). The driver opens that own job by its name afterwards (<see cref="OpenHolding"/>)
 /// and reads and ends the session through it.</para>
 /// </remarks>
-public sealed class ProcessJob : IDisposable
+public sealed partial class ProcessJob : IDisposable
 {
     private IntPtr _handle;
 

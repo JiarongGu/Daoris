@@ -36,7 +36,7 @@ public static class DriverChoicesCommand
                daoris settings [notify|cap|cooloff|quiet|drain|manifest|terminal|keep|checks|vacancy|reserve]  (no verb says each setting; a verb with no value, that one)
                daoris settings notify on|off · cap <n> · cooloff <minutes> · quiet <minutes> · drain <minutes> · manifest files <n>|minutes <n>|copy <megabytes> · terminal ask|act
                daoris settings checks <n>|auto  (how many checks the machine runs at once; auto, the default, as many as its memory admits)
-               daoris settings reserve <gb>|auto  (the memory kept free for your own work: a heavy run starts only while it stays free after its need; auto, the default, a third of the machine's)
+               daoris settings reserve <gb>|auto  (the floor of the memory kept free for your own work: a heavy run starts only while the larger of it and what your own work is measured to take back stays free after its need; auto, the default, no floor)
                daoris settings vacancy <hours>  (how long a step nobody's session answers stands before Daoris gives it up; 24 by default)
                daoris settings risk [<workspace>|machine] [--repository <name>] [low|medium|high] [--mark <marks>] [--unmark <marks>]
                daoris settings risk why <run> [<step>]  (what the risk policy said at each hold of a run, beside what happened)

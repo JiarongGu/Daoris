@@ -10,10 +10,13 @@ namespace Daoris.Driver;
 /// <param name="Processors">The machine's processors.</param>
 /// <param name="Machine">How many heavy runs the machine's admission holds at once.</param>
 /// <param name="Memory">The machine's free memory, read where <c>auto</c> asks it and for the reserve; null where it cannot be read.</param>
-/// <param name="ReserveGb">The GB kept free for the person's own work (<see cref="ReserveSetting"/>); null is <c>auto</c>.</param>
+/// <param name="ReserveGb">The GB kept free at least for the person's own work (<see cref="ReserveSetting"/>, the floor under the measured headroom); null is <c>auto</c>, no floor.</param>
 public sealed record CheckRules(int? Setting, int Processors, int Machine, Func<MemoryReading?> Memory, int? ReserveGb = null)
 {
-    public long ReserveOf(MemoryReading reading) => ReserveSetting.Bytes(ReserveGb, reading.Total);
+    /// <summary>The machine's seams the room reads beside the memory: the clock, the processors and Daoris's own share; this machine's unless a test holds them.</summary>
+    public RoomWorld World { get; init; } = RoomWorld.Machine;
+
+    public long FloorOf() => ReserveSetting.Bytes(ReserveGb);
 
     /// <summary>
     /// The most checks <c>auto</c> runs at once: a quarter of the processors, a check's build and suites keeping about four busy, within
@@ -84,7 +87,12 @@ public sealed record CheckWait(string Code, IReadOnlyDictionary<string, string> 
 /// <param name="Key">The repository whose heavy-run slot it holds, by its key; null for a check slot whose repository slot says nothing.</param>
 /// <param name="Starting">Whether its first gate has not ended yet, so its peak may be still to come.</param>
 /// <param name="Who">The run, as a wait names it.</param>
-public sealed record HeavyHeld(DateTimeOffset Since, string? Key, bool Starting, string Who);
+public sealed record HeavyHeld(DateTimeOffset Since, string? Key, bool Starting, string Who)
+{
+    public string? Agent { get; init; }
+
+    public string Gate { get; init; } = CheckAdmission.DefaultGate;
+}
 
 /// <summary>
 /// What a heavy run asks the admission for: the repository's slot it runs under (<paramref name="Key"/>, its repository's name and the
@@ -94,6 +102,12 @@ public sealed record HeavyAsk(string Key, string Repository, int? Declared, Func
 {
     /// <summary>The check slot's record, where the run takes one (a check, an integration's gated line); null for a session's or a terminal's run.</summary>
     public Func<VerifyHolder>? Check { get; init; }
+
+    public string? Agent { get; init; }
+
+    public string Gate { get; init; } = CheckAdmission.DefaultGate;
+
+    public string Kind { get; init; } = LoadKind.Test;
 }
 
 /// <summary>What the admission handed a run: its check slot where it asked one, its repository's slot, and the record written beside it.</summary>
@@ -111,14 +125,14 @@ public sealed record HeavyTaken(VerifySlot? Check, HeavySlot Repository, HeavyHo
 /// The machine's admission of heavy runs: how many run at once, and why one waits. One judgement over every heavy run on the machine,
 /// read from the records beside the slots (<see cref="Holding"/>): the checks' and the integration's check slots (<see cref="VerifySlot"/>)
 /// and every repository's heavy-run slots (<see cref="HeavySlot"/>), a run holding both counted once. <c>checks</c> pinned is that many,
-/// within the machine's admission (<see cref="CheckRules.Slots"/>). <c>auto</c>, the default, admits the first run always (as the one slot
-/// did) and another while the free physical memory and the free commit both stay at or above what a run needs, up to the ceiling
-/// (<see cref="CheckRules.Ceiling"/>); memory that cannot be read admits one.
+/// within the machine's admission (<see cref="CheckRules.Slots"/>). <c>auto</c>, the default, is the room's measured judgement (<see cref="RoomJudge"/>): the first run
+/// always (the person's floor apart), another while what is free now, less what starting runs will take and less what the person's work is
+/// measured to need back, holds its learned need, within the limit pressure has left and its project's and agent's fair share.
 /// </summary>
 /// <remarks>
-/// <para><b>A run's need</b> is the merge tool's for a Process suite (<c>MEMORY_NEEDS.process</c>, 8 GB), not its 6 GB for a suite: a check
-/// runs the classes its change reaches, the Process classes among them, each starting real hosts and git beside a build. It is an estimate on
-/// the safe side, since a check's records keep no peak to measure.</para>
+/// <para><b>A run's need</b> is learned from its own runs on this machine (<see cref="LearnedNeeds"/>, kept by <see cref="RunMeter"/>):
+/// its peak memory, a tenth over, once two have run; until then the declared cost of its kind (<see cref="LoadKind.Declared"/>, the
+/// merge tool's 8 GB for a Process suite).</para>
 ///
 /// <para><b>Still starting until its first gate ends.</b> A run whose first gate has not ended may not have reached its peak, so its need is
 /// counted again and two never climb to their peaks on one reading. The first gate's end is a fact its record keeps (<see cref="HeavyHolder.Now"/>
@@ -139,8 +153,8 @@ public sealed record HeavyTaken(VerifySlot? Check, HeavySlot Repository, HeavyHo
 /// </remarks>
 public static class CheckAdmission
 {
-    /// <summary>The free memory a run needs before it starts beside another: the merge tool's need for a Process suite.</summary>
-    public const long Need = 8L << 30;
+    public const string DefaultGate = "heavy";
+
 
     /// <summary>
     /// How often a run tries for the admission's lock before it waits as for a slot and looks again: spun, the later tries a millisecond's
@@ -164,12 +178,15 @@ public static class CheckAdmission
             var at = holder.Run is { } run ? checks.FindIndex(check => check.Pid == holder.Pid && check.Started == holder.Started && check.Run == run) : -1;
             var since = at >= 0 ? checks[at].Since : holder.Since;
             if (at >= 0) checks.RemoveAt(at);
-            held.Add(new HeavyHeld(since, key, Starting(holder), Who(holder)));
+            held.Add(new HeavyHeld(since, key, Starting(holder), Who(holder)) { Agent = holder.Session, Gate = GateOf(holder) });
         }
 
         held.AddRange(checks.Select(check => new HeavyHeld(check.Since, null, true, $"the verification run {check.Run}")));
         return [.. held.OrderBy(one => one.Since)];
     }
+
+    public static string GateOf(HeavyHolder holder) =>
+        holder.Run is not null ? "reached" : holder.Gates.Count > 0 ? string.Join('+', holder.Gates) : DefaultGate;
 
     /// <summary>Whether a holder's first gate has not ended: none started, or the first still running, with no failure said.</summary>
     public static bool Starting(HeavyHolder holder) => holder.Failed is null && holder.Now is not { At: > 0 };
@@ -178,31 +195,24 @@ public static class CheckAdmission
     public static string Who(HeavyHolder holder) =>
         holder.Run is { } run ? $"the verification run {run}" : holder.Session is { } session ? $"session {session}'s heavy run" : "a heavy run from a terminal";
 
-    /// <summary>Why a run waits beside the runs holding a slot, or null where it may take one: its need against the lower memory, the reserve against free commit.</summary>
-    public static CheckWait? Judge(IReadOnlyList<HeavyHeld> held, CheckRules rules)
+    /// <summary>Why a run waits beside the runs holding a slot, or null where it may take one: the room's judgement over each run's learned need (declared by its kind until it has run).</summary>
+    public static CheckWait? Judge(string home, IReadOnlyList<HeavyHeld> held, CheckRules rules, HeavyAsk ask, KindRule? rule = null, IReadOnlyList<LoadLease>? leases = null)
     {
-        var slots = rules.Slots;
-        if (held.Count >= slots && held.Count > 0) return CheckWait.OfSlots(held.Count, slots);
-        var reading = rules.Memory();
-        var reserve = reading is null ? 0 : rules.ReserveOf(reading);
-        var judgesNeed = held.Count > 0 && rules.Setting is null;
-        if (reserve == 0 && !judgesNeed) return null;
-        if (reading?.Least is not { } least) return held.Count == 0 ? null : CheckWait.OfSlots(held.Count, Math.Max(held.Count, 1));
-        var starting = held.Count(one => one.Starting);
-        var need = Need * (1 + starting);
-        var commit = reading.Commit ?? reading.Physical ?? least;
-        var short_ = judgesNeed && least < need ? least : reserve > 0 && commit < need + reserve ? commit : (long?)null;
-        if (short_ is not { } free) return null;
-        var values = new Dictionary<string, string>(StringComparer.Ordinal)
+        var view = RoomLedger.Observe(home, rules, ask.Key, ask.Agent, rules.Ceiling);
+        var learned = LearnedNeeds.Read(LearnedNeeds.PathOf(home));
+        NeedReading Need(string project, string kind, string gate) =>
+            LearnedNeeds.Need(learned.GetValueOrDefault(LearnedNeeds.KeyOf(project, kind, gate)) ?? [], LoadKind.Declared(kind));
+        var holds = held.Select(one => new RoomHold(one.Key ?? one.Who, one.Agent, LoadKind.Test, Need(one.Key ?? one.Who, LoadKind.Test, one.Gate).Cost, one.Starting, one.Who)).ToList();
+        foreach (var lease in leases ?? LoadLeases.Live(home))
         {
-            ["free"] = (Math.Floor(free * 10.0 / (1L << 30)) / 10).ToString("F1", CultureInfo.InvariantCulture),
-            ["need"] = (need / (double)(1L << 30)).ToString("0.#", CultureInfo.InvariantCulture),
-        };
-        if (starting > 0) values["starting"] = starting.ToString(CultureInfo.InvariantCulture);
-        if (judgesNeed && least < need) return new CheckWait(CheckWait.Memory, values);
-        values["reserve"] = (reserve / (double)(1L << 30)).ToString("0.#", CultureInfo.InvariantCulture);
-        return new CheckWait(CheckWait.Reserve, values);
+            holds.Add(new RoomHold(lease.Project, lease.Owner, lease.Kind, Need(lease.Project, lease.Kind, lease.Name).Cost, view.Now - lease.Since < LeaseStarting, $"{lease.Kind} {lease.Name}"));
+        }
+
+        var need = Need(ask.Key, ask.Kind, ask.Gate);
+        return RoomJudge.Decide(view, holds, new RoomAsk(ask.Key, ask.Agent, ask.Kind, need.Cost, need.Source, rule ?? KindRule.Default(ask.Kind)) { Name = ask.Repository }, rules.Setting is null ? null : rules.Slots);
     }
+
+    public static readonly TimeSpan LeaseStarting = TimeSpan.FromMinutes(2);
 
     /// <summary>The slots a repository has: the machine's, or fewer where its accepted declaration says so.</summary>
     public static int SlotsOf(CheckRules rules, int? declared) => Math.Min(rules.Slots, declared ?? int.MaxValue);
@@ -221,7 +231,7 @@ public static class CheckAdmission
         var mine = SlotsOf(rules, ask.Declared);
         var ours = held.Where(one => one.Key == ask.Key).ToList();
         if (ours.Count >= mine) return (null, CheckWait.OfRepository(ask.Repository, string.Join(", ", ours.Select(one => one.Who))));
-        if (Judge(held, rules) is { } wait) return (null, wait);
+        if (Judge(home, held, rules, ask) is { } wait) return (null, wait);
 
         VerifySlot? check = null;
         try
@@ -260,7 +270,7 @@ public static class CheckAdmission
     }
 
     /// <summary>The admission's lock, tried <see cref="AdmittingTries"/> times, spinning between; null where another still holds it.</summary>
-    private static FileStream? Admitting(string home)
+    internal static FileStream? Admitting(string home)
     {
         var path = AdmittingPath(home);
         Directory.CreateDirectory(Path.GetDirectoryName(path)!);

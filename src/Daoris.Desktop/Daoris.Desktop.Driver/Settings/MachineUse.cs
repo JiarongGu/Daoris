@@ -6,6 +6,9 @@ namespace Daoris.Driver;
 /// </summary>
 public sealed record MachineUse(long? Total, long? FreeCommit, long? Daoris, long Reserve)
 {
+    /// <summary>Why the room is what it is: what <see cref="Reserve"/> (what is kept free now) rests on, the limit and the need; null where nothing reads.</summary>
+    public RoomWhy? Why { get; init; }
+
     /// <summary>Nothing read: what a world with no reader says.</summary>
     public static MachineUse Unknown { get; } = new(null, null, null, 0);
 

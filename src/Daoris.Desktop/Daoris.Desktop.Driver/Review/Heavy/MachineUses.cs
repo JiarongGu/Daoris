@@ -9,17 +9,19 @@ public static class MachineUses
 
     private static readonly object Gate = new();
 
-    private static (long At, string Home, MachineUse Use)? _last;
+    private static (long At, string Home, int? Reserve, MachineUse Use)? _last;
 
     /// <summary>This machine now, read at most every few seconds: the share walks every process, which a state read each look would repeat.</summary>
     public static MachineUse Read(string home, int? reserveGb)
     {
         lock (Gate)
         {
-            if (_last is { } last && last.Home == home && Environment.TickCount64 - last.At < FreshMilliseconds) return last.Use with { Reserve = ReserveSetting.Bytes(reserveGb, last.Use.Total) };
+            if (_last is { } last && last.Home == home && last.Reserve == reserveGb && Environment.TickCount64 - last.At < FreshMilliseconds) return last.Use;
             var reading = MachineMemory.Read();
-            var use = new MachineUse(reading?.Total, reading?.Commit ?? reading?.Physical, DaorisShare.Read(home), ReserveSetting.Bytes(reserveGb, reading?.Total));
-            _last = (Environment.TickCount64, home, use);
+            var ceiling = Math.Max(1, Math.Min(Environment.ProcessorCount / 4, MachineAdmission.Capacity()));
+            var why = RoomWhy.Read(home, reading, reserveGb, RoomWorld.Machine.Clock(), ceiling);
+            var use = new MachineUse(reading?.Total, reading?.Commit ?? reading?.Physical, DaorisShare.Read(home), why.Keep) { Why = why };
+            _last = (Environment.TickCount64, home, reserveGb, use);
             return use;
         }
     }
