@@ -6,6 +6,7 @@ import type { Answered } from '../work/InlineConfirm';
 import type { PluginShown } from '../plugins/catalog';
 import { PluginSettings } from './plugins/PluginSettings';
 import { ChecksSetting } from './machine/ChecksSetting';
+import { type ReserveFacts, ReserveSetting } from './machine/ReserveSetting';
 import { CopyBoundSetting } from './machine/CopyBoundSetting';
 import { ManifestBoundsSetting } from './machine/ManifestBoundsSetting';
 import { UxTrailSetting, type UxTrailShown } from './machine/UxTrailSetting';
@@ -29,6 +30,7 @@ export type DriverFacts = {
   drain?: number | null;
   checks?: number | null;
   vacancy?: number | null;
+  reserve?: ReserveFacts | null;
   /** How many sessions Daoris starts at once here, and the tier of a terminal's presses; absent where the answer lacks it. */
   cap?: number | null;
   terminal?: TerminalTier | null;
@@ -50,11 +52,11 @@ export type DriverFacts = {
  * the facts here; a story hands a fixture, so the domain is drawn at the frame's widths.
  * A molecule: every state by props, every press out.
  */
-export function DriverCards({ facts, minutes, busy, onGo, onNotify, onCoolOff, onQuiet, onDrain, onChecks, onVacancy, onManifest, onCap, onTerminal, onAccess, onGitAccess, uxTrail }: {
+export function DriverCards({ facts, minutes, busy, onGo, onNotify, onCoolOff, onQuiet, onDrain, onChecks, onVacancy, onReserve, onManifest, onCap, onTerminal, onAccess, onGitAccess, uxTrail }: {
   facts: DriverFacts;
   /** The settings held in minutes, and the checks' bounds, as the driver's list declares them, which the domain reads from the list. */
-  minutes: { cooloff: MinutesDeclared; quiet: MinutesDeclared; drain?: MinutesDeclared; manifest?: MinutesDeclared; checks?: MinutesDeclared; vacancy?: MinutesDeclared };
-  busy: { access: boolean; gitAccess?: boolean; checks?: boolean };
+  minutes: { cooloff: MinutesDeclared; quiet: MinutesDeclared; drain?: MinutesDeclared; manifest?: MinutesDeclared; checks?: MinutesDeclared; vacancy?: MinutesDeclared; reserve?: MinutesDeclared };
+  busy: { access: boolean; gitAccess?: boolean; checks?: boolean; reserve?: boolean };
   onGo: (door: StarterDoor) => void;
   onNotify: (on: boolean) => void;
   /** A cool-off in minutes the person typed and left: whole, one or more, and not the one held. */
@@ -64,6 +66,7 @@ export function DriverCards({ facts, minutes, busy, onGo, onNotify, onCoolOff, o
   onDrain?: (minutes: number) => void;
   onChecks?: (checks: number | null) => void;
   onVacancy?: (hours: number) => void;
+  onReserve?: (gb: number | null) => void;
   /** One bound of the manifest setting the person typed and left, the copy's in megabytes: whole, and not the one held. */
   onManifest?: (bound: { files: number } | { minutes: number } | { copy: number }) => void;
   /** A cap the person typed and left: whole, one or more, and not the one held. */
@@ -172,6 +175,8 @@ export function DriverCards({ facts, minutes, busy, onGo, onNotify, onCoolOff, o
           {typeof facts.vacancy === 'number' && minutes.vacancy && onVacancy && (
             <MinutesSetting setting={minutes.vacancy} held={facts.vacancy} onSet={onVacancy} unit="hours" />
           )}
+
+          {facts.reserve && minutes.reserve && onReserve && <ReserveSetting setting={minutes.reserve} held={facts.reserve} onSet={onReserve} busy={busy.reserve} />}
 
           {facts.pluginsFolder && (
             <SettingRow

@@ -205,25 +205,25 @@ test('a gate past its budget has what it started killed, and fails as over-budge
   }
 });
 
-function loadHarness(peak: number, ends: number | null) {
+function loadHarness(peak: number, endsAfterBudget: boolean) {
   const killed: number[] = [];
+  const reads = { budget: 0 };
   const h = harness({
     timeoutMs: () => 20,
     killTree: (pid) => { killed.push(pid); return true; },
-    load: { sample: () => ({ peak: () => peak, stop: () => {} }), free: () => true, sleep: async () => {}, now: () => 0 },
+    load: { sample: () => ({ peak: () => { reads.budget += 1; return peak; }, stop: () => {} }), free: () => true, sleep: async () => {}, now: () => 0 },
     runGate: async (_w, each, _l, options) => {
       const trees = options.trees as { hold(pid: number): void; ended: string | null };
       trees.hold(77);
-      const from = Date.now();
-      while (!trees.ended && (ends === null || Date.now() - from < ends)) await new Promise((done) => setTimeout(done, 5));
-      return trees.ended ? { gate: each, code: null, verdict: 'ENDED', note: 'ended', ms: 20, log: 'l' } : { gate: each, code: 0, verdict: 'PASS', note: '', ms: ends ?? 0, log: 'l' };
+      while (!trees.ended && !(endsAfterBudget && reads.budget > 0)) await new Promise((done) => setTimeout(done, 5));
+      return trees.ended ? { gate: each, code: null, verdict: 'ENDED', note: 'ended', ms: 20, log: 'l' } : { gate: each, code: 0, verdict: 'PASS', note: '', ms: 45, log: 'l' };
     },
   });
   return { h, killed };
 }
 
 test('a gate past its budget under load runs on to its own end: its time is a load breach that fails nothing, and it is not run again', async () => {
-  const { h, killed } = loadHarness(3, 45);
+  const { h, killed } = loadHarness(3, true);
   try {
     const result = await call(h, { gate: { ...gate, reuse: '' } });
     assert.deepEqual([result.verdict, result.again, result.overBudget], ['PASS', undefined, undefined]);
@@ -236,7 +236,7 @@ test('a gate past its budget under load runs on to its own end: its time is a lo
 });
 
 test('a gate past its budget alone is killed and fails as its time, classed by what it did', async () => {
-  const { h, killed } = loadHarness(1, null);
+  const { h, killed } = loadHarness(1, false);
   try {
     const result = await call(h, { gate: { ...gate, reuse: '' } });
     assert.deepEqual([result.verdict, result.again, result.overBudget], ['FAIL', false, true]);
@@ -249,7 +249,7 @@ test('a gate past its budget alone is killed and fails as its time, classed by w
 });
 
 test('a gate that runs on under load is still ended at its cap, a runaway, and that fails', async () => {
-  const { h, killed } = loadHarness(3, null);
+  const { h, killed } = loadHarness(3, false);
   try {
     const result = await call(h, { gate: { ...gate, reuse: '' } });
     assert.deepEqual([result.verdict, result.again, result.overBudget], ['FAIL', false, true]);

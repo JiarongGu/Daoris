@@ -179,6 +179,47 @@ public static class AccountWindows
         return windows.Count == 0 ? null : new AccountSaid(windows);
     }
 
+    /// <summary>The account's entry that holds its plan's word, beside its windows (a string, never read as a window).</summary>
+    private const string PlanKey = "plan";
+
+    /// <summary>
+    /// The plan the account's agent last named for it (the word as the agent said it: <c>max_20x</c>, <c>team</c>), or null where none
+    /// is kept. Never who signed in or the organisation: a plan's word only.
+    /// </summary>
+    public static string? PlanOf(string home, string agent, string? account) =>
+        account is not null && Child(Child(Load(home), agent), account) is { } held && Json.NonEmpty(held, PlanKey) is { } plan ? plan : null;
+
+    /// <summary>
+    /// The plan an agent named for an account, kept beside its windows. A type (<c>max</c>, a usage reading's) leaves a kept tier of
+    /// it (<c>max_20x</c>, a status's), the same plan said more exactly; any other word replaces the kept one. Never throws, and keeps
+    /// no word that is no plain name (<see cref="UsageHistory.Word"/>).
+    /// </summary>
+    public static void Planned(string home, string agent, string account, string said)
+    {
+        // A plain word, as the history keeps one: a sentence, an email or an organisation is no plan's word.
+        if (UsageHistory.Word(said) is not { Length: > 0 } plan) return;
+        try
+        {
+            lock (Gate)
+            {
+                using var locked = KeepLock.Take(PathOf(home));
+                var root = Load(home);
+                var held = Made(Made(root, agent), account);
+                if (Json.NonEmpty(held, PlanKey) is { } kept && (PlanWords.Same(kept, plan) && !PlanWords.Refines(plan, kept)))
+                {
+                    return;
+                }
+
+                held[PlanKey] = plan;
+                JsonFile.Write(PathOf(home), root);
+            }
+        }
+        catch (Exception error) when (error is IOException or UnauthorizedAccessException)
+        {
+            // A plan not written is one the next reading says again.
+        }
+    }
+
     /// <summary>The file's root, or an empty one when it is missing or does not read.</summary>
     private static JsonObject Load(string home) => AccountFileNodes.Load(PathOf(home));
 }

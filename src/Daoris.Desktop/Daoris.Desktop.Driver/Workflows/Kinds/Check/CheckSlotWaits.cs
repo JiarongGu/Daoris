@@ -16,6 +16,9 @@ public static class CheckSlotWaits
     /// <summary>The wait's code where another check would leave too little memory: <c>free</c> and <c>need</c> in GB, and its place.</summary>
     public const string Memory = "slot-memory";
 
+    /// <summary>The wait's code where another check would leave less free than the reserve kept for the person's own work: <c>free</c>, <c>need</c> and <c>reserve</c> in GB, and its place.</summary>
+    public const string Reserve = "slot-reserve";
+
     /// <summary>The wait's code where a heavy run of its own repository runs: <c>repository</c>, and its place.</summary>
     public const string Repository = "slot-repository";
 
@@ -25,7 +28,7 @@ public static class CheckSlotWaits
     public const string Queued = "slot-queued";
 
     /// <summary>Every code a check's slots wait under, as the check kind declares them.</summary>
-    public static IReadOnlyList<string> Codes { get; } = [Full, Memory, Repository, Admitting, Queued];
+    public static IReadOnlyList<string> Codes { get; } = [Full, Memory, Reserve, Repository, Admitting, Queued];
 
     /// <summary>The slots' waits of a run's graph, read from the home's slots only where a check of its record is under way.</summary>
     public static IReadOnlyDictionary<string, WorkflowRunWait> Read(string home, NodeGraph graph, NodeRecord? record) =>
@@ -58,6 +61,7 @@ public static class CheckSlotWaits
             {
                 CheckWait.Slots => Full,
                 CheckWait.Memory => Memory,
+                CheckWait.Reserve => Reserve,
                 CheckWait.Repository => Repository,
                 CheckWait.Admitting => Admitting,
                 _ => Queued,
@@ -71,6 +75,12 @@ public static class CheckSlotWaits
             {
                 values["free"] = said!.Values.GetValueOrDefault("free") ?? "?";
                 values["need"] = said.Values.GetValueOrDefault("need") ?? "?";
+            }
+            else if (code == Reserve)
+            {
+                values["free"] = said!.Values.GetValueOrDefault("free") ?? "?";
+                values["need"] = said.Values.GetValueOrDefault("need") ?? "?";
+                values["reserve"] = said.Values.GetValueOrDefault("reserve") ?? "?";
             }
             else if (code == Repository)
             {
@@ -92,6 +102,7 @@ public static class CheckSlotWaits
         {
             Full => $"Waits for a check slot: {Value("running")} of {Value("slots")} run; {queue}.",
             Memory => $"Waits for memory: {Value("free")} GB free, the next check needs {Value("need")} GB; {queue}.",
+            Reserve => $"Waits for the reserve kept for your own work: {Value("free")} GB free, the next check needs {Value("need")} GB and {Value("reserve")} GB stays free; {queue}.",
             Repository => $"Waits for a heavy-run slot of {Value("repository")}: its other heavy runs hold every one it has; {queue}.",
             Admitting => $"Waits for the admission's lock, which another start holds; {queue}.",
             _ => $"Waits for a check slot: {queue}.",

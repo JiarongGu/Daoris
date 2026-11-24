@@ -1,10 +1,13 @@
 /**
  * The machine's free memory as the merge tool reads it before a heavy gate (`readMemory`), and whether a gate that failed died
  * of memory (`memoryDeath`). `tools/merge-branch.mjs` exports each again under its own name and holds the wait itself
- * (`memoryGate`), its *A heavy gate waits for memory* says why.
+ * (`memoryGate`), its *A heavy gate waits for memory* says why. The wait also keeps the person's reserve (`reserveGb`): a gate starts only
+ * while each free memory stays at or above its need and the free commit at or above its need and the reserve together (`memoryLacking`), and
+ * its wait says the reserve.
  */
 import { spawnSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
+import { homeEntry } from '../../src/Daoris.Cli/src/platform/home.ts';
 import { freemem as osFreemem, totalmem as osTotalmem } from 'node:os';
 
 /**
@@ -41,6 +44,60 @@ export function memoryDeath(log, ...codes) {
 const MEMORY_QUERY = 'ConvertTo-Json -Compress -InputObject (Get-CimInstance Win32_OperatingSystem | Select-Object FreePhysicalMemory,FreeVirtualMemory)';
 
 const kilobytes = (value) => (typeof value === 'number' && Number.isFinite(value) ? value * 1024 : null);
+
+const GB = 2 ** 30;
+
+export const gbOf = (bytes) => (bytes / GB).toFixed(1);
+export const needOf = (gb) => (Number.isInteger(gb) ? String(gb) : gb.toFixed(1));
+
+/** A reading's free commit and free physical memory, said, each that is read; `need` keeps those below it, in GB. */
+export function memoryShown(reading, need = Infinity) {
+  return [[reading.commit, 'free commit'], [reading.physical, 'free physical memory']]
+    .filter(([bytes]) => bytes !== null && bytes < need * GB)
+    .map(([bytes, what]) => `${gbOf(bytes)} GB ${what}`);
+}
+
+/**
+ * What a reading lacks for a gate, said as `memoryShown` says it: each field below `need`, and the free commit (the free physical memory
+ * where no commit is read) below `need` and `kept`, the reserve, together. The reserve is of free commit, as the driver's
+ * `CheckAdmission.Judge` holds it.
+ */
+export function memoryLacking(reading, need, kept = 0) {
+  const reserveOn = reading.commit !== null ? 'commit' : 'physical';
+  const short = { ...reading };
+  for (const field of ['commit', 'physical']) {
+    const floor = field === reserveOn ? need + kept : need;
+    if (short[field] !== null && short[field] >= floor * GB) short[field] = null;
+  }
+  return memoryShown(short);
+}
+
+/** The GB `reserve` keeps at a machine with `total` bytes, none where it throws or answers no positive number. */
+export function keptFree(reserve, total) {
+  try {
+    const gb = Number(reserve(total));
+    return Number.isFinite(gb) && gb > 0 ? gb : 0;
+  } catch {
+    return 0;
+  }
+}
+
+/**
+ * The GB the machine keeps free for the person's own work: `reserveGb` of the Daoris home's `driver.json` (the file the driver's
+ * `ReserveSetting` reads, at the place the home's table gives it), else a third of `total`, the machine's physical memory in bytes, to
+ * the whole GB; 0 where the file says none, or where neither is known.
+ */
+export function reserveGb({ total = null, home = null, read = (path) => readFileSync(path, 'utf8') } = {}) {
+  if (home) {
+    try {
+      const stored = JSON.parse(read(homeEntry(home, 'driver')).replace(/^﻿/, '')).reserveGb;
+      if (Number.isInteger(stored) && stored >= 0 && stored <= 1024) return stored;
+    } catch {
+      // A file that does not read keeps the default, as the driver's reader does.
+    }
+  }
+  return typeof total === 'number' && total > 0 ? Math.floor(total / 3 / GB) : 0;
+}
 
 /** What a failed command said: its first `error:` or `fatal:` line, else its first line. */
 const firstSaid = (text) => {

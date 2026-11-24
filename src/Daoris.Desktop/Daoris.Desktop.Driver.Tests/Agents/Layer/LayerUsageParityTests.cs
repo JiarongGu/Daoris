@@ -75,6 +75,7 @@ public sealed class LayerUsageParityTests : IDisposable
         Claude("initialize refused", ClaudeUsageTests.Recorded(3.5, 100.25), mode: UsageServerMode.RefusesInitialize);
 
         Codex("the recorded answer", CodexUsageTests.Recorded(3.5, 100.25));
+        Codex("a plan named", CodexUsageTests.Recorded(3.5, 100.25).Replace("\"limitId\":\"codex\"", "\"limitId\":\"codex\",\"planType\":\"team\"", StringComparison.Ordinal));
         foreach (var minutes in new[] { 300, 10080, 1440, 60, 301 })
         {
             Codex($"a window of {minutes} minutes", CodexUsageTests.Answer(CodexUsageTests.Window(42, minutes, CodexUsageTests.Seconds(2))));

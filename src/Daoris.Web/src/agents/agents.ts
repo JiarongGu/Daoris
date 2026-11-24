@@ -1,6 +1,6 @@
 import i18n from '../locales/i18n';
 import { ago, clockOf, moment } from '../locales/format';
-import type { Account, Tool } from './tools';
+import type { Account, SignOutCause, Tool } from './tools';
 import {
   type AccountCooling, type AccountFacts, type AccountScope, type AccountsAnswer, type AgentAccounts, agentOf, coolingLine,
   heldLine, machineScope, nextLine, offeredLine, orderedWindows, percent, type PoolReceipt, type WindowSaid, windowName,
@@ -34,6 +34,7 @@ export type AccountState = {
   since?: string | null;
   /** A sign-out after a signed-in reading: the agent did it, not the person. */
   notByPerson?: boolean;
+  by?: SignOutCause | null;
   /** Its cool-off, where it cools. */
   cooling: AccountCooling | null;
   /** The starts run on it, as on every account of Daoris's: a signed-out one then holds work, and wears open's hue. */
@@ -56,7 +57,7 @@ export function accountState(
     ? (account.key ? 'refused' : 'out')
     : cooling ? 'cooling' : signIn?.state === 'unanswered' ? 'unanswered'
     : account.key ? 'keyed' : account.login === 'in' ? 'in' : 'unknown';
-  return { state, read, cooling, holdsWork, since: signIn?.since ?? null, notByPerson: signIn?.notByPerson ?? false };
+  return { state, read, cooling, holdsWork, since: signIn?.since ?? null, notByPerson: signIn?.notByPerson ?? false, by: signIn?.by ?? null };
 }
 
 /** Whether a state waits on the person as a sign-out does: signed out, or a key its provider refused. */
@@ -322,6 +323,13 @@ export function accountLabel(account: Named, among?: Among | null): string {
   const who = account.account?.trim();
   const apart = apartOf(account, among);
   return apart && who && says(name, who) && !says(name, apart) ? `${name} · ${apart}` : name;
+}
+
+/** The plan its agent named for an account (`max_20x`, `team`), as `agent list` says it; null for a key, none named, or one already said. */
+export function accountPlan(account: Named, among?: Among | null): string | null {
+  const plan = account.key ? null : account.plan?.trim();
+  if (!plan) return null;
+  return [accountName(account), accountWho(account, among) ?? ''].some((text) => says(text, plan)) ? null : plan;
 }
 
 /**

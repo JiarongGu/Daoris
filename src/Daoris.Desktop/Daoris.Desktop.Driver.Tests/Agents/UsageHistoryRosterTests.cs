@@ -162,7 +162,7 @@ public sealed class UsageHistoryRosterTests : IDisposable
     }
 
     [Fact]
-    public async Task A_codex_read_s_answer_is_kept_in_the_history_by_its_windows_lengths_and_its_limit_never_its_plan()
+    public async Task A_codex_read_s_answer_is_kept_in_the_history_by_its_windows_lengths_and_its_limit_and_no_plan_where_the_answer_names_none()
     {
         var seconds = (double hours) => (Seen + TimeSpan.FromHours(hours)).ToUnixTimeSeconds().ToString(CultureInfo.InvariantCulture);
         _answer = CodexUsage.Read(Frame(Placed(CodexUsage.Question.Recorded[0].Frame, "<reset>", seconds(3.5), seconds(100.25))));

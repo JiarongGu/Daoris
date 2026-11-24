@@ -127,7 +127,7 @@ internal sealed class RosterReport(HarnessRoster roster)
             return new ProfileReport(
                 account, HarnessSettings.ProfileHome(roster.Home, owner, account), read?.Login ?? LoginState.Unknown,
                 who?.Account, held is null ? null : HarnessKeys.Handle(held), read?.At,
-                names.GetValueOrDefault(account), who?.Org, who?.Plan) { SignIn = SignInStates.Of(read) };
+                names.GetValueOrDefault(account), who?.Org, who?.Plan ?? KeptPlan(owner, account, read?.Login)) { SignIn = SignInStates.Of(read) };
         }).ToList();
 
         // The folders beside the accounts that are no account, each with whether Daoris kept a sign-in of it,
@@ -152,7 +152,7 @@ internal sealed class RosterReport(HarnessRoster roster)
             own?.Account,
             reads.Own?.At,
             own?.Org,
-            own?.Plan)
+            own?.Plan ?? KeptPlan(owner, AccountWindows.Own, reads.Own?.Login))
         {
             Strays = strays,
         };
@@ -167,6 +167,10 @@ internal sealed class RosterReport(HarnessRoster roster)
         && said.Said.Login == LoginState.In
             ? said.Said
             : null;
+
+    /// <summary>The plan kept under the home, for an account last read signed in: what a restart knows before any status is asked.</summary>
+    private string? KeptPlan(string owner, string account, LoginState? login) =>
+        login == LoginState.In ? AccountWindows.PlanOf(roster.Home, owner, account) : null;
 
     private static DateTimeOffset Second(DateTimeOffset at) =>
         new(at.UtcTicks - (at.UtcTicks % TimeSpan.TicksPerSecond), TimeSpan.Zero);

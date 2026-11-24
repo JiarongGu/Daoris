@@ -8,7 +8,12 @@ namespace Daoris.Driver;
 /// How long a reading of this candidate stands before it is read again: its provider's own read floor, or null where its
 /// agent asks nothing of its server and <see cref="SwitchDecision.Fresh"/> stands.
 /// </param>
-public sealed record SwitchCandidate(string Account, AccountSaid? Said, bool Ready, TimeSpan? Floor = null);
+/// <param name="Size">Its plan's size in its agent's base plans (<see cref="AccountFacts.Size"/>), or null where none is declared.</param>
+public sealed record SwitchCandidate(string Account, AccountSaid? Said, bool Ready, TimeSpan? Floor = null, double? Size = null)
+{
+    /// <summary>What its room and lapse are weighed by, as the walk's (<see cref="AccountFacts.Units"/>).</summary>
+    public double Units => Size is { } size and > 0 ? size : 1;
+}
 
 /// <summary>What <see cref="SwitchDecision.Decide"/> says of a session at its turn's end.</summary>
 public abstract record SwitchChoice
@@ -103,17 +108,18 @@ public static class SwitchDecision
         if (held) return new SwitchChoice.Stay(SwitchStay.Held);
 
         // The move is required by now; what would lapse only chooses where it goes: the most
-        // of a week that would lapse per hour first, as the walk's step 4, then the most room. OrderByDescending and ThenBy
-        // are stable: equal keeps the scope's list order.
+        // of a week that would lapse per hour first, as the walk's step 4, then the most room, both in the plan's units as the walk
+        // weighs them; the margin is a share of the window. OrderByDescending and ThenBy are stable: equal keeps the scope's list order.
         var target = others
             .Where(each => each.Ready)
             .Select(each => (
                 each.Account,
                 Room: UsageCurves.TightestSaid(use, each.Said, now)?.Room,
-                Lapse: UsageCurves.Lapsing(use, each.Said, now)?.Rate ?? 0))
+                Lapse: (UsageCurves.Lapsing(use, each.Said, now)?.Rate ?? 0) * each.Units,
+                each.Units))
             .Where(each => each.Room >= UsageCurves.SwitchMargin)
             .OrderByDescending(each => each.Lapse)
-            .ThenByDescending(each => each.Room)
+            .ThenByDescending(each => each.Room * each.Units)
             .Select(each => each.Account)
             .FirstOrDefault();
         return target is null

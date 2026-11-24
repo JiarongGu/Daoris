@@ -43,6 +43,7 @@ public sealed class HeavyToolsProcessTests : IDisposable
         var world = new HeavyRunWorld(_fixture.Home, _fixture.Checkout, _ => null)
         {
             Waiting = new HeavyWaiting(TimeSpan.FromMilliseconds(20), TimeSpan.FromSeconds(30), () => DateTimeOffset.UtcNow),
+            Checks = () => new CheckRules(null, 4, 4, () => null),
         };
 
         var path = Environment.GetEnvironmentVariable("PATH");

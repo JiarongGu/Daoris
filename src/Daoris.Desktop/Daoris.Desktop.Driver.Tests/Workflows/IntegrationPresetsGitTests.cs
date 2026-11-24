@@ -47,6 +47,7 @@ public sealed class IntegrationPresetsGitTests : LandedFixture, IAsyncLifetime
     private IntegrationTransport Transport(string root) => _transport ??= new IntegrationTransport(Home, new IntegrationTransportWorld
     {
         Config = () => Config,
+        Memory = () => null,
         Root = (_, _, _) => Task.FromResult<string?>(root),
         Settled = () => StoreSettled.Yes,
         Tidy = IntegrationTidies.Through(new SessionTrees(Home)),

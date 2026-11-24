@@ -99,6 +99,7 @@ internal sealed class WatchNodes
             Answered = (run, _) => watch.NodesWoken(RunUnits.IdOf(run)),
             Mapping = repository => HeavyMapping.For(DriverConfig.Load(DriverConfig.ResolvePath(home)), repository),
             Checks = () => ChecksSetting.At(DriverConfig.ResolvePath(home)),
+            Reserve = () => ReserveSetting.At(DriverConfig.ResolvePath(home)),
             Bus = watch.Bus,
         });
 
@@ -115,7 +116,11 @@ internal sealed class WatchNodes
         _handOffs = new OpenHandOffs(home, resolvers, said => Log?.Info("resolve.run", ("said", said)));
         nodes.Doors = NodeDoors.Wired(new NodeDoorWiring(home, () => HomeLease.HeldHere(home) && !watch.DrainsNow())
         {
-            Log = (code, said) => Log?.Info(code, ("said", said)),
+            Log = (code, said) =>
+            {
+                if (code == UnlandedRunEnds.Event) Log?.Error(code, ("said", said));
+                else Log?.Info(code, ("said", said));
+            },
             Clock = clock,
             Landing = () => new LandPerformer(home, new ServiceReviewLandingWorld(home, service), new SessionTrees(home, landingPlugins),
                 watch.Events ?? new SessionEvents(DaorisHome.Entry(home, HomeEntry.Sessions)), service.LandingSaid) { Told = hooks.Tell },
@@ -278,6 +283,7 @@ internal sealed class WatchNodes
                 Resources = plugin => PluginCatalog.Load(home).Contributing.FirstOrDefault(each => each.Manifest.Id == plugin)?.Manifest.Resources,
                 // An observed node's event is bound to its branch's tip read now, once per checkout per pass.
                 Tips = NodeTips.ReadAsync,
+                Heads = NodeTips.HeadsAsync,
                 // The look's git reads for `pushed` and an ahead `pull-request`, asked only where one waits on them.
                 Remotes = NodeTips.RemotesAsync,
                 // The gates for a unit whose opinion or look waits, read as a landing door reads them; and a quest whose run

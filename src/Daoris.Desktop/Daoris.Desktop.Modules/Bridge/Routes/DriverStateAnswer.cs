@@ -59,6 +59,7 @@ internal static class DriverStateAnswer
             Quiet = (int)QuietSetting.Of(config).TotalMinutes,
             Drain =(int)DrainSetting.Of(config).TotalMinutes,
             config.Checks,
+            Reserve = ReserveShown.Of(loop.Home, config),
             Vacancy = (int)VacancySetting.Of(config).TotalHours,
             // The bounds of a folder's manifest read: the file's, or the defaults.
             ManifestFiles = config.Manifest.Bounds.Files,

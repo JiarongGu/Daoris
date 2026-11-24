@@ -59,7 +59,7 @@ public sealed record IntegrationTransportWorld
 
     public Func<string, string?> Variable { get; init; } = Environment.GetEnvironmentVariable;
 
-    internal CheckRules Rules(int? checks) => CheckRules.Of(checks, Processors, Capacity, Variable, Memory);
+    internal CheckRules Rules(int? checks, int? reserveGb) => CheckRules.Of(checks, Processors, Capacity, Variable, Memory, reserveGb);
 }
 
 /// <summary>
@@ -267,7 +267,7 @@ public sealed class IntegrationTransport(string home, IntegrationTransportWorld?
             {
                 Check = () => new VerifyHolder(Environment.ProcessId, Started, integrating, $"integration-{send.Repository}-{send.Line}", send.Repository, now),
             };
-            (held, var wait) = CheckAdmission.TryTake(home, _world.Rules(config.Checks), ask);
+            (held, var wait) = CheckAdmission.TryTake(home, _world.Rules(config.Checks, config.ReserveGb), ask);
             if (held is null)
             {
                 Later(send, $"integration: `{send.Repository}`'s line `{send.Line}` waits for {wait!.Sentence}.");

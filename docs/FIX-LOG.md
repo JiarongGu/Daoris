@@ -5,6 +5,13 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-11-25 - A flow case that runs a gate on past its budget failed with an empty note beside other runs (FLOWLOADLEAK1)
+
+- **Sighting:** `tools/merge/flow.test.ts` "a gate past its budget under load runs on to its own end" (and, said in the row, its sibling "a gate whose hang bound killed a test under load…") passed alone and failed in `reached` gates beside three heavy runs (RISKGATE1j's check 5, OWNERRESERVE1's steward merge on 2026-11-24).
+- **Root cause:** the row read it as the cases reading the machine's heavy-run admission; they do not. Every load the flow reads in those cases is the case's own seam (`deps.load`), and with `heldNow`, `lookAt` and `readProcesses` instrumented a whole-file run called none of them. The case gave its gate a wall-clock end, 45 ms, past a 20 ms budget whose timer reads the seam's peak: a stall of the test's own process (other runs taking its cores) of more than 45 ms before the event loop turned let the gate's poll see its end first, so the flow cleared the budget timer unfired and the result's note was `''` ("The input did not match /ran on past its 0 min budget under load…/"). Reproduced with three busy processes per core: 2 of 8 runs failed with that note. Introduced with the case in `b5105ab049`.
+- **Fix:** the case's gate runs on until the budget's timer has read the load, then ends, however late the machine ran the timer (`loadHarness`, `endsAfterBudget`); and the tool-test census names a test under `tools/` that reads the live machine's load (`loadSeam`, `readProcesses`, `heldNow`, `lookAt`, `holdersSentence`, `foreignTrees`, `loadSampler`, `createAdmission` with no seam, home or count of its own), a net over direct calls read from the source (strings and comments blanked): a reader behind a helper, or a home set from the environment elsewhere, passes it. The sibling hang case was not fixed: its failure words in OWNERRESERVE1's merge are not in any record this session could read, it reads only its seam and a git-initialised fixture, and it passed alone (4 s) and in 14 loaded runs, so its cause is open (FLOWLOADLEAK1b).
+- **Verification:** at the final commit, `node --test tools/tool-test-census.test.mjs` and `node tools/tool-test-census.mjs` (the real tree clean); `flow.test.ts`'s load cases under CPU oversubscription (three busy processes per core), 14 runs, none red.
+
 ## 2026-11-24 - A reviewer that ended without an opinion held the run for the person, even where the rule required none (OPINIONUNKNOWN1)
 
 - **Sighting:** `REPLAYCONFLICT1`'s run (`c9f25ddbc33c`, 2026-11-23) stopped at a failed second opinion, "ask again, or pass it over", for hours until the steward answered `workflow again c9f25ddbc33c opinion`; the gate's own words were "The rule does not require one, so nothing waits for it", and the landing was never reached.
@@ -14785,3 +14792,28 @@ write in flight holds a start until it is gone; each write to a real Claude stor
 the rule; a store open for writing still reads. Run filtered with `SignInRefreshTests` and `LookAccountTests`: 12 passed.
 `LookAccountTests.A_look_over_many_runs_is_said_whole_by_its_stages_and_reads_each_run_once` failed once in the reached-checks
 run on parsing a stage word (`other:3/9837ms[...]`), not touched by this change, and passed alone.
+
+## A store emptied by a write read signed in for hours on the page and the list (2026-11-24, SIGNOUTSEEN1)
+
+**Symptom.** On 2026-11-24 at 05:10:15Z the credentials watch logged account-1's store renamed with its access and refresh tokens
+empty (running 0, no session on it), yet the Agents page and `daoris agent list` read the account signed in from an hours-old
+reading until the person found it out and signed in again at 06:54Z.
+
+**Root cause.** A sign-out was only ever made by a reader: a look's `StoredSignIns.Read` (95227f0361, CREDRACE1's renewal) or a
+status question. The watch that saw the write (SIGNOUTRACE1, 7cd3514fd0) only logged it, so every place that shows the state waited
+for a reader that did not come in time. The install's log for the window shows the looks after 05:10:15Z ran (`watch.looked` with a
+`stored-sign-ins` stage, none failed) and says no `read signed out` event all day, so the look's read did not mark the account; why
+is not established. Its writes of the store each show a `deleted` line then a `renamed` one within 5 ms, and the sign-in at 06:54Z
+wrote full tokens at once with no empty store first.
+
+**Fix.** A write of the store is a reading when it lands (`CredentialWrites.Marked`, through `StoredSignIns.MarkOut` and `MarkIn`):
+both tokens empty marks the account signed out and claims its notice, a store filled after the watch saw it cleared marks it signed
+in, a refresh into a store that had tokens and a file with no bytes mark nothing. The reading (`AccountRead.By`, `reads.json`'s `by`)
+and the `credentials.written` line (`by`, `marked`) say who was at the account (`SignInCause`: Daoris's sign-in by `SignInMarks`, a
+probe by its lock, a session running or starting, else outside Daoris); the page's row and the CLI list word it. Left: see it on the
+install's next sign-out.
+
+**Verification.** `SignOutSeenTests` (8, written first, red before the code): a store emptied by a write reads signed out with a cause
+and a notice; the four causes; the cause kept in `reads.json`; a filled store reads signed in; a refresh's write undoes no refusal;
+an empty file marks nothing; the look's read names no cause. `SignOutRaceTests` and the sign-in, reads, probe and look tests (145)
+pass; `signInState.test.ts` (9) passes.

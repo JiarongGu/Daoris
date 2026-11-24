@@ -34,5 +34,6 @@ public static class DriverChoiceVerbs
         new TerminalVerb(),
         new ChecksVerb(),
         new VacancyVerb(),
+        new ReserveVerb(),
     ];
 }

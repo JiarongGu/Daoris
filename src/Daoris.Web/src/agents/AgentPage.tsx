@@ -10,7 +10,7 @@ import { type AccountChoice, type ScopeActs } from '../settings/accounts/Account
 import { type AgentRulesState, type RuleAddition, type RuleScopeName } from '../settings/repository/AgentRules';
 import { AccountRow } from './AccountRow';
 import { type BackAccount, RenameAccount } from './AddAccount';
-import { type AccountAct, type AgentPart, type AgentUsage, accountAct, accountLabel, accountName, accountStates, accountWho, latestRead, nextStartSaid, whoApart, usageCells, versionOnly } from './agents';
+import { type AccountAct, type AgentPart, type AgentUsage, accountAct, accountLabel, accountName, accountPlan, accountStates, accountWho, latestRead, nextStartSaid, whoApart, usageCells, versionOnly } from './agents';
 import { AgentMore } from './page/AgentMore';
 import { AgentDoors } from './page/AgentDoors';
 import { AccountsFold } from './page/AccountsFold';
@@ -461,6 +461,7 @@ export function AgentPage({
         name={name}
         label={label}
         who={keyOnly ? (account.key ? t('agents.key.set', { handle: account.key }) : t('agents.key.none')) : accountWho(account, tool)}
+        plan={keyOnly ? null : accountPlan(account, tool)}
         id={account.name}
         home={account.home}
         state={state}

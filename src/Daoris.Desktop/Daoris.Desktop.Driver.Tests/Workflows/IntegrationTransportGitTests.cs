@@ -56,6 +56,7 @@ public sealed class IntegrationTransportGitTests : LandedFixture, IAsyncLifetime
     {
         Poll = _poll,
         Config = () => Config,
+        Memory = () => null,
         Root = (_, _, _) => Task.FromResult<string?>(root),
         Settled = () => StoreSettled.Yes,
         Tidy = IntegrationTidies.Through(new SessionTrees(Home)),

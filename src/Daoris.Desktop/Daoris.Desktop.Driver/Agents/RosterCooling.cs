@@ -123,6 +123,7 @@ internal sealed class RosterCooling(HarnessRoster roster)
             planFrom = UsageHistory.PlanFromStatus;
         }
 
+        if (plan is { Length: > 0 }) AccountWindows.Planned(roster.Home, owner, account, plan);
         UsageHistory.Kept(roster.Home, new ReadingFrom(owner, account, door, source, reader, now, session, plan, planFrom), windows, now);
         ModelsSpent(owner, account, door, windows, now, session);
     }
@@ -273,15 +274,17 @@ internal sealed class RosterCooling(HarnessRoster roster)
     /// restart starts from it; who, the organisation and the plan, in memory alone. A reading not
     /// written costs a restart's knowledge, never the answer.
     /// </summary>
-    internal void Keep(string owner, string? account, LoginRead said, DateTimeOffset at)
+    internal void Keep(string owner, string? account, LoginRead said, DateTimeOffset at, string? by = null)
     {
         var login = said.Login;
         roster._who[HarnessRoster.AccountKey(owner, account)] = (at, login == LoginState.In ? said : new LoginRead(login, null));
         // Its usage history's binding epoch: a sign-out marks it, and another plan as read begins the next.
         UsageHistory.Login(roster.Home, owner, account ?? AccountWindows.Own, login, login == LoginState.In ? said.Plan : null, at);
+        // The plan the walk weighs the account's room in: kept under the home, so a start after a restart reads it.
+        if (login == LoginState.In && said.Plan is { Length: > 0 } plan) AccountWindows.Planned(roster.Home, owner, account ?? AccountWindows.Own, plan);
         try
         {
-            AccountReads.Keep(roster.Home, owner, account, login, at);
+            AccountReads.Keep(roster.Home, owner, account, login, at, by);
         }
         catch (Exception error) when (error is IOException or UnauthorizedAccessException)
         {

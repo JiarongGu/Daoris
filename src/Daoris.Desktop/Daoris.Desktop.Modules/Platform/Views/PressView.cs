@@ -81,6 +81,7 @@ public static class PressViews
         MachineSettingView.Drain(),
         MachineSettingView.Checks(),
         MachineSettingView.Vacancy(),
+        MachineSettingView.Reserve(),
         MachineSettingView.Manifest(),
         MachineSettingView.Terminal(),
         new KeepRuleView(),

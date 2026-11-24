@@ -10,8 +10,8 @@ public sealed class MachineMemoryTests
     [Fact]
     public void Available_memory_is_read_and_the_commit_only_under_strict_overcommit()
     {
-        Assert.Equal(new MemoryReading(8000000L * 1024, null), MachineMemory.Meminfo(Meminfo, strict: false));
-        Assert.Equal(new MemoryReading(8000000L * 1024, 2000000L * 1024), MachineMemory.Meminfo(Meminfo, strict: true));
+        Assert.Equal(new MemoryReading(8000000L * 1024, null, 32000000L * 1024), MachineMemory.Meminfo(Meminfo, strict: false));
+        Assert.Equal(new MemoryReading(8000000L * 1024, 2000000L * 1024, 32000000L * 1024), MachineMemory.Meminfo(Meminfo, strict: true));
     }
 
     /// <summary>🔴 An overcommit mode that cannot be read is not strict, and never loses the available memory read beside it.</summary>

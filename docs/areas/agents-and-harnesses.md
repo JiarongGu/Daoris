@@ -202,7 +202,10 @@ where a seam, route, verb or fixture is. Which folder owns which job:
     curve holds, the person's included, so all its remaining room is spendable, and the most per hour to its reset goes first
     ahead of any other account's room), then most room in the tightest window the provider reported
     (rooms within five points tie; no number ranks as no room; not under `switch: off`), then fewest of Daoris's sessions running,
-    then most room under the curve, then least recently started, then the order. Under `order` the
+    then most room under the curve, then least recently started, then the order. Every room there is in the plan's own units
+    (`AccountFacts.Units`: points times the plan's declared size, one where its agent declares none; the five-point band is of the
+    share, then scaled), so the same share of a larger plan is more room; a near account's standing stays the pace curve's, which is
+    a share of the window. A running session's move by the curve picks its target in the same units (`SwitchCandidate.Units`). Under `order` the
     list is the walk, a near account last. The cap is one number per machine. (D130, D165, D197)
 30. A cooling account is held first, by a file read, before any probe. A model family's cool-off holds a start whose model names
     that family (`opus` in `claude-opus-4-5`) or runs at account default, and passes one naming another (`held.cooling-model`);
@@ -241,6 +244,19 @@ where a seam, route, verb or fixture is. Which folder owns which job:
     on the account and the starts chosen on it not yet running. The pace is a time, not an acknowledgement: a refresh that takes
     longer than the gap, with no temp file until its response, can still overlap the next session's. The file system names no writer, so the sessions beside the write are
     the attribution; `credentials.watching` and `app.started` mark a restart beside them. (SIGNOUTRACE1)
+    A write of the store is also a reading, made when it lands and not at a look or a status question (`CredentialWrites`, through
+    `StoredSignIns`): both tokens empty reads the account signed out (`MarkOut`, kept in `reads.json` so the roster, Settings, the CLI
+    list and the sign-out notice, claimed at the write, all say it at the next look), a store filled after this watch saw it cleared
+    reads it signed in (`MarkIn`), and one that leaves tokens in a store that had them, a refresh, changes no reading, so a refused
+    account stays refused; a file with no bytes is a write half made and marks nothing. The reading and the `credentials.written` line
+    (`by`, `marked`) say who was at the account (`SignInCause`, never who wrote: the file system does not say): Daoris's own sign-in
+    (`SignInMarks`, one file beside the probe lock for each sign-in running, made as its flow starts and stale after thirty minutes), else
+    a probe (its lock held), else a session running or starting on it, else outside Daoris, so a sign-out none of Daoris's was at reads
+    as outside; the page's row and `daoris agent list` word it. The notice keeps its old wording and carries no cause, and one made
+    during Daoris's own sign-in is told only if the sign-in leaves the account signed out. The look's own read of a cleared store still
+    marks one the watch missed, with no cause. A store that is deleted, and not emptied, marks nothing: the install's writes of the
+    store each show a `deleted` line then a `renamed` one a millisecond later, so a deletion alone says nothing. A watch-made signed-in
+    reading is kept in `reads.json` alone, with no who or plan until the next status read. (SIGNOUTSEEN1)
 
 **Usage, limits and errors**
 
@@ -250,6 +266,13 @@ where a seam, route, verb or fixture is. Which folder owns which job:
     start's walk needs it, never within the question's floor. A week opened with no reset and no use has a made-up reset and is no
     account week (`UsageCurves.ResetMadeUp`). Each usage file is edited under its keep lock; one that does not read is never saved
     over. (D57, D165)
+    The plan is one field of every usage reading (`UsageAnswer.Plan`), the agent's own word and never a credential's value or who
+    signed in: Claude's `subscription_type` and the status's tier (`max_5x`, `max_20x`), Codex's `planType`; an agent that names none
+    leaves it unknown. A tier and its type are one plan (`PlanWords`): the history's binding epoch does not turn on them, and a bare
+    type never replaces the tier that names it more exactly. It is kept beside the account's windows (`AccountWindows.Planned`), shown beside the account in `agent list` and the roster, and sized by the provider's `PlanSizes` where its
+    word states one (`ClaudePlans`; Codex states none, so its plans weigh as the base). The person's own use of an account outside
+    Daoris is not read: an account they do not want used is switched off. (ACCOUNTPLAN1,
+    docs/2026-11-24-account-plan-evidence.md)
 35. Capacity is estimated from Daoris's own turns and the readings, with weights that are dated ratios, never prices. Acting on
     the estimate waits. (D179)
 36. A door's failure is read by one reader (`AgentErrors`) into four kinds, in order: limit, access, transient, fatal, from the

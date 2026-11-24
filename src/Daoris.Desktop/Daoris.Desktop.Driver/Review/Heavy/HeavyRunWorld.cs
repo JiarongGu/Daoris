@@ -23,7 +23,8 @@ public sealed record HeavyRunWorld(string Home, string Directory, Func<string, s
     public Func<CheckRules>? Checks { get; init; }
 
     internal CheckRules Rules() => Checks?.Invoke() ?? CheckRules.Of(
-        ChecksSetting.At(DriverConfig.ResolvePath(Home)), System.Environment.ProcessorCount, null, Variable, MachineMemory.Read);
+        ChecksSetting.At(DriverConfig.ResolvePath(Home)), System.Environment.ProcessorCount, null, Variable, MachineMemory.Read,
+        ReserveSetting.At(DriverConfig.ResolvePath(Home)));
 
     /// <summary>The whole environment the gates start in, with the run's own variables over it; null for this process's.</summary>
     public IReadOnlyDictionary<string, string>? Environment { get; init; }

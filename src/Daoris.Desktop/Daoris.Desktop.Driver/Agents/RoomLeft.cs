@@ -32,7 +32,7 @@ public static class RoomLeft
         return least;
     }
 
-    /// <summary>The band an account's room falls in; an account that said no number ranks as one with no room.</summary>
-    public static double BandOf(RotationUse use, AccountSaid? said, DateTimeOffset now) =>
-        Tightest(use, said, now) is { } tightest ? Math.Floor(tightest.Room / Band) : 0;
+    /// <summary>The band of share an account's room falls in, times its plan's units (<see cref="AccountFacts.Units"/>), so noise still ties within a plan; no number ranks as no room.</summary>
+    public static double BandOf(RotationUse use, AccountSaid? said, DateTimeOffset now, double units = 1) =>
+        Tightest(use, said, now) is { } tightest ? Math.Floor(tightest.Room / Band) * units : 0;
 }

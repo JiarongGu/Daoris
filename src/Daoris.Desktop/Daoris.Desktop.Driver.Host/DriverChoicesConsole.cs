@@ -19,6 +19,7 @@ internal static class DriverChoicesConsole
             Instance = InstanceHost.World(DriverConfig.HomeOf(path), "daoris"),
             ConfigPath = path,
             Registry = RegistryAsync,
+            Use = MachineUses.Read,
         };
 
         try

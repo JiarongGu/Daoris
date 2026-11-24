@@ -60,6 +60,14 @@ public sealed class MachineSettingView : IPressView
         return Shown("checks", new() { ["checks"] = text }, $"daoris settings checks {text}");
     });
 
+    public static MachineSettingView Reserve() => new("SET_RESERVE", payload =>
+    {
+        if (Number(payload, "gb") is not { } gb) return Shown("reserve-auto", [], $"daoris settings reserve {ReserveSetting.Auto}");
+        if (!ReserveSetting.Takes(gb)) return PressViewed.Refused(ReserveSetting.Refusal);
+        var text = gb.ToString(CultureInfo.InvariantCulture);
+        return Shown(gb == 0 ? "reserve-none" : "reserve", new() { ["gb"] = text }, $"daoris settings reserve {text}");
+    });
+
     public static MachineSettingView Vacancy() => new("SET_VACANCY", payload =>
     {
         if (Number(payload, "hours") is not { } hours || !VacancySetting.Takes(hours)) return PressViewed.Refused(VacancySetting.Refusal);

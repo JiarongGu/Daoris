@@ -51,7 +51,7 @@
   },
   "tools/merge/flow.test.ts::a gate whose hang bound killed a test under load fails nothing yet and runs again alone; a hang killed alone fails": {
     "ms": 35000,
-    "why": "starts the gate's child process twice, once killed under a planted load and once alone, and waits for each to end; 10 to 31 s on this machine, the time being the two processes' start and kill",
+    "why": "runs the flow three times over a fixture repository, each reading the hung test's source through a real git init and ls-files; 4 s alone, 10 to 31 s in earlier records beside other runs, the time being git's starts",
     "row": "PUREPROC1"
   },
   "src/Daoris.Web/src/work/WorkFrame.test.tsx::a park's question sends the free answer through the box as before, naming no question": {

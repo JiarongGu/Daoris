@@ -412,6 +412,12 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     (a monitor, a plugin's release), since that reads the landing, which a tidied branch and the line's holding the commit leave readable;
     or, with its quest still open, when its work step reached and no branch of it was ever recorded (work done in place, on the line: a
     set-up asked in the checkout): nothing is left for `content.holds` or the `land` to read, so it ends (`in-place`, `InPlaceRunEnds`);
+    never while any standing branch the home records for the run (`session-branches.json`, its `run`, an earlier subject of its chain too) still
+    holds commits the line does not, or git cannot read its tip or say what the line lacks, whatever this look read of its branches (a tree
+    mid-rebase or an unread unit hides them; the tips are read fresh, never from the pass's cache): the run and its quest stay taken, and an error
+    line `run.end.unlanded` in the machine log, written by the home's lease holder alone, names the branch and the commits once per change; the next
+    look lands the work once the branch reads again, and a branch left with commits nobody lands keeps the run open until the person lands or
+    discards it (`UnlandedRunEnds`, RUNENDLOST1);
     it is not governed again until its chain comes back. A `line` is reached by the kept end fact, or where the pass's read of the line
     holds every commit of the branch at its tip (a landing that found its work already there made no landing record).
     A check whose executor could not say what became of it (unknown with the code `unrun`, or with no cause of its own: a result that does
@@ -820,7 +826,14 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     lines' check slots (`locks/verify/`), every repository's heavy-run slots, and the sessions' `run-heavy`, a run holding both counted
     once. The judgement, the take of each slot and the write of each record happen under one lock (`locks/heavy/admitting.lock`), so two
     starts never both see no holder. The machine setting `checks` (`daoris settings checks <n>|auto`, the window's `SET_CHECKS`) pins a
-    number, never more than the machine's heavy-run admission holds; `auto`, the default, runs the first always and another while free
+    number, never more than the machine's heavy-run admission holds. The machine keeps a reserve free for the person's own work (the
+    setting `reserve`, `reserveGb` in `driver.json`, `daoris settings reserve <gb>|auto`, the window's `SET_RESERVE`, `ReserveSetting`; `auto`,
+    the default, a third of the machine's physical memory to the whole GB, 0 none): whatever `checks` says, a heavy run, a check or a
+    build is admitted only while the free memory stays at or above the reserve after the run's own need (counted for the runs still
+    starting as below), the first run included, and a new admission waits while it is under, saying the reserve (`CheckWait.Reserve`,
+    `slot-reserve` on a check's step); the merge tool's memory wait reads the same field from the home's `driver.json` and holds it against free commit too (`memoryLacking`). The setting's row
+    and `daoris settings reserve` show the machine's memory, its free commit and what Daoris's own processes hold (`DaorisShare`: this
+    process and each slot holder, with their children). `auto`, the default, runs the first always (the reserve apart) and another while free
     physical memory and free commit both hold a run's need (the merge tool's 8 GB for a Process suite, since a check runs the Process
     classes its change reaches), counted again for each run whose first gate has not ended (its record says so; a Daoris check's one
     `reached` gate holds its build and its suites, so it counts twice for its whole run), up to a quarter of the processors within the

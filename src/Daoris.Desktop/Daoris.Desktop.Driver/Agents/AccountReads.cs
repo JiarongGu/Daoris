@@ -11,7 +11,8 @@ namespace Daoris.Driver;
 /// <param name="At">When the answer came.</param>
 /// <param name="Since">The first reading of a run saying the same, so a sign-out says since when however often it is read again; null reads as <paramref name="At"/>.</param>
 /// <param name="Before">The word the run replaced, through an unanswered run between: a sign-out after <c>in</c> is one nobody at Daoris made.</param>
-public sealed record AccountRead(LoginState Login, DateTimeOffset At, DateTimeOffset? Since = null, LoginState? Before = null);
+/// <param name="By">Who held the account when a write of its store made this reading (<see cref="SignInCause"/>); null where none saw it.</param>
+public sealed record AccountRead(LoginState Login, DateTimeOffset At, DateTimeOffset? Since = null, LoginState? Before = null, string? By = null);
 
 /// <summary>An agent's readings: its own sign-in's, and each account's by its name; none where nothing is read.</summary>
 public sealed record AgentReads(AccountRead? Own, IReadOnlyDictionary<string, AccountRead> Accounts);
@@ -27,14 +28,13 @@ public sealed record AgentReads(AccountRead? Own, IReadOnlyDictionary<string, Ac
 /// (<see cref="HarnessRoster.SignedOut"/>). A question never asked (an account a session of Daoris's runs on, an agent with no
 /// login question) writes nothing, so the last word stands with its own time. An older reading never replaces a newer one.</para>
 /// <para><b>A word and a time, never who</b>: who signed in is read fresh and written nowhere, so after a restart an
-/// account says its state and when, and who once it is read again. Missing or unreadable is nothing known: never read, never
-/// signed in. Beside <c>cooling.json</c> and <c>windows.json</c>, not in <c>harnesses.json</c>, which is the person's
-/// wiring. Written atomically, LF, keeping what it has no field for. No HTTP route reaches it.</para>
+/// account says its state and when, and who once it is read again. Missing or unreadable is nothing known. Beside <c>cooling.json</c>
+/// and <c>windows.json</c>, not in <c>harnesses.json</c>, the person's wiring. Written atomically, LF, keeping what it has no field for.</para>
 /// <para>Held, row for row, to one table, <c>fixtures/account-reads.json</c> among the driver's tests, which <c>AccountReadsTests</c>
 /// reads. A terminal's reading is this program's.</para>
 /// <para>The file's shape: <c>{ "&lt;agent&gt;": { "own": { "login": "in", "read": "…Z" }, "accounts": { "&lt;account&gt;":
-/// { "login": "out", "read": "…Z", "since": "…Z", "before": "in" } } } }</c> (<see cref="AccountRead.Since"/>); an older build's write
-/// drops the last two; a door's binary's version reading sits beside them as its <c>binary</c> (<see cref="BinaryReads"/>).</para>
+/// { "login": "out", "read": "…Z", "since": "…Z", "before": "in", "by": "outside" } } } }</c> (<see cref="AccountRead.Since"/>); an older build's write
+/// drops the last three; a door's binary's version reading sits beside them as its <c>binary</c> (<see cref="BinaryReads"/>).</para>
 /// </remarks>
 public static class AccountReads
 {
@@ -75,7 +75,7 @@ public static class AccountReads
     /// A reading of one account's sign-in, or with <paramref name="account"/> null the tool's own: kept unless a newer reading
     /// of it is already there.
     /// </summary>
-    public static void Keep(string home, string agent, string? account, LoginState login, DateTimeOffset at)
+    public static void Keep(string home, string agent, string? account, LoginState login, DateTimeOffset at, string? by = null)
     {
         lock (Gate)
         {
@@ -96,6 +96,7 @@ public static class AccountReads
                 : (at, before.Login);
             if (since is { } began) entry["since"] = AccountCooling.Stamp(began);
             if (replaced is { } word) entry["before"] = Word(word);
+            if ((by ?? (before?.Login == login ? before.By : null)) is { } writer && SignInCause.Known(writer)) entry["by"] = writer;
             parent[name] = entry;
             Save(home, root);
         }
@@ -132,7 +133,7 @@ public static class AccountReads
     private static AccountRead? Reading(JsonObject entry)
     {
         return WordOf(entry["login"]) is { } said && Moment(entry, "read") is { } at
-            ? new AccountRead(said, at, Moment(entry, "since"), WordOf(entry["before"]))
+            ? new AccountRead(said, at, Moment(entry, "since"), WordOf(entry["before"]), entry["by"] is JsonValue by && by.TryGetValue<string>(out var writer) && SignInCause.Known(writer) ? writer : null)
             : null;
 
         static LoginState? WordOf(JsonNode? node) => node is JsonValue value && value.TryGetValue<string>(out var word)

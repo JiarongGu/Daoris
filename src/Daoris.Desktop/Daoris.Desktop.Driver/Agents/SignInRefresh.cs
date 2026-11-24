@@ -116,9 +116,9 @@ internal sealed class RefreshPace
 }
 
 /// <summary>
-/// The stored sign-ins read at each look: an account whose store its agent cleared since its last reading reads signed out from
-/// then, kept as a reading is (<see cref="AccountReads"/>), so the walk passes it, its page says so through its sign-in state
-/// (<see cref="SignInStates"/>) and, after a signed-in reading, a notice tells it (<see cref="SignOutNotices"/>).
+/// The stored sign-ins, read at each look and at each write the credentials watch sees (<see cref="CredentialWrites"/>): a cleared
+/// store reads its account signed out, kept as a reading is (<see cref="AccountReads"/>), so the walk passes it, its page says so
+/// through its sign-in state (<see cref="SignInStates"/>) and, after a signed-in reading, a notice tells it (<see cref="SignOutNotices"/>).
 /// </summary>
 internal static class StoredSignIns
 {
@@ -131,19 +131,41 @@ internal static class StoredSignIns
             // A door's accounts are its owner's: each store read once, under its owner.
             if (roster.Adapters.AgentNamed(name) is not { Accounts.StoredSignIn: { } store }
                 || !string.Equals(roster.Adapters.OwnerOfAgent(name).Value, name, StringComparison.OrdinalIgnoreCase)) continue;
-            var reads = AccountReads.Of(roster.Home, name).Accounts;
             foreach (var account in HarnessSettings.Profiles(roster.Home, name))
             {
                 if (store.Read(HarnessSettings.ProfileHome(roster.Home, name, account)) is not { Cleared: true } shape) continue;
-                var read = reads.GetValueOrDefault(account);
-                if (read is { Login: LoginState.Out }) continue;
-                // At the store's write, unless a reading came after it, which an older moment never replaces.
-                var at = read is null || shape.Written > read.At ? shape.Written : roster.Clock();
-                roster.Keep(name, account, new LoginRead(LoginState.Out, null), at);
-                kept++;
+                if (MarkOut(roster, name, account, shape, by: null)) kept++;
             }
         }
 
         return kept;
+    }
+
+    /// <summary>A cleared store reads the account signed out unless it does, at the store's write unless a reading came after it; whether it marked.</summary>
+    internal static bool MarkOut(HarnessRoster roster, string owner, string account, StoredSignInShape shape, string? by)
+    {
+        var read = AccountReads.Of(roster.Home, owner).Accounts.GetValueOrDefault(account);
+        if (read is { Login: LoginState.Out }) return false;
+        var at = read is null || shape.Written > read.At ? shape.Written : roster.Clock();
+        roster.Keep(owner, account, new LoginRead(LoginState.Out, null), at, by);
+        return true;
+    }
+
+    /// <summary>A store filled after the watch saw it cleared is a sign-in: the account read signed out reads signed in; whether it marked.</summary>
+    internal static bool MarkIn(HarnessRoster roster, string owner, string account)
+    {
+        var read = AccountReads.Of(roster.Home, owner).Accounts.GetValueOrDefault(account);
+        if (read is not { Login: LoginState.Out }) return false;
+        try
+        {
+            // The reading alone: who signed in and the plan are not known here, and a plan read as none would bump the usage epoch.
+            AccountReads.Keep(roster.Home, owner, account, LoginState.In, roster.Clock());
+        }
+        catch (Exception error) when (error is IOException or UnauthorizedAccessException)
+        {
+            return false;
+        }
+
+        return true;
     }
 }

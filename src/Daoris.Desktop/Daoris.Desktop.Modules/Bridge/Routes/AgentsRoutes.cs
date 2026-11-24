@@ -210,7 +210,7 @@ public sealed class AgentsRoutes(DriverContext context)
             : AccountSettings(AgentSettings.Read(Path.Combine(profile.Home, settingsFile))),
         // When its state is last read, or null where it never is: absent is never a reading.
         profile.Read,
-        SignIn = profile.SignIn is { } signIn ? new { State = signIn.Word, signIn.Since, signIn.NotByPerson } : null,
+        SignIn = profile.SignIn is { } signIn ? new { State = signIn.Word, signIn.Since, signIn.NotByPerson, signIn.By } : null,
     };
 
     /// <summary>
