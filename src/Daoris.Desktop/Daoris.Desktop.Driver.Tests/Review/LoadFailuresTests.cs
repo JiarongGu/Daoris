@@ -32,7 +32,37 @@ public sealed class LoadFailuresTests
         Assert.Equal(["signOut.test.tsx", "Daoris.Driver.Tests.X"], LoadFailures.Names(["vitest|src/web/signOut.test.tsx", "dotnet|Daoris.Driver.Tests.X"]));
         Assert.Null(LoadFailures.Names([]));
         Assert.Null(LoadFailures.Names(["vitest|a b; rm -rf x"]));
-        Assert.Equal("node tools/reached-checks.mjs --base main --tier fast --classes A,B", LoadFailures.Command("node tools/reached-checks.mjs --base main --tier fast", ["A", "B"]));
+    }
+
+    private const string Marker = "reached-classes: ";
+
+    private static string Log(string failure, params string[] red) =>
+        $"{failure}\n{Marker}{{\"ran\":3,\"red\":[{string.Join(',', red.Select(id => $"\"{id}\""))}]}}";
+
+    [Fact]
+    public void Classes_are_run_again_only_where_each_red_class_s_own_failure_is_a_timeout_or_the_host_was_ended_by_its_hang_bound()
+    {
+        var timeout = Log("FAIL X.Y > waits\nError: Test timed out in 10000ms.", "dotnet|X.Y");
+        Assert.Equal(["X.Y"], LoadFailures.Timeouts(timeout, Marker));
+
+        var assertion = Log("FAIL Z.W > slow\nError: Test timed out in 10000ms.\n\nFAIL X.Y > adds\nAssertionError: expected 1 to be 2", "dotnet|X.Y");
+        Assert.Null(LoadFailures.Timeouts(assertion, Marker));
+
+        var mixed = Log("FAIL X.Y > waits\nError: Test timed out in 10000ms.\n\nFAIL Q.R > adds\nAssertionError: expected 1 to be 2", "dotnet|X.Y", "dotnet|Q.R");
+        Assert.Null(LoadFailures.Timeouts(mixed, Marker));
+
+        var hung = Log("Data collector 'Blame' message: The specified inactivity time of 60 seconds has elapsed.\nThe test running when the crash occurred:\nX.Y.No_source", "dotnet|X.Y");
+        Assert.Equal(["X.Y"], LoadFailures.Timeouts(hung, Marker));
+        Assert.Null(LoadFailures.Timeouts("no outcome line, but a Test timed out in 10ms", Marker));
+    }
+
+    [Fact]
+    public void A_reached_runner_runs_classes_again_only_by_a_command_its_declaration_names()
+    {
+        var declared = ReachedRunner.Of("""{ "reached": { "run": "x --base {base}", "rerun": "x --classes {classes} --base {base}" } }""")!;
+        Assert.Equal("x --classes A,B --base main", declared.RerunFor(["A", "B"], "main"));
+        Assert.Null(declared.RerunFor(["A"], "main; rm -rf /"));
+        Assert.Null(ReachedRunner.Of("""{ "reached": { "run": "x --base {base}" } }""")!.RerunFor(["A"], "main"));
     }
 
     [Fact]

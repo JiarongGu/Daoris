@@ -31,14 +31,28 @@ internal static class LoadFailures
     internal const string Mark = "(quiet rerun)";
 
     private static readonly Regex Timeout = new(
-        @"timed out in \d+\s*ms|Test timed out|Timeout of \d+\s*ms exceeded|exceeded timeout of \d+\s*ms|inactivity time of \d+ seconds has elapsed", RegexOptions.CultureInvariant | RegexOptions.IgnoreCase);
+        @"timed out in \d+\s*ms|Test timed out|Timeout of \d+\s*ms exceeded|exceeded timeout of \d+\s*ms", RegexOptions.CultureInvariant | RegexOptions.IgnoreCase);
+
+    private static readonly Regex HostHung = new(@"inactivity time of \d+ seconds has elapsed", RegexOptions.CultureInvariant | RegexOptions.IgnoreCase);
 
     private static readonly Regex Safe = new(@"^[A-Za-z0-9][A-Za-z0-9._/\\-]*$", RegexOptions.CultureInvariant);
 
-    /// <summary>Whether a log says a test timed out.</summary>
-    internal static bool TimedOut(string log) => Timeout.IsMatch(log);
+    /// <summary>Whether a text says a test timed out, or its test host hit the hang bound.</summary>
+    internal static bool TimedOut(string text) => Timeout.IsMatch(text) || HostHung.IsMatch(text);
 
-    /// <summary>The names the red classes are run again by (<c>--classes</c>), or null where there are none or one is no plain name, which is never put in a command.</summary>
+    /// <summary>
+    /// The names of the red classes a log's failure is load for, or null where it is not: each red class's own failure says a test timed out, or
+    /// the test host hit the hang bound, which no class's lines name. One red class that failed on anything else is the work's, and the
+    /// failure stands whole.
+    /// </summary>
+    internal static IReadOnlyList<string>? Timeouts(string log, string marker)
+    {
+        var red = ReachedVerdict.RedOf(log, marker);
+        if (red.Count == 0) return null;
+        return HostHung.IsMatch(log) || red.All(id => ReachedVerdict.LinesOf(log, id).Any(Timeout.IsMatch)) ? Names(red) : null;
+    }
+
+    /// <summary>The names the red classes are run again by, or null where there are none or one is no plain name, which is never put in a command.</summary>
     internal static IReadOnlyList<string>? Names(IReadOnlyList<string> red)
     {
         if (red.Count == 0) return null;
@@ -46,14 +60,11 @@ internal static class LoadFailures
         return names.All(name => Safe.IsMatch(name)) ? names : null;
     }
 
-    /// <summary>The command that runs a failed reached command's red classes again: itself, with the classes named.</summary>
-    internal static string Command(string run, IReadOnlyList<string> names) => $"{run} --classes {string.Join(',', names)}";
-
-    /// <summary>The load now: the live places held but <paramref name="except"/>'s, and the free commit.</summary>
+    /// <summary>The load now: the live places held that do work, but <paramref name="except"/>'s, and the free commit. A place only waiting for its quiet slot is no load.</summary>
     internal static LoadReading Read(string home, VerifyWorld world, string? except = null)
     {
         var look = MachineAdmission.Look(home, world.Admission.Alive, world.Admission.Clock(), world.Capacity);
-        return new LoadReading(look.Holds.Count(hold => hold.Id != except), world.Memory()?.Commit);
+        return new LoadReading(look.Holds.Count(hold => hold.Id != except && !hold.What.EndsWith(Mark, StringComparison.Ordinal)), world.Memory()?.Commit);
     }
 
     /// <summary>
@@ -74,6 +85,16 @@ internal static class LoadFailures
     /// <summary>What the record says of classes that timed out under load and failed again run alone at a quiet slot: the work's.</summary>
     internal static string Failed(IReadOnlyList<string> names, LoadReading seen) =>
         $"{Classes(names)} timed out while the machine was loaded ({seen.Words}) and failed again run alone at a quiet slot, so the failure is the work's";
+
+    /// <summary>What the record says of classes that timed out under load and timed out again run alone while the machine read loaded again.</summary>
+    internal static string Again(IReadOnlyList<string> names, LoadReading seen, LoadReading now) =>
+        $"load: {Classes(names)} timed out while the machine was loaded ({seen.Words}) and timed out again run alone, the machine loaded again ({now.Words}); "
+        + "a load failure is no failure of the work and counts no round, so the check is asked again";
+
+    /// <summary>What the record says where the classes could not be run again as declared.</summary>
+    internal static string Empty(IReadOnlyList<string> names, LoadReading seen) =>
+        $"load: {Classes(names)} timed out while the machine was loaded ({seen.Words}) and their rerun ran no class, so nothing says they pass; "
+        + "a load failure is no failure of the work and counts no round, so the check is asked again";
 
     /// <summary>What the record says of classes that timed out under load while no quiet slot came.</summary>
     internal static string Waited(IReadOnlyList<string> names, LoadReading seen, TimeSpan waited) =>

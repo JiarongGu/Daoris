@@ -18,7 +18,7 @@
 
   "generated": [{ "paths": "tools/size-ratchet.json", "run": "node tools/size-ratchet.mjs --shrink" }],
 
-  "reached": { "run": "node tools/reached-checks.mjs --tier {tier} --base {base}", "clock": true, "outcome": "reached-classes: " },
+  "reached": { "run": "node tools/reached-checks.mjs --tier {tier} --base {base}", "rerun": "node tools/reached-checks.mjs --classes {classes} --base {base}", "clock": true, "outcome": "reached-classes: " },
 
   "admission": {
     "_why": "The line's admission (LANDGATES1): the gates every change passes before it moves the line, kept once. The merge tool selects its blocking gates from it (tools/merge/reach.ts) and the driver's check step, which judges a run's work as merged before its landing, runs the same gates (AdmissionGates); neither keeps a list of its own. always runs at every change; suites too, as the merge's one non-blocking suite; byPaths runs a gate where a changed path matches one of its globs (the lane table's grammar) or one of verifyBudget.fullRunReasons.widePaths, which change how every gate runs. Every name is a gate declared below.",

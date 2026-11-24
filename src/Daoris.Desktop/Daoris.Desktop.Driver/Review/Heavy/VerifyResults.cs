@@ -81,7 +81,7 @@ public sealed record VerifyResult(string Invocation, string Commit, string Verdi
 
     public const string Unaccounted = "unaccounted";
 
-    /// <summary>Why an unknown is what it is, where a door answers it: <see cref="Changed"/>, <see cref="Bound"/>, <see cref="Stopped"/>, <see cref="Busy"/>, <see cref="Unrun"/> (Daoris could not run it: never a failure), <see cref="Unprepared"/>.</summary>
+    /// <summary>Why an unknown is what it is, where a door answers it: <see cref="Changed"/>, <see cref="Bound"/>, <see cref="Stopped"/>, <see cref="Busy"/>, <see cref="Unrun"/> (Daoris could not run it: never a failure), <see cref="Unprepared"/>, <see cref="Load"/> (tests timed out under load and no quiet slot came: never a failure of the work).</summary>
     public string? Code { get; init; }
 
     /// <summary>The gate a failed check names (a runner's name for an opaque one).</summary>
