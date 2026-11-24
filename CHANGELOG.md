@@ -10,6 +10,9 @@ with the version and date at release.
   now takes it on that grant, where before an approval and a share were always the owner's and the re-cast also needed
   `vacancy.prepaid`. A row of the risk policy classing the act `owner` keeps it yours; a row naming a role keeps it that role's.
   A go-ahead stays yours where the policy classes its act yours, and a refusal says `policy-owner` in place of `high-risk` or `marked`.
+- An agent process Daoris started that outlives its session is now named in the machine log (`agent.stray`: its id, agent, pin and age) and ended
+  with its tree five minutes later (`agent.stray.stopped`), or at once where its pin has moved on. Only a process Daoris recorded as it started it is
+  ever read; a process of another program at the same path is never touched, and a process started before the record was kept is not named.
 - `daoris bus stats` now reads each consumer's handling time by kind (`handled`) and each day's share of the 128 MiB a day the bus log may
   put on disk, and the log says once when a day passes it. A check's start and a second opinion's asking carry deadlines measured on the
   install; the answers an author keeps to a second opinion's findings reach the bus's log as they are given, not only at the turn's end.

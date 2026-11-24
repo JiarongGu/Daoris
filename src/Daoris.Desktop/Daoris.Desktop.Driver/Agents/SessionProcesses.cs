@@ -33,6 +33,8 @@ public sealed class SessionProcesses(string? markers = null)
 {
     public ShellClose Close { get; set; } = ShellClose.Person;
 
+    internal string? Markers => markers;
+
     /// <summary>Told the session and how many processes were still running in its job when its tracking ended and were ended with it.</summary>
     public Action<string, int>? Reaped { get; set; }
 
@@ -515,6 +517,7 @@ public sealed class SessionProcesses(string? markers = null)
             }
 
             Mark(sessionId, process);
+            if (markers is not null) StartRecords.Write(markers, sessionId, process);
         }
 
         return new Untrack(this, sessionId, entry);
@@ -639,12 +642,19 @@ public sealed class SessionProcesses(string? markers = null)
     }
 
     /// <summary>Whether the process with this id is alive as the one that started at <paramref name="started"/> (UTC ticks): what a marker names.</summary>
-    internal static bool IsRunning(int pid, long started)
+    internal static bool IsRunning(int pid, long started) => Runs(pid, started, null);
+
+    /// <summary>Ends the process, with its tree, where it runs as the one that started at <paramref name="started"/>; false where it runs on after the try or cannot be told.</summary>
+    internal static bool EndRecorded(int pid, long started) => !Runs(pid, started, process => OwnedProcesses.End(process) is not null);
+
+    // `then` answers for a process that runs as the one asked for; none answers that it runs.
+    private static bool Runs(int pid, long started, Func<Process, bool>? then)
     {
         try
         {
             using var process = Process.GetProcessById(pid);
-            return Math.Abs(process.StartTime.ToUniversalTime().Ticks - started) < TimeSpan.TicksPerSecond;
+            if (Math.Abs(process.StartTime.ToUniversalTime().Ticks - started) >= TimeSpan.TicksPerSecond) return false;
+            return then?.Invoke(process) ?? true;
         }
         catch (ArgumentException)
         {
@@ -737,24 +747,7 @@ public sealed class SessionProcesses(string? markers = null)
             : null;
     }
 
-    private static bool Gone(int pid, long started)
-    {
-        try
-        {
-            using var process = Process.GetProcessById(pid);
-            return Math.Abs(process.StartTime.ToUniversalTime().Ticks - started) >= TimeSpan.TicksPerSecond;
-        }
-        catch (ArgumentException)
-        {
-            // No process has that id now.
-            return true;
-        }
-        catch (Exception error) when (error is InvalidOperationException or System.ComponentModel.Win32Exception)
-        {
-            // Exited as we looked: gone. A start time not ours to read: taken as alive.
-            return error is InvalidOperationException;
-        }
-    }
+    private static bool Gone(int pid, long started) => !IsRunning(pid, started);
 
     public bool HasMarker(string sessionId) => MarkerOf(sessionId) is { } marker && File.Exists(marker);
 
@@ -855,6 +848,8 @@ public sealed class SessionProcesses(string? markers = null)
             // never did, so a launcher still running does not keep the job, and the tree, alive past its session.
             if (SessionTreeReap.End(job) is > 0 and var left) owner.Reaped?.Invoke(sessionId, left);
             job?.Dispose();
+
+            if (owner.Markers is { } folder) StartRecords.Forget(folder, sessionId, entry.Process);
         }
     }
 }
