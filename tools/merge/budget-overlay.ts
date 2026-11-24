@@ -15,18 +15,25 @@ export type BudgetSource = { home: string | null; repository: string };
 type Budgeted = { name: string; timeoutMinutes?: number; memoryGb?: number; alone?: boolean; budget?: Budget };
 
 /**
- * The home and the repository a run in `root` reads. The repository is the driver's `DAORIS_REPOSITORY` for a session it started, else the
- * folder of the main checkout that `root` is a tree of; the home is `DAORIS_HOME`, none where there is none.
+ * The home and the repository a run in `root` reads: the Daoris home (`DAORIS_HOME`, none where there is none), and the name of the folder of the
+ * main checkout `root` is a tree of. A folder that is no repository's own top (a fixture inside another repository) is named by itself, so what
+ * a test builds there never reads the record of the repository around it.
  */
 export function budgetSourceOf(root: string, env: Record<string, string | undefined> = process.env): BudgetSource {
-  return { home: daorisHome(env, null), repository: env['DAORIS_REPOSITORY']?.trim() || mainCheckoutName(root) };
+  return { home: daorisHome(env, null), repository: mainCheckoutName(root) };
 }
+
+const gitAt = (root: string, args: string[]): string | null => {
+  const run = spawnSync('git', args, { cwd: root, encoding: 'utf8', windowsHide: true });
+  return run.status === 0 ? run.stdout.trim() : null;
+};
 
 /** The name of the folder holding the repository's main checkout: a linked tree's git folder is inside it. */
 function mainCheckoutName(root: string): string {
-  const common = spawnSync('git', ['rev-parse', '--path-format=absolute', '--git-common-dir'], { cwd: root, encoding: 'utf8', windowsHide: true });
-  const folder = common.status === 0 ? dirname(resolve(common.stdout.trim())) : resolve(root);
-  return basename(folder);
+  const top = gitAt(root, ['rev-parse', '--show-toplevel']);
+  const common = gitAt(root, ['rev-parse', '--path-format=absolute', '--git-common-dir']);
+  if (top === null || common === null || resolve(top) !== resolve(root)) return basename(resolve(root));
+  return basename(dirname(resolve(common)));
 }
 
 /** What the home keeps of the repository, nothing where it names no home or keeps no record. */
