@@ -49,6 +49,7 @@
   "agents.read.never": "从未读取",
   "agents.read.failed": "上次读取失败，{{when}}",
   "agents.read.unanswered": "登录查询未应答，{{when}}",
+  "agents.read.off": "已被你停用",
   "agents.read.outSince": "自 {{since}} 起已退出登录，{{when}} 读取",
   "agents.read.again": "重新读取",
   "agents.read.againTip": "逐个询问 {{agent}} 的每个 Daoris 账户。你自己的登录从不被询问。打开这个页面不会询问登录状态。",

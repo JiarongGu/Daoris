@@ -67,6 +67,8 @@ export type AgentActs = {
   onTryNow: (account: string, label: string) => void;
   /** An account removed, from its *Remove…*'s ask, told back to it. */
   onRemove: (account: string, answered: Answered) => void;
+  /** An account switched off or on, the person's own press (`daoris agent account off|on`); the label names it in the toast. */
+  onSwitch: (account: string, off: boolean, label: string) => void;
   /** An account named by the person, or its name taken back with null (`daoris agent profile rename`). */
   onRename: (account: string, name: string | null, answered: Answered) => void;
   /** The new account's name, at the add flow's end (nothing else is asked). */
@@ -389,6 +391,10 @@ export function AgentPage({
         ? [{ id: 'settings', label: t('agents.account.settings'), onSelect: () => { setOpen((was) => new Set([...was, 'settings' as const])); askSettings(name); } }]
         : []),
       { id: 'rename', label: t('agents.account.rename'), disabled: busy, onSelect: () => askRename(name) },
+      // Off is undone by the row's own act, *Switch on*; here only what is on is switched off.
+      ...(state.state === 'off'
+        ? []
+        : [{ id: 'switchOff', label: t('harness.account.switchOff'), disabled: busy, onSelect: () => acts.onSwitch(name, true, accountLabel(account, tool)) }]),
       // An agent held by a key alone: its key is set, replaced or taken out here, and the account stays.
       ...(keyOnly
         ? [{ id: 'setKey', label: t(account.key ? 'agents.account.replaceKey' : 'agents.account.setKey'), disabled: busy, onSelect: () => askReplace(name) }]
@@ -425,6 +431,11 @@ export function AgentPage({
         return {
           label: t('harness.cooling.tryNow'), ariaLabel: t('harness.cooling.tryNowFor', { account: label }),
           onPress: () => acts.onTryNow(id, label), disabled: busy,
+        };
+      case 'switchOn':
+        return {
+          label: t('harness.account.switchOn'), ariaLabel: t('harness.account.switchOnFor', { account: label }),
+          onPress: () => acts.onSwitch(id, false, label), disabled: busy,
         };
       // A key its provider refused: a key field on its own row, which puts the new key into the same account
       // (`key-replace`), keeping its name and its place in the order.

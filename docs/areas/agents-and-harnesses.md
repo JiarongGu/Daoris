@@ -188,7 +188,13 @@ where a seam, route, verb or fixture is. Which folder owns which job:
     *Set key…*), never a sign-in. (D66, D67)
 27. Each agent's accounts are one set serving every workspace, with one order and one set of use settings. The person's pick at
     a start is the one exception; a pick whose folder is gone is refused, never moved; a handed quest's named account that is gone
-    walks on. (D197)
+    walks on. (D197) The person's switch is part of that one record, the same for every agent: an account switched off (`daoris agent
+    account off <agent> <account>`, the window's *Switch off*, a key of `accounts.json` beside the name, `AccountSwitch`) stays signed in
+    and is read as before, and the roster's `Before` reads the switch first (`AccountReadiness.Off`, `NextHold.Off`), so no start, move or
+    resume is chosen onto it while another account is ready, and a pick of it is refused, never moved. A session already on it goes on to
+    its turn's end; the next resume reads its own account off and moves it by the walk (the line that switches), or holds it for the
+    switch where no other account is ready or the line does not move: it never waits for a reset it has not got. Only the person's press
+    writes it, as a sign-in is theirs: the window and the terminal on their own, a session's terminal refused.
 28. The person's own sign-in is outside the set: Daoris never signs it in or out, asks it anything or starts work in it. On the
     agent's page it is the list's last row; *Ways in* says each way in by what it gives, and one not installed says what to do.
     A protocol door has no sign-in of its own: the window's *Sign in*, a step's sign-in words and `daoris agent login` all sign in as the agent

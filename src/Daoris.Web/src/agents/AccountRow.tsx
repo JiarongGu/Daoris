@@ -114,6 +114,7 @@ function stateWhy(t: (key: string, values?: Record<string, string>) => string, s
     case 'keyed': return t('harness.login.keyedTip');
     case 'refused': return t('harness.login.refusedTip');
     case 'unanswered': return t('harness.login.unansweredTip');
+    case 'off': return t('harness.account.offTip');
     case 'out': return outWhy(t, state, now);
     default: return null;
   }

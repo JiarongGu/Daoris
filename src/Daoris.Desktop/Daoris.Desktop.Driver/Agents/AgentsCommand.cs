@@ -21,7 +21,7 @@ namespace Daoris.Driver;
 /// the route.
 /// </remarks>
 [CommandGroup("agent", "list", "install", "update", "login", "key", "pin", "unpin", "which", "trust", "settings", "rules", "account",
-    Nested = ["account: list add remove default order use ready rename join"])]
+    Nested = ["account: list add remove default order use ready rename join on off"])]
 public static class AgentsCommand
 {
     /// <summary>The verbs this program has, each the CLI hands on (the CLI's allow-list is held to it).</summary>
@@ -45,6 +45,7 @@ public static class AgentsCommand
                daoris agent account use <agent> [goal|order] [--keep <account>|--no-keep] [--switch smart|curve|off]
                      [--curve <window>=<elapsed>:<used>,…]… [--no-curve] · use <agent> --clear
                daoris agent account rename <agent> <account> <name>
+               daoris agent account on|off <agent> <account>        switch an account on or off: signed in still, but none starts or moves to it
                daoris agent install <agent>
                daoris agent key <agent> [--account <account>]     the key read from standard input, never an argument
                daoris agent login <agent> [--account <account>] [--device-code]

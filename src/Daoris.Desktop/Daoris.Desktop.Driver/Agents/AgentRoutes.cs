@@ -20,7 +20,7 @@ public static class AgentRoutes
     /// <summary><c>agent settings &lt;agent&gt; model|effort …</c>: an account's own model and effort.</summary>
     public static InstanceRoute Settings { get; } = Person("SET_AGENT_SETTINGS");
 
-    /// <summary><c>agent unpin|update|pin</c> and <c>agent profile add|remove|default|rename|join</c>: the Agents place's own actions.</summary>
+    /// <summary><c>agent unpin|update|pin</c> and <c>agent profile add|remove|default|rename|join|on|off</c>: the Agents place's own actions.</summary>
     public static InstanceRoute Harness { get; } = Person("HARNESS_ACTION");
 
     /// <summary><c>agent profile order|ready|use</c>: the Accounts place's order, <i>Try now</i> and how a list is used.</summary>
@@ -37,7 +37,7 @@ public static class AgentRoutes
         ("agent settings <agent> model|effort …", Settings, "an account's own model and effort, in the tool's own settings file", AgentHome.Wiring),
         ("agent trust <agent> <folder> --yes", null,
             "alone: the window's TRUST_FOLDER grants only a folder a hold names, and this names any folder", AgentHome.Wiring),
-        ("agent profile add|remove|default|rename|join", Harness, "the Accounts place's `profile-*` actions", AgentHome.Wiring),
+        ("agent profile add|remove|default|rename|join|on|off", Harness, "the Accounts place's `profile-*` actions", AgentHome.Wiring),
         ("agent unpin <agent>", Harness, "the machine's pin taken back", AgentHome.Wiring),
         ("agent profile order|ready", Account, "the Accounts place's order and *Try now*", AgentHome.Wiring),
         ("agent profile use <agent> …", Account, "the Accounts place's *How accounts are used*", AgentHome.Wiring),

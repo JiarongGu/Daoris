@@ -123,7 +123,7 @@ public static class HeldNoteCodes
     public static readonly NoteCode HeldPickedReady = new("held.picked-ready", ["accounts"]);
     public static readonly NoteCode HeldPickedNone = new("held.picked-none", ["agent"]);
     public static readonly NoteCode HeldRefusedAccount = new("held.refused-account", ["owner", "account"]);
-    public static readonly NoteCode HeldAccountOff = new("held.account-off", ["owner", "account"]);
+    public static readonly NoteCode HeldAccountOff = new("held.account-off", ["owner", "account", "profile"]);
     public static readonly NoteCode HeldRefusedOwn = new("held.refused-own", ["owner"]);
     public static readonly NoteCode HeldSignInRefusedOwn = new("held.sign-in-refused-own", ["owner"]);
     public static readonly NoteCode HeldNotInstalledOwn = new("held.not-installed-own", ["agent"]);

@@ -480,6 +480,10 @@ function AgentsMain({ tool, adapter, notify, part, onAnchored, onOpenPlugin, say
       { door: door, action: 'ready', profile: account },
       { onSuccess: (answer) => notify(t(answer.ended ? 'harness.cooling.ready' : 'harness.cooling.notCooling', { account: label })), onError },
     ),
+    onSwitch: (account, off, label) => act.mutate(
+      { door: door, action: off ? 'profile-off' : 'profile-on', profile: account },
+      { onSuccess: () => notify(t(off ? 'harness.account.switchedOff' : 'harness.account.switchedOn', { account: label })), onError },
+    ),
     onRemove: (account, answered) => run(door, 'profile-remove', account, undefined, answered),
     onRename: (account, name, answered) => told(rename(account, name), answered),
     // The add flow's end: its name kept where the field holds one other than

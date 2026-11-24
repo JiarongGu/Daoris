@@ -29,7 +29,7 @@ public sealed class CommandWordsTests
         Assert.Equal(CommandWords.Groups.Select(group => group.Name).Order(StringComparer.Ordinal), CommandWords.Groups.Select(group => group.Name));
         var agent = CommandWords.Group("agent")!;
         Assert.Contains("account", agent.Verbs);
-        Assert.Equal(["list", "add", "remove", "default", "order", "use", "ready", "rename", "join"], agent.Nested["account"]);
+        Assert.Equal(["list", "add", "remove", "default", "order", "use", "ready", "rename", "join", "on", "off"], agent.Nested["account"]);
         Assert.Equal("\"…\"", CommandWords.Group("ask")!.Takes);
         Assert.True(CommandWords.Group("drive")!.Whole);
     }

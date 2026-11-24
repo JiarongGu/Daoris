@@ -19,7 +19,7 @@ const render = (node: ReactElement) => rtlRender(<Tooltip.Provider>{node}</Toolt
 const nothing = () => {};
 const ACTS: AgentActs = {
   onReadAgain: nothing, onReadOne: nothing, onReadNow: nothing, onSignInNew: nothing, onAddKey: nothing, onReplaceKey: nothing, onRemoveKey: nothing, onSignIn: nothing, onTryNow: nothing,
-  onRemove: nothing, onRename: nothing, onAddedAnswer: nothing, onPooledSaid: nothing, onSaveSettings: nothing, onDoor: nothing, onPin: nothing,
+  onRemove: nothing, onSwitch: nothing, onRename: nothing, onAddedAnswer: nothing, onPooledSaid: nothing, onSaveSettings: nothing, onDoor: nothing, onPin: nothing,
   scope: { onOrder: nothing, onUse: nothing },
   rules: { onSwitchDefault: nothing, onRemove: nothing, onAdd: nothing, onAnswer: nothing },
 };
@@ -28,8 +28,8 @@ const CLAUDE = DOORS.find((door) => door.door === 'claude-code')!;
 const HOME = 'C:/somewhere/data/harnesses/claude-code/';
 
 /** Claude Code's page with these accounts, each in the set's order, as every account is; its sessions speak unless told. */
-function page(profiles: NonNullable<ToolDoor['profiles']>, { speaks = true, said = {} }: {
-  speaks?: boolean; said?: Record<string, AccountSaid>;
+function page(profiles: NonNullable<ToolDoor['profiles']>, { speaks = true, said = {}, acts = ACTS }: {
+  speaks?: boolean; said?: Record<string, AccountSaid>; acts?: AgentActs;
 } = {}) {
   const [tool] = toolsOf([{ ...CLAUDE, profiles }]);
   const use = {
@@ -38,7 +38,7 @@ function page(profiles: NonNullable<ToolDoor['profiles']>, { speaks = true, said
     accounts: profiles.map((profile) => ({ name: profile.name, running: 0, said: said[profile.name] ?? null })),
     scopes: [{ ...CLAUDE_USE.scopes[0]!, default: null, begins: profiles[0]!.name, list: profiles.map((profile) => profile.name) }],
   };
-  return render(<AgentPage tool={tool!} use={use} rules={null} usage={[]} acts={ACTS} />);
+  return render(<AgentPage tool={tool!} use={use} rules={null} usage={[]} acts={acts} />);
 }
 
 const SESSION_88: WindowCell = {
@@ -212,6 +212,35 @@ describe('an account’s row without a pointer (ACCTUX2)', () => {
     const unchecked = screen.getByRole('listitem', { name: 'API key …wxyz' });
     await userEvent.click(within(unchecked).getByRole('button', { name: "About API key …wxyz's state" }));
     expect(within(unchecked).getByText(/^The tool says signed in for any key/)).toBeTruthy();
+  });
+
+  /** The person's switch, the same on every agent's page: an off account says so, its one act undoes it, and the ⋯ switches an on one off. */
+  it.each(['claude-code', 'codex-acp'])('says %s’s switched-off account is off and presses its switch both ways', async (agent) => {
+    const switched: [string, boolean, string][] = [];
+    const [tool] = toolsOf([{
+      ...DOORS.find((door) => door.door === agent)!,
+      profiles: [
+        { name: 'account-1', home: `${HOME}account-1`, login: 'in', read: READ, off: true },
+        { name: 'account-2', home: `${HOME}account-2`, login: 'in', read: READ },
+      ],
+    }]);
+    const use = {
+      ...CLAUDE_USE, accounts: [{ name: 'account-1', running: 0, said: null }, { name: 'account-2', running: 0, said: null }],
+      scopes: [{ ...CLAUDE_USE.scopes[0]!, default: null, begins: 'account-2', list: ['account-1', 'account-2'] }],
+    };
+    render(<AgentPage tool={tool!} use={use} rules={null} usage={[]} acts={{ ...ACTS, onSwitch: (...press) => switched.push(press) }} />);
+
+    const off = screen.getByRole('listitem', { name: 'account-1' });
+    expect(within(off).getByText('off')).toBeTruthy();
+    expect(within(off).queryByText('signed in')).toBeNull();
+    await userEvent.click(within(off).getByRole('button', { name: 'switch account-1 on' }));
+    expect(switched).toEqual([['account-1', false, 'account-1']]);
+
+    const on = screen.getByRole('listitem', { name: 'account-2' });
+    expect(within(on).queryByRole('button', { name: /switch account-2 on/ })).toBeNull();
+    await userEvent.click(within(on).getByRole('button', { name: /More for/ }));
+    await userEvent.click(await screen.findByRole('menuitem', { name: 'Switch off' }));
+    expect(switched.at(-1)).toEqual(['account-2', true, 'account-2']);
   });
 
   it('offers no such press where the state needs no explanation', () => {

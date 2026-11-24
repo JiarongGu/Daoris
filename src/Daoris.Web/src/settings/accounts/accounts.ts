@@ -93,7 +93,7 @@ export type NextReason =
   | 'unanswered' | 'waits' | 'noAccount';
 
 /** What keeps the next start off an account, or `ready` where nothing does and it is merely ranked after. */
-export type NextHold = 'ready' | 'near' | 'cooling' | 'refused' | 'signedOut' | 'kept' | 'missing' | 'outside';
+export type NextHold = 'ready' | 'near' | 'cooling' | 'refused' | 'signedOut' | 'off' | 'kept' | 'missing' | 'outside';
 
 /** One account the next start does not take: null is the tool's own sign-in. */
 export type AccountHeld = { account?: string | null; hold: NextHold; until?: string | null };

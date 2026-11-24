@@ -190,7 +190,7 @@ public static class RotationWords
             $"the `{owner}` account `{AccountNames.Said(names, account)}` is switched off, so Daoris starts nothing on it and moves nothing to it — "
             + $"`daoris agent account on {owner} {ShellWord.Of(account, ShellWord.Account)}` switches it on, or Agents → the agent's page → Accounts. "
             + "It stays signed in.",
-            ("owner", owner), ("account", account));
+            ("owner", owner), ("account", account), ("profile", ShellWord.Of(account, ShellWord.Account)));
 
     /// <summary>The first line of a rotated start's record: which account it opened on, and why.</summary>
     public static string Opened(string to, RotatedStart rotated) => Opened(to, rotated.Why);
