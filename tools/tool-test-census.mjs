@@ -7,7 +7,10 @@
  * CLI package and the page, wherever they sit; the sets are `daoris.gates.json`'s `tests` (`tools/test-sets.mjs`). A test file is
  * placed by a set's pattern, so a new one is run with no list to edit; a script or a gate's command that names one would be a
  * list again, and is refused. A set whose runner runs its own config (Vitest, Playwright) runs every file its patterns hold, so
- * one that holds an earlier set's file would run it twice; a pick of another set (`of`) names files that set holds.
+ * one that holds an earlier set's file would run it twice; a pick of another set (`of`) names files that set holds. A test under
+ * `tools/` that calls a reader of the live machine's load (its heavy-run admission or its process list) with no seam of its own is
+ * named. It is a net over direct calls, read by name from the source: a reader behind a helper, or a home set from the environment
+ * elsewhere, passes it.
  */
 import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
@@ -30,6 +33,46 @@ const readJson = (root, path) => {
 /** The test files a command names one by one: a word that is a test file's path, a glob not counted. */
 export const namedTests = (command) => command.split(/[\s"'&|;]+/).filter((word) => !word.includes('*') && TEST_FILE.test(word));
 
+const LIVE_HOME = /process\.env|DAORIS_HOME/;
+const ADMISSION = { fixture: (args) => args !== '' && !LIVE_HOME.test(args), why: 'the live admission of the Daoris home; a test names a home of its own' };
+/** The readers of the machine's load as it stands, each with what makes a call a fixture's: a test's words change with the load it runs beside. */
+const LIVE_READS = [
+  { name: 'loadSeam', fixture: () => false, why: 'the merge\'s own reading of the machine; a test hands the flow a seam of its own (`load`)' },
+  { name: 'readProcesses', fixture: () => false, why: 'the process list of the machine; a test hands `foreignTrees` its `processes`' },
+  { name: 'createAdmission', fixture: (args) => /\bdaorisHome\b/.test(args) && !LIVE_HOME.test(args), why: 'the live admission of the Daoris home; a test names a `daorisHome` of its own' },
+  { name: 'heldNow', ...ADMISSION },
+  { name: 'lookAt', ...ADMISSION },
+  { name: 'holdersSentence', ...ADMISSION },
+  { name: 'foreignTrees', fixture: (args) => /seam|processes/i.test(args), why: 'the process list of the machine; a test hands it `processes`' },
+  { name: 'loadSampler', fixture: (args) => /\bcount\b/.test(args), why: 'the live admission and process list; a test hands it its `count`' },
+];
+
+const LITERALS = /\/\/[^\n]*|\/\*[\s\S]*?\*\/|'(?:[^'\\\n]|\\.)*'|"(?:[^"\\\n]|\\.)*"/g;
+
+/** The text between the parenthesis at `at` and its pair, the pair found in `code` (comments and strings blanked), the text read from `text`. */
+function argumentsAt(code, text, at) {
+  let depth = 0;
+  for (let i = at; i < code.length; i++) {
+    if (code[i] === '(') depth++;
+    else if (code[i] === ')' && --depth === 0) return text.slice(at + 1, i).trim();
+  }
+  return text.slice(at + 1).trim();
+}
+
+/** The calls in a test's `text` that read the live machine's load, each `{ line, name, why }`; a name in a comment or a string is none. */
+export function liveLoadReads(text) {
+  const code = text.replace(LITERALS, (each) => each.replace(/[^\n]/g, ' '));
+  const found = [];
+  for (const { name, fixture, why } of LIVE_READS) {
+    for (const match of code.matchAll(new RegExp(`(?<![.\\w$])${name}\\s*\\(`, 'g'))) {
+      const before = code.slice(code.lastIndexOf('\n', match.index) + 1, match.index).trim();
+      if (/(?:^|\s)function\*?$/.test(before)) continue;
+      if (!fixture(argumentsAt(code, text, match.index + match[0].length - 1))) found.push({ line: text.slice(0, match.index).split('\n').length, name, why });
+    }
+  }
+  return found.sort((x, y) => x.line - y.line);
+}
+
 /** The census over the tree at `root`: `{ problems, count }`, one problem for each file no set holds and each set or script at fault. */
 export function checkToolTests(root) {
   const declaration = readJson(root, 'daoris.gates.json');
@@ -40,6 +83,9 @@ export function checkToolTests(root) {
   const held = filesBySet(sets, files);
   const problems = [];
   for (const file of tests) if (!setOf(sets, file)) problems.push(`${file}: no test set holds it (add a pattern to a set in daoris.gates.json's tests)`);
+  for (const file of tests.filter((each) => each.startsWith('tools/'))) {
+    for (const read of liveLoadReads(readFileSync(join(root, file), 'utf8'))) problems.push(`${file}:${read.line}: ${read.name}( reads the live machine, so the test's words change with the load it runs beside: ${read.why}`);
+  }
   sets.forEach((set, at) => {
     if (!gates.has(set.gate)) problems.push(`set ${set.name}: run by gate ${set.gate}, which daoris.gates.json does not declare`);
     if (set.of) {
