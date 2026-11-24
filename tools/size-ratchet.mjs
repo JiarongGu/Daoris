@@ -38,25 +38,30 @@ export function scanSizes(root, { files = repositoryFiles(root), read = (path) =
   return Object.fromEntries(Object.entries(over).sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0)));
 }
 
-/** The breaches of `list` (path -> bytes) against `found` (the same, from the tree), no file past its size in `base` (main's list) where given. */
-export function checkSizes(found, list, base = null) {
+/** The breaches of `list` (path -> bytes) against `found` (the same, from the tree), each `{ path, text }`: no file past its size in `base` (main's list) where given, nor past its own entry. */
+export function breaches(found, list, base = null) {
   const problems = [];
+  const add = (path, text) => problems.push({ path, text });
   for (const [path, size] of Object.entries(found)) {
     const listed = list[path];
     const limit = base ? base[path] : listed;
     if (listed === undefined || limit === undefined) {
-      problems.push(`${path} is ${size} bytes, over the ${BUDGET}-byte budget: put the new behaviour in a unit of its own`);
+      add(path, `${path} is ${size} bytes, over the ${BUDGET}-byte budget: put the new behaviour in a unit of its own`);
     } else if (size > limit) {
-      problems.push(`${path} grew from ${limit} to ${size} bytes: a file over the budget does not grow, so move the new behaviour into a unit of its own`);
+      add(path, `${path} grew from ${limit} to ${size} bytes: a file over the budget does not grow, so move the new behaviour into a unit of its own`);
+    } else if (size > listed) {
+      add(path, `${path} is ${size} bytes, over the ${listed} its entry holds (main's list allows ${limit}): write the list again (node tools/size-ratchet.mjs --write) so it holds the size`);
     } else if (size < listed) {
-      problems.push(`${path} shrank from ${listed} to ${size} bytes: write the list again (node tools/size-ratchet.mjs --write) so it holds the new size`);
+      add(path, `${path} shrank from ${listed} to ${size} bytes: write the list again (node tools/size-ratchet.mjs --write) so it holds the new size`);
     }
   }
   for (const path of Object.keys(list)) {
-    if (found[path] === undefined) problems.push(`${path} is under the budget now or gone: write the list again (node tools/size-ratchet.mjs --write)`);
+    if (found[path] === undefined) add(path, `${path} is under the budget now or gone: write the list again (node tools/size-ratchet.mjs --write)`);
   }
   return problems;
 }
+
+export const checkSizes = (found, list, base = null) => breaches(found, list, base).map((each) => each.text);
 
 /** `list` cut down to the tree (`found`, the files over the budget): a shrunk entry takes its size, one under the budget or gone leaves; growth and new files stay for the check. */
 export function lowered(list, found) {
@@ -83,7 +88,7 @@ export function settleStaged(sizes, list, base = null) {
       problems.push(`${path} is ${size} bytes, over the ${BUDGET}-byte budget: put the new behaviour in a unit of its own`);
     } else if (size > limit) {
       problems.push(`${path} grew from ${limit} to ${size} bytes: a file over the budget does not grow, so move the new behaviour into a unit of its own`);
-    } else if (size < listed) {
+    } else if (size !== listed) {
       settled[path] = size;
     }
   }
@@ -97,7 +102,7 @@ export function baseList(root) {
   return JSON.parse(git(['show', `${base}:tools/size-ratchet.json`]));
 }
 
-function main() {
+async function main() {
   const root = dirname(dirname(fileURLToPath(import.meta.url)));
   const listFile = join(root, 'tools', 'size-ratchet.json');
   try {
@@ -115,15 +120,11 @@ function main() {
       console.log(`size-ratchet: lowered ${cut} entr${cut === 1 ? 'y' : 'ies'} of tools/size-ratchet.json to the tree`);
       return 0;
     }
-    const problems = checkSizes(found, JSON.parse(readFileSync(listFile, 'utf8')), baseList(root));
-    for (const p of problems) console.error(`size-ratchet: ${p}`);
-    if (problems.length) return 1;
-    console.log(`size-ratchet: clean (${Object.keys(found).length} files over the budget, none grown)`);
-    return 0;
+    return (await import('./size-ratchet-check.mjs')).checkTree(root, found);
   } catch (e) {
     console.error(`size-ratchet: ${e.message}`);
     return 2;
   }
 }
 
-if (isMain(import.meta.url)) process.exitCode = main();
+if (isMain(import.meta.url)) process.exitCode = await main();

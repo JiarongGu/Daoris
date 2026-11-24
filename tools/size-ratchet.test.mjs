@@ -19,6 +19,11 @@ test('a file does not pass the size main\'s list gives it, whatever its own list
   assert.match(checkSizes({ 'a.cs': 49900 }, own, { 'a.cs': 50000 })[0], /shrank/);
 });
 
+test('a file over its own entry fails though main\'s list allows it, and a commit writes the entry up to what main allows', () => {
+  assert.match(checkSizes({ 'a.cs': 50150 }, { 'a.cs': 50100 }, { 'a.cs': 50200 })[0], /^a\.cs is 50150 bytes, over the 50100 its entry holds \(main's list allows 50200\)/);
+  assert.deepEqual(settleStaged({ 'a.cs': 50150 }, { 'a.cs': 50100 }, { 'a.cs': 50200 }), { list: { 'a.cs': 50150 }, problems: [] });
+});
+
 test('CODESHAPE1: a listed file may not grow, a new one may not pass the budget, and the list only tightens', () => {
   assert.deepEqual(checkSizes({ 'a.cs': 50000 }, { 'a.cs': 50000 }), []);
   assert.match(checkSizes({ 'a.cs': 50001 }, { 'a.cs': 50000 })[0], /grew from 50000 to 50001/);
