@@ -438,10 +438,13 @@ export function nextLine(
     const join = (names: string[]) => names.join(i18n.t('harness.next.comma'));
     const signIn = out.filter((held) => !isKey(held.account!) && held.hold === 'signedOut').map((held) => labelOf(held.account!));
     const keys = out.filter((held) => isKey(held.account!)).map((held) => labelOf(held.account!));
+    const off = next.others.filter((held) => held.hold === 'off' && held.account).map((held) => labelOf(held.account!));
     const sooner = next.when ? 'Sooner' : '';
     const sentences = [
       signIn.length > 0 ? i18n.t(`harness.next.signIn${sooner}`, { accounts: join(signIn) }) : null,
       keys.length > 0 ? i18n.t(`harness.next.newKey${sooner}`, { accounts: join(keys) }) : null,
+      // An account the person switched off waits for their switch, never for a reset or a sign-in.
+      off.length > 0 ? i18n.t(`harness.next.switchOn${sooner}`, { accounts: join(off) }) : null,
     ].filter((sentence): sentence is string => sentence !== null);
     return [waits, ...sentences].join(i18n.t('harness.said.sentences'));
   }

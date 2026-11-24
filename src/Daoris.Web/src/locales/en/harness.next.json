@@ -15,6 +15,8 @@
   "harness.next.signIn": "Signing in to {{accounts}} starts it.",
   "harness.next.newKeySooner": "A new API key in place of {{accounts}} starts it sooner.",
   "harness.next.newKey": "A new API key in place of {{accounts}} starts it.",
+  "harness.next.switchOnSooner": "Switching {{accounts}} on starts it sooner.",
+  "harness.next.switchOn": "Switching {{accounts}} on starts it.",
   "harness.next.why.named": "it is the only one of Daoris's accounts",
   "harness.next.why.onlyReady": "it is the only one of Daoris's accounts that is ready",
   "harness.next.why.kept": "it is kept for conversations",

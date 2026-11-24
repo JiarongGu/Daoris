@@ -193,7 +193,10 @@ where a seam, route, verb or fixture is. Which folder owns which job:
     and is read as before, and the roster's `Before` reads the switch first (`AccountReadiness.Off`, `NextHold.Off`), so no start, move or
     resume is chosen onto it while another account is ready, and a pick of it is refused, never moved. A session already on it goes on to
     its turn's end; the next resume reads its own account off and moves it by the walk (the line that switches), or holds it for the
-    switch where no other account is ready or the line does not move: it never waits for a reset it has not got. Only the person's press
+    switch where no other account is ready or the line does not move: it never waits for a reset it has not got. A running
+    conversation's turn-end move (`CurveMove`) moves by the account's curve and a running session is never moved *to* an off account
+    (`SwitchCandidates` reads `Before`), but it does not yet read its own account's switch: that conversation stays until its next
+    resume (ACCOUNTSWITCH1). Only the person's press
     writes it, as a sign-in is theirs: the window and the terminal on their own, a session's terminal refused.
 28. The person's own sign-in is outside the set: Daoris never signs it in or out, asks it anything or starts work in it. On the
     agent's page it is the list's last row; *Ways in* says each way in by what it gives, and one not installed says what to do.

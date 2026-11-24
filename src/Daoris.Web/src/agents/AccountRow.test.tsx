@@ -231,8 +231,9 @@ describe('an account’s row without a pointer (ACCTUX2)', () => {
     render(<AgentPage tool={tool!} use={use} rules={null} usage={[]} acts={{ ...ACTS, onSwitch: (...press) => switched.push(press) }} />);
 
     const off = screen.getByRole('listitem', { name: 'account-1' });
+    // Off is said beside the state its agent last said, never in its place.
     expect(within(off).getByText('off')).toBeTruthy();
-    expect(within(off).queryByText('signed in')).toBeNull();
+    expect(within(off).getByText('signed in')).toBeTruthy();
     await userEvent.click(within(off).getByRole('button', { name: 'switch account-1 on' }));
     expect(switched).toEqual([['account-1', false, 'account-1']]);
 
@@ -242,6 +243,20 @@ describe('an account’s row without a pointer (ACCTUX2)', () => {
     await userEvent.click(await screen.findByRole('menuitem', { name: 'Switch off' }));
     expect(switched.at(-1)).toEqual(['account-2', true, 'account-2']);
   });
+
+  /** An account that is off and signed out says both, and its sign-in is still one press away in its ⋯ beside the one act, *Switch on*. */
+  it('keeps a signed-out account’s state and its sign-in beside off', async () => {
+    page([{ name: 'account-1', home: `${HOME}account-1`, login: 'out', read: READ, off: true }]);
+
+    const row = screen.getByRole('listitem', { name: 'account-1' });
+    expect(within(row).getByText('off')).toBeTruthy();
+    expect(within(row).getByText('signed out')).toBeTruthy();
+    expect(within(row).getByRole('button', { name: 'switch account-1 on' })).toBeTruthy();
+    within(row).getByRole('button', { name: /More for/ }).focus();
+    await userEvent.keyboard('{Enter}');
+    expect(await screen.findByRole('menuitem', { name: 'Sign in again' })).toBeTruthy();
+    expect(screen.queryByRole('menuitem', { name: 'Switch off' })).toBeNull();
+  }, 20_000);
 
   it('offers no such press where the state needs no explanation', () => {
     render(<ul><AccountRow name="spare" state={accountState({ login: 'in', read: READ }, null, true)} menu={[]} /></ul>);

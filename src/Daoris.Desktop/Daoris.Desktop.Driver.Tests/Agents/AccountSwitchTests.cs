@@ -283,6 +283,20 @@ public sealed class AccountSwitchTests : IDisposable
         Assert.Equal((NextHold.Ready, false, "account-1"), (resume.Own, resume.Switched, resume.Selection.Profile));
     }
 
+    [Theory]
+    [MemberData(nameof(Agents))]
+    public void A_running_session_is_never_moved_to_an_account_switched_off(string agent)
+    {
+        Accounts(agent);
+        var roster = Roster();
+        Switch(agent, "account-2", off: true);
+
+        var candidates = roster.SwitchCandidates(agent, ["account-1", "account-2"]);
+
+        Assert.True(candidates.Single(candidate => candidate.Account == "account-1").Ready);
+        Assert.False(candidates.Single(candidate => candidate.Account == "account-2").Ready);
+    }
+
     // ——— The two real agents: the same switch, read the same way.
 
     [Theory]

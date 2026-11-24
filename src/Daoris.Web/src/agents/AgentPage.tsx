@@ -384,7 +384,7 @@ export function AgentPage({
   // An account's ⋯: its model and effort, *Rename…*, *Sign in again*, *Read again*
   // and *Remove…*. It has no default and no list to add it to or take it from: every account serves every workspace,
   // and the order says where starts begin (*How accounts are used*).
-  const accountMenu = (account: Account, state: { state: string }): MenuAct[] => {
+  const accountMenu = (account: Account, state: { state: string; off?: boolean }): MenuAct[] => {
     const name = account.name;
     return [
       ...(settingsShown && account.settings && tool.settingsChoices
@@ -392,7 +392,7 @@ export function AgentPage({
         : []),
       { id: 'rename', label: t('agents.account.rename'), disabled: busy, onSelect: () => askRename(name) },
       // Off is undone by the row's own act, *Switch on*; here only what is on is switched off.
-      ...(state.state === 'off'
+      ...(state.off
         ? []
         : [{ id: 'switchOff', label: t('harness.account.switchOff'), disabled: busy, onSelect: () => acts.onSwitch(name, true, accountLabel(account, tool)) }]),
       // An agent held by a key alone: its key is set, replaced or taken out here, and the account stays.
@@ -402,7 +402,7 @@ export function AgentPage({
       ...(keyOnly && account.key
         ? [{ id: 'removeKey', label: t('agents.account.removeKey'), disabled: busy, onSelect: () => acts.onRemoveKey(name, answered('key', name, () => {})) }]
         : []),
-      ...(signsIn && !account.key && state.state !== 'out'
+      ...(signsIn && !account.key && (state.state !== 'out' || state.off)
         ? [{ id: 'signIn', label: t('harness.login.again'), disabled: busy || !tool.present, onSelect: () => acts.onSignIn(name) }]
         : []),
       // That one account asked again, on the press (§5.3): an agent not installed has nobody to ask.

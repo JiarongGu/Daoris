@@ -114,7 +114,6 @@ function stateWhy(t: (key: string, values?: Record<string, string>) => string, s
     case 'keyed': return t('harness.login.keyedTip');
     case 'refused': return t('harness.login.refusedTip');
     case 'unanswered': return t('harness.login.unansweredTip');
-    case 'off': return t('harness.account.offTip');
     case 'out': return outWhy(t, state, now);
     default: return null;
   }
@@ -178,7 +177,7 @@ export function AccountRow({ name, label = name, who, plan, id, home, why, state
   const word = state ? stateWord(state) : null;
   const when = state ? stateWhen(state, now) : null;
   // Why the state reads so, opened under the row from its press; a state its word says whole has none.
-  const explanation = state ? stateWhy(t, state, now) : null;
+  const explanation = state ? [state.off ? t('harness.account.offTip') : null, stateWhy(t, state, now)].filter(Boolean).join(' ') || null : null;
   // The time's tip says it whole where nothing else does: when it is read. A cool-off's is the explanation's.
   const tip = !state || explanation ? null : readLine(state, now);
   const nameTip = id && id !== name ? (home ? `${id} · ${home}` : id) : home;
@@ -205,6 +204,7 @@ export function AccountRow({ name, label = name, who, plan, id, home, why, state
           {/* 🔴 A key is never said to be signed in: the tool says so for any key, a wrong one included. One its
               provider refused says so, and its explanation what repairs it. */}
           <Pill tone={word.tone}>{word.label}</Pill>
+          {state?.off && <Pill tone="neutral">{t('harness.account.off')}</Pill>}
           {/* When it is read, or a hold's end, is a time the person acts on: the soft ink, not the faint. */}
           {when && (tip ? <Tip content={tip}>{time}</Tip> : time)}
           {explanation && (

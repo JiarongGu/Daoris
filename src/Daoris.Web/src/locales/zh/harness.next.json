@@ -15,6 +15,8 @@
   "harness.next.signIn": "登录 {{accounts}}，它就会开始。",
   "harness.next.newKeySooner": "用新的 API 密钥替换 {{accounts}}，它就能更早开始。",
   "harness.next.newKey": "用新的 API 密钥替换 {{accounts}}，它就会开始。",
+  "harness.next.switchOnSooner": "启用 {{accounts}}，它就能更早开始。",
+  "harness.next.switchOn": "启用 {{accounts}}，它就会开始。",
   "harness.next.why.named": "它是 Daoris 唯一的账户",
   "harness.next.why.onlyReady": "它是 Daoris 的账户中唯一就绪的",
   "harness.next.why.kept": "它留作对话",

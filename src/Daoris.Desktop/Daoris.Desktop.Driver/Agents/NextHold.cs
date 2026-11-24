@@ -18,8 +18,6 @@ public enum NextHold
     /// <summary>The agent last said nobody is signed in there: it waits for a person.</summary>
     SignedOut,
 
-    Off,
-
     /// <summary>Kept for conversations, which driven work never starts on.</summary>
     Kept,
 
@@ -28,4 +26,6 @@ public enum NextHold
 
     /// <summary>The scope does not use it: never carries its starts.</summary>
     Outside,
+
+    Off,
 }
