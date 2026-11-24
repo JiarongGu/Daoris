@@ -119,6 +119,7 @@ internal sealed class RosterReport(HarnessRoster roster)
         var owner = roster.Adapters.OwnerOfAgent(name).Value;
         var reads =AccountReads.Of(roster.Home, owner);
         var names = AccountNames.Of(roster.Home, owner);
+        var off = AccountSwitch.OffOf(roster.Home, owner);
         var profiles = HarnessSettings.Profiles(roster.Home, owner).Select(account =>
         {
             var read = reads.Accounts.GetValueOrDefault(account);
@@ -127,7 +128,10 @@ internal sealed class RosterReport(HarnessRoster roster)
             return new ProfileReport(
                 account, HarnessSettings.ProfileHome(roster.Home, owner, account), read?.Login ?? LoginState.Unknown,
                 who?.Account, held is null ? null : HarnessKeys.Handle(held), read?.At,
-                names.GetValueOrDefault(account), who?.Org, who?.Plan ?? KeptPlan(owner, account, read?.Login)) { SignIn = SignInStates.Of(read) };
+                names.GetValueOrDefault(account), who?.Org, who?.Plan ?? KeptPlan(owner, account, read?.Login))
+            {
+                SignIn = SignInStates.Of(read), Off = off.Contains(account),
+            };
         }).ToList();
 
         // The folders beside the accounts that are no account, each with whether Daoris kept a sign-in of it,

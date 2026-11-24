@@ -112,6 +112,7 @@ public static class HeldNoteCodes
     public static readonly NoteCode HeldClauseCooling = new("held.clause-cooling", ["account", "until"]);
     public static readonly NoteCode HeldClauseRefused = new("held.clause-refused", ["account"]);
     public static readonly NoteCode HeldClauseSignedOut = new("held.clause-signed-out", ["account"]);
+    public static readonly NoteCode HeldClauseOff = new("held.clause-off", ["account"]);
     public static readonly NoteCode HeldClauseReady = new("held.clause-ready", ["account"]);
     public static readonly NoteCode HeldWaitFirst = new("held.wait-first", ["account", "until", "why"]) { Why = NoteCodes.Cooling };
     public static readonly NoteCode HeldSignInSooner = new("held.sign-in-sooner", ["logins"]);
@@ -122,6 +123,7 @@ public static class HeldNoteCodes
     public static readonly NoteCode HeldPickedReady = new("held.picked-ready", ["accounts"]);
     public static readonly NoteCode HeldPickedNone = new("held.picked-none", ["agent"]);
     public static readonly NoteCode HeldRefusedAccount = new("held.refused-account", ["owner", "account"]);
+    public static readonly NoteCode HeldAccountOff = new("held.account-off", ["owner", "account"]);
     public static readonly NoteCode HeldRefusedOwn = new("held.refused-own", ["owner"]);
     public static readonly NoteCode HeldSignInRefusedOwn = new("held.sign-in-refused-own", ["owner"]);
     public static readonly NoteCode HeldNotInstalledOwn = new("held.not-installed-own", ["agent"]);

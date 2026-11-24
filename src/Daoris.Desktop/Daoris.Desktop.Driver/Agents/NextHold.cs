@@ -18,6 +18,8 @@ public enum NextHold
     /// <summary>The agent last said nobody is signed in there: it waits for a person.</summary>
     SignedOut,
 
+    Off,
+
     /// <summary>Kept for conversations, which driven work never starts on.</summary>
     Kept,
 

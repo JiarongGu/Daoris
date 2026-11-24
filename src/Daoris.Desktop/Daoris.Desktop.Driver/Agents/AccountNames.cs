@@ -69,7 +69,7 @@ public static class AccountNames
     private const string NameKey = "name";
 
     // One writer at a time in this process: two screens may rename at once.
-    private static readonly object Gate = new();
+    internal static readonly object Gate = new();
 
 
     /// <summary>Where the file is: beside <c>reads.json</c>, under the home.</summary>

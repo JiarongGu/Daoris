@@ -101,6 +101,7 @@ public static class RotationWords
                 AccountReadiness.Cooling => Noted.Of(HeldNoteCodes.HeldClauseCooling, clause, ("account", id), ("until", NoteCodes.Moment(states[at].Cooling!.Until))),
                 AccountReadiness.Refused => Noted.Of(HeldNoteCodes.HeldClauseRefused, clause, ("account", id)),
                 AccountReadiness.SignedOut => Noted.Of(HeldNoteCodes.HeldClauseSignedOut, clause, ("account", id)),
+                AccountReadiness.Off => Noted.Of(HeldNoteCodes.HeldClauseOff, clause, ("account", id)),
                 _ => Noted.Of(HeldNoteCodes.HeldClauseReady, clause, ("account", id)),
             };
             noted = noted.Then(at == 0 ? " " : ", ", line);
@@ -175,8 +176,21 @@ public static class RotationWords
         AccountReadiness.Cooling => $"{CoolingWords.Who(state.Cooling!)} is cooling until {CoolingWords.When(state.Cooling!.Until, zone)}, {CoolingWords.Why(state.Cooling)}",
         AccountReadiness.Refused => $"{Who(agent, state.Account)} was refused by its provider",
         AccountReadiness.SignedOut => $"{Who(agent, state.Account)} is not signed in",
+        AccountReadiness.Off => $"{Who(agent, state.Account)} is switched off",
         _ => $"{Who(agent, state.Account)} is ready",
     };
+
+    /// <summary>
+    /// What a start held on an account the person switched off says: the account by the person's name, that it stays signed in, and
+    /// the two doors that switch it on. By code, the account by its owner and id, never the name its English says.
+    /// </summary>
+    internal static Noted OffHold(string owner, string account, IReadOnlyDictionary<string, string>? names) =>
+        Noted.Of(
+            HeldNoteCodes.HeldAccountOff,
+            $"the `{owner}` account `{AccountNames.Said(names, account)}` is switched off, so Daoris starts nothing on it and moves nothing to it — "
+            + $"`daoris agent account on {owner} {ShellWord.Of(account, ShellWord.Account)}` switches it on, or Agents → the agent's page → Accounts. "
+            + "It stays signed in.",
+            ("owner", owner), ("account", account));
 
     /// <summary>The first line of a rotated start's record: which account it opened on, and why.</summary>
     public static string Opened(string to, RotatedStart rotated) => Opened(to, rotated.Why);
@@ -340,7 +354,7 @@ public static class RotationWords
         var own = facts.GetValueOrDefault(ran) ?? new AccountFacts();
         return step switch
         {
-            WalkStep.Cooling or WalkStep.Refused or WalkStep.SignedOut or WalkStep.Locked => Passed(agent, passed!, zone),
+            WalkStep.Cooling or WalkStep.Refused or WalkStep.SignedOut or WalkStep.Off or WalkStep.Locked => Passed(agent, passed!, zone),
             WalkStep.Kept when string.Equals(ran, scope.Begins, StringComparison.OrdinalIgnoreCase) => Reason("it is kept for conversations", OpeningWhy.KeptSelf),
             WalkStep.Kept when kind == StartKind.Conversation =>
                 Reason($"`{scope.Begins}` is kept for conversations, which take it last", OpeningWhy.KeptLast, ("over", scope.Begins)),
@@ -388,6 +402,7 @@ public static class RotationWords
                 ("agent", cooling.Agent), ("over", account), ("until", NoteCodes.Moment(cooling.Until)), ("cooling", CoolingWhy.Of(cooling))),
             { Readiness: AccountReadiness.Refused, Account: { } account } => Reason(text, OpeningWhy.Refused, ("agent", agent), ("over", account)),
             { Readiness: AccountReadiness.SignedOut, Account: { } account } => Reason(text, OpeningWhy.SignedOut, ("agent", agent), ("over", account)),
+            { Readiness: AccountReadiness.Off, Account: { } account } => Reason(text, OpeningWhy.Off, ("agent", agent), ("over", account)),
             _ => Reason(text, null),
         };
     }
@@ -533,6 +548,7 @@ public static class RotationWords
             AccountReadiness.Cooling => $"`{account}` is cooling until {CoolingWords.When(state.Cooling!.Until, zone)}",
             AccountReadiness.Refused => $"`{account}` was refused by its provider",
             AccountReadiness.SignedOut => $"`{account}` is not signed in",
+            AccountReadiness.Off => $"`{account}` is switched off",
             _ => $"`{account}` is ready",
         };
     }
