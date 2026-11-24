@@ -155,6 +155,7 @@ public sealed class StandingConfirmation : IDecisionAdmission
         Wider = new RuleWiderPlaceStore(home).Read;
         var config = DaorisHome.Entry(home, HomeEntry.DriverConfig);
         Risk = () => File.Exists(config) ? DriverConfig.Load(config).PlaceRisk : PlaceRiskBook.Unwritten;
+        Config = () => File.Exists(config) ? DriverConfig.Load(config) : DriverConfig.Parse("{}");
         Slots = () =>
         {
             try
@@ -218,6 +219,24 @@ public sealed class StandingConfirmation : IDecisionAdmission
     }
 
     internal RolePlace Placed(string repository) => new(Wider().WorkspaceOf.GetValueOrDefault(repository), repository);
+
+    /// <summary>The home's <c>driver.json</c>, read at each judgement of what an act spends; a test hands its own.</summary>
+    public Func<DriverConfig> Config { get; set; }
+
+    /// <summary>The risk policy's outcome on <paramref name="act"/> at <paramref name="place"/>, its workspace placed; a record that does not read is the owner's.</summary>
+    public string Verdict(RolePlace place, RiskAct act)
+    {
+        try
+        {
+            var placed = place is { Repository: { } repository, Workspace: null } ? Placed(repository) : place;
+            var config = Config();
+            return RiskGate.Judge(RiskPolicy.Of(config), act, "", RiskPlace.Of(config, placed.Workspace, placed.Repository), "").Outcome;
+        }
+        catch (Exception error) when (error is DriverException or IOException or System.Text.Json.JsonException)
+        {
+            return RiskVerdict.OwnerOutcome;
+        }
+    }
 
     /// <summary>What Ask Daoris pressed this run in full access, with no card: the window's list of it.</summary>
     public HelpPressRecord HelpPresses { get; }

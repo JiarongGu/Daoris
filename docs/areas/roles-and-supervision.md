@@ -62,7 +62,7 @@ in a file of its name; `docs/index/README.md` says where a seam, route, verb or 
    `course.go-on` and `limit.move`. The `allow` kind decides a held permission request, a widening and a working session's asked
    press (never Ask Daoris's) before the person's card, a leave or ten minutes falling to the card. The `files` kind decides an
    act a person's `ask` in the rule file held, writing the act's own text into the person's own layer of each repository it
-   reaches, never the machine's; an ask naming the person, and a share (its destination no grant covers, rule 43), is no supervisor's. No supervisor record is written before the home's
+   reaches, never the machine's; an ask naming the person is no supervisor's, nor a share where the policy classes `publish.outside` the owner's (rule 43). No supervisor record is written before the home's
    `supervisor-kinds` step (`not-converted`). (D233)
 8. A start keeps its role and the role's revision on its binding, and a census holds the two to the work. Changing or removing a
    role touches no running session; a continuation reads the role that takes its work now. (D212)
@@ -206,12 +206,16 @@ in a file of its name; `docs/index/README.md` says where a seam, route, verb or 
     refused (`untold`). A write granting acts to a role held by anything but the person's rules (an agent, a terminal, which an
     agent's session holds too, or no holder yet) is the owner's alone (`PipeOwnerOnly`): an agent's press
     of it goes on the owner's card in every mode, and one from an agents' job proving no key is refused (`owner-only`). Every act
-    of a supervisor kind and of the steward declares in one census what it spends (money, a sign-in, a destination) and its pin,
-    the subject it lapses with (`ActSpends`); it is admitted only where every grant on its chain lists both the act and the grant
-    covering its spend, a spend no grant covers staying the owner role's, and a refusal names the grant missing (`missing`). The
-    common admission asks it for every kind (`SupervisorGrants.Missing`), so a landing's `approve` and a files ask's `allow-share`,
-    whose destination no grant covers, are never a supervisor's; a spend a grant does cover (a re-cast naming the prepaid harness)
-    is asked again by its kind with the use. (D208, D209, D233, D284, D306)
+    of a supervisor kind and of the steward declares in one census what it spends (money, a destination, a permission) and its pin,
+    the subject it lapses with (`ActSpends`). A spend is an act kind of the risk policy (`ActSpends.KindOf`: money `spend.money`, a
+    destination `release.start`, or `publish.outside` for a files ask's `allow-share`, a held permission's `allow.once` and
+    `allow.standing` `reach.widen`), judged at the act's place: an act is admitted only where every grant on its chain lists the act,
+    and, where the policy gates the spend on a role, the grant covering it if one is named; a spend the policy passes needs no more,
+    one it classes `owner` stays the owner role's, and a refusal names the grant or the spend missing (`missing`). The common
+    admission asks it for every kind (`SupervisorGrants.Missing`, the judge's verdict read through `StandingConfirmation.Verdict`), so a
+    landing's `approve` and a files ask's `allow-share` are a granted supervisor's with nothing configured and the owner role's where a
+    row classes their destination `owner`; a spend a grant covers (a re-cast naming the prepaid harness) is asked again by its kind
+    with the use. (D208, D209, D233, D284, D306, D354)
 44. The holder is a dedicated session in a tab the window starts, outside every repository, on a configuration Daoris writes,
     running only read tools and its roles' verbs. Every other verb refuses `role-terminal`. (D208, D209)
 45. The holder key is drawn at the appointment, kept only as a hash in memory, and stripped from every other start. The verb sends
@@ -264,7 +268,7 @@ in a file of its name; `docs/index/README.md` says where a seam, route, verb or 
     held decisions go stale at the restart; an older build has no table and closes them as before, and a row whose file it closed is
     dropped. (D309) Its word is `From: supervisor`, never the person's; an unattributable one is
     quarantined. A landing is the same window with *Overrule*: the supervisor's `accept` of a `review`, or `reject` of a
-    `task` approval (its `approve` spends a destination no grant covers, so it is the owner role's, rule 43), kept against the step as it waits on that attempt and naming the review record's revision, is refused
+    `task` approval (its `approve` spends a destination, the owner role's where the policy classes `release.start` the owner's, rule 43), kept against the step as it waits on that attempt and naming the review record's revision, is refused
     `answered` once it moved, `go-ahead-open` under a `go-ahead` and `owner-held` on a line the person stopped or paused. Its
     release reads all again, a moved record going stale, and keeps the node's word on the run's record with its author, which the
     pass applies or drops; a person's word supersedes it, and a `return`'s per-file choice offers a supervisor no act. The head's

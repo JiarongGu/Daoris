@@ -33,7 +33,7 @@ internal sealed class RoleJudge(StandingConfirmation owner, StandingState state)
         {
             // An agent's hold is its role's revision as the catalogue says it now, never a terminal's in memory; its grants cover the act and
             // what it spends (the census), or the refusal names the grant missing.
-            if (act is not null && SupervisorGrants.Missing(effective!, kind, act) is { } missing)
+            if (act is not null && SupervisorGrants.Missing(effective!, kind, act, spent => owner.Verdict(place, spent)) is { } missing)
             {
                 return DecisionAdmitted.Refused(SupervisorWhy.NotGranted) with { Missing = missing };
             }
@@ -45,7 +45,7 @@ internal sealed class RoleJudge(StandingConfirmation owner, StandingState state)
         lock (state.Gate)
         {
             if (effective is not { Hold.Terminal: true }) return DecisionAdmitted.Refused(SupervisorWhy.NotStaffed);
-            if (act is not null && SupervisorGrants.Missing(effective, kind, act) is { } missing)
+            if (act is not null && SupervisorGrants.Missing(effective, kind, act, spent => owner.Verdict(place, spent)) is { } missing)
             {
                 return DecisionAdmitted.Refused(SupervisorWhy.NotGranted) with { Missing = missing };
             }
