@@ -14,7 +14,7 @@ public sealed class OpinionAgainTests
             Product = "Codex", Maker = "OpenAI", Minutes = 20, Why = why,
         };
 
-    private static OpinionAskKept Look(string id, int minute) => new(Asked.AddMinutes(minute), "landing", "s1", Read) { Opinion = id };
+    private static OpinionAskKept Look(string id, int minute, string tip = Read) => new(Asked.AddMinutes(minute), "landing", "s1", tip) { Opinion = id };
 
     private static OpinionAskKept Person(string id, int minute) => Look(id, minute) with { By = OpinionAskers.Person };
 
@@ -52,7 +52,20 @@ public sealed class OpinionAgainTests
         Assert.Equal(1, cooled.Ended);
         Assert.Contains("ask 1 of 3", first.Says);
         Assert.Contains("Nothing waits for you", first.Says);
-        Assert.Contains("work waits for you", spent.Says);
+        Assert.Contains("Daoris gave up the second opinion after 3 asks", spent.Says);
+        Assert.Contains("Nothing waits for you", spent.Says);
+    }
+
+    [Fact]
+    public async Task Passes_asked_at_an_earlier_tip_are_not_counted_toward_the_new_tip_s_bound()
+    {
+        var opinions = new Dictionary<string, OpinionView>(StringComparer.Ordinal);
+        foreach (var id in new[] { "o1", "o2", "o3" }) opinions[id] = Pass(id, "ended");
+        const string Later = "2222222222222222222222222222222222222222";
+
+        var gate = await JudgeAsync(opinions, true, Look("o1", 1), Look("o2", 2), Look("o3", 3, Later));
+
+        Assert.Equal((1, true), (gate.Ended, OpinionAgain.Pending(gate)));
     }
 
     /// <summary>A rule that does not require an opinion never asks again, gives up or waits: it lets the work go.</summary>

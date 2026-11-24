@@ -195,6 +195,23 @@ public sealed class DriverModuleOpinionGateTests : DriverModuleBridge
         Assert.Equal(waits, TreesRoutes.WaitsOnPerson(gate, auto));
     }
 
+    /// <summary>A required opinion whose reviewer ended is asked again by Daoris, then given up by it: neither waits on the person.</summary>
+    [Theory]
+    [InlineData(1)]
+    [InlineData(OpinionAgain.Bound)]
+    public void A_required_opinion_asked_again_or_given_up_waits_on_nobody(int ended)
+    {
+        var failed = new OpinionView("o1", "landing", "first", "s1", "r-o1", "web-app", Read, Read, "codex-acp", ReviewerLabels.AnotherMaker, "failed") { Why = "ended" };
+        var gate = new OpinionGateState(OpinionGateStates.Unavailable, "web-app")
+        {
+            Rule = new ResolvedOpinion(new OpinionRule(["codex-acp"], [OpinionRules.Landing], Required: true), OpinionSource.Repository),
+            Code = "ended", Ended = ended, Opinion = failed,
+        };
+
+        Assert.False(TreesRoutes.WaitsOnPerson(gate, auto: true));
+        Assert.Contains("Nothing waits for you", gate.Says);
+    }
+
     /// <summary>
     /// *What needs you* reads the gates the last look judged, as of that look, and
     /// runs no gate itself: no git, no service. Where the look kept a dispute, a required opinion none could be had for and

@@ -27,6 +27,8 @@ internal static class NodeLifecycleRows
         NodeStates.Reached when row.From == NodeStates.Reached && !authority.Reanswers => NodeRefusal.NotReanswered,
         NodeStates.Rejected when !authority.PersonJudges => NodeRefusal.NotJudged,
         NodeStates.Failed when authority.FailureBy is null => NodeRefusal.NoFailureAuthority,
+        NodeStates.Skipped when row is { From: NodeStates.Failed, By: NodeCause.Authority } =>
+            authority.SkipBy is null || NodeKit.Of(authority.Kind) is not IObserves { PassesOverFailed: true } ? NodeRefusal.NotAuthority : null,
         NodeStates.Skipped when row.By == NodeCause.Authority => authority.SkipBy is null ? NodeRefusal.NotAuthority : null,
         NodeStates.Skipped when row.By != NodeCause.Daoris && !authority.PersonSkips => NodeRefusal.NotSkippable,
         _ => null,

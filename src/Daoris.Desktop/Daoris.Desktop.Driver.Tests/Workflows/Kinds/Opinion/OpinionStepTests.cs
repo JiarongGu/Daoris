@@ -378,5 +378,39 @@ public sealed class OpinionStepTests
         Assert.Contains($"in {OpinionAgain.Bound} asks, so Daoris gave it up", stopped.Status.Words);
         Assert.Contains("Codex (OpenAI) ended without saying one", stopped.Status.Words);
         Assert.False(((IObserves)NodeKit.Of(NodeKinds.Opinion)!).ObservesFailed(stopped.Status));
+
+        var run = Derive(Opinion(NodeStates.Stopped) with { Words = stopped.Status.Words, By = NodeSource.Daoris }, Ended(OpinionAgain.Bound));
+        Assert.Contains("Daoris gave it up", WorkflowRunWords.Say([run], null));
+        Assert.DoesNotContain("waits for you", WorkflowRunWords.Say([run], null));
+    }
+
+    /// <summary>Only a kind that says so lets its record pass a failed node over: a failed look or push stays failed for its holder.</summary>
+    [Theory]
+    [InlineData(NodeKinds.Look)]
+    [InlineData(NodeKinds.Push)]
+    public void A_failed_node_is_passed_over_by_its_record_only_where_its_kind_says_so(string kind)
+    {
+        var node = Node(kind);
+        var failed = Active(kind) with { State = NodeStates.Failed, Code = "refused", By = NodeAuthorities.Of(node)!.SkipBy };
+        var move = new NodeMove(NodeStates.Skipped, NodeCause.Authority) { Source = NodeAuthorities.Of(node)!.SkipBy, Attempt = 1, Scope = Scope };
+
+        Assert.Equal((false, NodeRefusal.NotAuthority), (NodeLifecycle.Apply(node, failed, move).Moved, NodeLifecycle.Apply(node, failed, move).Refused));
+    }
+
+    /// <summary>
+    /// The shape of a run an older build ended failed at an optional opinion: the end is read as an observed one, so the runtime reads the step
+    /// again, and the record passes it over (the step above), which lifts the run's end.
+    /// </summary>
+    [Fact]
+    public void A_run_an_older_build_ended_failed_at_an_opinion_is_read_again_by_the_runtime()
+    {
+        var (graph, _) = NodeGraphs.Read(ClaimedOpinionHanded);
+        var record = new NodeRecord(Self)
+        {
+            Statuses = new Dictionary<string, NodeStatus>(StringComparer.Ordinal) { ["opinion"] = Opinion(NodeStates.Failed, code: "ended") },
+            Ended = new RunEnd(Run, Then) { Outcome = RunOutcomes.Failed, Node = "opinion" },
+        };
+
+        Assert.True(FailedHeldRuns.Observed(graph, record));
     }
 }

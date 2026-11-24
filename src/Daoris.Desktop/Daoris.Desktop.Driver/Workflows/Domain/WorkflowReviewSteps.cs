@@ -55,6 +55,8 @@ internal static class WorkflowReviewSteps
             },
             OpinionGateStates.Disputed => on with { State = WorkflowRunStates.Waiting, Role = StepRoles.Acceptor, Session = gate.Session, Count = gate.Disputes?.Count },
             OpinionGateStates.CommitsSince => on with { State = WorkflowRunStates.Waiting, Role = StepRoles.Acceptor, Session = gate.Session, Count = gate.Since },
+            OpinionGateStates.Unavailable when OpinionAgain.Pending(gate) => on with { State = WorkflowRunStates.Working, Session = gate.Session },
+            OpinionGateStates.Unavailable when OpinionAgain.Spent(gate) => on with { State = WorkflowRunStates.Failed, Session = gate.Session, Words = OpinionAgain.GaveUpWords(gate) },
             OpinionGateStates.Unavailable => on with
             {
                 State = gate.Required ? WorkflowRunStates.Waiting : WorkflowRunStates.Skipped, Role = gate.Required ? StepRoles.Acceptor : null, Session = gate.Session, At = gate.Until,

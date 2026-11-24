@@ -541,7 +541,7 @@ public sealed class TreesRoutes(DriverLoop loop, ReadLeaves reads)
     public static bool WaitsOnPerson(OpinionGateState gate, bool auto) => gate.State switch
     {
         OpinionGateStates.Disputed => gate.OwnerHolds,
-        OpinionGateStates.Unavailable => gate.Required,
+        OpinionGateStates.Unavailable => gate.Required && !OpinionAgain.Pending(gate) && !OpinionAgain.Spent(gate),
         OpinionGateStates.CommitsSince => auto && gate.OwnerHolds,
         _ => false,
     };

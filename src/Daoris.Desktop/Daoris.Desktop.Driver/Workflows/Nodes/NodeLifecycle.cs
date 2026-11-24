@@ -464,6 +464,7 @@ public static class NodeLifecycle
                 // The kind's record passes the started attempt over, for that attempt's graph and run. It is never the person's:
                 // its source is the record's, and no words are kept whatever the move brings, so nothing reads it as what someone said.
                 if (authority.SkipBy is null || move.Source != authority.SkipBy) return Refuse(NodeRefusal.NotAuthority);
+                if (status.State == NodeStates.Failed && NodeKit.Of(node.Kind) is not IObserves { PassesOverFailed: true }) return Refuse(NodeRefusal.NotAuthority);
                 if (Unbound(move.Attempt) is { } skipAttempt) return Refuse(skipAttempt);
                 if (move.Scope is not { } skipScope) return Refuse(NodeRefusal.NoScope);
                 if (status.Binding is not { } judged) return Refuse(NodeRefusal.NoBinding);

@@ -188,14 +188,16 @@ public static class OpinionGate
 
     /// <summary>
     /// How many of the newest first passes in a row ended with no opinion given (not a cap's cool-off), counting back through the asks and stopping at
-    /// the person's own, which counts afresh; each pass is read as the host answers it (<see cref="OpinionAgain"/>).
+    /// the person's own, which counts afresh, and at the first ask made at another tip; each pass is read as the host answers it (<see cref="OpinionAgain"/>).
     /// </summary>
     private static async Task<int> EndedRunAsync(OpinionGateFacts facts, OpinionReads reads)
     {
         var ended = 0;
+        string? tip = null;
         foreach (var ask in facts.Asks.OrderByDescending(ask => ask.At))
         {
-            if (ask.Opinion is not { } id) break;
+            if (ask.Opinion is not { } id || (tip is not null && ask.Tip != tip)) break;
+            tip = ask.Tip;
             if (await reads.Opinion(id).ConfigureAwait(false) is not { State: OpinionViews.Failed } view || view.Why == OpinionViews.Limited) break;
             ended++;
             if (ask.By == OpinionAskers.Person) break;
