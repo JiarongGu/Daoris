@@ -63,9 +63,9 @@ describe("a repository's integration declaration on its Setup", () => {
     expect(screen.getByRole('alert')).toHaveTextContent('another declaration than the one you read');
   });
 
-  it('says which access mode decides: full access takes a change without asking, restricted waits for the person', () => {
+  it('says which way the risk policy decides: a passed change is taken without asking, a restricted one waits for the person', () => {
     const { unmount } = render(<IntegrationDeclaration repository="engine" integration={{ ...INTEGRATION_ACCEPTED, mode: 'full' }} onAccept={vi.fn()} />);
-    expect(screen.getByText(/^Full access: taken without asking\./)).toBeInTheDocument();
+    expect(screen.getByText(/^Taken without asking: the risk policy passes a command change here\./)).toBeInTheDocument();
     unmount();
 
     render(<IntegrationDeclaration repository="engine" integration={{ ...INTEGRATION_CHANGED, mode: 'restricted' }} onAccept={vi.fn()} />);

@@ -134,13 +134,13 @@ public sealed class PlaceProjectionTests
     }
 
     [Fact]
-    public void The_access_chip_says_declarations_where_only_permissions_are_unrestricted()
+    public void The_access_chip_says_permissions_where_only_permissions_are_unrestricted()
     {
         static PlaceValues At(DriverConfig config) => PlaceProjection.ValuesAt(config, "engine", "aurora", PlaceSource.RepositoryLevel);
         var only = DriverConfig.Empty.WithAccess(new AccessEdit { Repository = "engine", Set = [new(AccessRules.Permissions, AccessRules.Unrestricted)] });
         var full = DriverConfig.Empty.WithAccess(new AccessEdit { Repository = "engine", Full = true });
 
-        Assert.Equal("declarations", At(only).Access.Value);
+        Assert.Equal("permissions", At(only).Access.Value);
         Assert.Equal("full", At(full).Access.Value);
         Assert.Equal("today", At(DriverConfig.Empty).Access.Value);
     }

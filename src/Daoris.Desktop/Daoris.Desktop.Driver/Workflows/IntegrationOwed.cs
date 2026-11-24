@@ -30,6 +30,9 @@ public sealed record DeclarationOwed(string Repository, string Workspace, string
 
     /// <summary>What the change drops from a reach: said, owing nothing.</summary>
     public IReadOnlyList<DeclaredNarrowing> Narrowed { get; init; } = [];
+
+    /// <summary>The judge's verdict on each changed unit's digest (<see cref="DeclarationVerdicts"/>).</summary>
+    public IReadOnlyList<DeclarationUnitVerdict> Verdicts { get; init; } = [];
 }
 
 /// <summary>An acceptance by a whole file's blob that holds no accepted units yet.</summary>
@@ -38,15 +41,14 @@ public sealed record DeclarationUnconverted(string Repository, string Root, stri
 /// <summary>One pair of accepted and line blobs judged: its change, whether it keeps the acceptance, what it set aside, or why it could not be judged.</summary>
 internal sealed record DeclarationJudged(
     DeclarationChange? Change, bool Keeps, IReadOnlyList<DeclarationSetAside> SetAside, string? Problem = null,
-    IReadOnlyList<string>? ChangedUnits = null, IReadOnlyList<DeclaredNarrowing>? Narrowed = null);
+    IReadOnlyList<string>? ChangedUnits = null, IReadOnlyList<DeclaredNarrowing>? Narrowed = null, IReadOnlyDictionary<string, string>? Digests = null);
 
 /// <summary>
 /// Which repositories' committed declaration their owner has not accepted: the look's own read, since the attention judge may start no
 /// git. Each repository with a checkout here is read at its line's committed <c>daoris.gates.json</c> against the one acceptance
 /// (<see cref="IntegrationAcceptance.Of"/>, and the landed route's gates where that route verifies). A line that holds no declaration
-/// owes nothing, nor does one that declares no <c>integration</c> to a repository whose landed route verifies nothing. A repository in full
-/// access (<see cref="DeclarationMode"/>) owns its line, so it accepts the declaration its line commits as it lands (<see cref="ByMode"/>)
-/// and is never owed; nor is a change that alters no command (<see cref="Kept"/>). A changed row carries its <see cref="DeclarationOwed.Change"/>.
+/// owes nothing, nor does one that declares no <c>integration</c> to a repository whose landed route verifies nothing. A change the risk policy
+/// passes on every unit (<see cref="DeclarationVerdicts"/>) is accepted as it lands (<see cref="Passed"/>), as is one that alters no command (<see cref="Kept"/>).
 /// </summary>
 /// <remarks>
 /// The tip commit is read from git's own files (<see cref="TreeTips.Named"/>, no process), and git is asked only when it moved since the last
@@ -73,16 +75,16 @@ public sealed class IntegrationOwed
     /// <summary>What is owed under <paramref name="config"/> now, oldest first: the reads of the last look judged afresh, a full-access repository's left out.</summary>
     public IReadOnlyList<DeclarationOwed> Under(DriverConfig config) => Judge(config).Owed;
 
-    /// <summary>What <paramref name="config"/>'s full-access repositories accept as it lands: each declaration waiting that its repository's own line owns.</summary>
-    public IReadOnlyList<DeclarationOwed> ByMode(DriverConfig config) => Judge(config).ByMode;
+    /// <summary>What the risk policy of <paramref name="config"/> takes as it lands: each changed declaration whose every unit's verdict passes.</summary>
+    public IReadOnlyList<DeclarationOwed> Passed(DriverConfig config) => Judge(config).Passed;
 
     /// <summary>Each changed declaration that alters no command against the accepted blob (<see cref="DeclarationCommands.Keeps"/>): never owed.</summary>
     public IReadOnlyList<DeclarationOwed> Kept(DriverConfig config) => Judge(config).Kept;
 
-    private (IReadOnlyList<DeclarationOwed> Owed, IReadOnlyList<DeclarationOwed> ByMode, IReadOnlyList<DeclarationOwed> Kept) Judge(DriverConfig config)
+    private (IReadOnlyList<DeclarationOwed> Owed, IReadOnlyList<DeclarationOwed> Passed, IReadOnlyList<DeclarationOwed> Kept) Judge(DriverConfig config)
     {
         var owed = new List<DeclarationOwed>();
-        var byMode = new List<DeclarationOwed>();
+        var passed = new List<DeclarationOwed>();
         var kept = new List<DeclarationOwed>();
         foreach (var read in _held)
         {
@@ -90,19 +92,19 @@ public sealed class IntegrationOwed
             if (state is not (IntegrationAcceptance.Unaccepted or IntegrationAcceptance.Changed)) continue;
             var against = Against(config, read);
             var judged = against is not null && _judged.TryGetValue((against, read.Blob), out var pair) ? pair : null;
+            var keeps = state == IntegrationAcceptance.Changed && judged is { Keeps: true };
             var row = new DeclarationOwed(read.Repository, read.Workspace, read.Line, read.Blob, state, read.Since)
             {
                 Root = read.Root, Change = judged?.Change, Against = against, SetAside = judged?.SetAside ?? [],
                 ChangedUnits = judged?.ChangedUnits ?? [], Narrowed = judged?.Narrowed ?? [],
+                Verdicts = keeps ? [] : DeclarationVerdicts.Of(config, read.Repository, read.Workspace, read.Line, read.Blob, judged?.ChangedUnits ?? [], judged?.Digests),
             };
-            (!DeclarationMode.Waits(config, read.Repository, read.Workspace) ? byMode
-                : state == IntegrationAcceptance.Changed && judged is { Keeps: true } ? kept
-                : owed).Add(row);
+            (keeps ? kept : DeclarationVerdicts.Passes(row.Verdicts) ? passed : owed).Add(row);
         }
 
         static IReadOnlyList<DeclarationOwed> Ordered(List<DeclarationOwed> rows) =>
             [.. rows.OrderBy(each => each.Since).ThenBy(each => each.Repository, StringComparer.Ordinal)];
-        return (Ordered(owed), Ordered(byMode), Ordered(kept));
+        return (Ordered(owed), Ordered(passed), Ordered(kept));
     }
 
     /// <summary>The blob a read is judged against: the integration's acceptance, else the landed route's gates; null where none is accepted.</summary>
@@ -156,7 +158,7 @@ public sealed class IntegrationOwed
         var changed = before is not null && after is not null ? DeclarationUnits.Differing(before, after) : null;
         var keeps = changed is not null ? changed.Count == 0 : DeclarationCommands.Keeps(accepted, now);
         return new DeclarationJudged(
-            DeclarationChange.Between(accepted, now), keeps, keeps ? DeclarationCommands.SetAside(accepted, now) : [], null, changed ?? [], DeclarationUnits.Narrowed(accepted, now));
+            DeclarationChange.Between(accepted, now), keeps, keeps ? DeclarationCommands.SetAside(accepted, now) : [], null, changed ?? [], DeclarationUnits.Narrowed(accepted, now), after);
     }
 
     /// <summary>The acceptances of <paramref name="config"/> by blob that hold no units of that blob yet; converted by reading their text, so no press is owed.</summary>

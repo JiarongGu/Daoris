@@ -214,9 +214,10 @@ public sealed class AccessRulesTests
         Assert.DoesNotContain('\n', AccessRules.Said(AccessRules.ResolveLevels(null, null, AccessSetting.FullAccess)));
 
         var only = AccessRules.ResolveLevels(new AccessSetting { Pauses = new Dictionary<string, string> { ["permissions"] = "unrestricted" } }, null, null);
-        Assert.True(AccessRules.TakesDeclarations(only));
-        Assert.False(AccessRules.TakesDeclarations(AccessRules.ResolveLevels(null, AccessSetting.FullAccess, null)));
-        Assert.Contains("its declaration's commands are taken without asking", AccessRules.Said(only));
+        Assert.True(AccessRules.PromptsOnlyUnrestricted(only));
+        Assert.False(AccessRules.PromptsOnlyUnrestricted(AccessRules.ResolveLevels(null, AccessSetting.FullAccess, null)));
+        Assert.Contains("its permission prompts are unrestricted", AccessRules.Said(only));
+        Assert.DoesNotContain("without asking", AccessRules.Said(only));
     }
 
     private static AccessEdit Edit(string payload)

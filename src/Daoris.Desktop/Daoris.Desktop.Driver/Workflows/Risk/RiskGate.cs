@@ -4,6 +4,10 @@ namespace Daoris.Driver;
 /// <param name="Full">Whether the place's sessions run in full access (<see cref="AccessRules.Resolve"/>): the mode rows keyed by one apply under.</param>
 public sealed record RiskPlace(string? Workspace, string? Repository, bool Full)
 {
+    public bool? Prompts { get; init; }
+
+    public RiskPlace Reaching() => this with { Full = Prompts ?? Full };
+
     public const string FullMode = "full";
     public const string RestrictedMode = "restricted";
 
@@ -16,7 +20,7 @@ public sealed record RiskPlace(string? Workspace, string? Repository, bool Full)
         var access = named is not null
             ? AccessRules.Resolve(config, named, workspace)
             : AccessRules.ResolveLevels(null, workspace is { Length: > 0 } w && config.WorkspaceAccess.TryGetValue(w, out var shared) ? shared : null, config.MachineAccess);
-        return new(workspace is { Length: > 0 } ? workspace : null, named, access.Full);
+        return new(workspace is { Length: > 0 } ? workspace : null, named, access.Full) { Prompts = access.Value(AccessRules.Permissions) == AccessRules.Unrestricted };
     }
 
     /// <summary>The policy's place keys from this place up to the machine, narrowest first.</summary>
@@ -106,7 +110,8 @@ public static class RiskGate
     private static string SeedReason(string kind, string seed, RiskPlace place) => kind switch
     {
         RiskActs.CheckNarrow => "a check's reach narrowed passes, said in one line (the seed)",
-        RiskActs.ReachWiden or RiskActs.CommandChange => $"under {place.Mode} access the seed classes it `{seed}`",
+        RiskActs.ReachWiden => $"under {place.Mode} access the seed classes it `{seed}`",
+        RiskActs.CommandChange => $"where its harness's reach is {place.Mode} the seed classes it `{seed}`",
         RiskActs.HistoryRewrite or RiskActs.DataDelete => "the owner's by the seed, which the owner may change",
         _ => "no risk declared: it passes, recorded (the seed)",
     };

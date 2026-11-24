@@ -158,11 +158,17 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
    release step's plugin's to resolve. `daoris repository deployables <repository>` says it, writing nothing. (D290)
 4. The landed route (`landed`) resolves on its own, names only a verification pipeline and keeps the accepted
    `daoris.gates.json`'s blob id; a changed route applies to the next run. (D192) The line's `daoris.gates.json` is accepted once for
-   every purpose it serves (`DeclarationAcceptance`: the integration's blob and the landed route's gates). Whether it waits for the
-   person is the repository's access mode alone (`DeclarationMode`, asked by the check, the line's acceptance, the held checks' rerun
-   and the window): full where its permission prompts resolve `unrestricted`, at whichever level, restricted otherwise. In full access
-   it is accepted as it lands (the look says the checks changed in one sentence ending `(full access: taken without asking)`, and
-   *What needs you* holds no row); in restricted access by one press (`INTEGRATION_GATES`, or `daoris integrate <repository>
+   every purpose it serves (`DeclarationAcceptance`: the integration's blob and the landed route's gates). A changed declaration
+   waits only where the risk policy classes `command.change` at the repository's place (D354 point 9): the judge's verdict on each changed
+   unit's digest (`DeclarationVerdicts`, one per unit, subject the unit and its digest), the seed `none` where the place's permission
+   prompts resolve `unrestricted` (full access gives that, at whichever level) and `owner` otherwise, a row of the policy changing either
+   (a command change reads its place by that reach, `RiskPlace.Reaching`, so a row keyed by a mode reads it there; every other act reads full access alone). The check, the line's acceptance, the held checks' rerun and the
+   window ask the one verdict (`DeclarationMode`, through the port `IDeclarationRisk` the judge's side installs; a driver file that does
+   not read, or a policy that does not, reads at the owner). Where every unit passes, the declaration is accepted as it lands (`IntegrationOwed.Passed`,
+   `DeclarationAcceptance.AcceptPassedAsync`, judged again under the file's lock against the policy it holds: the look says the checks
+   changed in one sentence ending `(passed by the risk policy: <the rule>)`, one `risk.judged` line opens and releases with it, and *What
+   needs you* holds no row); where one does not (a row classing it `role` or `owner`, which no tool of a role answers yet, so it is the
+   person's row), by one press (`INTEGRATION_GATES`, or `daoris integrate <repository>
    --accept|--withdraw [--plan]`), Setup saying the mode that decided, shown as checks added, removed and changed by name with their commands
    (`DeclarationChange`), the row ending at the press; its row in *What needs you* names the checks added, removed and changed and
    opens that press on Setup. A landed change that adds or alters no command keeps the acceptance as it lands, said in one sentence
@@ -177,19 +183,19 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
    look (`IntegrationOwed.Unconverted`, `DeclarationAcceptance.ConvertAsync`), owing no press, and a change is judged against the digests.
    A change that drops a gate's `paths` or a test set's files is a keep like any other and says what it dropped in its one sentence
    (`DeclaredNarrowing`). A change the look cannot judge waits and is said once, and
-   never ends the look. In full access a check runs the work's own declaration as its commit carries it, a command change of its own
+   never ends the look. Where the policy passes a command change there a check runs the work's own declaration as its commit carries it, a command change of its own
    included, as the work's agents run any command in their own sessions anyway, also before any acceptance (said in one line); its result
    names that blob and nothing holds. The workspace its mode resolves through is the work's bound one. A driver file that does not
-   read is restricted. In
-   restricted access a check runs under the accepted declaration, read from its blob, never the work's file (`CheckDeclaration`): a
+   read is restricted. Where a command change waits
+   a check runs under the accepted declaration, read from its blob, never the work's file (`CheckDeclaration`): a
    work whose declaration runs only what the accepted one runs, or whose own change against where it left the line (the merge base with
    the local branch of the line the look reads) alters no unit its run reads, is checked as accepted, so a declaration change on the line
    holds no run; a run reads the gates it runs, `generated` and every part nobody named, a run of every gate also their order, and the
    hand-back run `reached` (`DeclarationUnits.Run`; `doctrine` is read by none), so a change to one gate holds only the runs of that gate.
    Only a work whose own change alters a unit its run reads, or one whose line or merge base git cannot name, holds `changed`, saying which,
-   that restricted access decided, and what the person can do (land the change and accept it, or answer the check *It happened*).
-   Daoris starts only the commands the person accepted; they run the work's own code. Once the acceptance moves, or the repository takes
-   full access, each check so held is run again by itself (`ChangedChecks`, its held attempt's *Run again*). The set-up review
+   that the policy's verdict decided, and what the person can do (land the change and accept it, or answer the check *It happened*).
+   Daoris starts only the commands the person accepted; they run the work's own code. Once the acceptance moves, or the policy comes to pass a command change
+   there, each check so held is run again by itself (`ChangedChecks`, its held attempt's *Run again*). The set-up review
    offers the same one acceptance, a single tick per repository saying the checks changed (`daoris place … --apply --accept
    <repository>`), never one tick per purpose. (D283, D350, D353)
 5. Saving (`WORKFLOW_SAVE`) and choosing (`WORKFLOW_USE`) are two presses; *Set up…* alone does both, in one receipt-kept Apply. A

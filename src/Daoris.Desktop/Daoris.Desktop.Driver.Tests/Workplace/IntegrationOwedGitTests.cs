@@ -113,16 +113,18 @@ public sealed class IntegrationOwedGitTests : IAsyncLifetime
 
         await owed.LookAsync(full, Registry, _now, CancellationToken.None);
         Assert.Empty(owed.Under(full));
-        var byMode = Assert.Single(owed.ByMode(full));
+        var byMode = Assert.Single(owed.Passed(full));
         Assert.Equal(second, byMode.Blob);
 
-        var said = await DeclarationAcceptance.AcceptByModeAsync(_home, configPath, byMode, CancellationToken.None);
+        var said = await DeclarationAcceptance.AcceptPassedAsync(_home, configPath, byMode, CancellationToken.None);
 
-        Assert.Equal("engine's checks changed on main: added `comments`; they run from now on (full access: taken without asking).", said);
+        Assert.Equal(
+            "engine's checks changed on main: added `comments`; they run from now on (passed by the risk policy: where its harness's reach is full the seed classes it `none` (rule seed at seed)).",
+            said);
         Assert.Equal(second, IntegrationAcceptance.Of(DriverConfig.Load(configPath), "engine"));
         var restricted = Choices(first);
         Assert.Single(owed.Under(restricted));
-        Assert.Empty(owed.ByMode(restricted));
+        Assert.Empty(owed.Passed(restricted));
     }
 
     [Fact]
@@ -138,18 +140,125 @@ public sealed class IntegrationOwedGitTests : IAsyncLifetime
         await owed.LookAsync(unrestricted, Registry, _now, CancellationToken.None);
 
         Assert.Equal(IntegrationAcceptance.Changed, Assert.Single(owed.Under(asking)).State);
-        Assert.Empty(owed.ByMode(asking));
+        Assert.Empty(owed.Passed(asking));
         Assert.Empty(owed.Under(unrestricted));
-        var taken = Assert.Single(owed.ByMode(unrestricted));
+        var taken = Assert.Single(owed.Passed(unrestricted));
 
         asking.Save(configPath);
-        Assert.Null(await DeclarationAcceptance.AcceptByModeAsync(_home, configPath, taken, CancellationToken.None));
+        Assert.Null(await DeclarationAcceptance.AcceptPassedAsync(_home, configPath, taken, CancellationToken.None));
         Assert.Equal(first, IntegrationAcceptance.Of(DriverConfig.Load(configPath), "engine"));
 
         unrestricted.Save(configPath);
-        var said = await DeclarationAcceptance.AcceptByModeAsync(_home, configPath, taken, CancellationToken.None);
-        Assert.Equal("engine's checks changed on main: changed `build`; they run from now on (full access: taken without asking).", said);
+        var said = await DeclarationAcceptance.AcceptPassedAsync(_home, configPath, taken, CancellationToken.None);
+        Assert.Equal(
+            "engine's checks changed on main: changed `build`; they run from now on (passed by the risk policy: where its harness's reach is full the seed classes it `none` (rule seed at seed)).",
+            said);
         Assert.Equal(second, IntegrationAcceptance.Of(DriverConfig.Load(configPath), "engine"));
+    }
+
+    private static DriverConfig WithRisk(DriverConfig config, string risk)
+    {
+        var node = System.Text.Json.Nodes.JsonNode.Parse(config.ToJson())!.AsObject();
+        node["risk"] = System.Text.Json.Nodes.JsonNode.Parse(risk);
+        return DriverConfig.Parse(node.ToJsonString());
+    }
+
+    /// <summary>A changed declaration waits only where the policy classes <c>command.change</c>, whatever the access mode.</summary>
+    [Fact]
+    public async Task A_changed_declaration_waits_only_where_the_policy_classes_command_change_whatever_the_access_mode()
+    {
+        const string Command = """{ "gates": [ { "name": "build", "run": "dotnet build -c Release" } ], "integration": { "by": "daoris" } }""";
+        var first = await CommitAsync(Build);
+        var second = await CommitAsync(Command);
+        var configPath = DaorisHome.Entry(_home, HomeEntry.DriverConfig);
+        var restricted = Choices(first);
+        var passes = WithRisk(restricted, """{ "repository/engine": [ { "kind": "command.change", "class": "none" } ] }""");
+        var full = Choices(first).WithAccess(new AccessEdit { Repository = "engine", Full = true });
+        var asks = WithRisk(full, """{ "repository/engine": [ { "kind": "command.change", "class": "owner" } ] }""");
+        var owed = new IntegrationOwed();
+        await owed.LookAsync(restricted, Registry, _now, CancellationToken.None);
+
+        Assert.Empty(owed.Under(passes));
+        var taken = Assert.Single(owed.Passed(passes));
+        var verdict = Assert.Single(taken.Verdicts);
+        Assert.Equal(("gate:build", RiskVerdict.Pass, "repository/engine"), (verdict.Unit, verdict.Verdict.Outcome, verdict.Verdict.Source));
+
+        var row = Assert.Single(owed.Under(asks));
+        Assert.Empty(owed.Passed(asks));
+        Assert.Equal(RiskVerdict.OwnerOutcome, Assert.Single(row.Verdicts).Verdict.Outcome);
+
+        asks.Save(configPath);
+        Assert.Null(await DeclarationAcceptance.AcceptPassedAsync(_home, configPath, taken, CancellationToken.None));
+        Assert.Equal(first, IntegrationAcceptance.Of(DriverConfig.Load(configPath), "engine"));
+
+        passes.Save(configPath);
+        var said = await DeclarationAcceptance.AcceptPassedAsync(_home, configPath, taken, CancellationToken.None);
+        Assert.Equal(
+            "engine's checks changed on main: changed `build`; they run from now on (passed by the risk policy: `repository/engine` classes `command.change` `none` (rule repository/engine at "
+            + RiskPolicy.Of(passes).Revision + ")).",
+            said);
+        Assert.Equal(second, IntegrationAcceptance.Of(DriverConfig.Load(configPath), "engine"));
+    }
+
+    /// <summary>A change to one gate of two is judged on that unit alone, with its digest.</summary>
+    [Fact]
+    public async Task A_change_to_one_gate_is_judged_on_that_unit_alone_with_its_digest()
+    {
+        const string Two = """{ "gates": [ { "name": "build", "run": "dotnet build" }, { "name": "comments", "run": "node gate.mjs" } ], "integration": { "by": "daoris" } }""";
+        const string Moved = """{ "gates": [ { "name": "build", "run": "dotnet build -c Release" }, { "name": "comments", "run": "node gate.mjs" } ], "integration": { "by": "daoris" } }""";
+        var first = await CommitAsync(Two);
+        await CommitAsync(Moved);
+        var restricted = Choices(first);
+        var owed = new IntegrationOwed();
+
+        await owed.LookAsync(restricted, Registry, _now, CancellationToken.None);
+
+        var row = Assert.Single(owed.Under(restricted));
+        var one = Assert.Single(row.Verdicts);
+        Assert.Equal(["gate:build"], row.ChangedUnits);
+        Assert.Equal(("gate:build", RiskVerdict.OwnerOutcome), (one.Unit, one.Verdict.Outcome));
+        Assert.Equal(DeclarationUnits.Of(Moved)!["gate:build"], one.Digest);
+    }
+
+    /// <summary>The journal holds the verdict of a taken declaration and of a held one, each naming its unit and digest.</summary>
+    [Fact]
+    public async Task The_journal_names_the_verdict_and_the_unit_digest_of_a_taken_and_of_a_held_declaration()
+    {
+        const string Command = """{ "gates": [ { "name": "build", "run": "dotnet build -c Release" } ], "integration": { "by": "daoris" } }""";
+        var first = await CommitAsync(Build);
+        await CommitAsync(Command);
+        var digest = DeclarationUnits.Of(Command)!["gate:build"][..12];
+        var owed = new IntegrationOwed();
+        await owed.LookAsync(Choices(first), Registry, _now, CancellationToken.None);
+        var shadow = new RiskShadow(_home, () => _now);
+
+        RiskDeclarationHolds.Shadow(shadow, owed, Choices(first));
+        var held = Assert.Single(RiskJournal.Read(_home));
+        Assert.Equal((RiskVerdict.OwnerOutcome, true), (held.Outcome, held.TodayHeld));
+        Assert.Contains($"`build` {digest}", held.Subject, StringComparison.Ordinal);
+
+        var elsewhere = Path.Combine(_home, "taken");
+        var passing = WithRisk(Choices(first), """{ "repository/engine": [ { "kind": "command.change", "class": "none" } ] }""");
+        RiskDeclarationHolds.Shadow(new RiskShadow(elsewhere, () => _now), owed, passing);
+        var taken = Assert.Single(RiskJournal.Read(elsewhere));
+        Assert.Equal((RiskVerdict.Pass, false, "repository/engine"), (taken.Outcome, taken.TodayHeld, taken.Source));
+        Assert.Contains($"`build` {digest}", taken.Subject, StringComparison.Ordinal);
+    }
+
+    /// <summary>A path-only change on a full-access line is kept as it lands, in the keep's sentence, never taken or owed.</summary>
+    [Fact]
+    public async Task A_change_of_no_command_on_a_full_access_line_is_kept_and_not_taken()
+    {
+        var first = await CommitAsync(Build);
+        await CommitAsync("""{ "gates": [ { "name": "build", "run": "dotnet build", "paths": ["src/"] } ], "integration": { "by": "daoris" } }""");
+        var full = Choices(first).WithAccess(new AccessEdit { Repository = "engine", Full = true });
+        var owed = new IntegrationOwed();
+
+        await owed.LookAsync(full, Registry, _now, CancellationToken.None);
+
+        Assert.Empty(owed.Under(full));
+        Assert.Empty(owed.Passed(full));
+        Assert.Single(owed.Kept(full));
     }
 
     [Fact]
@@ -206,7 +315,7 @@ public sealed class IntegrationOwedGitTests : IAsyncLifetime
         var full = Choices(first).WithAccess(new AccessEdit { Repository = "engine", Full = true });
         var configPath = DaorisHome.Entry(_home, HomeEntry.DriverConfig);
         full.Save(configPath);
-        var said = await DeclarationAcceptance.AcceptByModeAsync(_home, configPath, Assert.Single(owed.ByMode(full)), CancellationToken.None);
+        var said = await DeclarationAcceptance.AcceptPassedAsync(_home, configPath, Assert.Single(owed.Passed(full)), CancellationToken.None);
 
         Assert.StartsWith("engine's ", said);
         Assert.Equal(second, IntegrationAcceptance.Of(DriverConfig.Load(configPath), "engine"));
