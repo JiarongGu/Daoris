@@ -5,7 +5,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import {
   BUDGET_FACTOR, BUDGET_FLOOR_MINUTES, GREENS_KEPT, GREENS_NEEDED, RISE_BOUND,
-  budgetsFile, budgetOf, readBudgets, recordGreen, saidRise, setGate, type GateKept,
+  budgetsFile, budgetOf, readBudgets, recordGreen, saidRise, setGate, type GateKept, type Green,
 } from './check-budgets.ts';
 
 const MIN = 60_000;
@@ -15,7 +15,7 @@ const homeOf = (): string => {
   scratch.push(home);
   return home;
 };
-const green = (minutes: number[]): GateKept['green'] => minutes.map((each, index) => ({ ms: each * MIN, at: `2026-11-${String(10 + index).padStart(2, '0')}T00:00:00Z` }));
+const green = (minutes: number[]): Green[] => minutes.map((each, index) => ({ ms: each * MIN, at: `2026-11-${String(10 + index).padStart(2, '0')}T00:00:00Z` }));
 
 test.afterAll(() => { for (const each of scratch) rmSync(each, { recursive: true, force: true }); });
 
@@ -30,7 +30,7 @@ test('a gate\'s timeout follows its green times: the slowest ninetieth percentil
   const budget = budgetOf({ green: greens }, 'merge');
   assert.equal(budget.source, 'learned');
   assert.equal(budget.minutes, Math.ceil(14 * BUDGET_FACTOR));
-  const slower = budgetOf({ green: [...greens!, ...green([30])!] }, 'merge');
+  const slower = budgetOf({ green: [...greens, ...green([30])] }, 'merge');
   assert.equal(slower.minutes, Math.ceil(30 * BUDGET_FACTOR), 'a slower green time moves the timeout');
   const faster = budgetOf({ green: green([2, 2, 2, 2, 2, 2]) }, 'merge');
   assert.equal(faster.minutes, BUDGET_FLOOR_MINUTES, 'a fast gate never has less than the floor');
@@ -39,7 +39,7 @@ test('a gate\'s timeout follows its green times: the slowest ninetieth percentil
 test('only the newest greens count, so a gate that got faster is let go of its old time', () => {
   const old = green(Array.from({ length: GREENS_KEPT }, () => 40));
   const now = green(Array.from({ length: GREENS_KEPT }, () => 3));
-  assert.equal(budgetOf({ green: [...old!, ...now!] }, 'merge').minutes, BUDGET_FLOOR_MINUTES);
+  assert.equal(budgetOf({ green: [...old, ...now] }, 'merge').minutes, BUDGET_FLOOR_MINUTES);
 });
 
 test('a pin stands over what the green times say, and carries its why', () => {

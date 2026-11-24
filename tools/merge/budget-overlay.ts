@@ -42,14 +42,14 @@ export function keptOf(source: BudgetSource | null): RepositoryKept {
 }
 
 /** The gates with the home's values laid over: a pin or a learned timeout, and the memory and load settings. Answers the gates themselves where `source` names no home. */
-export function overlay<T extends Budgeted>(gates: readonly T[], source: BudgetSource | null): T[] {
+export function overlay<T extends { name: string }>(gates: readonly T[], source: BudgetSource | null): (T & Budgeted)[] {
   if (!source?.home) return [...gates];
   const kept = readBudgets(source.home).repositories[source.repository]?.gates ?? {};
   return gates.map((gate) => {
     const own = kept[gate.name];
     if (!own) return gate;
     const budget = budgetOf(own, 'merge');
-    const next: T = { ...gate };
+    const next: T & Budgeted = { ...gate };
     if (budget.source !== 'default') { next.timeoutMinutes = budget.minutes; next.budget = budget; }
     if (typeof own.memoryGb === 'number') next.memoryGb = own.memoryGb;
     if (own.alone === true) next.alone = true;
