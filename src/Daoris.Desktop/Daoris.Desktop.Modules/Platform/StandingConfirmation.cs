@@ -223,20 +223,31 @@ public sealed class StandingConfirmation : IDecisionAdmission
     /// <summary>The home's <c>driver.json</c>, read at each judgement of what an act spends; a test hands its own.</summary>
     public Func<DriverConfig> Config { get; set; }
 
-    /// <summary>The risk policy's outcome on <paramref name="act"/> at <paramref name="place"/>, its workspace placed; a record that does not read is the owner's.</summary>
-    public string Verdict(RolePlace place, RiskAct act)
+    /// <summary>
+    /// The risk policy's outcome on <paramref name="act"/> by the role <paramref name="acting"/> at <paramref name="place"/>, its workspace
+    /// placed: a gate whose row names a role other than <paramref name="acting"/> is the owner's here, since no other role takes it; a
+    /// record that does not read is the owner's.
+    /// </summary>
+    public string Verdict(RolePlace place, RiskAct act, string? acting)
     {
         try
         {
             var placed = place is { Repository: { } repository, Workspace: null } ? Placed(repository) : place;
             var config = Config();
-            return RiskGate.Judge(RiskPolicy.Of(config), act, "", RiskPlace.Of(config, placed.Workspace, placed.Repository), "").Outcome;
+            var verdict = RiskGate.Judge(RiskPolicy.Of(config), act, acting ?? "", RiskPlace.Of(config, placed.Workspace, placed.Repository), "");
+            return verdict.Outcome == RiskVerdict.Gate && verdict.By is { } by && by != RiskGate.DefaultRole(act.Kind) && by != acting
+                ? RiskVerdict.OwnerOutcome
+                : verdict.Outcome;
         }
         catch (Exception error) when (error is DriverException or IOException or System.Text.Json.JsonException)
         {
             return RiskVerdict.OwnerOutcome;
         }
     }
+
+    /// <summary>The <see cref="Verdict"/> on a go-ahead of <paramref name="kind"/> on <paramref name="on"/>; null where its kind names no act.</summary>
+    public string? GoAheadOutcome(RolePlace place, string kind, string on, string? acting) =>
+        RiskAskHolds.GoAheadAct(kind, on) is { } act ? Verdict(place, act, acting) : null;
 
     /// <summary>What Ask Daoris pressed this run in full access, with no card: the window's list of it.</summary>
     public HelpPressRecord HelpPresses { get; }

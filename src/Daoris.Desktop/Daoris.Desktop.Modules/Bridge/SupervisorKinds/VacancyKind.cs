@@ -58,7 +58,7 @@ internal sealed class VacancyKind : ISupervisorKind
         // A re-cast names a reviewer the vacancy offered; and every grant on the act's chain covers what it spends.
         if (OpinionCasting.Refusal(kept, act, agent) is { } refused) return SupervisorDecided.Refused(refused);
         var role = judge.Supervising(SupervisorKinds.Vacancy, place).Role;
-        if (act != LinePasses.Left && ActSpends.Missing([role?.Hold?.Acts ?? []], SupervisorKinds.Qualified(SupervisorKinds.Vacancy, act), OpinionCasting.Spends(act, agent), spent => judge.Verdict(place, spent))
+        if (act != LinePasses.Left && ActSpends.Missing([role?.Hold?.Acts ?? []], SupervisorKinds.Qualified(SupervisorKinds.Vacancy, act), OpinionCasting.Spends(act, agent), spent => judge.Verdict(place, spent, role?.Id))
             is { } missing)
         {
             return SupervisorDecided.Refused(SupervisorWhy.NotGranted) with { Missing = missing };

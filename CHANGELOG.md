@@ -5,6 +5,11 @@ with the version and date at release.
 
 ## Unreleased
 
+- What a supervisor's act spends is read by the risk policy at its place. With nothing configured the policy passes money, a release
+  and publishing outside, so a supervisor already granted `landing.approve`, `files.allow-share` or a re-cast naming the prepaid harness
+  now takes it on that grant, where before an approval and a share were always the owner's and the re-cast also needed
+  `vacancy.prepaid`. A row of the risk policy classing the act `owner` keeps it yours; a row naming a role keeps it that role's.
+  A go-ahead stays yours where the policy classes its act yours, and a refusal says `policy-owner` in place of `high-risk` or `marked`.
 - `daoris bus stats` now reads each consumer's handling time by kind (`handled`) and each day's share of the 128 MiB a day the bus log may
   put on disk, and the log says once when a day passes it. A check's start and a second opinion's asking carry deadlines measured on the
   install; the answers an author keeps to a second opinion's findings reach the bus's log as they are given, not only at the turn's end.

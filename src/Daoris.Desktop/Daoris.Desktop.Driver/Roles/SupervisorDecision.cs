@@ -14,7 +14,7 @@ public interface IDecisionAdmission
 
     PlaceRiskNow RiskAt(RolePlace place) => new(PlaceRisks.High, PlaceRiskBook.DefaultSource, []);
 
-    string? GoAheadOwners(RolePlace place, string kind, string on) => SupervisorWhy.PolicyOwner;
+    string? GoAheadOwners(RolePlace place, string kind, string on, string? acting) => SupervisorWhy.PolicyOwner;
 }
 
 /// <summary>What <see cref="IDecisionAdmission"/> answers: the effective generation, or why no holder is admitted.</summary>

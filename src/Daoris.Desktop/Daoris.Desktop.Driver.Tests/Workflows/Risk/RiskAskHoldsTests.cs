@@ -73,6 +73,14 @@ public sealed class RiskAskHoldsTests : IDisposable
     }
 
     [Fact]
+    public void A_go_ahead_is_placed_in_its_repositorys_own_workspace_as_its_door_places_it_not_the_asks()
+    {
+        var elsewhere = Ask(GoAhead(1, "write", "production")) with { Workspace = "other" };
+        var hold = Assert.Single(RiskAskHolds.GoAheads([elsewhere], Records, DriverConfig.Parse("{}"), WorkspaceOf));
+        Assert.Equal(("work", "app"), (hold.Place.Workspace, hold.Place.Repository));
+    }
+
+    [Fact]
     public void A_go_ahead_whose_askers_have_all_ended_is_no_hold_and_one_at_a_marked_place_waits_on_the_owner_today_and_by_the_judge()
     {
         var config = DriverConfig.Parse("""{ "placeRisk": { "workspace/work": { "risk": "low", "marks": ["release.production"] } } }""");

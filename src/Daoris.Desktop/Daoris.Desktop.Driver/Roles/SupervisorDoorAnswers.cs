@@ -269,7 +269,7 @@ internal sealed class SupervisorDoorAnswers(SupervisorBook book, IDecisionAdmiss
     // whose pin does not read is no longer what the role judged.
     private string? OwnersAgain(SupervisorDoorDecision due) =>
         due.Subject.Kind != SupervisorKinds.GoAhead ? null
-        : GoAheadPin.Read(due.Pin) is var (kind, on) ? admission.GoAheadOwners(new RolePlace(Repository: due.Repository), kind, on)
+        : GoAheadPin.Read(due.Pin) is var (kind, on) ? admission.GoAheadOwners(new RolePlace(Repository: due.Repository), kind, on, due.Role)
         : SupervisorWhy.SubjectChanged;
 
     private SupervisorState Settle(SupervisorDoorDecision due, SupervisorState to, DateTimeOffset now, string? why)

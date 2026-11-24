@@ -35,7 +35,7 @@ internal sealed class GoAheadKind : ISupervisorKind
             var subject = SupervisorSubject.GoAhead(session, ask, goAhead.Number);
             if (!loop.Supervisor.RefersDoor(subject) || SupervisorDecisionDoor.Covered(admission, subject, new RolePlace(Repository: repository)) is not { } covered) continue;
             // Only a go-ahead a role may answer here is listed: one the policy classes the owner's and a sign-in wait on the owner role.
-            if (Refusal(loop, judge, repository, goAhead) is not null) continue;
+            if (Refusal(judge, repository, goAhead) is not null) continue;
             waiting.Add(new
             {
                 Kind, Subject = subject.Wire(), Repository = repository, covered.Generation, Acts = (IReadOnlyList<string>)[SupervisorKinds.Answer],
@@ -82,18 +82,17 @@ internal sealed class GoAheadKind : ISupervisorKind
         var goAhead = await SupervisorDoorSubjects.GoAheadAsync(service, subject, ct).ConfigureAwait(false);
         var open = goAhead is { Answer: null };
         // The risk policy as it stands at the answer, and every grant on the role's chain; a leave needs none.
-        var refused = !open ? SupervisorWhy.Answered : act == SupervisorDoorActs.Hold ? null : Refusal(loop, judge, repository, goAhead!);
+        var refused = !open ? SupervisorWhy.Answered : act == SupervisorDoorActs.Hold ? null : Refusal(judge, repository, goAhead!);
         var answer = new SupervisorDoorAnswer(subject, repository, generation, act, choice, reasons, holder) { Pin = open ? SupervisorDoorSubjects.Pin(goAhead!).Said : null };
         var kept = await loop.Supervisor.DoorAsync(answer, refused, DateTimeOffset.UtcNow, ct).ConfigureAwait(false);
         return SupervisorDecided.Of(kept, SupervisorWhy.NotReferred);
     }
 
     // Why a role may not answer it at the repository's place now: the owner role's code by the policy, else the grant missing on the role's chain.
-    private static string? Refusal(DriverLoop loop, StandingConfirmation judge, string repository, GoAheadView goAhead)
+    private static string? Refusal(StandingConfirmation judge, string repository, GoAheadView goAhead)
     {
         var place = judge.Placed(repository);
-        var grants = judge.Supervising(SupervisorKinds.GoAhead, place).Role?.Hold?.Acts ?? [];
-        var config = DriverConfig.Load(loop.ConfigPath);
-        return GoAheadAuthority.Refusal(goAhead.Kind, RiskAskHolds.GoAheadOutcome(RiskPolicy.Of(config), RiskPlace.Of(config, place.Workspace, place.Repository), goAhead.Kind, goAhead.On), [grants]);
+        var role = judge.Supervising(SupervisorKinds.GoAhead, place).Role;
+        return GoAheadAuthority.Refusal(goAhead.Kind, judge.GoAheadOutcome(place, goAhead.Kind, goAhead.On, role?.Id), [role?.Hold?.Acts ?? []]);
     }
 }

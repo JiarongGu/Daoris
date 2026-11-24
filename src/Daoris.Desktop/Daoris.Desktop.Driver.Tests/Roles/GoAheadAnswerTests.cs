@@ -32,7 +32,7 @@ public sealed class GoAheadAnswerTests : IDisposable
                 ? new("g-1", null) { Window = TimeSpan.FromMinutes(10), Role = "reports-supervisor" }
                 : DecisionAdmitted.Refused(SupervisorWhy.NotGranted);
 
-        public string? GoAheadOwners(RolePlace place, string kind, string on) => RiskAskHolds.GoAheadOwners(Now, place, kind, on);
+        public string? GoAheadOwners(RolePlace place, string kind, string on, string? acting) => RiskAskHolds.GoAheadOwners(Now, place, kind, on);
     }
 
     private static DoorRelease Posting(List<SupervisorDoorDue> posted) => new(

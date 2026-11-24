@@ -65,7 +65,7 @@ public static class RiskAskHolds
                 if (GoAheadAct(goAhead.Kind, goAhead.On) is not { } act) continue;
                 var asker = goAhead.Asked.Reverse().Select(request => live.GetValueOrDefault(request.Session)).FirstOrDefault(each => each?.Repository is not null);
                 if (asker is null) continue;
-                var workspace = ask.Workspace is { Length: > 0 } named ? named : workspaceOf(asker.Repository!);
+                var workspace = workspaceOf(asker.Repository!) ?? (ask.Workspace is { Length: > 0 } named ? named : null);
                 var owners = GoAheadOwners(config, new RolePlace(workspace, asker.Repository), goAhead.Kind, goAhead.On);
                 var today = owners is { } code
                     ? $"Waiting on the owner role (`{code}`)."

@@ -20,9 +20,11 @@ public sealed class SpendAdmissionTests : IDisposable
         if (Directory.Exists(_home)) Directory.Delete(_home, recursive: true);
     }
 
-    private StandingConfirmation Standing(string config, params string[] acts)
+    private StandingConfirmation Standing(string config, params string[] acts) => StandingAs(config, AppointedRoles.Supervisor, acts);
+
+    private StandingConfirmation StandingAs(string config, string id, params string[] acts)
     {
-        var role = RoleKit.Supervisor(acts: acts, holder: RoleHolders.Agent);
+        var role = RoleKit.Supervisor(id, acts: acts, holder: RoleHolders.Agent);
         return new StandingConfirmation(_home, null, new StandingConfirmationTests.Placed(StandingPlace.Outside), walk: new StandingConfirmationTests.Walked())
         {
             Wider = () => RuleWiderPlaces.None,
@@ -56,5 +58,33 @@ public sealed class SpendAdmissionTests : IDisposable
 
         Assert.Null(judge.Admit(SupervisorKinds.Landing, Place, "approve").Why);
         Assert.Null(judge.Admit(SupervisorKinds.Files, Place, "allow-share").Why);
+    }
+
+    /// <summary>🔴 A row gating the spend on a role it names holds it for that role alone: another role granted the act does not take it.</summary>
+    [Fact]
+    public void A_row_naming_its_answering_role_admits_that_role_and_refuses_another_granted_the_act()
+    {
+        const string named = """{ "risk": { "workspace/work": [ { "kind": "release.start", "class": "role", "by": "release-manager" } ] } }""";
+
+        var other = StandingAs(named, "reports-supervisor", "landing.approve").Admit(SupervisorKinds.Landing, Place, "approve");
+        var its = StandingAs(named, "release-manager", "landing.approve").Admit(SupervisorKinds.Landing, Place, "approve");
+
+        Assert.Equal((SupervisorWhy.NotGranted, ActSpending.Destination), (other.Why, other.Missing));
+        Assert.Null(its.Why);
+        // With no role named, the gate's default role is the place's supervisor, which any supervisor deciding the kind holds.
+        Assert.Null(StandingAs("""{ "risk": { "workspace/work": [ { "kind": "release.start", "class": "role" } ] } }""", "reports-supervisor", "landing.approve")
+            .Admit(SupervisorKinds.Landing, Place, "approve").Why);
+    }
+
+    /// <summary>🔴 A driver.json that does not read is the owner's: a spend and a go-ahead are refused, and nothing throws.</summary>
+    [Fact]
+    public void An_unreadable_policy_reads_every_spend_and_go_ahead_as_the_owners_and_never_throws()
+    {
+        var judge = Standing("{}", "landing.approve");
+        judge.Config = () => throw new DriverConfigUnreadableException(Path.Combine(_home, "driver.json"), "it does not parse");
+
+        Assert.Equal(ActSpending.Destination, judge.Admit(SupervisorKinds.Landing, Place, "approve").Missing);
+        Assert.Equal(RiskVerdict.OwnerOutcome, judge.GoAheadOutcome(Place, "write", "staging", "supervisor"));
+        Assert.Equal(SupervisorWhy.PolicyOwner, GoAheadAuthority.OwnersOwn("write", judge.GoAheadOutcome(Place, "write", "staging", "supervisor")));
     }
 }
