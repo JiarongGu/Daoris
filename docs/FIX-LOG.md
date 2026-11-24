@@ -5,6 +5,13 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-11-25 - A publish built the web bundle against generated routes older than the C# (PUBLISHCONTRACTS1)
+
+- **Sighting:** a publish of main (f1709ef081) failed in `npm --prefix src/Daoris.Web run build` with TS2345, `"SET_RESERVE"` not assignable to `keyof DriverPayloads`: the checkout's ignored `src/Daoris.Web/src/bridge/generated/routes.ts` predated OWNERRESERVE1's route.
+- **Root cause:** the generated contracts are ignored files each checkout keeps from its last generation. The merge tool regenerates them (`contracts.mjs --if-stale`) before its gates; `tools/desktop-publish.mjs` (since it built the web bundle) left them to the page's `prebuild` script, which runs only where npm runs pre-scripts. Why that pre-script did not regenerate them in the failed publish is not known: its output was not kept, and the main checkout's files were regenerated (05:20 local, 2026-11-25) before this was read.
+- **Fix:** the publish asks the contracts itself before the bundle (`freshContracts`, `tools/desktop-publish/contracts.mjs`, the generator's own staleness and lock), regenerates them where stale, and says whether they were fresh or it regenerated them; a generator that fails stops the publish before anything is written.
+- **Verification:** `src/Daoris.Cli/tool-test/desktop-publish-contracts.test.ts` (stale routes regenerated and said; fresh ones left and said; a failed generator stops the publish). On a checkout whose `routes.ts` was stamped stale with every `SET_RESERVE` line taken out, `tsc --noEmit` in `src/Daoris.Web` failed with the publish's TS2345 at `src/bridge/driver.ts`; the publish's step (`freshContracts`, the real generator) said the routes were stale and regenerated them, `contracts.mjs --check` passed and `tsc --noEmit` had no error; run again, it said they were fresh.
+
 ## 2026-11-25 - A flow case that runs a gate on past its budget failed with an empty note beside other runs (FLOWLOADLEAK1)
 
 - **Sighting:** `tools/merge/flow.test.ts` "a gate past its budget under load runs on to its own end" (and, said in the row, its sibling "a gate whose hang bound killed a test under load…") passed alone and failed in `reached` gates beside three heavy runs (RISKGATE1j's check 5, OWNERRESERVE1's steward merge on 2026-11-24).
