@@ -15,10 +15,7 @@ public sealed class CheckBudgetsTests : IDisposable
 
     public CheckBudgetsTests() => Directory.CreateDirectory(_home);
 
-    public void Dispose()
-    {
-        try { Directory.Delete(_home, recursive: true); } catch (IOException) { } catch (UnauthorizedAccessException) { }
-    }
+    public void Dispose() => GitSeed.Discard(_home);
 
     private string File => CheckBudgets.PathOf(_home);
 
