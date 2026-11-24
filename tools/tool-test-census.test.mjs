@@ -12,7 +12,7 @@ import { mkdirSync, rmSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { after, test } from 'node:test';
 import { fileURLToPath } from 'node:url';
-import { checkToolTests } from './tool-test-census.mjs';
+import { checkToolTests, liveLoadReads } from './tool-test-census.mjs';
 
 const root = dirname(dirname(fileURLToPath(import.meta.url)));
 const scratch = join(root, '_fixtures', 'tool-test-census-test');
@@ -89,4 +89,28 @@ test('a script that names a test file is named: the declaration is where a test 
     'package.json: script verify:tests names tools/a.test.mjs; place a test file by a set\'s pattern in daoris.gates.json\'s tests',
     'src/Daoris.Cli/package.json: script tooltests names ../../tools/a.test.mjs; place a test file by a set\'s pattern in daoris.gates.json\'s tests',
   ]);
+});
+
+const call = (name, args = '') => `${name}(${args})`;
+
+test('a tools test that reads the live machine\'s load is named by line; one that hands a seam or a home of its own is not', () => {
+  const source = [
+    `const flow = { load: ${call('loadSeam', 'home, root')} };`,
+    `const held = ${call('heldNow')};`,
+    `const again = ${call('lookAt', 'process.env.DAORIS_HOME')};`,
+    `const trees = ${call('foreignTrees', 'own')};`,
+    `const sampler = ${call('loadSampler')};`,
+    `const procs = ${call('readProcesses')};`,
+    `const ok = [${call('heldNow', 'fixtureHome')}, ${call('foreignTrees', 'own, seamOf([])')}, ${call('loadSampler', '{ every: 1, count: () => 0 }')}, ${call('holdersSentence', 'null')}];`,
+    `// ${call('heldNow')} in a comment reads nothing`,
+    `function ${call('heldNow')} {}`,
+    `const nested = ${call('foreignTrees', `own, { processes: () => ${call('list')} }`)};`,
+  ].join('\n');
+  assert.deepEqual(liveLoadReads(source).map((read) => [read.line, read.name]), [[1, 'loadSeam'], [2, 'heldNow'], [3, 'lookAt'], [4, 'foreignTrees'], [5, 'loadSampler'], [6, 'readProcesses']]);
+  const dir = tree({ files: ['tools/a.test.mjs', 'tools/b.test.mjs', 'src/Daoris.Cli/tool-test/c.test.ts'] });
+  writeFileSync(join(dir, 'tools', 'b.test.mjs'), source);
+  writeFileSync(join(dir, 'src/Daoris.Cli/tool-test/c.test.ts'), source);
+  const { problems } = checkToolTests(dir);
+  assert.deepEqual(problems.map((each) => each.split(' ')[0]), ['tools/b.test.mjs:1:', 'tools/b.test.mjs:2:', 'tools/b.test.mjs:3:', 'tools/b.test.mjs:4:', 'tools/b.test.mjs:5:', 'tools/b.test.mjs:6:'], 'only a test under tools/ is read, and each call is named');
+  assert.match(problems[1], /heldNow\( reads the live machine/);
 });

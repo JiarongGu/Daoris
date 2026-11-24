@@ -5,6 +5,13 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-11-25 - A flow case that runs a gate on past its budget failed with an empty note beside other runs (FLOWLOADLEAK1)
+
+- **Sighting:** `tools/merge/flow.test.ts` "a gate past its budget under load runs on to its own end" (and, said in the row, its sibling "a gate whose hang bound killed a test under load…") passed alone and failed in `reached` gates beside three heavy runs (RISKGATE1j's check 5, OWNERRESERVE1's steward merge on 2026-11-24).
+- **Root cause:** the row read it as the cases reading the machine's heavy-run admission; they do not. Every load the flow reads in those cases is the case's own seam (`deps.load`), and with `heldNow`, `lookAt` and `readProcesses` instrumented a whole-file run called none of them. The case gave its gate a wall-clock end, 45 ms, past a 20 ms budget whose timer reads the seam's peak: a stall of the test's own process (other runs taking its cores) of more than 45 ms before the event loop turned let the gate's poll see its end first, so the flow cleared the budget timer unfired and the result's note was `''` ("The input did not match /ran on past its 0 min budget under load…/"). Reproduced with three busy processes per core: 2 of 8 runs failed with that note. Introduced with the case in `b5105ab049`.
+- **Fix:** the case's gate runs on until the budget's timer has read the load, then ends, however late the machine ran the timer (`loadHarness`, `endsAfterBudget`); and the tool-test census names a test under `tools/` that reads the live machine's load (`loadSeam`, `readProcesses`, `heldNow`, `lookAt`, `holdersSentence`, `foreignTrees`, `loadSampler` with no seam, home or count of its own), so none can. The hang case could not be made to fail by CPU load and reads no clock; it is unchanged.
+- **Verification:** `node --test tools/tool-test-census.test.mjs`; `flow.test.ts`'s load cases under CPU oversubscription (three busy processes per core), 14 runs, none red.
+
 ## 2026-11-24 - A reviewer that ended without an opinion held the run for the person, even where the rule required none (OPINIONUNKNOWN1)
 
 - **Sighting:** `REPLAYCONFLICT1`'s run (`c9f25ddbc33c`, 2026-11-23) stopped at a failed second opinion, "ask again, or pass it over", for hours until the steward answered `workflow again c9f25ddbc33c opinion`; the gate's own words were "The rule does not require one, so nothing waits for it", and the landing was never reached.
