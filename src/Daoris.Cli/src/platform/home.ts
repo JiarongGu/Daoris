@@ -128,6 +128,7 @@ export const HOME_ENTRIES = [
   row('usage-history', 'data', 'data/usage-history'),
   row('keeping', 'data', 'data/keeping.json'),
   row('notices', 'data', 'data/notices.json'),
+  row('check-budgets', 'data', 'data/check-budgets.json'),
   row('git-identities', 'data', 'data/git-identities.json'),
   // Named here, never read by the CLI.
   row('agent-offers', 'data', 'data/agent-offers.json'),

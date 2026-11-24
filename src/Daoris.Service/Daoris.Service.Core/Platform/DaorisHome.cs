@@ -280,6 +280,7 @@ public sealed record HomeEntry(string Name, HomeCategory Category, string New, p
     public static readonly HomeEntry UsageHistory = new("usage-history", HomeCategory.Data, "data/usage-history");
     public static readonly HomeEntry Keeping = new("keeping", HomeCategory.Data, "data/keeping.json");
     public static readonly HomeEntry Notices = new("notices", HomeCategory.Data, "data/notices.json");
+    public static readonly HomeEntry CheckBudgets = new("check-budgets", HomeCategory.Data, "data/check-budgets.json");
     public static readonly HomeEntry GitIdentities = new("git-identities", HomeCategory.Data, "data/git-identities.json");
     // What each agent, version and account last offered and refused, a reading the walk judges.
     public static readonly HomeEntry AgentOffers = new("agent-offers", HomeCategory.Data, "data/agent-offers.json");
@@ -369,7 +370,7 @@ public sealed record HomeEntry(string Name, HomeCategory Category, string New, p
         PluginApprovals, Usage,
         Landings, SessionBranches, LinesMoved, OverlapsTold, RegistryFollowed, Abandoned, Update, Knowledge, DesktopDb, Memory, Sessions, Helpers, Partners, Checks, Handed, Setup,
         Workflows, ConfiguredAccess, OpinionGates, OpinionDues, BrowserSettings, BrowserFavorites, HomeId, Brainstorms,
-        UsageHistory, Keeping, Notices, GitIdentities, AgentOffers, PipeWaiting, ActFiles, PlaceReceipts, StewardDesk,
+        UsageHistory, Keeping, Notices, CheckBudgets, GitIdentities, AgentOffers, PipeWaiting, ActFiles, PlaceReceipts, StewardDesk,
         LastBuild, TerminalActs, UxTrail,
         Keys, Remotes, AgentHomes, BrowserEngine, BrowserEdge, EdgeCookies, GitKeys, GitTokens, PluginPrivate, GitSshConfig, GitKnownHosts, GitConfig, Window, PipeSent,
         DepsSecret,

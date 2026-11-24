@@ -141,7 +141,7 @@
  * `superseded`, never passed. A person's Ctrl+C ends them the same way and the run winds down, its lock let go. I/O
  * priority is left out.
  * - **Its private files, its logs.** Before its gates start, the private files a gate reads under
- * `local/` (`privateGateFiles`: the declared `sensitive.patternsFile`, nothing outside `local/`) are copied from the main
+ * `local/` (`privateGateFiles`, nothing outside `local/`) are copied from the main
  * checkout into the tree on every run; a missing one is said, and the gate that reads it answers. When the run ends, pass,
  * fail or a thrown error, the tree's run folder is copied to the main checkout's `local/scratch/beside-<sha7>` (the newest
  * run's replaces an older), so a prune loses none. A run killed outright never gets there: the next run, before it clears
@@ -252,12 +252,12 @@
  *
  * A full set beside driven sessions and builders can run a machine out of commit, and a gate that dies of it reads as the
  * change's failure. So before a heavy gate starts (a suite of `isHeavyGate`, a Process half, a rehearsal) the tool reads the machine's free
- * commit and free physical memory (`readMemory`: on Windows `Win32_OperatingSystem`'s FreeVirtualMemory and
- * FreePhysicalMemory; elsewhere Node's free memory, and the commit only where the platform holds one, said once where not).
- * While either is below the gate's need (`MEMORY_NEEDS` by class, or the gate's own `"memoryGb"` in `daoris.gates.json`), it
+ * commit and free physical memory (`readMemory`: Windows' FreeVirtualMemory and FreePhysicalMemory; elsewhere Node's free
+ * memory, and the commit only where the platform holds one, said once where not).
+ * While either is below the gate's need (`MEMORY_NEEDS` by class, or the gate's own `memoryGb`), it
  * says "waiting for memory before <gate>: N GB free commit, the gate needs M GB" and reads again every five seconds, for up to
- * ten minutes, past which the gate runs anyway, said (`memoryGate`). A light gate is never read for. The gate waits in its
- * lane's place. `MERGE_BRANCH_MEMORY=off` reads nothing (the tool's own end-to-end tests).
+ * ten minutes, then runs it anyway, said (`memoryGate`). A light gate is never read for. The gate waits in its
+ * lane's place. `MERGE_BRANCH_MEMORY=off` reads nothing (the end-to-end tests).
  *
  * A gate that died of memory (`memoryDeath`: `OutOfMemoryException`, "cannot allocate memory", "out of memory", "the paging
  * file is too small", or Windows' exit for an allocation refused) is said as memory, its line MEMORY, never a check that
@@ -265,10 +265,10 @@
  * memory is free (`againOfMemory`): a pass reads FLAKE of memory, which the summary names as the machine's and not the
  * change's, not for the flake classes; a second death of memory fails, still named as memory; another failure fails plainly. A Process
  * half whose dead tests are named runs them alone as a flake class's are, once its memory is free. A run a failure stopped runs none
- * again, saying so. The gate's own pass and fail are unchanged, and so is `--one-at-a-time`, whose memory re-runs come last.
- * A clock gate's timed specs run again alone take the same turn, and are run again in the same way. So do the
- * failed tests of a gate that runs `node --test` (`nodeTestDirs`: read from its npm scripts), when every failure is
- * named in the run's `✖ failing tests` list and the list matches its count: each is run again alone by its own title.
+ * again, saying so. The gate's own pass and fail are unchanged, as is `--one-at-a-time`, whose memory re-runs come last.
+ * A clock gate's timed specs take the same turn, and so do the failed tests of a gate that runs `node --test`
+ * (`nodeTestDirs`: read from its npm scripts), when every failure is named in the run's `✖ failing tests` list and the
+ * list matches its count: each is run again alone by its own title.
  *
  * ## Two lanes
  *
@@ -403,6 +403,7 @@ import { memoryDeath, parseMeminfo, parseWindowsMemory, readMemory } from './mer
 import { MAIN_WATCH_LOCK, MAIN_WATCH_TREE, WATCH_PREFIX, appendWatch, lastRed, readWatch, sightingsOf, startWatch, watchGates, watchHold } from './merge/main-watch.ts';
 import { inFolders, readFolders, regenerate, regenerations, writeFolders } from './merge/generated.ts';
 import { MERGE_RECORD, appendRecord, readRecords } from './merge/merge-record.ts';
+import { learnGreen, saidBudgets } from './merge/budget-overlay.ts';
 import { appendHeavy, hasRunner, heavyStanding, readHeavy, startAfterLanding, startDetached } from './merge/heavy-after.ts';
 import { measureAfterLanding } from './merge/landing-measure.ts';
 import { landMerge, notReadyLines, readiness } from './merge/land-merge.ts';
@@ -1201,7 +1202,7 @@ export function rehearsalDecision(log, code, command) {
  * the page's build and a browser; a Process half runs eight classes at once, each starting real hosts and git; a rehearsal
  * builds and starts the driver's and the service's hosts and runs the CLI's bin, the deployment one publishing every desktop
  * project too. A light gate needs none and is never read for; one that died of memory needs `again` to run again. A gate's
- * `"memoryGb"` in `daoris.gates.json` is its need whatever its class, 0 for none.
+ * `memoryGb` is its need whatever its class, 0 for none.
  */
 export const MEMORY_NEEDS = Object.freeze({ suite: 6, process: 8, rehearsal: 10, again: 4 });
 
@@ -2500,6 +2501,7 @@ function runRecorded(root, gates, dir, {
   for (const line of regenerated.lines) console.log(line);
   if (!regenerated.ok) throw new Refusal(regenerated.lines.at(-1), 1);
   const flow = flowDepsOf(flowSeams(), root, verdictsHome(root), kind, replay);
+  const budgets = saidBudgets(root, gates);
   return runGates(root, gates, dir, {
     waitFor,
     keepGoing,
@@ -2532,6 +2534,7 @@ function runRecorded(root, gates, dir, {
         if (gateVerdict(gate)) addVerdicts(home, [{ gate: gate.name, verdict: result.verdict, tree, at: started, commit, branch, ...(kind ? { kind } : {}), ...classes, ...verdictExtras(result) }]);
         addClassVerdicts(home, gate.name, found.map((each) => ({ ...each, tree, at: started, commit })));
       }
+      learnGreen(budgets, gate.name, result, gateVerdict(gate), started);
       onResult(result);
       return result;
     },
