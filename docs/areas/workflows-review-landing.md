@@ -831,7 +831,7 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     the default, a third of the machine's physical memory to the whole GB, 0 none): whatever `checks` says, a heavy run, a check or a
     build is admitted only while the free memory stays at or above the reserve after the run's own need (counted for the runs still
     starting as below), the first run included, and a new admission waits while it is under, saying the reserve (`CheckWait.Reserve`,
-    `slot-reserve` on a check's step); the merge tool's memory wait reads the same field from the home's `driver.json`. The setting's row
+    `slot-reserve` on a check's step); the merge tool's memory wait reads the same field from the home's `driver.json` and holds it against free commit too (`memoryLacking`). The setting's row
     and `daoris settings reserve` show the machine's memory, its free commit and what Daoris's own processes hold (`DaorisShare`: this
     process and each slot holder, with their children). `auto`, the default, runs the first always (the reserve apart) and another while free
     physical memory and free commit both hold a run's need (the merge tool's 8 GB for a Process suite, since a check runs the Process

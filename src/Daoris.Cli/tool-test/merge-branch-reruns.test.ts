@@ -130,6 +130,24 @@ test('a heavy gate starts only while the free memory stays above the reserve kep
   const quiet: string[] = [];
   await tool.memoryGate({ ...none, reserve: () => 0, say: (line) => quiet.push(line) })(deploy);
   assert.deepEqual(quiet, []);
+
+  // The reserve is of free commit, as the driver's admission judges it: free physical memory above the need but under the need and
+  // the reserve together holds nothing, and where no commit is read the physical memory stands in for it.
+  const roomy = standIn([31], { physical: 20 });
+  const started: string[] = [];
+  await tool.memoryGate({ ...roomy, reserve: () => 20, say: (line) => started.push(line) })(deploy);
+  assert.deepEqual([started, roomy.slept], [[], []]);
+  const tight = standIn([29], { physical: 40 });
+  const held: string[] = [];
+  await tool.memoryGate({ ...tight, reserve: () => 20, say: (line) => held.push(line), boundMs: 1 })(deploy);
+  assert.match(held[0]!, /waiting for memory before deployment: 29\.0 GB free commit, the gate needs 10 GB and 20 GB stays free/);
+  const noCommit: string[] = [];
+  let clock = 0;
+  await tool.memoryGate({
+    read: () => ({ physical: 25 * GiB, commit: null, total: 64 * GiB, why: 'none kept' }), reserve: () => 20, boundMs: 1,
+    sleep: async (ms) => { clock += ms; }, now: () => clock, say: (line) => noCommit.push(line),
+  })(deploy);
+  assert.match(noCommit.join('\n'), /waiting for memory before deployment: 25\.0 GB free physical memory, the gate needs 10 GB and 20 GB stays free/);
 });
 
 

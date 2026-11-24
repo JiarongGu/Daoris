@@ -399,7 +399,7 @@ import { fastPlan, scopedKind } from './merge/fast-plan.ts';
 import {
   flakeDecision, nodeTestDecision, nodeTestDirs, nodeTestRerunCommand, ownOutput, rerunCommand, short, testClass, testSummary, timedDecision, timedRerunCommand,
 } from './merge-branch/test-output.mjs';
-import { gbOf, keptFree, memoryDeath, memoryShown, needOf, parseMeminfo, parseWindowsMemory, readMemory, reserveGb } from './merge-branch/memory.mjs';
+import { gbOf, keptFree, memoryDeath, memoryLacking, memoryShown, needOf, parseMeminfo, parseWindowsMemory, readMemory, reserveGb } from './merge-branch/memory.mjs';
 import { MAIN_WATCH_LOCK, MAIN_WATCH_TREE, WATCH_PREFIX, appendWatch, lastRed, readWatch, sightingsOf, startWatch, watchGates, watchHold } from './merge/main-watch.ts';
 import { inFolders, readFolders, regenerate, regenerations, writeFolders } from './merge/generated.ts';
 import { MERGE_RECORD, appendRecord, readRecords } from './merge/merge-record.ts';
@@ -1262,7 +1262,7 @@ export function memoryGate({
     let current = reading();
     const need = current.total ? Math.min(wanted, current.total / GB / 4) : wanted;
     let kept = keptFree(reserve, current.total);
-    let lacking = memoryShown(current, need + kept);
+    let lacking = memoryLacking(current, need, kept);
     if (!lacking.length) return;
     const from = now();
     const needs = () => `the gate needs ${needOf(need)} GB${again ? ' to run again' : ''}${kept > 0 ? ` and ${needOf(kept)} GB stays free for your own work` : ''}`;
@@ -1277,7 +1277,7 @@ export function memoryGate({
       await sleep(Math.min(pollMs, boundMs - waited));
       current = reading();
       kept = keptFree(reserve, current.total);
-      lacking = memoryShown(current, need + kept);
+      lacking = memoryLacking(current, need, kept);
       if (!lacking.length) {
         say(`  memory for ${gate.name}: ${memoryShown(current).join(' and ')} after ${span(now() - from)}; it ${again ? 'runs again' : 'starts'}`);
         return;
