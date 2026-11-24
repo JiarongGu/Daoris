@@ -49,6 +49,7 @@ internal static class TestProcessStarts
         [
             "Daoris.Desktop.Driver.Rehearsals/Agents/AgentSignInProcessTests.cs", "Daoris.Desktop.Driver.Tests/Agents/InAppBrowserServersTests.cs",
             "Daoris.Desktop.Driver.Tests/Agents/SessionProcessesProcessTests.cs", "Daoris.Desktop.Driver.Tests/Agents/LineageTokensTests.cs",
+            "Daoris.Desktop.Driver.Tests/Agents/StrayAgentsProcessTests.cs",
             "Daoris.Desktop.Driver.Tests/Conversations/ChatTurnTakingTests.cs", "Daoris.Desktop.Driver.Tests/Course/QuestPartStopProcessTests.cs",
             "Daoris.Desktop.Driver.Tests/Departments/FolderReturnProcessTests.cs", "Daoris.Desktop.Driver.Tests/Install/HeldFilesProcessTests.cs",
             "Daoris.Desktop.Driver.Tests/Loop/LineageExitProcessTests.cs", "Daoris.Desktop.Driver.Tests/Loop/LineageRaceProcessTests.cs",
