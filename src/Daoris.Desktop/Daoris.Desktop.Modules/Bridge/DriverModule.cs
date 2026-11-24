@@ -459,6 +459,7 @@ public sealed class DriverModule : ModuleBase
         Domain.Of(context => new QuestVerdictRoutes(context)),
         Domain.Of(context => new AskChoiceRoutes(context)),
         Domain.Of(context => new GrowthRoutes(context)),
+        Domain.Of(context => new CheckBudgetsRoutes(context)),
         Domain.Of(context => new PlaceRiskRoutes(context)),
         Domain.Of(context => new CastRoutes(context)),
         Domain.Of(context => new VacancyRoutes(context)),

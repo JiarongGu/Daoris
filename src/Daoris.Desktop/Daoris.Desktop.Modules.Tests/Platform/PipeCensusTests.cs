@@ -359,6 +359,7 @@ public sealed class PipeCensusTests
     [InlineData("DAORIS.DRIVER", "SET_KEEP", PipeClass.Person)]
     // Which checks a repository's sessions run is the person's standing choice, and light lowers their part.
     [InlineData("DAORIS.DRIVER", "SET_SESSION_CHECKS", PipeClass.Person)]
+    [InlineData("DAORIS.DRIVER", "SET_CHECK_BUDGETS", PipeClass.Person)]
     // What only a window does: the pickers, the file manager, Daoris's browser, its frame, its shells.
     [InlineData("DAORIS.DRIVER", "TOOLS_PICK", PipeClass.Window)]
     [InlineData("DAORIS.DRIVER", "SESSION_OPEN_FOLDER", PipeClass.Window)]
@@ -562,7 +563,7 @@ public sealed class PipeCensusTests
         string[] inert =
         [
             "SET_HOLD", "SET_DRIVABLE", "SET_STANDING", "SET_COMMITS", "SET_ACCESS", "SET_READ_ACROSS",
-            "SET_WRITE_ACROSS", "SET_HEAVY_GATES", "SET_SESSION_CHECKS", "SET_SESSION_OPTION", "SET_AGENT_SETTINGS", "SET_HELP_MODE",
+            "SET_WRITE_ACROSS", "SET_HEAVY_GATES", "SET_SESSION_CHECKS", "SET_CHECK_BUDGETS", "SET_SESSION_OPTION", "SET_AGENT_SETTINGS", "SET_HELP_MODE",
             "SET_HELP_GRANT", "SET_NOTIFY", "SET_QUIET", "SET_MANIFEST","SET_LANGUAGE", "RULE_ACTION", "RULE_PROPOSAL", "TOOLS_LOCATION", "TOOLS_DELETE", "TOOLS_GIT",
             // An acceptance of a repository's integration declaration, a standing choice that starts nothing.
             "INTEGRATION_GATES",
