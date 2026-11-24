@@ -98,9 +98,14 @@ public static class OpinionGateReading
             OpinionGateStates.Settled or OpinionGateStates.Anyway or OpinionGateStates.Myself or OpinionGateStates.Answered =>
                 Reached(GateRecord, $"{gate.Repository}:{gate.Opinion?.Id ?? gate.Person?.Said ?? gate.State}", tip, $"its gate says {gate.State}"),
             OpinionGateStates.None => Skipped("its rule asks no second opinion here"),
+            OpinionGateStates.Unavailable when !gate.Required => Skipped("none could be had, and its rule does not require one"),
+            OpinionGateStates.Unavailable when OpinionAgain.Pending(gate) =>
+                Seen(null, $"its reviewer ended with no opinion given (ask {gate.Ended} of {OpinionAgain.Bound}), so its look asks again") with { Holds = OpinionStepWaits.Again },
+            OpinionGateStates.Unavailable when OpinionAgain.Spent(gate) =>
+                Seen(NodeStates.Stopped, OpinionAgain.GaveUpWords(gate)) with { By = NodeCause.Daoris, Source = NodeSource.Daoris, Words = OpinionAgain.GaveUpWords(gate), Code = OpinionAgain.GaveUp },
+            // Only a record a build before the asking again wrote still reaches here: its failed pass has no opinion read.
             OpinionGateStates.Unavailable when OpinionStepWaits.EndedSaid(gate.Code) is { } ended =>
                 Seen(NodeStates.Failed, ended) with { Source = NodeSource.Opinion, Code = gate.Code },
-            OpinionGateStates.Unavailable when !gate.Required => Skipped("none could be had, and its rule does not require one"),
             _ => Seen(null, $"its gate says {gate.State}") with { Holds = gate.Required && OpinionVacancy.Of(gate) is not null ? Vacant : RoleHold(gate) ?? gate.State },
         };
     }

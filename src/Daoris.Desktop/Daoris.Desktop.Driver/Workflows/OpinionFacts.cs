@@ -33,4 +33,6 @@ internal sealed record OpinionAct(
     public bool Early { get; init; }
 
     public string? Ended { get; init; }
+
+    public OpinionView? Again { get; init; }
 }

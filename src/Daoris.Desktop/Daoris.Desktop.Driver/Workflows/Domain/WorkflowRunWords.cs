@@ -164,6 +164,9 @@ public static class WorkflowRunWords
             (WorkflowKinds.Opinion, OpinionGateStates.CommitsSince) => count == 1
                 ? "1 commit since was not read by another agent, and one pass and one recheck are spent."
                 : $"{count} commits since were not read by another agent, and one pass and one recheck are spent.",
+            (WorkflowKinds.Opinion, OpinionGateStates.Unavailable) when step.State == WorkflowRunStates.Working =>
+                $"No second opinion yet: {Unavailable(step.Code)}. Nothing waits for you: the driver asks again, the next ready reviewer first.",
+            (WorkflowKinds.Opinion, OpinionGateStates.Unavailable) when step is { State: WorkflowRunStates.Failed, Words: { Length: > 0 } gaveUp } => gaveUp,
             // Required, it waits on the person; not, it is passed over and holds nothing.
             (WorkflowKinds.Opinion, OpinionGateStates.Unavailable) => step.State == WorkflowRunStates.Waiting
                 ? $"No second opinion could be had: {Unavailable(step.Code)}. The rule requires one, so the work waits for you."

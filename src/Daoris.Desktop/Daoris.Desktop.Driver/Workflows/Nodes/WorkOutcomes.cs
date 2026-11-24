@@ -47,9 +47,21 @@ internal sealed class WorkOutcomes(Func<DateTimeOffset> clock)
             case WorkStates.Failed:
                 var code = outcome.Code ?? NoCode;
                 settled = settled with { Code = code };
+                if (UnansweredSteps.Is(node, code) && status.Tries >= UnansweredSteps.Attempts(node, code))
+                {
+                    // A session that ended unanswered with its asks spent: given up as said, never held for the person.
+                    var words = UnansweredSteps.Words(node, status.Tries, outcome.Evidence?.Message);
+                    var stopped = NodeLifecycle.Apply(node, status, new NodeMove(NodeStates.Stopped, NodeCause.Daoris) { Words = words });
+                    if (stopped.Moved)
+                    {
+                        return (With(Kept(record, stopped, "unsaid", now), attempt, settled), new(unit, node.Id, PerformedWhat.Applied, UnansweredSteps.GaveUp) { Detail = words });
+                    }
+                }
+
                 move = new NodeMove(NodeStates.Failed, NodeCause.Authority)
                 {
-                    Source = source, Attempt = attempt.Attempt, Code = code, Needs = outcome.Needs, Transient = node.Perform?.Transient.Contains(code, StringComparer.Ordinal) == true,
+                    Source = source, Attempt = attempt.Attempt, Code = code, Needs = outcome.Needs,
+                    Transient = node.Perform?.Transient.Contains(code, StringComparer.Ordinal) == true || UnansweredSteps.Is(node, code),
                 };
                 break;
             default:
@@ -65,7 +77,7 @@ internal sealed class WorkOutcomes(Func<DateTimeOffset> clock)
 
         var moved = NodeLifecycle.Apply(node, status, move);
         if (!moved.Moved) return Hold(record, attempt with { Outcome = outcome.State, Generation = generation }, moved.Refused!);
-        if (moved.Status is { State: NodeStates.Failed, Transient: true } failedStatus && failedStatus.Tries < (node.Retry?.MaxAttempts ?? 1))
+        if (moved.Status is { State: NodeStates.Failed, Transient: true } failedStatus && failedStatus.Tries < UnansweredSteps.Attempts(node, failedStatus.Code))
         {
             // The delay of the next try within the binding, as the bound counts it; the attempt's own number keeps growing
             // across bindings and runs, and would index a later delay.

@@ -208,7 +208,7 @@ public sealed class OpinionGateTests
         Assert.Contains("Codex (OpenAI) ran out of its minutes before it said one", late.Says);
     }
 
-    /// <summary>A pass whose provider kept failing is unavailable with its own code and no reset, so the look has nothing to ask again by.</summary>
+    /// <summary>A pass whose provider kept failing is unavailable with its own code and no reset.</summary>
     [Fact]
     public async Task A_pass_whose_provider_kept_failing_is_unavailable_with_the_transient_code_and_no_reset()
     {

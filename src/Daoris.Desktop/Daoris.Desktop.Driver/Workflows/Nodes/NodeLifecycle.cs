@@ -327,6 +327,7 @@ public static class NodeLifecycle
         // A record's skip is its judgement of its binding, so a changed binding lapses it too.
         // A declined request is gone on without, a move of that kind alone (judged in Apply).
         rows.Add(new(NodeStates.Failed, NodeStates.Skipped, person, "the person goes on without a failed request, with their words, for this graph and run: a request node alone"));
+        rows.Add(new(NodeStates.Failed, NodeStates.Skipped, authority, "an opinion its rule does not require, failed by a build before it was passed over: its record passes it over (NodeAuthority.SkipBy)"));
         rows.Add(new(NodeStates.Skipped, NodeStates.Blocked, person, "the person withdraws their skip: it is judged again"));
         rows.Add(new(NodeStates.Skipped, NodeStates.Invalidated, daoris,
             "its graph or run is another: a skip holds for its own alone; or a record's skip, its binding changed"));
@@ -463,6 +464,7 @@ public static class NodeLifecycle
                 // The kind's record passes the started attempt over, for that attempt's graph and run. It is never the person's:
                 // its source is the record's, and no words are kept whatever the move brings, so nothing reads it as what someone said.
                 if (authority.SkipBy is null || move.Source != authority.SkipBy) return Refuse(NodeRefusal.NotAuthority);
+                if (status.State == NodeStates.Failed && NodeKit.Of(node.Kind) is not IObserves { PassesOverFailed: true }) return Refuse(NodeRefusal.NotAuthority);
                 if (Unbound(move.Attempt) is { } skipAttempt) return Refuse(skipAttempt);
                 if (move.Scope is not { } skipScope) return Refuse(NodeRefusal.NoScope);
                 if (status.Binding is not { } judged) return Refuse(NodeRefusal.NoBinding);
@@ -518,7 +520,7 @@ public static class NodeLifecycle
 
             case NodeStates.Ready when status.State == NodeStates.Failed && move.By == NodeCause.Daoris:
                 if (!status.Transient) return Refuse(NodeRefusal.NotTransient);
-                if (status.Tries >= (node.Retry?.MaxAttempts ?? 1)) return Refuse(NodeRefusal.NoAttemptsLeft);
+                if (status.Tries >= UnansweredSteps.Attempts(node, status.Code)) return Refuse(NodeRefusal.NoAttemptsLeft);
                 return To(Reset(next));
 
             case NodeStates.Ready when status.State == NodeStates.Unknown && move.By == NodeCause.Daoris:

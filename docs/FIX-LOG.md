@@ -5,6 +5,13 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-11-24 - A reviewer that ended without an opinion held the run for the person, even where the rule required none (OPINIONUNKNOWN1)
+
+- **Sighting:** `REPLAYCONFLICT1`'s run (`c9f25ddbc33c`, 2026-11-23) stopped at a failed second opinion, "ask again, or pass it over", for hours until the steward answered `workflow again c9f25ddbc33c opinion`; the gate's own words were "The rule does not require one, so nothing waits for it", and the landing was never reached.
+- **Root cause:** `OpinionGateReading.Observe` read an `Unavailable` gate whose code was `ended` or `out-of-time` as the step's failure before it asked whether the rule required an opinion, and nothing asked a failed pass again by itself (only a cool-off's reset was). A failed observed step ends its run as the person's to settle (`FailedHeldRuns`). The same shape stood in a plugin step's `goal` session that ended without `step_answer`: failed `no-answer`, held. Introduced with the failed-pass codes (the `ended` and `out-of-time` reading) and the performed-step failure; CHECKUNKNOWN2 closed the check's half.
+- **Fix:** an opinion the rule does not require is passed over at every code (a step an older build failed too: `failed>skipped` by the opinion's record); one it requires is asked again by the gate's judgment, the next ready reviewer first, up to three passes in a row, then its step is stopped by Daoris with the reason (`OpinionAgain`); a `goal` step's `no-answer` is asked again as a new attempt, three on one binding, then stopped (`UnansweredSteps`).
+- **Verify:** `OpinionAgainTests`, `OpinionLookTests` (asked again by itself and settled; asked the bound's times and no more), `OpinionStepTests` (not required: passed over whatever ended; required: working, then stopped with its reason), `StepAgentPerformTests`.
+
 ## 2026-11-23 - A check whose executor could not say was held for the person, and a person's word ran it again (CHECKUNKNOWN2)
 
 - **Sighting:** four checks of 2026-11-22 and 23 (LOOKACCOUNTFLAKE1 check 5, SESSIONOPEN4 check 1, TREEFLOOR1 check 2, one more) were held "its

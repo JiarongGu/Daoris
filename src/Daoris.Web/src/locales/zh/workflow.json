@@ -58,6 +58,7 @@
   "workflow.wait.opinion.rechecking": "等待 {{agent}} 再读为回应第二意见而做的提交；它的发现只交给你。",
   "workflow.wait.opinion.reading-until": "等待 {{agent}} 阅读这项工作，这是第二意见的第一次阅读；它的时限到 {{until}} 为止。",
   "workflow.wait.opinion.rechecking-until": "等待 {{agent}} 再读为回应第二意见而做的提交，它的时限到 {{until}} 为止；它的发现只交给你。",
+  "workflow.wait.opinion.asking-again": "等待驱动程序下一次查看时再次请求第二意见：$t(workflow.run.opinionWhy.{{why}})，这是第 {{count}} 次，共 {{bound}} 次。没有什么在等你；最后一次之后，Daoris 会按规则放弃它。",
   "workflow.wait.opinion.unavailable": "等待你回应：没有可用的第二意见，$t(workflow.run.opinionWhy.{{why}})。规则要求有一个：再请求一次、记下你自己的阅读，或仍然继续。",
   "workflow.wait.opinion.not-asked": "等待驱动程序下一次查看时请求第二意见：除了那次查看，没有别的在拦着它。",
   "workflow.wait.opinion.not-asked-recheck": "等待驱动程序下一次查看时请求对回应所做提交的再读。",

@@ -50,6 +50,12 @@ public static class OpinionGateWords
                 + $"`{Short(gate.Recheck is { Given: true } recheck ? recheck.Tip : gate.Opinion!.Tip)}`, and one pass and one recheck are "
                 + $"spent for this work. Your Accept, or your Reviewed where a look is required, answers them; {anyway} lands them, or "
                 + $"{Verb(gate, "ask")} asks again." + RoleSaid(gate),
+            OpinionGateStates.Unavailable when OpinionAgain.Pending(gate) =>
+                $"No second opinion yet: {UnavailableWhy(gate)}, ask {gate.Ended} of {OpinionAgain.Bound}. Nothing waits for you: the driver asks again, "
+                + "the next ready reviewer in the rule's order first.",
+            OpinionGateStates.Unavailable when OpinionAgain.Spent(gate) =>
+                $"Daoris gave up the second opinion after {gate.Ended} asks: {UnavailableWhy(gate)}. Nothing waits for you; the work does not land without one until "
+                + $"{Verb(gate, "ask")} tries again, {Verb(gate, "myself", "\"…\"")} records your own reading, or {anyway} lets it land without one.",
             OpinionGateStates.Unavailable => $"No second opinion: {UnavailableWhy(gate)}. " + (gate.Required
                 ? $"The rule requires one, so the work waits for you: {Verb(gate, "ask")} tries again, with `--same-agent` asks the same "
                   + $"agent in a fresh conversation, {Verb(gate, "myself", "\"…\"")} records your own reading, or {anyway} lets it land without one."

@@ -53,6 +53,7 @@ describe('a step\'s wait', () => {
       ['not-asked-press', {}, 'Waits for you to press Accept'],
       ['unread', { why: 'git could not say' }, 'could not be read: git could not say'],
       ['waits-chain', { quest: 'q2' }, 'later step here, quest #q2'],
+      ['asking-again', { agent: 'Codex (OpenAI)', why: 'ended', count: '1', bound: '3' }, 'its reviewer ended without saying one, ask 1 of 3. Nothing waits for you'],
       ['vacant', { why: 'no-reviewer' }, 'no second opinion can be had, no listed reviewer of another maker is installed'],
       ['vacant-until', { why: 'cooling' }, 'every listed reviewer of another maker is cooling; the driver asks again at'],
       ['disputed', { count: '3', first: '2', raised: '1' }, '(3: 2 the working session left unfixed, 1 the recheck\'s own)'],

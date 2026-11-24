@@ -299,26 +299,118 @@ public sealed class OpinionStepTests
         Assert.Null(((IWaitsOnRole)NodeKit.Of(NodeKinds.Opinion)!).Waits(node, Opinion(NodeStates.Active, OpinionGateStates.Disputed)));
     }
 
-    /// <summary>
-    /// 🔴 A pass whose reviewer's session ended without giving an opinion, or whose minutes ran out first, fails the step with that said, its
-    /// code kept; a gate with nobody free to read it is no failed pass and stands as before.
-    /// </summary>
+    private static ResolvedOpinion RuleOf(bool required) => new(new OpinionRule(["codex-acp"], [OpinionRules.Landing], required), OpinionSource.Repository);
+
+    /// <summary>A record an older build left with a failed pass and no opinion read, its rule requiring one, still fails the step, saying so.</summary>
     [Theory]
     [InlineData("ended", "ended without giving an opinion")]
     [InlineData("out-of-time", "ran out before it gave an opinion")]
-    public void A_pass_that_ended_without_an_opinion_fails_the_step_saying_so(string code, string said)
+    public void A_failed_pass_with_no_opinion_read_still_fails_a_required_step_saying_so(string code, string said)
     {
         var node = Node(NodeKinds.Opinion);
-        var gate = new OpinionGateState(OpinionGateStates.Unavailable, "engine") { Tip = Tip, Code = code };
+        var gate = new OpinionGateState(OpinionGateStates.Unavailable, "engine") { Tip = Tip, Code = code, Rule = RuleOf(true) };
 
         var moved = Applied(node, Reads.Opinion(Branch(), node, Binding(NodeKinds.Opinion), gate));
 
         Assert.Equal((NodeStates.Failed, code), (moved.Status.State, moved.Status.Code));
         Assert.True(((IObserves)NodeKit.Of(NodeKinds.Opinion)!).ObservesFailed(moved.Status));
-        var run = Derive(Opinion(NodeStates.Failed, code: code), gate);
-        Assert.Contains(said, WorkflowRunWords.Say([run], null));
+        Assert.Contains(said, WorkflowRunWords.Say([Derive(Opinion(NodeStates.Failed, code: code), gate)], null));
+    }
 
-        var nobody = Applied(node, Reads.Opinion(Branch(), node, Binding(NodeKinds.Opinion), gate with { Code = ReviewerUnavailable.Cooling }));
-        Assert.Equal(NodeStates.Skipped, nobody.Status.State);
+    /// <summary>An opinion the rule does not require never ends or holds the run: whatever ended, the step is passed over, a failed one an older build left too.</summary>
+    [Theory]
+    [InlineData("ended")]
+    [InlineData("out-of-time")]
+    [InlineData("transient")]
+    [InlineData(ReviewerUnavailable.Cooling)]
+    public void An_opinion_the_rule_does_not_require_is_passed_over_whatever_ended_and_never_holds_the_run(string code)
+    {
+        var node = Node(NodeKinds.Opinion);
+        var gate = Ended(OpinionAgain.Bound, code, required: false);
+
+        var passed = Applied(node, Reads.Opinion(Branch(), node, Binding(NodeKinds.Opinion), gate));
+        var failed = Active(NodeKinds.Opinion) with { State = NodeStates.Failed, Code = code, By = NodeSource.Opinion };
+        var move = Reads.Opinion(Branch(), node, Binding(NodeKinds.Opinion), gate).Move! with { Scope = Scope };
+        var recovered = NodeLifecycle.Apply(node, failed, move);
+
+        Assert.Equal(NodeStates.Skipped, passed.Status.State);
+        Assert.Equal((true, NodeStates.Skipped), (recovered.Moved, recovered.Status.State));
+    }
+
+    private static OpinionGateState Ended(int count, string code = "ended", bool required = true) =>
+        new(OpinionGateStates.Unavailable, "engine")
+        {
+            Tip = Tip, Code = code, Ended = count, Opinion = Pass("failed") with { Why = code }, Rule = RuleOf(required),
+        };
+
+    /// <summary>A reviewer that ended with its asks not spent leaves the step working on nobody: a hold the run reads as the driver's next look asking again.</summary>
+    [Theory]
+    [InlineData("ended")]
+    [InlineData("out-of-time")]
+    [InlineData("transient")]
+    public void A_pass_that_ended_with_asks_left_keeps_the_step_working_and_waits_on_nobody_while_the_look_asks_again(string code)
+    {
+        var node = Node(NodeKinds.Opinion);
+        var gate = Ended(1, code);
+
+        var seen = Reads.Opinion(Branch(), node, Binding(NodeKinds.Opinion), gate);
+
+        Assert.Null(seen.Move);
+        Assert.Equal(OpinionStepWaits.Again, seen.Holds);
+        var run = Derive(Opinion(NodeStates.Active, seen.Holds), gate);
+        var step = Opinion(run);
+        Assert.Equal((WorkflowRunStates.Waiting, OpinionStepWaits.Again), (step.State, step.Wait?.Code));
+        Assert.Equal(("Codex (OpenAI)", "1", OpinionAgain.Bound.ToString()), (step.Wait!.Values["agent"], step.Wait.Values["count"], step.Wait.Values["bound"]));
+        Assert.Equal(StepHolders.Agent, step.Holder?.Kind);
+        Assert.False(OpinionStepWaits.OnPerson(step.Wait));
+        Assert.Contains("ask the second opinion again", WorkflowRunWords.Say([run], null));
+        Assert.Contains(OpinionStepWaits.Again, NodeKit.Of(NodeKinds.Opinion) is BuiltInNode built ? built.Waits : []);
+    }
+
+    [Fact]
+    public void A_required_opinion_whose_reviewers_stayed_unanswered_past_the_bound_is_stopped_by_daoris_with_its_reason_and_waits_on_nobody()
+    {
+        var node = Node(NodeKinds.Opinion);
+
+        var stopped = Applied(node, Reads.Opinion(Branch(), node, Binding(NodeKinds.Opinion), Ended(OpinionAgain.Bound)));
+
+        Assert.Equal((NodeStates.Stopped, NodeSource.Daoris), (stopped.Status.State, stopped.Status.By));
+        Assert.Contains($"in {OpinionAgain.Bound} asks, so Daoris gave it up", stopped.Status.Words);
+        Assert.Contains("Codex (OpenAI) ended without saying one", stopped.Status.Words);
+        Assert.False(((IObserves)NodeKit.Of(NodeKinds.Opinion)!).ObservesFailed(stopped.Status));
+
+        var run = Derive(Opinion(NodeStates.Stopped) with { Words = stopped.Status.Words, By = NodeSource.Daoris }, Ended(OpinionAgain.Bound));
+        Assert.Contains("Daoris gave it up", WorkflowRunWords.Say([run], null));
+        Assert.DoesNotContain("waits for you", WorkflowRunWords.Say([run], null));
+    }
+
+    /// <summary>Only a kind that says so lets its record pass a failed node over: a failed look or push stays failed for its holder.</summary>
+    [Theory]
+    [InlineData(NodeKinds.Look)]
+    [InlineData(NodeKinds.Push)]
+    public void A_failed_node_is_passed_over_by_its_record_only_where_its_kind_says_so(string kind)
+    {
+        var node = Node(kind);
+        var failed = Active(kind) with { State = NodeStates.Failed, Code = "refused", By = NodeAuthorities.Of(node)!.SkipBy };
+        var move = new NodeMove(NodeStates.Skipped, NodeCause.Authority) { Source = NodeAuthorities.Of(node)!.SkipBy, Attempt = 1, Scope = Scope };
+
+        Assert.Equal((false, NodeRefusal.NotAuthority), (NodeLifecycle.Apply(node, failed, move).Moved, NodeLifecycle.Apply(node, failed, move).Refused));
+    }
+
+    /// <summary>
+    /// The shape of a run an older build ended failed at an optional opinion: the end is read as an observed one, so the runtime reads the step
+    /// again, and the record passes it over (the step above), which lifts the run's end.
+    /// </summary>
+    [Fact]
+    public void A_run_an_older_build_ended_failed_at_an_opinion_is_read_again_by_the_runtime()
+    {
+        var (graph, _) = NodeGraphs.Read(ClaimedOpinionHanded);
+        var record = new NodeRecord(Self)
+        {
+            Statuses = new Dictionary<string, NodeStatus>(StringComparer.Ordinal) { ["opinion"] = Opinion(NodeStates.Failed, code: "ended") },
+            Ended = new RunEnd(Run, Then) { Outcome = RunOutcomes.Failed, Node = "opinion" },
+        };
+
+        Assert.True(FailedHeldRuns.Observed(graph, record));
     }
 }

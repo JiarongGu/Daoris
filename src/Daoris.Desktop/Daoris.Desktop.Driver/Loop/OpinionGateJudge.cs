@@ -172,7 +172,8 @@ internal sealed class OpinionGateJudge(LoopContext context, DriverOpinions opini
             act = new OpinionAct(due, key, claim, chain, due.Occasion, Person: true, process);
         }
         else if (((gate.State == OpinionGateStates.NotAsked && !gate.Held)
-                  || (gate is { State: OpinionGateStates.Unavailable, Code: ReviewerUnavailable.Cooling, Until: not null } && !recheckCapped))
+                  || (gate is { State: OpinionGateStates.Unavailable, Code: ReviewerUnavailable.Cooling, Until: not null } && !recheckCapped)
+                  || (OpinionAgain.Pending(gate) && gate.Opinion is not null && !gate.Held && !recheckCapped))
                  // One opinion reads a chain's whole work here: an earlier step's is its last step's to ask.
                  && (due.Occasion == OpinionRules.Steps || !OpinionGate.HasLaterWork(chain, due.Quest, due.Repository))
                  // A run bound to a graph version is asked its opinion only once its record has begun
@@ -183,6 +184,7 @@ internal sealed class OpinionGateJudge(LoopContext context, DriverOpinions opini
             {
                 Early = gate is { State: OpinionGateStates.Unavailable, Code: ReviewerUnavailable.Cooling, Until: { } before } && before > now,
                 Ended = gate.Opinion?.Id,
+                Again = OpinionAgain.Pending(gate) ? gate.Opinion : null,
             };
         }
         // A delivery goes a session on in a turn, which the drain does not count; it waits for the drain's end, which its turn judges again.
@@ -231,7 +233,7 @@ internal sealed class OpinionGateJudge(LoopContext context, DriverOpinions opini
         }
 
         var occasion = request?.Occasion ?? act.Occasion;
-        OpinionBeside(Subject(act.Due), act.Claim, token => AskPassAsync(act.Due, act.Key, act.Chain, occasion, request, act.Process, token, act.Early ? act.Ended ?? "" : null), ct, SettledNews(act.Due));
+        OpinionBeside(Subject(act.Due), act.Claim, token => AskPassAsync(act.Due, act.Key, act.Chain, occasion, request, act.Process, token, act.Early ? act.Ended ?? "" : null, act.Again), ct, SettledNews(act.Due));
         return true;
     }
 
@@ -333,7 +335,7 @@ internal sealed class OpinionGateJudge(LoopContext context, DriverOpinions opini
     /// <param name="process">The run's process: a named workflow's opinion step names which declared reviewers read it.</param>
     private async Task<string> AskPassAsync(
         OpinionDue due, string key, IReadOnlyList<QuestView> chain, string occasion, OpinionRequest? request,
-        WorkflowProcess process, CancellationToken ct, string? early = null)
+        WorkflowProcess process, CancellationToken ct, string? early = null, OpinionView? again = null)
     {
         var gates = new OpinionGates(Home);
         var named = $"`{due.Repository}` for session {due.Session}";
@@ -371,6 +373,7 @@ internal sealed class OpinionGateJudge(LoopContext context, DriverOpinions opini
         var casts = new OpinionCasts(Home);
         var acted = casts.Read(key, due.Repository, due.Session);
         var reviewers = request is null ? OpinionCasting.Reviewers(declared, OpinionCasting.Newest(acted), [.. wrote]) : declared;
+        if (again is not null) reviewers = OpinionAgain.Rotated(reviewers, again.Door);
         // The rule decides who, the opinion actor each agent's model; a refusal at the open is asked again here.
         // The role the run's opinion step names, kept at its bind, gives the models in place of the opinion actor's.
         var stepRole = process.Binding?.RoleOf(NodeKinds.Opinion)?.Role;
@@ -380,6 +383,7 @@ internal sealed class OpinionGateJudge(LoopContext context, DriverOpinions opini
         var choice = await Walk(null).ConfigureAwait(false);
         if (early is not null && !choice.Chosen) return $"held  second opinion on {named}: every holder is cooling, and the reset is asked again.";
         if (early is not null) Service.LandingSaid(OpinionLines.HandedOn(due.Session, occasion, early, ""));
+        if (again is not null && choice.Chosen) Service.LandingSaid(OpinionLines.HandedOn(due.Session, occasion, again.Id, again.Session));
 
         var reading = choice;
 
@@ -418,7 +422,7 @@ internal sealed class OpinionGateJudge(LoopContext context, DriverOpinions opini
             }
 
             Service.LandingSaid(OpinionLines.Unavailable(due.Session, occasion, code));
-            return $"opinion  {run.Line}";
+            return $"opinion  {AgainSaid(again)}{run.Line}";
         }
 
         // A reviewer holds the step: a vacancy that stood is filled, and the act that answered it shapes no later walk.
@@ -431,8 +435,12 @@ internal sealed class OpinionGateJudge(LoopContext context, DriverOpinions opini
         var view = await Service.Opinions.ReadAsync(run.Opinion, ct).ConfigureAwait(false);
         if (view is { Given: true }) Service.LandingSaid(OpinionLines.Given(view, (long)_context.Clock.GetElapsedTime(started).TotalSeconds));
         else if (view is { State: OpinionViews.Failed }) Service.LandingSaid(OpinionLines.Unavailable(due.Session, occasion, view.Why ?? "ended"));
-        return $"opinion  {run.Line}";
+        return $"opinion  {AgainSaid(again)}{run.Line}";
     }
+
+    /// <summary>The look's line on a pass it asked again by itself: which pass ended and why, so no ask is made without its reason.</summary>
+    private static string AgainSaid(OpinionView? again) =>
+        again is null ? "" : $"asked again, its reviewer's pass {again.Id} ended with no opinion given ({again.Why ?? OpinionStepWaits.Ended}): ";
 
     /// <summary>Deliver an owed opinion as far as the facts let it go (<see cref="OpinionDeliverer.DeliverAsync"/>), asked with what the
     /// first pass read; a recheck it asks says its own lines, and its consultation is kept, also here for one an older build left without.</summary>
