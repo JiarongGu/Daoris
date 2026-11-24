@@ -25,6 +25,7 @@ export * from './hold';
 export * from './sessions/history';
 export * from './repositories/growth';
 export * from './repositories/placeRisk';
+export * from './repositories/riskActs';
 export * from './repositories/lines';
 export * from './logs/log';
 export * from './logs/uxTrail';
