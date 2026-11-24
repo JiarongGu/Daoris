@@ -278,6 +278,25 @@ internal static class EventJournal
         """;
 
     /// <summary>
+    /// The opinions' trigger (BUS2b2): an <c>answers-kept</c> row when a second opinion's answers change, naming the opinion, the session
+    /// that answered and the counts standing as codes (<c>fixed:1,rejected:0,unresolved:2</c>), never an answer's text.
+    /// </summary>
+    internal static readonly string OpinionsSchema = $"""
+        {Table}
+
+        CREATE TRIGGER IF NOT EXISTS event_journal_opinion_answers AFTER UPDATE OF answers ON opinions
+        WHEN NEW.answers IS NOT OLD.answers AND NEW.answers IS NOT NULL AND json_valid(NEW.answers) AND json_type(NEW.answers) = 'array'
+        BEGIN
+          INSERT INTO event_journal (at, record, family, change, from_session, marks)
+          VALUES ({Now}, COALESCE(substr(NEW.id, 1, 64), ''), 'opinions', 'answers-kept', substr(NEW.handed_to, 1, 64),
+                  'fixed:' || (SELECT count(*) FROM json_each(NEW.answers) AS a WHERE json_extract(a.value, '$.said') = 'fixed')
+                  || ',rejected:' || (SELECT count(*) FROM json_each(NEW.answers) AS a WHERE json_extract(a.value, '$.said') = 'rejected')
+                  || ',unresolved:' || (SELECT count(*) FROM json_each(NEW.answers) AS a WHERE json_extract(a.value, '$.said') = 'unresolved'));
+          {Trim}
+        END;
+        """;
+
+    /// <summary>
     /// The channel's trigger (row k part 2): one <c>message</c> row for each message kept, the person's, a session's and a teammate's mirrored
     /// alike (a mirror seen again, a post the cap refused and a message already kept are no insert, so journal nothing). A message is never
     /// changed once kept, and a read mark, a cursor and a channel forgotten with its ask are not moves. The row names the message, its ask, its

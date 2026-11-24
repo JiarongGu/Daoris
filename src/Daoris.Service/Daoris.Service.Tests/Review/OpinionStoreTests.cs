@@ -431,6 +431,65 @@ public sealed class OpinionStoreTests : IAsyncLifetime
     }
 
     /// <summary>
+    /// BUS2b2: each answer kept is a row of the service's event journal, minted by the trigger in the statement that writes it (the
+    /// change stream's transport to the bus's log): the opinion, the session that answered, and the counts standing as closed codes, never
+    /// an answer's text, commit or evidence. A refused answer, and a write that changes nothing, journal none.
+    /// </summary>
+    [Fact]
+    public async Task An_answer_kept_is_one_journal_row_naming_the_counts_standing_and_no_text()
+    {
+        var working = await WorkingAsync();
+        var opinion = await HandedAsync(working, Finding(), Finding("should", "general", "The table is kept twice."), Finding("note", "general", "A word."));
+
+        Assert.Empty(await AnswerRowsAsync(opinion.Id));
+        Assert.Equal(OpinionRefusal.BadShape, (await _desk.AnswerAsync(working.Id, null, [new OpinionAnswer(4, Opinions.Fixed, Now) { Commit = "a1b2c3d" }], Now)).Refusal);
+        Assert.Empty(await AnswerRowsAsync(opinion.Id));
+
+        Assert.Equal(OpinionRefusal.None, (await _desk.AnswerAsync(working.Id, null,
+            [new OpinionAnswer(1, Opinions.Unresolved, Now) { Why = "Cannot reproduce yet." }, new OpinionAnswer(2, Opinions.Rejected, Now) { Evidence = "The twin test holds the table." }],
+            Now.AddMinutes(10))).Refusal);
+        Assert.Equal(OpinionRefusal.None, (await _desk.AnswerAsync(working.Id, opinion.Id, [new OpinionAnswer(1, Opinions.Fixed, Now) { Commit = "A1B2C3D" }], Now.AddMinutes(12))).Refusal);
+
+        var rows = await AnswerRowsAsync(opinion.Id);
+        Assert.Equal(
+            [(opinion.Id, working.Id, "fixed:0,rejected:1,unresolved:1"), (opinion.Id, working.Id, "fixed:1,rejected:1,unresolved:0")],
+            rows.Select(row => (row.Record, row.Session, row.Marks)));
+        Assert.All(rows, row =>
+        {
+            Assert.Equal("opinions", row.Family);
+            Assert.Equal("answers-kept", row.Change);
+            Assert.DoesNotContain("reproduce", row.Everything, StringComparison.OrdinalIgnoreCase);
+            Assert.DoesNotContain("a1b2c3d", row.Everything, StringComparison.OrdinalIgnoreCase);
+            Assert.DoesNotContain("twin", row.Everything, StringComparison.OrdinalIgnoreCase);
+        });
+
+        // The same answers written again change nothing, so the journal says nothing.
+        Assert.True(await _opinions.KeepAnswersAsync(opinion.Id, (await _opinions.FindAsync(opinion.Id))!.Answers));
+        Assert.Equal(2, (await AnswerRowsAsync(opinion.Id)).Count);
+    }
+
+    private sealed record AnswerRow(string Record, string? Session, string? Marks, string? Family, string Change, string Everything);
+
+    private async Task<List<AnswerRow>> AnswerRowsAsync(string opinion)
+    {
+        await using var command = _connection.CreateCommand();
+        command.CommandText = """
+            SELECT record, from_session, marks, family, change, quote(record) || quote(from_session) || quote(marks) || quote(entry) || quote(message) || quote(word)
+            FROM event_journal WHERE family = 'opinions' AND record = $record ORDER BY position
+            """;
+        command.Parameters.AddWithValue("$record", opinion);
+        await using var reader = await command.ExecuteReaderAsync();
+        var rows = new List<AnswerRow>();
+        while (await reader.ReadAsync())
+        {
+            string? Text(int i) => reader.IsDBNull(i) ? null : reader.GetString(i);
+            rows.Add(new AnswerRow(reader.GetString(0), Text(1), Text(2), Text(3), reader.GetString(4), reader.GetString(5)));
+        }
+
+        return rows;
+    }
+
+    /// <summary>
     /// The say door refuses words to a reviewer's record with its own word, `opinion`: a pass takes one turn
     /// and no words, and the person asks again instead.
     /// </summary>
