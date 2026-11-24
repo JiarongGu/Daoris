@@ -267,6 +267,11 @@ built, but nothing outside tests makes, takes or ends one; `LinePlaces` answers 
     answered (the landing line's channel), its findings delivered, the person's word at its gate, and what else its gate's verdict
     reads (the quests' move the change stream names, a node a run's record began, the standing choices this process wrote, a chat
     run's turn ending while its session's work is owed an opinion),
+    the answers an author keeps to its findings as they are given (`opinion.kept`, an observation: the service's trigger on the
+    opinion's answers writes an `opinions`/`answers-kept` row of its event journal in the statement that keeps them, naming the
+    opinion, the session and the counts standing as codes, and `OpinionKeptNews`, a teller of the lease holders' journal feed with a cursor
+    of its own (`bus-kept`), tees it, so an answer is in the log before the turn ends; the gate judges only the turn's end,
+    `opinion.answered`, never a partial answer),
     and a check started and settled (passed, failed with its red classes, unknown with its code, requeued by its busy runner, or
     ended with no result by the driver's close or an unkept result), a settle caused by its start and every start settled before
     its effect starts again. Red classes no gate named stay unknown, never a count of zero.
@@ -307,9 +312,11 @@ built, but nothing outside tests makes, takes or ends one; `LinePlaces` answers 
     emitter, its obliged handler or a request's answerer, a deadline and what set it, a retry budget, and a give-up from a closed
     list: `refused` (the bus answers the request itself), `held` (the gate stays shut), `dropped` (an observation counted) or
     `final-exit` (the subject reaches the owner's final exit, D354 point 4). No silent give-up is in the list: a `refused` request
-    or a `held` gate leaves its step a wait, which a vacancy bounds and the final exit ends. No measure set a deadline yet (the
-    install's `daoris bus stats` at cddcdac313 held one check start and no handling time, its quests paused), so each is stated
-    provisional with what it stands on (a check's bound, a busy runner's offer, a pass's bound, about one look a minute) and the
+    or a `held` gate leaves its step a wait, which a vacancy bounds and the final exit ends. A deadline is measured where the install
+    measured its handling and names the build its figures are of (`BusTypes.MeasuredAt`, the census holding it): a check's start,
+    105 minutes, twice the longest of 214 start-to-verdict times at 99ce8edc60 (51.5 minutes), and a pass's asking, 30, twice the
+    longest of 81 (14.5). Every other is stated provisional with what it stands on (a busy runner's offer, a consumer's ten
+    minutes) until the `handled` measure, each acknowledgement's append-to-acknowledgement time by kind, holds its days (BUS2b3), and the
     watchdog runs against it in shadow (below) before any give-up acts. `BusTypesCensusTests` holds that every type names its obligations, that its give-up
     is in the list, and that no desktop source builds a type elsewhere or spells a kind, so a type the registry lacks is never
     emitted; the page gets the types' list with its first reader in the window (BUS2f), not before. A subscription naming
@@ -330,7 +337,9 @@ built, but nothing outside tests makes, takes or ends one; `LinePlaces` answers 
     counted, then dropped. Measured by the day: entries by kind,
     each kind's handling time where known, the flushes' count, entries and time (a write that first opened the store is no
     flush's time), the rows' own bytes beside the pages each write put on disk (the write-ahead log's frames, as the engine counts
-    them), the misses, the dropped values and each look stage's time, which `daoris bus stats` reads. The log keeps its newest 50,000 rows (about 13 MiB of rows at the 270 bytes a row a check's facts
+    them), the misses, the dropped values, each consumer's handling time by kind (`handled`) and each look stage's time, which `daoris bus stats` reads. The bytes
+    the writes put on disk in a UTC day are held to 128 MiB (`BusLog.DiskBudget`, a third above the install's worst day at 99ce8edc60, 76.8 MB for 0.95 MB of rows), a day
+    past it said once as `bus.over-budget`, and the stats say each day's share. The log keeps its newest 50,000 rows (about 13 MiB of rows at the 270 bytes a row a check's facts
     measure) and 90 days of measures; nothing reads behind the cut yet. The history reset empties `bus_log` and `bus_timers` and
     keeps `bus_measures`, which are evidence. A second close waits for the first's write, and a writer's loop that failed is counted and
     said at the close, which still writes what waited.
@@ -766,7 +775,7 @@ size ratchet. A changed driven loop also meets the family rehearsal (`npm run re
 - **LIMITRESUME1**, **TOOL4n**: the native door's limit read, so a native session ended by a limit cools its account.
 - **AGENTERRORS1**, **AGENTPROVIDER1**: the agents area's rows.
 - **TREEOPENERR1**: the next fresh-tree open that fails with no stderr, read and reported.
-- **BUS2b2, BUS2d to BUS2g** (D356): the Daoris bus, one driver-owned log every fact, request and answer goes through; its first two
+- **BUS2b3, BUS2d to BUS2g** (D356): the Daoris bus, one driver-owned log every fact, request and answer goes through; its first two
   steps stand (rule 30a: the log, and the watchdog in shadow), and its rows move the looks of rule 30 to reducers over it one job at
   a time, the opinion gate first.
 - **LINESTOGETHER1e**: the steward's forms for several lines in one repository.
