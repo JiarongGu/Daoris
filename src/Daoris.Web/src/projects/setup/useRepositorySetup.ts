@@ -19,7 +19,7 @@ import { doorOf } from '../../agents/tools';
 import { type AccessEdit, accessToast, isFull, resolveAccess } from '../../settings/repository/Access';
 import { type CommitEdit, commitToast } from '../../settings/repository/Commits';
 import { heavyToast } from '../../settings/repository/HeavyGates';
-import { useCheckBudgets, useSetCheckBudgets } from '../../bridge/checkBudgets';
+import { useCheckBudgets, useSetCheckBudgets } from '../../bridge/repositories/checkBudgets';
 import { type HandOverEdit, handOverToast } from '../../settings/repository/HandOver';
 import { type GrowthValue, growthToast } from '../../settings/repository/Growth';
 import { type HelperEdit, helperToast } from '../../settings/repository/Helpers';

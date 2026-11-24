@@ -1,8 +1,8 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useShenora } from '@shenora/react';
-import { keys } from '../data/queries';
-import type { CheckBudgetsView } from '../settings/repository/CheckBudgets';
-import { call, type Payload } from './call';
+import { keys } from '../../data/queries';
+import type { CheckBudgetsView } from '../../settings/repository/CheckBudgets';
+import { call, type Payload } from '../call';
 
 /**
  * A repository's check budgets on this machine, as the driver reads them from the home's record: each gate's timeout and where it comes
