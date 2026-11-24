@@ -61,6 +61,7 @@ public static class BusStatsCommand
         if (measures.Count == 0)
         {
             output.AppendLine("No measures in these days: nothing was teed, and no look was timed.");
+            Deadlines(measures, output);
             return 0;
         }
 
@@ -78,7 +79,8 @@ public static class BusStatsCommand
     private static void Deadlines(IReadOnlyList<BusMeasureRow> measures, StringBuilder output)
     {
         output.AppendLine("deadlines, each obliged type's against its kind's handled most over these days:");
-        foreach (var type in BusTypes.All.Where(type => type.GiveUp != BusGiveUps.Dropped))
+        output.AppendLine("  (handled times a handled entry from its append or its consumer's start if later, leaving out a restart's backlog and retries: a figure below sets a deadline only with room for those)");
+        foreach (var type in BusTypes.All.Where(BusTypes.Obliges))
         {
             var deadline = type.Deadline;
             var minutes = Invariant($"{deadline.Within.TotalMinutes:0.##} min");
@@ -88,7 +90,15 @@ public static class BusStatsCommand
                 continue;
             }
 
-            var handled = measures.Where(row => row.Measure == BusMeasures.Handled && row.Name.EndsWith(":" + type.Kind, StringComparison.Ordinal)).ToList();
+            var ends = BusTypes.Ends(type);
+            if (!ends.Contains(BusEnd.Acknowledged))
+            {
+                output.AppendLine(Invariant($"  {type.Kind}: provisional {minutes}; ends on a later {string.Join(" or ", ends.Select(end => end.Type!.Kind))}, which handled does not time"));
+                continue;
+            }
+
+            var name = type.Obliged + ":" + type.Kind;
+            var handled = measures.Where(row => row.Measure == BusMeasures.Handled && row.Name == name).ToList();
             output.AppendLine(handled.Count == 0
                 ? Invariant($"  {type.Kind}: provisional {minutes}; no handled measure yet")
                 : Invariant($"  {type.Kind}: provisional {minutes}; handled n={handled.Sum(row => row.Count)} most {handled.Max(row => row.Most)} ms, which sets {BusDeadline.Reading(handled.Max(row => row.Most)).TotalMinutes:0.##} min"));

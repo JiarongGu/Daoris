@@ -316,11 +316,15 @@ built, but nothing outside tests makes, takes or ends one; `LinePlaces` answers 
     measured its handling and names the commit its days were read at (`BusTypes.MeasuredAt`, the census holding it; those days ran earlier builds too): a check's start,
     105 minutes, twice the longest of 214 start-to-verdict times read at 99ce8edc60 (51.5 minutes), and a pass's asking, 30, twice the
     longest of 81 (14.5). Every other is stated provisional with what it stands on (a busy runner's offer, a consumer's ten
-    minutes) until the `handled` measure, each acknowledgement's append-to-acknowledgement time by kind, holds its days (BUS2b3), and the
+    minutes) until the `handled` measure, each acknowledgement's handling time by kind, holds its days (BUS2b3), and the
     watchdog runs against it in shadow (below) before any give-up acts. `daoris bus stats` ends with the read that replaces a provisional
-    deadline: each obliged type's deadline beside the most its kind's `handled` measure holds over the days read, and the deadline that
-    most sets (`BusDeadline.Reading`: twice the most, up to the next five minutes, five at least), a type with no `handled` measure said so;
-    the install that precedes the measure (99ce8edc60) shows none, so every consumer type stays stated until one runs for days. `BusTypesCensusTests` holds that every type names its obligations, that its give-up
+    deadline, shown too where the days hold no measures: each obliged type's deadline beside the most `handled` holds for its kind under the
+    consumer the type obliges (a second consumer reading the kind, as run-step reads `node.begun`, is kept apart), and the deadline that
+    most sets (`BusDeadline.Reading`: twice the most, up to the next five minutes, five at least); a type with no `handled` measure says
+    so, and a type that ends on a later fact, never an acknowledgement (`check.requeued`, `check.ended`, `opinion.delivered`), says what it
+    ends on, since `handled` never times it. `handled` leaves out a restart's backlog and retries, which the watchdog's timers run
+    through from the append, so a figure sets a deadline only with room for those. The install that precedes the measure (99ce8edc60)
+    shows none, so every consumer type stays stated until one runs for days. `BusTypesCensusTests` holds that every type names its obligations, that its give-up
     is in the list, and that no desktop source builds a type elsewhere or spells a kind, so a type the registry lacks is never
     emitted; the page gets the types' list with its first reader in the window (BUS2f), not before. A subscription naming
     a type the registry lacks fails as it registers.
@@ -340,7 +344,7 @@ built, but nothing outside tests makes, takes or ends one; `LinePlaces` answers 
     counted, then dropped. Measured by the day: entries by kind,
     each kind's handling time where known, the flushes' count, entries and time (a write that first opened the store is no
     flush's time), the rows' own bytes beside the pages each write put on disk (the write-ahead log's frames, as the engine counts
-    them), the misses, the dropped values, each consumer's handling time by kind (`handled`, a handled entry from its append or its consumer's start if later, never a give-up's or a replay's wait) and each look stage's time, which `daoris bus stats` reads. The bytes
+    them), the misses, the dropped values, each consumer's handling time by kind, kept under the consumer's obliged name (`handled`, a handled entry from its append or its consumer's start if later, never a give-up's or a replay's wait) and each look stage's time, which `daoris bus stats` reads. The bytes
     the writes put on disk in a UTC day are measured against a budget of 128 MiB (`BusLog.DiskBudget`, nothing caps them; a third above the install's worst day at 99ce8edc60, 76.8 MB for 0.95 MB of rows; a restart counts what the day's stored measures hold), a day
     past it said once as `bus.over-budget`, and the stats say each day's share. The log keeps its newest 50,000 rows (about 13 MiB of rows at the 270 bytes a row a check's facts
     measure) and 90 days of measures; nothing reads behind the cut yet. The history reset empties `bus_log` and `bus_timers` and

@@ -679,7 +679,7 @@ internal sealed class BusConsumerRun
 
         var ended = ends && BusTypes.Of(entry.Kind) is { } type && BusTypes.Ends(type).Contains(BusEnd.Acknowledged) ? _consumer.Obliged : null;
         var kept = Written(() => _queue.Store.Acknowledge(new BusAck(Name, _epoch, cursor, entry) { Ends = ended, Unpark = parked, Writer = _queue.Log.WriterRead }), cursor) is not false;
-        if (kept && timed) _queue.Log.Measured(BusMeasures.Handled, $"{Name}:{entry.Kind}", Math.Max(0, (long)(_queue.Log.Clock.GetUtcNow() - (entry.At > _began ? entry.At : _began)).TotalMilliseconds));
+        if (kept && timed) _queue.Log.Measured(BusMeasures.Handled, $"{_consumer.Obliged}:{entry.Kind}", Math.Max(0, (long)(_queue.Log.Clock.GetUtcNow() - (entry.At > _began ? entry.At : _began)).TotalMilliseconds));
         return kept;
     }
 

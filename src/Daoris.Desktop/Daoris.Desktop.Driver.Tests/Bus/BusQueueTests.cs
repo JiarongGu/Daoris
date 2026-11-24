@@ -250,9 +250,31 @@ public sealed class BusQueueTests : IDisposable
         await bus.FlushAsync();
         using var store = new DesktopBusLogStore(_home);
         var measures = store.Measures("2000-01-01");
-        var given = Assert.Single(measures, row => row is { Measure: "handled" } && row.Name == "timed:" + BusTypes.OpinionGiven.Kind);
+        var given = Assert.Single(measures, row => row is { Measure: "handled" } && row.Name == BusTypes.OpinionGate + ":" + BusTypes.OpinionGiven.Kind);
         Assert.Equal(1, given.Count);
         Assert.InRange(given.Total, 0, 60_000);
+    }
+
+    /// <summary>🔴 The handling time is kept under the consumer the type obliges, so a second consumer reading the same kind never mixes its time into the read.</summary>
+    [Fact]
+    public async Task Handling_times_are_kept_by_the_consumer_the_kind_obliges()
+    {
+        var obliged = new Recording("gate", _ => Task.CompletedTask);
+        var beside = new Recording("beside", _ => Task.CompletedTask) { Obliged = BusTypes.Step };
+        await using var bus = Open();
+        await using var queue = await BusQueue.StartAsync(bus, [obliged, beside], Quick);
+
+        bus.Append(Asked("op-1"));
+        bus.Append(Given("op-1", 0));
+        await Poll.Until(() => obliged.Seen.Count == 2 && beside.Seen.Count == 2, () => $"saw {obliged.Seen.Count} and {beside.Seen.Count}", Soon);
+        var last = Logged().Max(entry => entry.Seq);
+        await Poll.Until(() => queue.Store.Consumer("gate")?.Cursor == last && queue.Store.Consumer("beside")?.Cursor == last, () => "cursors", Soon);
+        await bus.FlushAsync();
+        using var store = new DesktopBusLogStore(_home);
+        var handled = store.Measures("2000-01-01").Where(row => row.Measure == "handled").Select(row => row.Name).ToList();
+        Assert.Contains(BusTypes.OpinionGate + ":" + BusTypes.OpinionGiven.Kind, handled);
+        Assert.Contains(BusTypes.Step + ":" + BusTypes.OpinionGiven.Kind, handled);
+        Assert.DoesNotContain(handled, name => name.StartsWith("gate:", StringComparison.Ordinal) || name.StartsWith("beside:", StringComparison.Ordinal));
     }
 
     /// <summary>🔴 A burst of writes is handed in frames at most 60 a second, none lost, in order.</summary>
@@ -424,13 +446,13 @@ public sealed class BusQueueTests : IDisposable
 
     private sealed class Recording(string name, Func<BusEnvelope, Task> handle) : IBusConsumer
     {
+        public string Obliged { get; init; } = BusTypes.OpinionGate;
+
         public ConcurrentQueue<BusEnvelope> Seen { get; } = new();
 
         public Func<BusEnvelope, bool> Ends { get; init; } = _ => true;
 
         public BusSubscription Subscription { get; } = BusTypes.Subscribe(name, [.. BusTypes.All.Where(type => type.Name.StartsWith("opinion.", StringComparison.Ordinal)).Select(type => type.Kind)]);
-
-        public string Obliged => BusTypes.OpinionGate;
 
         public List<string> Of(string subject) => [.. Seen.Where(entry => entry.Subject == subject).Select(entry => entry.Kind)];
 
