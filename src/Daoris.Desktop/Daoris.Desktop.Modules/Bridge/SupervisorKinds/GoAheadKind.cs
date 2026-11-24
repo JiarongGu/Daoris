@@ -94,6 +94,6 @@ internal sealed class GoAheadKind : ISupervisorKind
         var place = judge.Placed(repository);
         var grants = judge.Supervising(SupervisorKinds.GoAhead, place).Role?.Hold?.Acts ?? [];
         var config = DriverConfig.Load(loop.ConfigPath);
-        return GoAheadAuthority.Refusal(RiskPolicy.Of(config), RiskPlace.Of(config, place.Workspace, place.Repository), goAhead.Kind, goAhead.On, [grants]);
+        return GoAheadAuthority.Refusal(goAhead.Kind, RiskAskHolds.GoAheadOutcome(RiskPolicy.Of(config), RiskPlace.Of(config, place.Workspace, place.Repository), goAhead.Kind, goAhead.On), [grants]);
     }
 }

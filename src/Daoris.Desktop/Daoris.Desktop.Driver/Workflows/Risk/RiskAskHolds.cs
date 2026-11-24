@@ -29,6 +29,14 @@ public static class RiskAskHolds
         _ => null,
     };
 
+    /// <summary>The judge's outcome on the go-ahead of <paramref name="kind"/> on <paramref name="on"/> at <paramref name="place"/>; null where its kind names no act.</summary>
+    public static string? GoAheadOutcome(RiskPolicy policy, RiskPlace place, string kind, string on) =>
+        GoAheadAct(kind, on) is { } act ? RiskGate.Judge(policy, act, "", place, "").Outcome : null;
+
+    /// <summary>Why the go-ahead is the owner role's at <paramref name="place"/> by the policy <paramref name="config"/> holds (<see cref="GoAheadAuthority.OwnersOwn"/>).</summary>
+    public static string? GoAheadOwners(DriverConfig config, RolePlace place, string kind, string on) =>
+        GoAheadAuthority.OwnersOwn(kind, GoAheadOutcome(RiskPolicy.Of(config), RiskPlace.Of(config, place.Workspace, place.Repository), kind, on));
+
     /// <summary>The act a question marked <paramref name="mark"/> asks the owner for; none for a sign-in, no mark or one this build does not know.</summary>
     public static RiskAct? MarkAct(string? mark) => mark switch
     {
@@ -58,7 +66,7 @@ public static class RiskAskHolds
                 var asker = goAhead.Asked.Reverse().Select(request => live.GetValueOrDefault(request.Session)).FirstOrDefault(each => each?.Repository is not null);
                 if (asker is null) continue;
                 var workspace = ask.Workspace is { Length: > 0 } named ? named : workspaceOf(asker.Repository!);
-                var owners = GoAheadAuthority.OwnersOwn(config, new RolePlace(workspace, asker.Repository), goAhead.Kind, goAhead.On);
+                var owners = GoAheadOwners(config, new RolePlace(workspace, asker.Repository), goAhead.Kind, goAhead.On);
                 var today = owners is { } code
                     ? $"Waiting on the owner role (`{code}`)."
                     : $"Waiting on you, or a role granted `{GoAheadAuthority.Act}` at its place.";

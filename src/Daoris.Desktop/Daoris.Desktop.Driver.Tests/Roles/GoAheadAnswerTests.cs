@@ -32,7 +32,7 @@ public sealed class GoAheadAnswerTests : IDisposable
                 ? new("g-1", null) { Window = TimeSpan.FromMinutes(10), Role = "reports-supervisor" }
                 : DecisionAdmitted.Refused(SupervisorWhy.NotGranted);
 
-        public string? GoAheadOwners(RolePlace place, string kind, string on) => GoAheadAuthority.OwnersOwn(Now, place, kind, on);
+        public string? GoAheadOwners(RolePlace place, string kind, string on) => RiskAskHolds.GoAheadOwners(Now, place, kind, on);
     }
 
     private static DoorRelease Posting(List<SupervisorDoorDue> posted) => new(
@@ -54,7 +54,7 @@ public sealed class GoAheadAnswerTests : IDisposable
         $$"""{ "placeRisk": { "repository/reports": { "risk": "{{risk}}", "marks": [{{string.Join(", ", marks.Select(mark => $"\"{mark}\""))}}] } } }""");
 
     private static string? Refusal(DriverConfig config, GoAheadPin pin) =>
-        GoAheadAuthority.Refusal(RiskPolicy.Of(config), RiskPlace.Of(config, null, "reports"), pin.Kind, pin.On, [[GoAheadAuthority.Act]]);
+        GoAheadAuthority.Refusal(pin.Kind, RiskAskHolds.GoAheadOutcome(RiskPolicy.Of(config), RiskPlace.Of(config, null, "reports"), pin.Kind, pin.On), [[GoAheadAuthority.Act]]);
 
     [Fact]
     public async Task An_appointed_role_answers_a_low_risk_go_ahead_and_it_holds_for_overrule_then_goes_out_as_the_roles()

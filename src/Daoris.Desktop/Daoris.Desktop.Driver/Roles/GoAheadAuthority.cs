@@ -17,7 +17,7 @@ public sealed record GoAheadPin(int Number, string Kind, string On, string Act)
 /// <summary>
 /// Who answers a go-ahead: the approver's yes is a role act, <see cref="Act"/>, which an appointed role whose grants cover it takes, held
 /// for the owner's overrule as <c>landing.accept</c> is, wherever the risk policy does not class the go-ahead's act the owner's. Its act is
-/// read by <see cref="RiskAskHolds.GoAheadAct"/> and judged at the asking session's place (<see cref="RiskGate"/>): a place at high risk, a
+/// judged at the asking session's place by the risk side, which hands its outcome here: a place at high risk, a
 /// production-releases mark (every release, write or run, however its target is worded) and a row classing the act <c>owner</c> keep it the
 /// owner role's, <c>policy-owner</c>; a kind this build does not know reads the owner's too. A sign-in is a person in a browser, the owner
 /// role's by its kind (<c>owner-class</c>). Judged as the policy stands at the answer and again at the release, and on every grant of the
@@ -38,26 +38,19 @@ public static class GoAheadAuthority
     public const string Push = "push";
 
     /// <summary>
-    /// Why the go-ahead of <paramref name="kind"/> on <paramref name="on"/> stays the owner role's at <paramref name="place"/> under
-    /// <paramref name="policy"/>: a sign-in (<c>owner-class</c>), and an act the judge classes the owner's or a kind it cannot read
-    /// (<c>policy-owner</c>). None where a role may answer it.
+    /// Why the go-ahead of <paramref name="kind"/> stays the owner role's, given the judge's <paramref name="outcome"/> on its act at its
+    /// place (null where its kind names no act): a sign-in (<c>owner-class</c>), and an act the judge classes the owner's or none it can
+    /// read (<c>policy-owner</c>). None where a role may answer it.
     /// </summary>
-    public static string? OwnersOwn(RiskPolicy policy, RiskPlace place, string kind, string on)
-    {
-        if (kind == SignIn) return SupervisorWhy.OwnerClass;
-        if (RiskAskHolds.GoAheadAct(kind, on) is not { } act) return SupervisorWhy.PolicyOwner;
-        return RiskGate.Judge(policy, act, "", place, "").Outcome == RiskVerdict.OwnerOutcome ? SupervisorWhy.PolicyOwner : null;
-    }
+    public static string? OwnersOwn(string kind, string? outcome) =>
+        kind == SignIn ? SupervisorWhy.OwnerClass
+        : outcome is null or RiskVerdict.OwnerOutcome ? SupervisorWhy.PolicyOwner
+        : null;
 
     /// <summary>
-    /// Why a role may not answer the go-ahead of <paramref name="kind"/> on <paramref name="on"/> at <paramref name="place"/>, by
-    /// <paramref name="chain"/>'s grants (the acting role's, then each delegator's): the owner role's code (<see cref="OwnersOwn"/>), else the
-    /// grant missing; none where the role answers it.
+    /// Why a role may not answer the go-ahead of <paramref name="kind"/>, by <paramref name="chain"/>'s grants (the acting role's, then each
+    /// delegator's): the owner role's code (<see cref="OwnersOwn"/>), else the grant missing; none where the role answers it.
     /// </summary>
-    public static string? Refusal(RiskPolicy policy, RiskPlace place, string kind, string on, IReadOnlyList<IReadOnlyCollection<string>> chain) =>
-        OwnersOwn(policy, place, kind, on) ?? (chain.Count > 0 && chain.All(grants => grants.Contains(Act)) ? null : Act);
-
-    /// <summary><see cref="OwnersOwn"/> with the policy and the place read from <paramref name="config"/>.</summary>
-    public static string? OwnersOwn(DriverConfig config, RolePlace place, string kind, string on) =>
-        OwnersOwn(RiskPolicy.Of(config), RiskPlace.Of(config, place.Workspace, place.Repository), kind, on);
+    public static string? Refusal(string kind, string? outcome, IReadOnlyList<IReadOnlyCollection<string>> chain) =>
+        OwnersOwn(kind, outcome) ?? (chain.Count > 0 && chain.All(grants => grants.Contains(Act)) ? null : Act);
 }

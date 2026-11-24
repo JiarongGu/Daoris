@@ -15,7 +15,7 @@ public sealed class GoAheadAuthorityTests
     private static string? Refusal(string config, string kind, string on = "staging", IReadOnlyList<IReadOnlyCollection<string>>? chain = null)
     {
         var read = DriverConfig.Parse(config);
-        return GoAheadAuthority.Refusal(RiskPolicy.Of(read), RiskPlace.Of(read, "work", "app"), kind, on, chain ?? Granted);
+        return GoAheadAuthority.Refusal(kind, RiskAskHolds.GoAheadOutcome(RiskPolicy.Of(read), RiskPlace.Of(read, "work", "app"), kind, on), chain ?? Granted);
     }
 
     [Fact]

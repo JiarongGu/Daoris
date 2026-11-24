@@ -30,7 +30,7 @@ public sealed class HeldDecisionsTests : IDisposable
 
         public PlaceRiskNow RiskAt(RolePlace place) => new(PlaceRisks.Low, "repository/reports", []);
 
-        public string? GoAheadOwners(RolePlace place, string kind, string on) => GoAheadAuthority.OwnersOwn(DriverConfig.Parse("{}"), place, kind, on);
+        public string? GoAheadOwners(RolePlace place, string kind, string on) => RiskAskHolds.GoAheadOwners(DriverConfig.Parse("{}"), place, kind, on);
     }
 
     private static readonly SupervisorHolder Codex = SupervisorHolders.OfAgent(new("daoris-landing", 3, "codex-acp", "gpt-5", "high", "gpt-5", "read-only", "t1"));

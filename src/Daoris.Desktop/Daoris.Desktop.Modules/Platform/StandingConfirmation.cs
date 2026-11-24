@@ -155,7 +155,7 @@ public sealed class StandingConfirmation : IDecisionAdmission
         Wider = new RuleWiderPlaceStore(home).Read;
         var config = DaorisHome.Entry(home, HomeEntry.DriverConfig);
         Risk = () => File.Exists(config) ? DriverConfig.Load(config).PlaceRisk : PlaceRiskBook.Unwritten;
-        Config = () => File.Exists(config) ? DriverConfig.Load(config) : DriverConfig.Parse("{}");
+        Config = () => DriverConfig.Load(config);
         Slots = () =>
         {
             try
