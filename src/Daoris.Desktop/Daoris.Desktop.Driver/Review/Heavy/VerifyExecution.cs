@@ -30,6 +30,14 @@ internal sealed class VerifyExecution(string home, VerifySend send, CandidateJob
 
     private IReadOnlyList<string> _regenerate = [];
 
+    private FailedRun? _failed;
+
+    private bool _loadChecked;
+
+    private string? _loadGate;
+
+    private sealed record FailedRun(string Gate, string Run, string Folder, bool Clock, string Log, string Marker);
+
     public async Task<(VerifyResult? Result, bool Busy)> ExecuteAsync(CancellationToken ct)
     {
         Directory.CreateDirectory(_folder);
@@ -41,6 +49,7 @@ internal sealed class VerifyExecution(string home, VerifySend send, CandidateJob
         }
 
         var (ran, busy) = await RunAsync(mode, ct).ConfigureAwait(false);
+        if (ran is { Verdict: VerifyVerdicts.Failed } && _failed is { } failed && await LoadAsync(ran, failed, mode, ct).ConfigureAwait(false) is { } settled) ran = settled;
         var result = ran is null ? null : ran with { Judged = _at, Onto = _onto };
         return send.Accepted is null && result is not null
             ? (Told(result, $"nothing was accepted yet, so the work's own declaration ran ({DeclarationMode.Said(DeclarationMode.Full)})"), busy)
@@ -216,6 +225,7 @@ internal sealed class VerifyExecution(string home, VerifySend send, CandidateJob
             var wall = Stopwatch.StartNew();
             var exit = await StepAsync(place.Hold, command, folder, [ReachedVerdict.Gate], new Dictionary<string, string>(), log, runner.Clock, ct).ConfigureAwait(false);
             if (exit is null) return Ended([new VerifyGate(ReachedVerdict.Gate, RunnerVerdicts.Ended) { Log = log, WallSeconds = wall.Elapsed.TotalSeconds }]);
+            _failed = new FailedRun(ReachedVerdict.Gate, command, folder, runner.Clock, log, runner.Outcome);
             return ReachedVerdict.Judge(send.Invocation, send.Commit, exit.Value, ReadText(log) ?? "", log, runner.Outcome, home) with { Declaration = _ran, WallSeconds = wall.Elapsed.TotalSeconds };
         }
         finally
@@ -282,20 +292,125 @@ internal sealed class VerifyExecution(string home, VerifySend send, CandidateJob
                 }
 
                 keep(holder => holder with { Failed = new HeavyGateFailed(gate.Name, exit.Value) });
+                _failed = marker is null ? null : new FailedRun(gate.Name, gate.Run, folder, gate.Clock, log, marker);
                 var failed = new VerifyResult(send.Invocation, send.Commit, VerifyVerdicts.Failed, $"the gate '{gate.Name}' failed with exit {exit}", [.. ran, .. rest, .. kept])
                 {
                     Failed = gate.Name, Declaration = _ran,
                 };
-                return Told(Told(failed, GateProgress.Words(carried)), ReadText(log) is not { } text ? null
+                return Told(Told(failed, Carried(carried)), ReadText(log) is not { } text ? null
                     : marker is not null && ReachedVerdict.Told(text, marker, log, home) is { } classes ? classes
                     : GateLogExcerpt.Told(text, log, home));
             }
 
-            return Told(new VerifyResult(send.Invocation, send.Commit, VerifyVerdicts.Reached, null, [.. ran, .. kept]) { Declaration = _ran }, GateProgress.Words(carried));
+            return Told(new VerifyResult(send.Invocation, send.Commit, VerifyVerdicts.Reached, null, [.. ran, .. kept]) { Declaration = _ran }, Carried(carried));
         }
         finally
         {
             await WorkingTree.GitAsync(send.Checkout, ["worktree", "unlock", tree], CancellationToken.None).ConfigureAwait(false);
+        }
+    }
+
+    private string? Carried(IReadOnlyList<string> carried) => GateProgress.Words([.. carried.Where(name => name != _loadGate)]);
+
+    /// <summary>A reached failure on timeouts under load runs its red classes again alone at a quiet slot (<see cref="LoadFailures"/>); null where it is no load failure and stands.</summary>
+    private async Task<VerifyResult?> LoadAsync(VerifyResult ran, FailedRun failed, string mode, CancellationToken ct)
+    {
+        if (_loadChecked || ReadText(failed.Log) is not { } text || !LoadFailures.TimedOut(text)) return null;
+        _loadChecked = true;
+        if (LoadFailures.Names(ReachedVerdict.RedOf(text, failed.Marker)) is not { } names) return null;
+
+        var seen = LoadFailures.Read(home, world);
+        if (!seen.Loaded) return null;
+        world.Said.WriteLine($"verify: {string.Join(", ", names)} timed out while the machine was loaded ({seen.Words}); they run again alone at a quiet slot before the result counts.");
+        var tree = send.Tree ?? Path.Combine(VerifyFiles.LinesFolder(home), "trees", slot);
+        AdmissionHold hold;
+        try
+        {
+            hold = await MachineAdmission.TakeAsync(
+                home, new AdmissionRequest($"verification of {send.Repository} at {TextBounds.ShortCommit(send.Commit, 7)} {LoadFailures.Mark}") { Repository = send.Repository, Tree = tree },
+                world.Said, ct, world.Admission, world.Capacity, world.Variable).ConfigureAwait(false);
+        }
+        catch (OperationCanceledException) when (ct.IsCancellationRequested)
+        {
+            return Ended(ran.Gates);
+        }
+        catch (Exception error) when (error is IOException or UnauthorizedAccessException)
+        {
+            return Unknown($"load: the machine's admission could not be kept ({error.Message}), so {string.Join(", ", names)} could not be run again alone; a load failure counts no round, so the check is asked again") with { Code = VerifyResult.Load };
+        }
+
+        using (hold)
+        {
+            var started = world.Clock.GetTimestamp();
+            LoadReading quiet;
+            while (true)
+            {
+                var look = MachineAdmission.Look(home, world.Admission.Alive, world.Admission.Clock(), world.Capacity);
+                var now = world.Admission.Clock();
+                var mine = look.Holds.FirstOrDefault(each => each.Id == hold.Id) ?? new AdmissionEntry(hold.Id, "session", Environment.ProcessId, "", now, now, null, null, null);
+                var commit = world.Memory()?.Commit;
+                if (LoadFailures.Quiet(look, mine, commit))
+                {
+                    quiet = new LoadReading(look.Holds.Count(each => each.Id != hold.Id), commit);
+                    break;
+                }
+
+                var waited = world.Clock.GetElapsedTime(started);
+                if (waited >= world.QuietWait)
+                {
+                    var words = LoadFailures.Waited(names, seen, waited);
+                    world.Said.WriteLine($"verify: {words}");
+                    return Unknown(words) with { Code = VerifyResult.Load };
+                }
+
+                try
+                {
+                    await Task.Delay(world.Poll, world.Clock, ct).ConfigureAwait(false);
+                }
+                catch (OperationCanceledException) when (ct.IsCancellationRequested)
+                {
+                    return Ended(ran.Gates);
+                }
+            }
+
+            var log = Path.Combine(_folder, "load.log");
+            var wall = Stopwatch.StartNew();
+            int? exit;
+            try
+            {
+                await TreeAtAsync(tree, ct).ConfigureAwait(false);
+                keep(holder => holder with { Gates = [failed.Gate], Now = new HeavyGateNow(failed.Gate, 0, world.Clock.GetUtcNow()) });
+                exit = await StepAsync(hold, LoadFailures.Command(failed.Run, names), failed.Folder, [failed.Gate], new Dictionary<string, string>(), log, failed.Clock, ct).ConfigureAwait(false);
+            }
+            catch (DriverException error)
+            {
+                return Unknown($"the classes that timed out under load would not run again alone: {error.Message}") with { Code = VerifyResult.Unrun };
+            }
+            finally
+            {
+                await WorkingTree.GitAsync(send.Checkout, ["worktree", "unlock", tree], CancellationToken.None).ConfigureAwait(false);
+            }
+
+            if (exit is null) return Ended(ran.Gates);
+            var again = ReadText(log) ?? "";
+            if (exit != 0)
+            {
+                var red = ReachedVerdict.Judge(send.Invocation, send.Commit, exit.Value, again, log, failed.Marker, home);
+                return Told(ran, $"{LoadFailures.Failed(names, seen)}\n{red.Why}") with { Red = ran.Red is null ? null : red.Red ?? ran.Red };
+            }
+
+            var said = LoadFailures.Passed(names, seen, quiet) + (ReachedVerdict.Told(again, failed.Marker) is { } classes ? $"\n{classes}" : "");
+            world.Said.WriteLine($"verify: {said}");
+            var passed = new VerifyGate(failed.Gate, RunnerVerdicts.Pass, 0)
+            {
+                Log = log, WallSeconds = wall.Elapsed.TotalSeconds, Command = ran.Gates.FirstOrDefault(each => each.Name == failed.Gate)?.Command,
+            };
+            if (!send.Reached) return new VerifyResult(send.Invocation, send.Commit, VerifyVerdicts.Reached, said, [passed]) { Declaration = _ran };
+
+            GateProgress.Write(_folder, send.Commit, _onto, _ran, [.. ran.Gates.Select(each => each.Name == failed.Gate ? passed : each)]);
+            _loadGate = failed.Gate;
+            var (rest, _) = await RunAsync(mode, ct).ConfigureAwait(false);
+            return rest is null ? null : Told(rest, said);
         }
     }
 

@@ -77,6 +77,8 @@ public sealed record VerifyResult(string Invocation, string Commit, string Verdi
 
     public const string Unprepared = "unprepared";
 
+    public const string Load = "load";
+
     public const string Unaccounted = "unaccounted";
 
     /// <summary>Why an unknown is what it is, where a door answers it: <see cref="Changed"/>, <see cref="Bound"/>, <see cref="Stopped"/>, <see cref="Busy"/>, <see cref="Unrun"/> (Daoris could not run it: never a failure), <see cref="Unprepared"/>.</summary>

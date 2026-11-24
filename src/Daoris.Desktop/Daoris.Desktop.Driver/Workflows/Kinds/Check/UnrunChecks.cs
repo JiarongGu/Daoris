@@ -15,7 +15,7 @@ public static class UnrunChecks
     public const string GaveUp = "unsaid";
 
     /// <summary>Whether <paramref name="code"/> says the executor could not say.</summary>
-    public static bool Is(string? code) => code is VerifyResult.Unrun or WorkStates.Unknown;
+    public static bool Is(string? code) => code is VerifyResult.Unrun or VerifyResult.Load or WorkStates.Unknown;
 
     /// <summary>
     /// The unknown attempt settled without a verdict, its node made ready for a new attempt with its <paramref name="why"/> in the retry; its asks

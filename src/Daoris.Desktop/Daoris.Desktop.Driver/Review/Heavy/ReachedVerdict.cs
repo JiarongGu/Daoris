@@ -113,7 +113,9 @@ internal static class ReachedVerdict
         return PassMarks.Any(mark => text.StartsWith(mark, StringComparison.Ordinal));
     }
 
-    private static string NameOf(string id)
+    internal static IReadOnlyList<string> RedOf(string log, string marker) => OutcomeOf(log, marker)?.Red ?? [];
+
+    internal static string NameOf(string id)
     {
         var unit = id.Contains('|', StringComparison.Ordinal) ? id[(id.IndexOf('|', StringComparison.Ordinal) + 1)..] : id;
         var slash = unit.LastIndexOfAny(['/', '\\']);
