@@ -31,7 +31,7 @@ internal static class LoadFailures
     internal const string Mark = "(quiet rerun)";
 
     private static readonly Regex Timeout = new(
-        @"timed out in \d+\s*ms|Test timed out|Timeout of \d+\s*ms exceeded|exceeded timeout of \d+\s*ms", RegexOptions.CultureInvariant | RegexOptions.IgnoreCase);
+        @"timed out in \d+\s*ms|Test timed out|Timeout of \d+\s*ms exceeded|exceeded timeout of \d+\s*ms|inactivity time of \d+ seconds has elapsed", RegexOptions.CultureInvariant | RegexOptions.IgnoreCase);
 
     private static readonly Regex Safe = new(@"^[A-Za-z0-9][A-Za-z0-9._/\\-]*$", RegexOptions.CultureInvariant);
 

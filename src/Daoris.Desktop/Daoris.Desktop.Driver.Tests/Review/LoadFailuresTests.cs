@@ -20,6 +20,7 @@ public sealed class LoadFailuresTests
     [Theory]
     [InlineData("FAIL src/signOut.test.tsx > shows it\nError: Test timed out in 10000ms.", true)]
     [InlineData("Error: Timeout of 5000 ms exceeded", true)]
+    [InlineData("Reason: Test host process crashed\nData collector 'Blame' message: The specified inactivity time of 60 seconds has elapsed.", true)]
     [InlineData("AssertionError: expected 3 to be 4", false)]
     [InlineData("", false)]
     public void A_log_that_says_a_test_timed_out_is_one_and_an_assertion_failure_is_not(string log, bool timedOut) =>

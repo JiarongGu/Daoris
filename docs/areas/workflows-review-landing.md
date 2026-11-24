@@ -426,7 +426,7 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     line carrying the executor's own reason from its answer. Past the three Daoris gives it up as said: its node is stopped by Daoris with
     that reason, which ends its run and holds no row for anyone (no held attempt, no kept failure, no final exit). A check whose old job could
     not be opened (`unaccounted`) may still run, so it is never sent beside it: it is asked again at each look until the job is accounted for.
-    A reached command that failed on tests that timed out while the machine was loaded (another heavy run holding a place in the admission, or
+    A reached command that failed on tests that timed out (or whose test host the 60-second hang bound ended) while the machine was loaded (another heavy run holding a place in the admission, or
     free commit below what one run needs) is a load failure, not the work's (`LoadFailures`, LOADFLAKE1): its red classes run again alone, once, at
     a quiet slot (no other working run holds a place and the commit is roomy; two runs waiting for one go by the order they asked in) before the
     result counts (`VerifyExecution.LoadAsync`). Passed alone the check is reached, its words saying `load:`, the load read and that no round
