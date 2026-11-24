@@ -2,12 +2,8 @@ using System.Runtime.InteropServices;
 
 namespace Daoris.Driver;
 
-/// <summary>
-/// How the machine's memory stands beside the reserve (<see cref="ReserveSetting"/>), for the setting's row to show: the machine's memory in
-/// all and free commit, the commit of Daoris's own processes (<see cref="DaorisShare"/>) and the reserve in force, each in bytes and null
-/// where it cannot be read.
-/// </summary>
-public sealed record MachineUse(long? Total, long? FreeCommit, long? Daoris, long Reserve)
+/// <summary>This machine's memory as the reserve's row shows it (<see cref="MachineUse"/>), read here and handed down to the settings by their callers.</summary>
+public static class MachineUses
 {
     private const long FreshMilliseconds = 5000;
 
@@ -28,8 +24,6 @@ public sealed record MachineUse(long? Total, long? FreeCommit, long? Daoris, lon
         }
     }
 
-    /// <summary>A byte count as GB, one place, for the words a person reads.</summary>
-    public static string Gb(long? bytes) => bytes is { } value ? (Math.Floor(value * 10.0 / (1L << 30)) / 10).ToString("0.#", System.Globalization.CultureInfo.InvariantCulture) : "?";
 }
 
 /// <summary>

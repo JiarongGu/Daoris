@@ -27,7 +27,7 @@ public sealed record ReserveShown(int? Gb, double Kept, double? Total, double? F
 
     public static ReserveShown Of(string home, DriverConfig config)
     {
-        var use = MachineUse.Read(home, config.ReserveGb);
+        var use = MachineUses.Read(home, config.ReserveGb);
         return new(config.ReserveGb, InGb(use.Reserve) ?? 0, InGb(use.Total), InGb(use.FreeCommit), InGb(use.Daoris));
     }
 }
