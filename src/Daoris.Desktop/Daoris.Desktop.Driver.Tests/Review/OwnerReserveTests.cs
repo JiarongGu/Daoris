@@ -75,6 +75,41 @@ public sealed class OwnerReserveTests : IDisposable
     }
 
     [Fact]
+    public void The_reserve_is_judged_against_free_commit_and_not_the_lower_physical_memory()
+    {
+        // Physical memory 10 GB is under need + reserve (28), free commit 40 GB is over it: the reserve is met, as the row says.
+        var rules = new CheckRules(null, 16, 4, () => new MemoryReading(10 * Gb, 40 * Gb, 64 * Gb), 20);
+
+        using var taken = Take(rules, Check("r-1")).Taken;
+
+        Assert.NotNull(taken);
+    }
+
+    [Fact]
+    public void A_second_run_short_of_its_own_need_waits_for_memory_never_for_the_reserve()
+    {
+        var rules = new CheckRules(null, 16, 4, () => new MemoryReading(5 * Gb, 40 * Gb, 64 * Gb), 20);
+        using var first = Take(Machine(60, reserveGb: 20), Check("r-1")).Taken;
+
+        var (second, wait) = Take(rules, Check("r-2", _fixture.Other));
+
+        Assert.Null(second);
+        Assert.Equal(CheckWait.Memory, wait!.Code);
+        Assert.Equal("5.0", wait.Values["free"]);
+    }
+
+    [Fact]
+    public void A_first_run_short_of_its_own_need_waits_on_the_reserve_which_setting_none_would_lift()
+    {
+        var (taken, wait) = Take(Machine(5, reserveGb: 20), Check("r-1"));
+
+        Assert.Null(taken);
+        Assert.Equal(CheckWait.Reserve, wait!.Code);
+        using var none = Take(Machine(5, reserveGb: 0), Check("r-1")).Taken;
+        Assert.NotNull(none);
+    }
+
+    [Fact]
     public void A_pinned_number_of_checks_still_keeps_the_reserve()
     {
         var (taken, wait) = Take(Machine(24, reserveGb: 20, pinned: 4), Check("r-1"));
@@ -145,6 +180,7 @@ public sealed class OwnerReserveTests : IDisposable
     [Fact]
     public void Daoris_s_share_of_this_machine_reads_this_process_at_least()
     {
+        if (!OperatingSystem.IsWindows() && !OperatingSystem.IsLinux()) return;
         var share = DaorisShare.Read(_fixture.Home);
 
         Assert.True(share > 0, "this process holds some commit, and it is its own root");

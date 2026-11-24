@@ -178,27 +178,30 @@ public static class CheckAdmission
     public static string Who(HeavyHolder holder) =>
         holder.Run is { } run ? $"the verification run {run}" : holder.Session is { } session ? $"session {session}'s heavy run" : "a heavy run from a terminal";
 
-    /// <summary>Why a run waits beside the runs holding a slot on the machine now, or null where it may take one; the reserve is kept whatever <c>checks</c> says.</summary>
+    /// <summary>Why a run waits beside the runs holding a slot, or null where it may take one: its need against the lower memory, the reserve against free commit.</summary>
     public static CheckWait? Judge(IReadOnlyList<HeavyHeld> held, CheckRules rules)
     {
         var slots = rules.Slots;
         if (held.Count >= slots && held.Count > 0) return CheckWait.OfSlots(held.Count, slots);
         var reading = rules.Memory();
         var reserve = reading is null ? 0 : rules.ReserveOf(reading);
-        if (reserve == 0 && (held.Count == 0 || rules.Setting is not null)) return null;
-        if (reading?.Least is not { } free) return held.Count == 0 ? null : CheckWait.OfSlots(held.Count, Math.Max(held.Count, 1));
+        var judgesNeed = held.Count > 0 && rules.Setting is null;
+        if (reserve == 0 && !judgesNeed) return null;
+        if (reading?.Least is not { } least) return held.Count == 0 ? null : CheckWait.OfSlots(held.Count, Math.Max(held.Count, 1));
         var starting = held.Count(one => one.Starting);
         var need = Need * (1 + starting);
-        if (free >= need + reserve) return null;
+        var commit = reading.Commit ?? reading.Physical ?? least;
+        var short_ = judgesNeed && least < need ? least : reserve > 0 && commit < need + reserve ? commit : (long?)null;
+        if (short_ is not { } free) return null;
         var values = new Dictionary<string, string>(StringComparer.Ordinal)
         {
-            // Floored, so a reading just short of the need never reads as the need itself.
             ["free"] = (Math.Floor(free * 10.0 / (1L << 30)) / 10).ToString("F1", CultureInfo.InvariantCulture),
             ["need"] = (need / (double)(1L << 30)).ToString("0.#", CultureInfo.InvariantCulture),
         };
-        if (reserve > 0) values["reserve"] = (reserve / (double)(1L << 30)).ToString("0.#", CultureInfo.InvariantCulture);
         if (starting > 0) values["starting"] = starting.ToString(CultureInfo.InvariantCulture);
-        return new CheckWait(reserve > 0 ? CheckWait.Reserve : CheckWait.Memory, values);
+        if (judgesNeed && least < need) return new CheckWait(CheckWait.Memory, values);
+        values["reserve"] = (reserve / (double)(1L << 30)).ToString("0.#", CultureInfo.InvariantCulture);
+        return new CheckWait(CheckWait.Reserve, values);
     }
 
     /// <summary>The slots a repository has: the machine's, or fewer where its accepted declaration says so.</summary>
