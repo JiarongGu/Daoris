@@ -108,6 +108,32 @@ public sealed class VerifyRunTests : NodeRuntimeFixture
     }
 
     [Fact]
+    public async Task A_check_given_up_waits_held_and_a_working_session_s_again_on_it_is_taken_and_starts_a_new_attempt()
+    {
+        var digest = SaveVerification();
+        VerifyRuns.Bind(_home, new VerifyRun(Run, "engine", "default", "checkout", "verify", 1, digest, Commit, VerifyRuns.Person, _now));
+        var checks = new Checks { Answer = _ => CheckExecution.AnswerOf(new VerifyAnswer(VerifyAnswers.Unknown) { Why = "its result does not read" }) };
+        var runtime = Runtime();
+        runtime.Doors = runtime.Doors.With(NodeKinds.Check, checks);
+        var unit = RunUnits.IdOf(Run);
+        for (var pass = 0; pass < 12 && Files.Read(unit)?.Attempts.LastOrDefault()?.State != AttemptStates.Held; pass++)
+        {
+            await runtime.PassAsync(Look("{}"), CancellationToken.None);
+            foreach (var each in checks.Sent) checks.Answers.Add(each.Attempt.Call.Invocation);
+        }
+
+        Assert.Equal((UnrunChecks.Bound, NodeStates.Unknown, AttemptStates.Held), (checks.Sent.Count, Files.Read(unit)!.Statuses["verify"].State, Files.Read(unit)!.Attempts[^1].State));
+        Assert.Null(Files.Read(unit)!.Ended);
+
+        var session = SettleBy.OfChannel(TerminalTierBy.Session, appointed: false, epoch: null, session: "s-0123abcd")!;
+        var worded = RunNodeWords.Word(Files, Run, "verify", NodeWordActs.Again, null, () => _now, settle: session);
+
+        Assert.True(worded.Done, worded.Refused);
+        await runtime.PassAsync(Look("{}"), CancellationToken.None);
+        Assert.Equal(UnrunChecks.Bound + 1, checks.Sent.Count);
+    }
+
+    [Fact]
     public async Task With_no_executor_its_check_waits_ready()
     {
         var digest = SaveVerification();

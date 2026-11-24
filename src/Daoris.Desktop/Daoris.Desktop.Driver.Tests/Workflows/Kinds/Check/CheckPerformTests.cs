@@ -253,7 +253,7 @@ public sealed class CheckPerformTests : IDisposable
             }
         }
 
-        await AssertGivenUpAsync(performer, last);
+        await AssertGivenUpAsync(performer, last, "why");
     }
 
     [Fact]
@@ -294,10 +294,10 @@ public sealed class CheckPerformTests : IDisposable
         }
 
         Assert.Contains("its result does not read", Assert.Single(last).Detail, StringComparison.Ordinal);
-        await AssertGivenUpAsync(performer, last);
+        await AssertGivenUpAsync(performer, last, "its result does not read");
     }
 
-    private async Task AssertGivenUpAsync(WorkPerformer performer, IReadOnlyList<WorkPerformed> last)
+    private async Task AssertGivenUpAsync(WorkPerformer performer, IReadOnlyList<WorkPerformed> last, string? reason)
     {
         var record = Record();
         var gave = Assert.Single(last);
@@ -308,6 +308,16 @@ public sealed class CheckPerformTests : IDisposable
         Assert.All(record.Attempts.SkipLast(1), attempt => Assert.Equal(AttemptStates.Settled, attempt.State));
         Assert.Equal((AttemptStates.Held, UnrunChecks.GaveUp), (record.Attempts.Last().State, record.Attempts.Last().Code));
         Assert.Empty(CheckRounds.Reds(record));
+        var held = Assert.Single(HeldAttempts.Read(Files));
+        var said = HeldAttempts.WhySaid(held);
+        Assert.Equal(UnrunChecks.GaveUp, held.Why);
+        Assert.DoesNotContain("did not bind", said, StringComparison.Ordinal);
+        Assert.Contains("workflow again", said, StringComparison.Ordinal);
+        Assert.Equal(reason, held.Reason);
+        if (reason is not null) Assert.Contains(reason, said, StringComparison.Ordinal);
+        var line = Assert.Single(WatchNodes.NodeRuntimeLines(new NodeRuntimePass(true, last, [], [])));
+        Assert.Contains("the run waits for a new attempt", line, StringComparison.Ordinal);
+        if (reason is not null) Assert.Contains(reason, line, StringComparison.Ordinal);
         var sent = _checks.Sent.Count;
         var asked = _checks.Asked.Count;
         Assert.Empty(await performer.ReconcileAsync(Declared, CancellationToken.None));

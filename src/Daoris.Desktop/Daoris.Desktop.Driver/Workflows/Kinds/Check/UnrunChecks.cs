@@ -28,7 +28,11 @@ public static class UnrunChecks
         if (ready.Moved) return (WorkPerformer.Kept(settled, ready, "unrun-again", now), new(record.Unit, node.Id, PerformedWhat.Retry, code) { Detail = why });
 
         var words = $"the check could not say whether the work passes after {Bound} asks, so Daoris gave it up and the run waits for a new attempt{(string.IsNullOrWhiteSpace(why) ? "" : $": {why.Trim().ReplaceLineEndings(" ")}")}";
-        var held = WorkPerformer.With(record, attempt, attempt with { State = AttemptStates.Held, Outcome = WorkStates.Unknown, Code = GaveUp, Generation = generation });
+        var reason = string.IsNullOrWhiteSpace(why) ? null : why.Trim().ReplaceLineEndings(" ");
+        var held = WorkPerformer.With(record, attempt, attempt with
+        {
+            State = AttemptStates.Held, Outcome = WorkStates.Unknown, Code = GaveUp, Generation = generation, Tail = reason is { Length: > LostChecks.TailChars } ? reason[..LostChecks.TailChars] : reason,
+        });
         return (held, new(record.Unit, node.Id, PerformedWhat.Held, GaveUp) { Detail = words });
     }
 }

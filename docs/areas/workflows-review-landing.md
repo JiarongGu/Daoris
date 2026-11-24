@@ -424,7 +424,7 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     not read, a gate log another process held for the instant its step opened it) is no question for the person: it settles with no verdict
     and is asked again as a new attempt, up to three on one binding (`UnrunChecks`), counting as neither a red round nor a pass, each retry's
     line carrying the executor's own reason from its answer. Past the three Daoris gives it up as said, but never by ending the run (a stopped node
-    does, with the work unlanded and its quest still taken): the last attempt is held with the code `unsaid` and the reason said, the node
+    does, with the work unlanded and its quest still taken): the last attempt is held with the code `unsaid` and the reason kept on it and said (the driver's line, `daoris work held`, the run view, the page), the node
     stays unknown, nothing asks the executor again by itself, and the run waits for a new attempt, which the person or the work's session
     asks with `daoris workflow again <run> <check>` (its asks counted afresh). A check whose old job could
     not be opened (`unaccounted`) may still run, so it is never sent beside it: it is asked again at each look until the job is accounted for.

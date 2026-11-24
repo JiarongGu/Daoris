@@ -81,6 +81,28 @@ public sealed class HeavyStepRetryTests
     }
 
     [Fact]
+    public async Task A_gate_log_still_open_in_the_step_s_own_sharing_is_written_with_no_wait()
+    {
+        if (!OperatingSystem.IsWindows()) return;
+        var log = HeldLog();
+        try
+        {
+            using var holder = new FileStream(log, FileMode.Create, FileAccess.Write, FileShare.ReadWrite | FileShare.Delete);
+            var clock = new MovedClock();
+            var waits = 0;
+
+            var kept = await DriveAsync(clock, HeavyStep.WriteLogAsync(log, "error: it would not start: no\n", clock), (_, _) => waits++);
+
+            Assert.True(kept);
+            Assert.Equal(0, waits);
+        }
+        finally
+        {
+            GitSeed.Discard(Path.GetDirectoryName(log)!);
+        }
+    }
+
+    [Fact]
     public async Task A_gate_log_held_past_every_try_is_not_written_and_throws_nothing()
     {
         if (!OperatingSystem.IsWindows()) return;
