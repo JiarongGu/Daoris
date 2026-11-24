@@ -172,8 +172,8 @@ internal sealed class CredentialWrites(HarnessRoster roster, Action<AccountLine>
             if (shape.Cleared)
             {
                 if (!StoredSignIns.MarkOut(roster, agent, account, shape, by)) return null;
-                // The notice for a sign-out nobody at Daoris made is told now, not at the next look.
-                SignOutNotices.Claim(roster.Home, roster.Clock());
+                // Told now, not at the next look; one made during Daoris's own sign-in waits to see whether the sign-in fills it.
+                if (by != SignInCause.SignIn) SignOutNotices.Claim(roster.Home, roster.Clock());
                 return "out";
             }
 

@@ -250,10 +250,13 @@ where a seam, route, verb or fixture is. Which folder owns which job:
     reads it signed in (`MarkIn`), and one that leaves tokens in a store that had them, a refresh, changes no reading, so a refused
     account stays refused; a file with no bytes is a write half made and marks nothing. The reading and the `credentials.written` line
     (`by`, `marked`) say who was at the account (`SignInCause`, never who wrote: the file system does not say): Daoris's own sign-in
-    (`SignInMarks`, a file beside the probe lock, made as a sign-in's flow starts and stale after thirty minutes), else a probe (its
-    lock held), else a session running or starting on it, else outside Daoris, so a sign-out none of Daoris's was at reads as outside;
-    the page's row and `daoris agent list` word it. The look's own read of a cleared store still marks one the watch missed, with no
-    cause. (SIGNOUTSEEN1)
+    (`SignInMarks`, one file beside the probe lock for each sign-in running, made as its flow starts and stale after thirty minutes), else
+    a probe (its lock held), else a session running or starting on it, else outside Daoris, so a sign-out none of Daoris's was at reads
+    as outside; the page's row and `daoris agent list` word it. The notice keeps its old wording and carries no cause, and one made
+    during Daoris's own sign-in is told only if the sign-in leaves the account signed out. The look's own read of a cleared store still
+    marks one the watch missed, with no cause. A store that is deleted, and not emptied, marks nothing: the install's writes of the
+    store each show a `deleted` line then a `renamed` one a millisecond later, so a deletion alone says nothing. A watch-made signed-in
+    reading is kept in `reads.json` alone, with no who or plan until the next status read. (SIGNOUTSEEN1)
 
 **Usage, limits and errors**
 

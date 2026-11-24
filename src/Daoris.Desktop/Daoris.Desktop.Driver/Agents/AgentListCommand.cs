@@ -171,7 +171,7 @@ internal static class AgentListCommand
     /// and last reading under it, the tool's own sign-in's cool-off and reading, each list with how it is used and its next
     /// start, and, where a start would otherwise reach the person's own sign-in, that Daoris starts none there.
     /// </summary>
-    private static List<string> AccountLines(
+    internal static List<string> AccountLines(
         string name, AccountAgent toolchain, HarnessReport report, HarnessSettings settings, string home, ProviderRegistry set,
         DateTimeOffset now, TimeZoneInfo zone)
     {

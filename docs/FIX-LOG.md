@@ -14794,8 +14794,10 @@ reading until the person found it out and signed in again at 06:54Z.
 
 **Root cause.** A sign-out was only ever made by a reader: a look's `StoredSignIns.Read` (95227f0361, CREDRACE1's renewal) or a
 status question. The watch that saw the write (SIGNOUTRACE1, 7cd3514fd0) only logged it, so every place that shows the state waited
-for a reader that did not come in time. Why the look's read did not mark it within the hours is not established from the tree: the
-install's look lines of that window were not read here.
+for a reader that did not come in time. The install's log for the window shows the looks after 05:10:15Z ran (`watch.looked` with a
+`stored-sign-ins` stage, none failed) and says no `read signed out` event all day, so the look's read did not mark the account; why
+is not established. Its writes of the store each show a `deleted` line then a `renamed` one within 5 ms, and the sign-in at 06:54Z
+wrote full tokens at once with no empty store first.
 
 **Fix.** A write of the store is a reading when it lands (`CredentialWrites.Marked`, through `StoredSignIns.MarkOut` and `MarkIn`):
 both tokens empty marks the account signed out and claims its notice, a store filled after the watch saw it cleared marks it signed

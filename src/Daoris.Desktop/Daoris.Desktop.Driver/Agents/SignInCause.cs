@@ -39,7 +39,7 @@ public static class SignInCause
 
 /// <summary>
 /// A mark that Daoris's own sign-in into an account is running, beside the account's probe lock under <c>harnesses/.probing/</c>: a file
-/// the sign-in's flow makes as it starts and removes as it ends, which a watch in another process reads. One left by a process that died
+/// for each sign-in, which its flow makes as it starts and removes as it ends, and which a watch in another process reads. One left by a process that died
 /// is stale after <see cref="Stale"/> and read as none.
 /// </summary>
 public static class SignInMarks
@@ -47,17 +47,26 @@ public static class SignInMarks
     /// <summary>How long a sign-in may run before its mark is taken for one left behind: a person's browser sign-in takes minutes.</summary>
     public static readonly TimeSpan Stale = TimeSpan.FromMinutes(30);
 
-    /// <summary>Where the mark of <paramref name="account"/>'s sign-in is.</summary>
-    public static string PathOf(string home, string owner, string account) =>
-        DaorisHome.Entry(home, HomeEntry.Probing, owner, account + ".signing-in");
-
-    /// <summary>Whether a sign-in into the account is running by its mark, as of the file's clock.</summary>
-    public static bool Active(string home, string owner, string account, DateTimeOffset now)
+    /// <summary>The marks of the sign-ins into <paramref name="account"/>: one file for each running, so two never share one.</summary>
+    public static IReadOnlyList<string> Files(string home, string owner, string account)
     {
-        var path = PathOf(home, owner, account);
+        var folder = Path.GetDirectoryName(DaorisHome.Entry(home, HomeEntry.Probing, owner, "x"))!;
         try
         {
-            return File.Exists(path) && now.UtcDateTime - File.GetLastWriteTimeUtc(path) < Stale;
+            return Directory.Exists(folder) ? [.. Directory.EnumerateFiles(folder, account + ".signing-in.*")] : [];
+        }
+        catch (Exception error) when (error is IOException or UnauthorizedAccessException)
+        {
+            return [];
+        }
+    }
+
+    /// <summary>Whether a sign-in into the account is running by its marks, as of each file's clock.</summary>
+    public static bool Active(string home, string owner, string account, DateTimeOffset now)
+    {
+        try
+        {
+            return Files(home, owner, account).Any(file => now.UtcDateTime - File.GetLastWriteTimeUtc(file) < Stale);
         }
         catch (Exception error) when (error is IOException or UnauthorizedAccessException)
         {
@@ -72,7 +81,7 @@ public static class SignInMarks
     public static IDisposable Begin(string profileHome)
     {
         if (HarnessSettings.AccountAt(profileHome) is not { } at) return Mark.None;
-        var path = PathOf(at.Home, at.Agent, at.Account);
+        var path = DaorisHome.Entry(at.Home, HomeEntry.Probing, at.Agent, $"{at.Account}.signing-in.{Guid.NewGuid():N}");
         try
         {
             Directory.CreateDirectory(Path.GetDirectoryName(path)!);

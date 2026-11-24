@@ -70,10 +70,11 @@ public sealed class SignOutSeenTests : IDisposable
         Assert.Equal(SignInCause.Outside, state.By);
 
         // The roster composes its report from the same reading; the notice for a sign-out nobody at Daoris made is there too.
-        Assert.Single(SignOutNotices.Occurrences(_home, Ten));
         await Poll.Until(
             () => lines.Any(line => line.Event == "credentials.written" && Value(line, "marked") is "out"),
             () => string.Join("; ", lines.Select(line => line.Event)));
+        Assert.Single(SignOutNotices.Occurrences(_home, Ten));
+        Assert.Equal(0, SignOutNotices.Claim(_home, Ten));
         var said = lines.First(line => line.Event == "credentials.written" && Value(line, "marked") is "out");
         Assert.Equal(SignInCause.Outside, Value(said, "by"));
     }
@@ -100,15 +101,36 @@ public sealed class SignOutSeenTests : IDisposable
         }
 
         using var signing = at == "sign-in" ? SignInMarks.Begin(_account) : null;
-        if (at == "sign-in") File.SetLastWriteTimeUtc(SignInMarks.PathOf(_home, "claude-code", "account-1"), Ten.UtcDateTime);
+        foreach (var mark in SignInMarks.Files(_home, "claude-code", "account-1")) File.SetLastWriteTimeUtc(mark, Ten.UtcDateTime);
         Assert.Equal(at == "sign-in", SignInMarks.Active(_home, "claude-code", "account-1", Ten));
         Assert.False(SignInMarks.Active(_home, "claude-code", "account-1", Ten.Add(SignInMarks.Stale).AddMinutes(1)));
-        using var writes = new CredentialWrites(_roster, _ => { });
+        var lines = new ConcurrentQueue<AccountLine>();
+        using var writes = new CredentialWrites(_roster, lines.Enqueue);
         writes.Follow();
         await Written(Emptied);
-        await Poll.Until(() => Read() is { Login: LoginState.Out }, () => $"read {Read()?.Login}");
+        await Poll.Until(
+            () => lines.Any(line => line.Event == "credentials.written" && Value(line, "marked") is "out"),
+            () => string.Join("; ", lines.Select(line => line.Event)));
 
         Assert.Equal(expected, Read()!.By);
+
+        // A sign-out made during Daoris's own sign-in waits to be told; any other is told at the write.
+        Assert.Equal(at == "sign-in" ? 1 : 0, SignOutNotices.Claim(_home, Ten));
+    }
+
+    /// <summary>Two sign-ins into one account keep a mark each: one ending leaves the other's.</summary>
+    [Fact]
+    public void Two_sign_ins_into_one_account_do_not_share_a_mark()
+    {
+        var first = SignInMarks.Begin(_account);
+        using var second = SignInMarks.Begin(_account);
+        Assert.Equal(2, SignInMarks.Files(_home, "claude-code", "account-1").Count);
+        foreach (var mark in SignInMarks.Files(_home, "claude-code", "account-1")) File.SetLastWriteTimeUtc(mark, Ten.UtcDateTime);
+
+        first.Dispose();
+
+        Assert.True(SignInMarks.Active(_home, "claude-code", "account-1", Ten));
+        Assert.Single(SignInMarks.Files(_home, "claude-code", "account-1"));
     }
 
     /// <summary>The cause is kept with the reading: it survives the file and shows after a restart, and a reading made without one has none.</summary>

@@ -156,7 +156,16 @@ internal static class StoredSignIns
     {
         var read = AccountReads.Of(roster.Home, owner).Accounts.GetValueOrDefault(account);
         if (read is not { Login: LoginState.Out }) return false;
-        roster.Keep(owner, account, new LoginRead(LoginState.In, null), roster.Clock());
+        try
+        {
+            // The reading alone: who signed in and the plan are not known here, and a plan read as none would bump the usage epoch.
+            AccountReads.Keep(roster.Home, owner, account, LoginState.In, roster.Clock());
+        }
+        catch (Exception error) when (error is IOException or UnauthorizedAccessException)
+        {
+            return false;
+        }
+
         return true;
     }
 }
