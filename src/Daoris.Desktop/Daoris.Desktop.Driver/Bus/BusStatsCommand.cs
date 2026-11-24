@@ -101,7 +101,8 @@ public static class BusStatsCommand
         var written = One(BusMeasures.Disk, BusMeasures.Bytes);
         output.AppendLine(pages is null
             ? "  disk not measured"
-            : Invariant($"  disk {pages.Total} pages, {written?.Total ?? 0} bytes written in {pages.Count} writes: {pages.Total / (double)Math.Max(1, pages.Count):0.0} pages a write, most {pages.Most}"));
+            : Invariant($"  disk {pages.Total} pages, {written?.Total ?? 0} bytes written in {pages.Count} writes: {pages.Total / (double)Math.Max(1, pages.Count):0.0} pages a write, most {pages.Most}")
+              + Invariant($"; {(written?.Total ?? 0) * 100.0 / BusLog.DiskBudget:0.0}% of the day's {BusLog.DiskBudget / (1024 * 1024)} MiB budget"));
 
         var missed = Of(BusMeasures.Miss).ToList();
         var retried = One(BusMeasures.Retry, BusMeasures.Entries);
@@ -111,6 +112,7 @@ public static class BusStatsCommand
         if (dropped.Count > 0) output.AppendLine($"  dropped values, their facts kept: {string.Join(", ", dropped.Select(row => Invariant($"{row.Name} {row.Count}")))}");
 
         Timed("took", Of(BusMeasures.Took).ToList(), output);
+        Timed("handled (a consumer's entry, from its append to its acknowledgement)", Of(BusMeasures.Handled).ToList(), output);
         var swept = Of(BusMeasures.Sweep).ToList();
         if (swept.Count > 0) output.AppendLine($"  settle boxes found by the sweep, not the watcher: {string.Join(", ", swept.Select(row => Invariant($"{row.Name} {row.Count}")))}");
         Timed("began (a run's nodes: by the consumer at the ending fact, or by a look; lag from that fact)", Of(BusMeasures.Began).ToList(), output);

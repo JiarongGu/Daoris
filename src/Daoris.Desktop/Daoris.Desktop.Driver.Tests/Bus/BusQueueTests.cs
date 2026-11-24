@@ -234,6 +234,27 @@ public sealed class BusQueueTests : IDisposable
         Assert.Contains(measures, row => row is { Measure: "middleware", Name: "drop:dropped" } && row.Total >= 1);
     }
 
+    /// <summary>🔴 Each acknowledgement measures its entry's handling time, append to acknowledgement, by kind and day.</summary>
+    [Fact]
+    public async Task An_acknowledgement_measures_the_entrys_handling_time_by_kind()
+    {
+        var consumer = new Recording("timed", _ => Task.CompletedTask);
+        await using var bus = Open();
+        await using var queue = await BusQueue.StartAsync(bus, [consumer], Quick);
+
+        bus.Append(Asked("op-1"));
+        bus.Append(Given("op-1", 0));
+        await Poll.Until(() => consumer.Seen.Count == 2, () => $"saw {consumer.Seen.Count}", Soon);
+        var last = Logged().Max(entry => entry.Seq);
+        await Poll.Until(() => queue.Store.Consumer("timed")?.Cursor == last, () => $"cursor {queue.Store.Consumer("timed")}", Soon);
+        await bus.FlushAsync();
+        using var store = new DesktopBusLogStore(_home);
+        var measures = store.Measures("2000-01-01");
+        var given = Assert.Single(measures, row => row is { Measure: "handled" } && row.Name == BusTypes.OpinionGiven.Kind);
+        Assert.Equal(1, given.Count);
+        Assert.InRange(given.Total, 0, 60_000);
+    }
+
     /// <summary>🔴 A burst of writes is handed in frames at most 60 a second, none lost, in order.</summary>
     [Fact]
     public async Task A_burst_is_handed_in_frames_at_most_sixty_a_second_none_lost()

@@ -118,6 +118,7 @@ internal static class DriveConsole
                     new JournalTeller(sessionLog.TellAsync),
                     WorkEventNews.Gapped(
                         new JournalTeller(hostNews.TellAsync, () => news.Cursor("host"), position => news.Advance("host", position)), hooks.Tell, () => DateTimeOffset.UtcNow),
+                    .. bus is null ? (JournalTeller[])[] : [OpinionKeptNews.Teller(bus, () => news.Cursor("bus-kept"), position => news.Advance("bus-kept", position))],
                 ],
                 log, closing.Token),
             closing.Token);

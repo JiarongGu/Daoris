@@ -118,6 +118,7 @@ internal sealed class LoopRun(
                     WorkEventNews.Gapped(
                         NewsFeed("lease", news, service, row => !row.Marks.Contains("chat", StringComparer.Ordinal), ct, told => shared.Hooks?.Tell(told)),
                         told => shared.Hooks?.Tell(told), () => DateTimeOffset.UtcNow),
+                    OpinionKeptNews.Teller(bus, () => news.Cursor("bus-kept"), position => news.Advance("bus-kept", position)),
                 ],
                 log, ct),
             ct);
