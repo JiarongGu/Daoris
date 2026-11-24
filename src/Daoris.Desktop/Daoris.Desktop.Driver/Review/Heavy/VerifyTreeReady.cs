@@ -26,7 +26,7 @@ internal sealed class VerifyPreparation : IVerifyPreparation
         if (head is null) return null;
         var deps = await StoreDependencyRules.ReadAsync(home, tree, repository, head, ct).ConfigureAwait(false);
         var keys = await DependencyKeys.EachAsync(home, tree, head, repository, deps.Each, ct).ConfigureAwait(false);
-        return Of(keys, TreeLocalInputs.Declared(checkout), checkout);
+        return Of(keys, TreeLocalInputs.Declared(checkout, CheckBudgets.Of(home, repository)), checkout);
     }
 
     /// <summary>The stamp over every input the preparation reads; a new input goes in here, and the stamp test moves it.</summary>

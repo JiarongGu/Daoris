@@ -22,7 +22,8 @@ internal static partial class FileAnalysis
     private static readonly string[] Lifecycle = ["preinstall", "install", "postinstall", "prepare"];
 
     internal static async Task<FileReading> ReadAsync(
-        string root, string commit, FileSignatures signatures, IReadOnlyList<string> observed, CancellationToken ct, DateTimeOffset? at = null)
+        string root, string commit, FileSignatures signatures, IReadOnlyList<string> observed, CancellationToken ct, DateTimeOffset? at = null,
+        RepositoryBudgets? kept = null)
     {
         var tracked = await FileGit.TrackedAsync(root, commit, ct).ConfigureAwait(false);
         var known = new HashSet<string>(tracked, StringComparer.Ordinal);
@@ -48,7 +49,7 @@ internal static partial class FileAnalysis
             if (signatures.LocalOf(top) is { } pattern) found[top] = new FileRule(FileKind.Local, Top(top)) { Evidence = [$"a local signature, `{pattern}`"], Size = walks[top].Size };
         }
 
-        foreach (var input in LocalInputs(gates).Where(input => !known.Contains(input) && !FileFloor.IsSettings(input)))
+        foreach (var input in LocalInputs(gates, kept).Where(input => !known.Contains(input) && !FileFloor.IsSettings(input)))
         {
             found[input] = new FileRule(FileKind.Local, Top(input)) { Reach = "copy", Evidence = ["read by a gate: the gates file names it"] };
         }
@@ -230,27 +231,32 @@ internal static partial class FileAnalysis
         }
     }
 
-    /// <summary>The gates file's local inputs at the commit: <c>localInputs</c> and the sensitive patterns file it names.</summary>
-    private static List<string> LocalInputs(string? gates)
+    /// <summary>The local inputs counted: this machine's (<paramref name="kept"/>) where it keeps them, else the gates file's at the commit.</summary>
+    private static List<string> LocalInputs(string? gates, RepositoryBudgets? kept)
     {
-        if (gates is null) return [];
-        try
+        var inputs = new List<string>();
+        string? patterns = null;
+        if (gates is not null)
         {
-            using var document = JsonDocument.Parse(gates.TrimStart('﻿'));
-            var root = document.RootElement;
-            if (root.ValueKind != JsonValueKind.Object) return [];
-            var inputs = Json.Strings(root, "localInputs").Where(input => RoomPaths.Unfit(input) is null).ToList();
-            if (root.TryGetProperty("sensitive", out var sensitive) && sensitive.ValueKind == JsonValueKind.Object && Json.Text(sensitive, "patternsFile") is { Length: > 0 } named)
+            try
             {
-                inputs.Add(named);
+                using var document = JsonDocument.Parse(gates.TrimStart('﻿'));
+                var root = document.RootElement;
+                if (root.ValueKind == JsonValueKind.Object)
+                {
+                    inputs = [.. Json.Strings(root, "localInputs")];
+                    if (root.TryGetProperty("sensitive", out var sensitive) && sensitive.ValueKind == JsonValueKind.Object && Json.Text(sensitive, "patternsFile") is { Length: > 0 } named) patterns = named;
+                }
             }
+            catch (JsonException)
+            {
+                inputs = [];
+            }
+        }
 
-            return [.. inputs.Distinct(StringComparer.Ordinal)];
-        }
-        catch (JsonException)
-        {
-            return [];
-        }
+        inputs = [.. kept?.LocalInputs ?? inputs.Where(input => RoomPaths.Unfit(input) is null)];
+        if ((kept?.PatternsFile ?? patterns) is { } place) inputs.Add(place);
+        return [.. inputs.Distinct(StringComparer.Ordinal)];
     }
 
     /// <summary>A path git printed, as one inside <paramref name="root"/> with a trailing <c>/</c>, or null for the root or one outside it.</summary>
