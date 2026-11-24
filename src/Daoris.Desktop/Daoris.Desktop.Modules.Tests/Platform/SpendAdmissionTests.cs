@@ -81,7 +81,7 @@ public sealed class SpendAdmissionTests : IDisposable
     public void An_unreadable_policy_reads_every_spend_and_go_ahead_as_the_owners_and_never_throws()
     {
         var judge = Standing("{}", "landing.approve");
-        judge.Config = () => throw new DriverConfigUnreadableException(Path.Combine(_home, "driver.json"), "it does not parse");
+        judge.Config = () => throw new DriverConfigUnreadableException(DaorisHome.Entry(_home, HomeEntry.DriverConfig), "it does not parse");
 
         Assert.Equal(ActSpending.Destination, judge.Admit(SupervisorKinds.Landing, Place, "approve").Missing);
         Assert.Equal(RiskVerdict.OwnerOutcome, judge.GoAheadOutcome(Place, "write", "staging", "supervisor"));
