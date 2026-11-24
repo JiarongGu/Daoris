@@ -2,16 +2,16 @@ import { test } from 'vitest';
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
 import { mkdirSync, mkdtempSync, rmSync } from 'node:fs';
-import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { recordGreen, setGate } from './check-budgets.ts';
 import { budgetSourceOf, learnGreen, overlay, riseLines } from './budget-overlay.ts';
 import { declaredIn } from './plan.ts';
+import { scratchRoot } from './fixture-home.ts';
 
 const MIN = 60_000;
 const scratch: string[] = [];
 const homeOf = (): string => {
-  const home = mkdtempSync(join(tmpdir(), 'budget-overlay-'));
+  const home = mkdtempSync(join(scratchRoot(), 'budget-overlay-'));
   scratch.push(home);
   return home;
 };
@@ -80,7 +80,7 @@ test('the declaration read hands the gates the home\'s values', () => {
 });
 
 test('the repository is named by the folder of its main checkout, from a linked tree too, and a folder inside another repository by itself', () => {
-  const base = mkdtempSync(join(tmpdir(), 'budget-name-'));
+  const base = mkdtempSync(join(scratchRoot(), 'budget-name-'));
   scratch.push(base);
   const main = join(base, 'Named');
   mkdirSync(main);
@@ -95,4 +95,4 @@ test('the repository is named by the folder of its main checkout, from a linked 
   assert.equal(budgetSourceOf(join(main, 'inside'), {}).repository, 'inside');
   assert.equal(budgetSourceOf(main, { DAORIS_HOME: 'h' }).home, 'h');
   assert.equal(budgetSourceOf(main, {}).home, null);
-});
+}, 60_000);

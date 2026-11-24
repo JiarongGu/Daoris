@@ -1,15 +1,15 @@
 import { test } from 'vitest';
 import assert from 'node:assert/strict';
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
-import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { budgetsFile, setTimeoutOf } from './check-budgets.ts';
 import { privateGateFiles } from '../private-gate-files.mjs';
 import { declaredPrep } from '../tree-prep.mjs';
+import { scratchRoot } from './fixture-home.ts';
 
 const scratch: string[] = [];
 const fixture = (gates: object, kept?: object): { checkout: string; source: { home: string; repository: string } } => {
-  const base = mkdtempSync(join(tmpdir(), 'home-members-'));
+  const base = mkdtempSync(join(scratchRoot(), 'home-members-'));
   scratch.push(base);
   const checkout = join(base, 'checkout');
   mkdirSync(checkout, { recursive: true });

@@ -1,8 +1,8 @@
 import { test } from 'vitest';
 import assert from 'node:assert/strict';
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
-import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import { scratchRoot } from './fixture-home.ts';
 import {
   BUDGET_FACTOR, BUDGET_FLOOR_MINUTES, GREENS_KEPT, GREENS_NEEDED, RISE_BOUND,
   budgetsFile, budgetOf, readBudgets, recordGreen, saidRise, setGate, type GateKept, type Green,
@@ -11,7 +11,7 @@ import {
 const MIN = 60_000;
 const scratch: string[] = [];
 const homeOf = (): string => {
-  const home = mkdtempSync(join(tmpdir(), 'check-budgets-'));
+  const home = mkdtempSync(join(scratchRoot(), 'check-budgets-'));
   scratch.push(home);
   return home;
 };
