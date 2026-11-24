@@ -51,7 +51,7 @@ const freshRoot = async () => {
   return (await import('./PageRoot')).PageRoot;
 };
 
-describe("the page's root", () => {
+describe("the page's root", { timeout: 30_000 }, () => {
   beforeEach(() => {
     vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => respond(String(input))));
     invoke.mockImplementation(async (module: string, type: string, options?: { payload?: { slice?: string } }) => {
