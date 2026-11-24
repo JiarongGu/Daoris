@@ -18,7 +18,7 @@ internal static class ClaudeCodeProvider
         LoggedOut: @"""loggedIn""\s*:\s*false",
         Account: @"""email""\s*:\s*""([^""]+)""",
         Org: @"""orgName""\s*:\s*""([^""]+)""",
-        Plan: @"""subscriptionType""\s*:\s*""([^""]+)""");
+        Plan: ClaudePlans.Plan);
 
     /// <summary>Its id, which the settings' <em>questions</em> pause also keeps as its one value: the console's way of asking.</summary>
     public const string Id = ConsoleProviderId.Value;
@@ -50,7 +50,8 @@ internal static class ClaudeCodeProvider
             SettingsFile: AgentSettings.FileName,
             StoredSignIn: new ClaudeStoredSignIn(),
             // Its maker fixes an account's weekly reset at one time each week.
-            WeekFixed: true);
+            WeekFixed: true,
+            PlanSizes: ClaudePlans.Sizes);
         var tables = new TablesPart(
             Limits: ClaudeLimits.Words,
             Windows: ClaudeWindows.Words,

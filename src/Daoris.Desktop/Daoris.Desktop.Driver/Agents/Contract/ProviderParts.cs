@@ -26,7 +26,7 @@ public sealed record DoorIdentity(string? DeclaredBy, string? Product, string? M
 /// <summary>
 /// The facts of an account pool a tool declares: the variable an API key is handed in, the login question and the sign-in (its
 /// arguments, its device code and its ports), and the settings file. Never the home variable a spawn sets, whether a start runs in
-/// its own home, or the trust file, each a door's <see cref="DoorHome"/> (O2-F2).
+/// its own home, or the trust file, each a door's <see cref="DoorHome"/> (O2-F2). Its <c>PlanSizes</c> map a plan's word to its size in base plans.
 /// </summary>
 public sealed record PoolFacts(
     string? KeyVariable,
@@ -37,7 +37,8 @@ public sealed record PoolFacts(
     string? SettingsFile,
     bool WeekFixed,
     IKeyCheck? KeyCheck = null,
-    IStoredSignIn? StoredSignIn = null)
+    IStoredSignIn? StoredSignIn = null,
+    IReadOnlyDictionary<string, double>? PlanSizes = null)
 {
     public static PoolFacts None { get; } = new(null, null, null, null, null, null, false);
 

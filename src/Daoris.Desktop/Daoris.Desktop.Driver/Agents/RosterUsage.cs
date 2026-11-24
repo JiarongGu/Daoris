@@ -179,7 +179,8 @@ internal sealed class RosterUsage(HarnessRoster roster)
             Ready: present.Contains(account, StringComparer.OrdinalIgnoreCase) && roster.Before(owner, account, now, model: offer?.Model).IsReady
                 && !HarnessRoster.SaidOut(reads, account)
                 && (offer is not { } asked || AgentOffers.Offers(roster.Home, asked.Agent, asked.Version, account, now).Session.Judge(asked.Model) is null),
-            floor))];
+            floor,
+            roster.PlanSizeOf(owner, AccountWindows.PlanOf(roster.Home, owner, account))))];
     }
 
     /// <summary>

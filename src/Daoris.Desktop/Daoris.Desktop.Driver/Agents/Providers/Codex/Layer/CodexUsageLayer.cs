@@ -9,7 +9,7 @@ namespace Daoris.Driver;
 /// Codex's windows read through the layer: its CLI provider registered under the holder's
 /// id for its usage source alone, never opened; its server in the driver's own folder, and told the client
 /// name the read uses; the reading named as <see cref="CodexUsage"/> names it, by length and its limit's scope, its plan
-/// never read. Bound when the driver loads, where the driver carries the layer.
+/// the server's word. Bound when the driver loads, where the driver carries the layer.
 /// </summary>
 internal static class CodexUsageLayer
 {
@@ -54,6 +54,6 @@ internal static class CodexUsageLayer
             walk.Add(new WindowReading(name, fraction, reset));
         }
 
-        return new(walk, seen, Plan: null);
+        return new(walk, seen, reading.Plan is { Length: > 0 } plan ? plan : null);
     }
 }

@@ -115,7 +115,7 @@ public sealed class CodexUsageTests
     }
 
     // ——— What the usage history keeps of an answer: each window by its length and its limit's
-    // scope (`limitId`), never its slot; its plan not read.
+    // scope (`limitId`), never its slot; its plan the own limit's `planType`.
 
     private static UsageAnswer Kept(string answer) => CodexUsage.Read(JsonDocument.Parse(answer).RootElement.Clone());
 
@@ -148,7 +148,7 @@ public sealed class CodexUsageTests
     }
 
     [Fact]
-    public void Another_limit_s_windows_are_kept_for_the_history_by_its_scope_and_the_plan_is_never_read()
+    public void Another_limit_s_windows_are_kept_for_the_history_by_its_scope_and_the_own_limit_s_plan_is_the_answer_s()
     {
         var answer = Kept(OtherLimit);
 
@@ -161,7 +161,17 @@ public sealed class CodexUsageTests
                 new WindowSeen("10080-minute", null, "codex_spark", 10080, 0.6, 0.01, In(50), UsageHistory.ResetSaid),
             ],
             answer.Seen);
-        Assert.Null(answer.Plan);
+        Assert.Equal("pro", answer.Plan);
+    }
+
+    [Fact]
+    public void The_plan_is_the_own_limit_s_plan_type_and_never_another_limit_s_or_a_missing_one()
+    {
+        var team = Recorded(3, 90).Replace("\"limitId\":\"codex\"", "\"limitId\":\"codex\",\"planType\":\"team\"", StringComparison.Ordinal);
+
+        Assert.Equal("team", Kept(team).Plan);
+        Assert.Null(Kept(Recorded(3, 90)).Plan);
+        Assert.Null(Kept(OtherLimit.Replace("\"planType\":\"pro\"", "\"planType\":\"\"", StringComparison.Ordinal)).Plan);
     }
 
     public static TheoryData<string, string> Unread => new()

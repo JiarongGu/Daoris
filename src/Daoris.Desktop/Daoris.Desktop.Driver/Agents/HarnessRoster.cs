@@ -260,6 +260,21 @@ public sealed class HarnessRoster(ProviderRegistry adapters, string? settingsPat
         Adapters.Names.Contains(adapter, StringComparer.OrdinalIgnoreCase)
         && Adapters.AccountAgentOf(new DoorId(Adapters.Door(adapter).Id.Value))?.Accounts.WeekFixed == true;
 
+    /// <summary>
+    /// The size, in units of its agent's base plan, of the plan an owner's agent named for an account, as the agent's declaration
+    /// states it (<see cref="PoolFacts.PlanSizes"/>); null where it names no plan or states no size for it.
+    /// </summary>
+    public double? PlanSizeOf(string owner, string? plan)
+    {
+        if (plan is not { Length: > 0 }) return null;
+        foreach (var name in Adapters.Names.Where(each => string.Equals(Adapters.OwnerOfAgent(each).Value, owner, StringComparison.OrdinalIgnoreCase)))
+        {
+            if (Adapters.AccountAgentOf(new DoorId(Adapters.Door(name).Id.Value))?.Accounts.PlanSizes is { } sizes && sizes.TryGetValue(plan, out var size)) return size;
+        }
+
+        return null;
+    }
+
     /// <inheritdoc cref="RosterReport.AccountAgentOf"/>
     public AccountAgent? AccountAgentOf(string adapter) => Reporting.AccountAgentOf(adapter);
 

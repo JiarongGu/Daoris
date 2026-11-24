@@ -292,12 +292,12 @@ public static class AccountRotation
 
         if (use.Use != "goal") return (WalkStep.List, 0);
 
-        // What would lapse, before room or sessions: another account's room is there tomorrow, this one's is lost at its reset.
-        var (lapseX, lapseY) = (UsageCurves.Lapsing(use, x.Said, now)?.Rate ?? 0, UsageCurves.Lapsing(use, y.Said, now)?.Rate ?? 0);
+        // What would lapse, before room or sessions: another account's room is there tomorrow, this one's is lost at its reset. Room is read in each plan's units.
+        var (lapseX, lapseY) = ((UsageCurves.Lapsing(use, x.Said, now)?.Rate ?? 0) * x.Units, (UsageCurves.Lapsing(use, y.Said, now)?.Rate ?? 0) * y.Units);
         if (lapseX != lapseY) return (WalkStep.Lapsing, lapseY.CompareTo(lapseX));
 
         // Room before sessions run: a session started near the end of a window meets its limit within minutes. Not under `off`, which ranks by pace.
-        if (use.Switch != "off" && RoomLeft.BandOf(use, x.Said, now) is var bandX && RoomLeft.BandOf(use, y.Said, now) is var bandY && bandX != bandY)
+        if (use.Switch != "off" && RoomLeft.BandOf(use, x.Said, now, x.Units) is var bandX && RoomLeft.BandOf(use, y.Said, now, y.Units) is var bandY && bandX != bandY)
         {
             return (WalkStep.Headroom, bandY.CompareTo(bandX));
         }
@@ -308,7 +308,7 @@ public static class AccountRotation
         // on pace under `off` (absent is never zero).
         var (spareX, spareY) = use.Switch == "off"
             ? (AccountReadings.Behind(x.Said, now) ?? 0, AccountReadings.Behind(y.Said, now) ?? 0)
-            : (UsageCurves.TightestSaid(use, x.Said, now)?.Room ?? 0, UsageCurves.TightestSaid(use, y.Said, now)?.Room ?? 0);
+            : ((UsageCurves.TightestSaid(use, x.Said, now)?.Room ?? 0) * x.Units, (UsageCurves.TightestSaid(use, y.Said, now)?.Room ?? 0) * y.Units);
         if (spareX != spareY) return (WalkStep.Pace, spareY.CompareTo(spareX));
 
         var (startedX, startedY) = (Started(x), Started(y));

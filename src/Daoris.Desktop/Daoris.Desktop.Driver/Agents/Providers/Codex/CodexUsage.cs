@@ -78,7 +78,7 @@ public static class CodexUsage
     /// any other limit there would name windows of the same lengths.</para>
     /// <para>Beside the walk's, what the usage history keeps: each window said in part or whole,
     /// named by its length and its limit's scope (<c>limitId</c>), never its slot, the other limits of <c>rateLimitsByLimitId</c>
-    /// among them. The plan (<c>planType</c>) is not read.</para>
+    /// among them. The plan is the own limit's <c>planType</c> word, when it names one.</para>
     /// </remarks>
     public static UsageAnswer Read(JsonElement answer)
     {
@@ -114,7 +114,7 @@ public static class CodexUsage
             }
         }
 
-        return new UsageAnswer(readings, seen, plan: null, Method, HistoryReader);
+        return new UsageAnswer(readings, seen, Json.NonEmpty(limits, "planType"), Method, HistoryReader);
 
         // A limit's windows as the history keeps them: a window with no length has only its slot to name it, and says nothing.
         void Seen(JsonElement limit, string? scope, bool walked)

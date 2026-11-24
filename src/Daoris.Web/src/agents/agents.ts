@@ -324,6 +324,13 @@ export function accountLabel(account: Named, among?: Among | null): string {
   return apart && who && says(name, who) && !says(name, apart) ? `${name} · ${apart}` : name;
 }
 
+/** The plan its agent named for an account (`max_20x`, `team`), as `agent list` says it; null for a key, none named, or one already said. */
+export function accountPlan(account: Named, among?: Among | null): string | null {
+  const plan = account.key ? null : account.plan?.trim();
+  if (!plan) return null;
+  return [accountName(account), accountWho(account, among) ?? ''].some((text) => says(text, plan)) ? null : plan;
+}
+
 /**
  * Who signed in, with what tells the sign-in apart from another of its agent of the same email after it, for a
  * line that says who and no name: *Signed in as …*, the agent's own sign-in. Null for a key, or where the agent said nobody.
