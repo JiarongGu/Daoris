@@ -431,6 +431,8 @@ internal sealed class WatchRun(
             report = report with { Events = [.. report.Events, .. accepted] };
         }
 
+        await Stages.TimeAsync("risk", () => watch.AskHoldsLookAsync(_config, ct)).ConfigureAwait(false);
+
         Looked(_by, _woke, part, nudges, began, failed: false);
         await onReport(report, _config).ConfigureAwait(false);
     }

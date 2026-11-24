@@ -19,26 +19,55 @@ public sealed class ActSpendsTests
         Assert.All(ActSpends.Named, act => Assert.True(SupervisorKinds.Acts.Contains(act) || AppointedRoles.StewardActs.Contains(act), act));
     }
 
+    private static Func<RiskAct, string> Judged(string outcome) => _ => outcome;
+
     [Fact]
-    public void A_recast_naming_the_prepaid_agent_without_the_prepaid_grant_is_refused_naming_it()
+    public void Each_spend_is_an_act_kind_of_the_risk_policy_and_an_act_that_spends_nothing_none()
+    {
+        Assert.Equal(RiskActs.SpendMoney, ActSpends.KindOf("vacancy.prepaid")?.Kind);
+        Assert.Equal(RiskActs.ReleaseStart, ActSpends.KindOf("landing.approve")?.Kind);
+        Assert.Equal(RiskActs.PublishOutside, ActSpends.KindOf("files.allow-share")?.Kind);
+        Assert.Equal(RiskActs.ReachWiden, ActSpends.KindOf("allow.once")?.Kind);
+        Assert.Equal(RiskActs.ReachWiden, ActSpends.KindOf("allow.standing")?.Kind);
+        Assert.Null(ActSpends.KindOf("allow.reject"));
+        Assert.Null(ActSpends.KindOf("question.answer"));
+        Assert.All(ActSpends.Named.Where(act => ActSpends.Of(act)!.Spends != ActSpending.None), act => Assert.NotNull(ActSpends.KindOf(act)));
+    }
+
+    [Fact]
+    public void A_spend_the_policy_passes_needs_no_grant_beyond_the_act_one_it_gates_on_a_role_needs_its_covering_grant_and_one_the_owner_holds_is_refused()
     {
         var recast = SupervisorKinds.Qualified(SupervisorKinds.Vacancy, SupervisorKinds.Recast);
         var spends = OpinionCasting.Spends(SupervisorKinds.Recast, OpinionCasting.PrepaidAgent);
         Assert.True(spends);
-        Assert.Equal("vacancy.prepaid", ActSpends.Missing([[recast]], recast, spends));
-        Assert.Null(ActSpends.Missing([[recast, "vacancy.prepaid"]], recast, spends));
-        // Naming another reviewer spends nothing beyond the act.
-        Assert.Null(ActSpends.Missing([[recast]], recast, OpinionCasting.Spends(SupervisorKinds.Recast, "codex-acp")));
+
+        Assert.Null(ActSpends.Missing([[recast]], recast, spends, Judged(RiskVerdict.Pass)));
+        Assert.Equal("vacancy.prepaid", ActSpends.Missing([[recast]], recast, spends, Judged(RiskVerdict.Gate)));
+        Assert.Null(ActSpends.Missing([[recast, "vacancy.prepaid"]], recast, spends, Judged(RiskVerdict.Gate)));
+        Assert.Equal(ActSpending.Money, ActSpends.Missing([[recast, "vacancy.prepaid"]], recast, spends, Judged(RiskVerdict.OwnerOutcome)));
+        // Naming another reviewer spends nothing beyond the act, whatever the policy says of money.
+        Assert.Null(ActSpends.Missing([[recast]], recast, OpinionCasting.Spends(SupervisorKinds.Recast, "codex-acp"), Judged(RiskVerdict.OwnerOutcome)));
+
+        // A spend no grant covers is the role's where the policy gates it on a role, the owner role's where it classes it the owner's.
+        Assert.Null(ActSpends.Missing([["landing.approve"]], "landing.approve", spends: true, Judged(RiskVerdict.Gate)));
+        Assert.Equal(ActSpending.Destination, ActSpends.Missing([["landing.approve"]], "landing.approve", spends: true, Judged(RiskVerdict.OwnerOutcome)));
+    }
+
+    [Fact]
+    public void Each_spend_is_judged_as_its_own_kind_at_the_place()
+    {
+        var asked = new List<string>();
+        ActSpends.Missing([["files.allow-share"]], "files.allow-share", spends: true, act => { asked.Add(act.ToString()); return RiskVerdict.Pass; });
+        ActSpends.Missing([["allow.once"]], "allow.once", spends: true, act => { asked.Add(act.ToString()); return RiskVerdict.Pass; });
+        Assert.Equal([RiskActs.PublishOutside, RiskActs.ReachWiden], asked);
     }
 
     [Fact]
     public void A_delegate_never_holds_more_than_its_delegator()
     {
         var recast = SupervisorKinds.Qualified(SupervisorKinds.Vacancy, SupervisorKinds.Recast);
-        Assert.Equal("vacancy.prepaid", ActSpends.Missing([[recast, "vacancy.prepaid"], [recast]], recast, spends: true));
-        Assert.Equal(recast, ActSpends.Missing([[recast], []], recast, spends: false));
-        // A spend no grant covers stays the owner role's.
-        Assert.Equal(ActSpending.Destination, ActSpends.Missing([["landing.approve"]], "landing.approve", spends: true));
+        Assert.Equal("vacancy.prepaid", ActSpends.Missing([[recast, "vacancy.prepaid"], [recast]], recast, spends: true, Judged(RiskVerdict.Gate)));
+        Assert.Equal(recast, ActSpends.Missing([[recast], []], recast, spends: false, Judged(RiskVerdict.Pass)));
     }
 
     [Fact]

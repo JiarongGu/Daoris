@@ -18,8 +18,8 @@ public static class GoAheadRoleDoor
 
     /// <summary>
     /// The role's answer to go-ahead <paramref name="number"/> on <paramref name="ask"/> among what waits for the holder, or null with why
-    /// not: it is no go-ahead a role this holder holds may answer (answered since, asked of no live session, a sign-in, a high-risk or marked
-    /// place, or no held role is granted the act).
+    /// not: it is no go-ahead a role this holder holds may answer (answered since, asked of no live session, a sign-in, an act the risk policy
+    /// classes the owner's, or no held role is granted the act).
     /// </summary>
     public static Answer? Of(IReadOnlyList<JsonElement> waiting, string ask, int number, bool approved, string? words, out string? refusal)
     {
@@ -70,7 +70,7 @@ public static class GoAheadRoleDoor
             : question is not null
             ? $"`#{named}` waits for this holder as a question, not a go-ahead: it is answered through `sessions supervise`. Nothing was kept."
             : $"go-ahead {number} on ask `#{named}` is not among what waits for the roles this terminal holds: it is answered already, it is a sign-in, "
-            + "its place is high-risk or marked, no role this terminal holds is granted `goahead.answer`, or no such go-ahead exists; it stays the owner's. Nothing was kept.";
+            + "the risk policy classes its act the owner's (a high-risk place, a production-releases mark or a row), no role this terminal holds is granted `goahead.answer`, or no such go-ahead exists; it stays the owner's. Nothing was kept.";
         return null;
     }
 

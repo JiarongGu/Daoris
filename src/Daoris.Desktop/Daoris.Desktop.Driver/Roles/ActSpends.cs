@@ -1,24 +1,25 @@
 namespace Daoris.Driver;
 
-/// <summary>What an act may spend beyond its decision: money, a sign-in, or a destination outside the repository.</summary>
+/// <summary>What an act may spend beyond its decision: money, a destination outside the repository, or reach beyond its harness's.</summary>
 public static class ActSpending
 {
     public const string None = "none";
     public const string Money = "money";
-    public const string SignIn = "sign-in";
     public const string Destination = "destination";
+    public const string Permission = "permission";
 }
 
 /// <summary>
-/// One act's row of the census: what it spends, the grant that covers that spend beside the act's own (none where no grant does, so the
-/// spend stays the owner role's), and the subject it is pinned to, with which it lapses.
+/// One act's row of the census: what it spends, the grant that covers that spend beside the act's own where the risk policy gates it on a
+/// role (none where no grant does), and the subject it is pinned to, with which it lapses.
 /// </summary>
 public sealed record ActSpend(string Spends, string? Covered, string Pin);
 
 /// <summary>
-/// The census of every supervisor kind's act and every steward act: each declares what it spends and its pin. An act is
-/// admitted only where every grant on its chain (the role that acts, and each role that allowed it) lists both the act and the grant that
-/// covers what it spends; a refusal names the grant it lacks. A new act with no row here fails the census test.
+/// The census of every supervisor kind's act and every steward act: each declares what it spends and its pin. A spend is an act kind of
+/// the risk policy (<see cref="KindOf"/>) judged at the act's place. An act is admitted only where every grant on its chain (the role that
+/// acts, and each role that allowed it) lists the act and what its spend's verdict asks; a refusal names the grant it lacks, or the spend.
+/// A new act with no row here fails the census test.
 /// </summary>
 public static class ActSpends
 {
@@ -30,9 +31,9 @@ public static class ActSpends
         ["course.go-on"] = Free("the referred point"),
         ["limit.move"] = Free("the limited end, moved to a choice the staffing declares"),
         ["limit.wait"] = Free("the limited end"),
-        ["allow.once"] = Free("the held request"),
+        ["allow.once"] = new(ActSpending.Permission, null, "the held request"),
         ["allow.reject"] = Free("the held request"),
-        ["allow.standing"] = Free("the held request's rule at its place"),
+        ["allow.standing"] = new(ActSpending.Permission, null, "the held request's rule at its place"),
         ["allow.steward"] = Free("the steward's one act it allows"),
         ["files.allow-run"] = Free("the files ask"),
         ["files.allow-copy"] = Free("the files ask"),
@@ -43,7 +44,7 @@ public static class ActSpends
         ["memory.keep"] = Free("the staged rows' ids"),
         ["memory.decide"] = Free("the end's id"),
         ["departure.accept"] = Free("the quest's state and answers"),
-        // What a go-ahead lets through is judged by the place's risk and the owner's marks (GoAheadAuthority), never spent by the grant alone.
+        // What a go-ahead lets through is judged by the risk policy on its own act (GoAheadAuthority), never spent by the grant alone.
         [GoAheadAuthority.Act] = Free("the go-ahead's number, kind, target and act"),
         // A re-cast naming the prepaid harness spends its balance: the prepaid grant covers it.
         ["vacancy.recast"] = new(ActSpending.Money, "vacancy.prepaid", "the vacancy, until a walk fills it"),
@@ -76,23 +77,25 @@ public static class ActSpends
     /// <summary>The row of <paramref name="act"/> (a supervisor's qualified, a steward's bare); none for an act the census does not name.</summary>
     public static ActSpend? Of(string act) => Rows.GetValueOrDefault(act);
 
-    /// <summary>
-    /// The grant missing on <paramref name="chain"/>'s grants for <paramref name="act"/> where it <paramref name="spends"/> (its row's spend, or
-    /// none where this use spends nothing): the act itself, else the grant that covers the spend, else the spend's name where no grant covers
-    /// it; none where every grant on the chain covers both.
-    /// </summary>
+    /// <summary>The act kind of the risk policy what <paramref name="act"/> spends is; none for an act that spends nothing or the census does not name.</summary>
+    public static RiskAct? KindOf(string act) => Of(act)?.Spends switch
+    {
+        ActSpending.Money => new RiskAct(RiskActs.SpendMoney, null),
+        ActSpending.Destination => new RiskAct(act == "files.allow-share" ? RiskActs.PublishOutside : RiskActs.ReleaseStart, null),
+        ActSpending.Permission => new RiskAct(RiskActs.ReachWiden, null),
+        _ => null,
+    };
+
+    /// <summary>The grant missing on <paramref name="chain"/> for <paramref name="act"/>: the act, else what its spend's <paramref name="verdict"/> asks (the spend's name where the owner's, a role's covering grant).</summary>
     /// <param name="chain">Each grant on the act's chain: the acting role's, then each delegator's.</param>
-    public static string? Missing(IReadOnlyList<IReadOnlyCollection<string>> chain, string act, bool spends)
+    public static string? Missing(IReadOnlyList<IReadOnlyCollection<string>> chain, string act, bool spends, Func<RiskAct, string> verdict)
     {
         if (Of(act) is not { } row) return act;
-        foreach (var grants in chain)
-        {
-            if (!grants.Contains(act)) return act;
-            if (!spends || row.Spends == ActSpending.None) continue;
-            if (row.Covered is not { } covering) return row.Spends;
-            if (!grants.Contains(covering)) return covering;
-        }
-
-        return null;
+        if (chain.Count == 0 || chain.Any(grants => !grants.Contains(act))) return act;
+        if (!spends || row.Spends == ActSpending.None) return null;
+        var outcome = KindOf(act) is { } kind ? verdict(kind) : RiskVerdict.OwnerOutcome;
+        if (outcome == RiskVerdict.Pass) return null;
+        if (outcome != RiskVerdict.Gate) return row.Spends;
+        return row.Covered is { } covering && chain.Any(grants => !grants.Contains(covering)) ? covering : null;
     }
 }

@@ -5,9 +5,9 @@ namespace Daoris.Desktop;
 /// <summary>
 /// The go-ahead kind: a go-ahead a session asked for on its ask, its subject <c>{ session, goahead }</c> naming the newest
 /// session that asked it and the ask's number. Listed where a role granted <c>goahead.answer</c> may answer it (<see cref="GoAheadAuthority"/>:
-/// low and medium risk, never at a place whose production releases are marked but a push, nor a sign-in); its decide answers approved or
+/// wherever the risk policy does not class its act the owner's, and never a sign-in); its decide answers approved or
 /// refused, pinned to the go-ahead's number, kind, target and act, held for the role's window with <i>Overrule</i> in the held decisions'
-/// table, its risk and marks judged again at the release, then posted to the service's go-ahead door as the role's answer
+/// table, judged by the policy again at the release, then posted to the service's go-ahead door as the role's answer
 /// (<see cref="SupervisorDoorAnswers"/>); its leave climbs the line. Its listing reads the service only where a role could answer one
 /// (<see cref="GoAheadsOpen"/>).
 /// </summary>
@@ -34,7 +34,7 @@ internal sealed class GoAheadKind : ISupervisorKind
         {
             var subject = SupervisorSubject.GoAhead(session, ask, goAhead.Number);
             if (!loop.Supervisor.RefersDoor(subject) || SupervisorDecisionDoor.Covered(admission, subject, new RolePlace(Repository: repository)) is not { } covered) continue;
-            // Only a go-ahead a role may answer here is listed: a marked place's, a high-risk place's and a sign-in wait on the owner role.
+            // Only a go-ahead a role may answer here is listed: one the policy classes the owner's and a sign-in wait on the owner role.
             if (Refusal(judge, repository, goAhead) is not null) continue;
             waiting.Add(new
             {
@@ -81,19 +81,18 @@ internal sealed class GoAheadKind : ISupervisorKind
         // The go-ahead as it stands, pinned to its number, kind, target and act; one answered since is no longer the role's to answer.
         var goAhead = await SupervisorDoorSubjects.GoAheadAsync(service, subject, ct).ConfigureAwait(false);
         var open = goAhead is { Answer: null };
-        // The place's risk and the owner's marks as they stand at the answer, and every grant on the role's chain; a leave needs none.
+        // The risk policy as it stands at the answer, and every grant on the role's chain; a leave needs none.
         var refused = !open ? SupervisorWhy.Answered : act == SupervisorDoorActs.Hold ? null : Refusal(judge, repository, goAhead!);
         var answer = new SupervisorDoorAnswer(subject, repository, generation, act, choice, reasons, holder) { Pin = open ? SupervisorDoorSubjects.Pin(goAhead!).Said : null };
         var kept = await loop.Supervisor.DoorAsync(answer, refused, DateTimeOffset.UtcNow, ct).ConfigureAwait(false);
         return SupervisorDecided.Of(kept, SupervisorWhy.NotReferred);
     }
 
-    // Why a role may not answer it at the repository's place now: the owner role's code, else the grant missing on the role's chain. A
-    // go-ahead carries no stage its plugin names yet, so at a place whose production releases are marked it fails closed.
+    // Why a role may not answer it at the repository's place now: the owner role's code by the policy, else the grant missing on the role's chain.
     private static string? Refusal(StandingConfirmation judge, string repository, GoAheadView goAhead)
     {
         var place = judge.Placed(repository);
-        var grants = judge.Supervising(SupervisorKinds.GoAhead, place).Role?.Hold?.Acts ?? [];
-        return GoAheadAuthority.Refusal(judge.RiskAt(place), goAhead.Kind, [grants], stage: null);
+        var role = judge.Supervising(SupervisorKinds.GoAhead, place).Role;
+        return GoAheadAuthority.Refusal(goAhead.Kind, judge.GoAheadOutcome(place, goAhead.Kind, goAhead.On, role?.Id), [role?.Hold?.Acts ?? []]);
     }
 }

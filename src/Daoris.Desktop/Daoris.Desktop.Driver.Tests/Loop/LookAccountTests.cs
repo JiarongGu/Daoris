@@ -106,10 +106,16 @@ public sealed class LookAccountTests(ITestOutputHelper output) : IDisposable
         Assert.True(warm * 2 < cold, $"the second look over {Runs} runs took {warm} ms against the first's {cold} ms: {looks[1].GetProperty("stages").GetString()}");
     }
 
-    /// <summary>The milliseconds a line's own stages hold and queue: every entry not marked as work beside the look.</summary>
+    [Fact]
+    public void A_lines_own_time_counts_its_stages_and_their_queues_never_its_git_counts()
+    {
+        Assert.Equal(1_250, Own("nodes=1000x3@q001 nodes.queue=200 ~tidy=900 owed=50 git=other:10/1131ms[log:6,status:4],look:2/0ms[rev-parse:2] gitmemo=look:3/1[rev-parse:3/1]"));
+    }
+
+    /// <summary>The milliseconds a line's own stages hold and queue: every entry not marked as work beside the look, and not the git asks it counts.</summary>
     internal static long Own(string stages) =>
         stages.Split(' ', StringSplitOptions.RemoveEmptyEntries)
-            .Where(entry => !entry.StartsWith('~'))
+            .Where(entry => !entry.StartsWith('~') && !entry.StartsWith("git=", StringComparison.Ordinal) && !entry.StartsWith("gitmemo=", StringComparison.Ordinal))
             .Select(entry => entry.Split('=')[1])
             .Sum(value => long.Parse(value.Split('x', '@')[0], System.Globalization.CultureInfo.InvariantCulture));
 
