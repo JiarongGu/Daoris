@@ -561,7 +561,7 @@
   "agents.setup.fold.lookOn": "Your look first",
   "agents.setup.fold.opinion": "Second opinion: {{who}}",
   "agents.setup.fold.access.full": "Full access",
-  "agents.setup.fold.access.permissions": "Its permission prompts unrestricted",
+  "agents.setup.fold.access.permissions": "Its agents run any command",
   "agents.setup.fold.access.today": "Pauses as today",
   "agents.setup.fold.access.custom": "Its own pauses",
   "agents.setup.fold.helpers.ask": "helpers ask you",
