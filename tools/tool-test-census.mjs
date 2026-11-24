@@ -7,8 +7,10 @@
  * CLI package and the page, wherever they sit; the sets are `daoris.gates.json`'s `tests` (`tools/test-sets.mjs`). A test file is
  * placed by a set's pattern, so a new one is run with no list to edit; a script or a gate's command that names one would be a
  * list again, and is refused. A set whose runner runs its own config (Vitest, Playwright) runs every file its patterns hold, so
- * one that holds an earlier set's file would run it twice; a pick of another set (`of`) names files that set holds. No test under
- * `tools/` reads the live machine's load (its heavy-run admission or its process list): a call to a reader with no seam is named.
+ * one that holds an earlier set's file would run it twice; a pick of another set (`of`) names files that set holds. A test under
+ * `tools/` that calls a reader of the live machine's load (its heavy-run admission or its process list) with no seam of its own is
+ * named. It is a net over direct calls, read by name from the source: a reader behind a helper, or a home set from the environment
+ * elsewhere, passes it.
  */
 import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
@@ -37,6 +39,7 @@ const ADMISSION = { fixture: (args) => args !== '' && !LIVE_HOME.test(args), why
 const LIVE_READS = [
   { name: 'loadSeam', fixture: () => false, why: 'the merge\'s own reading of the machine; a test hands the flow a seam of its own (`load`)' },
   { name: 'readProcesses', fixture: () => false, why: 'the process list of the machine; a test hands `foreignTrees` its `processes`' },
+  { name: 'createAdmission', fixture: (args) => /\bdaorisHome\b/.test(args) && !LIVE_HOME.test(args), why: 'the live admission of the Daoris home; a test names a `daorisHome` of its own' },
   { name: 'heldNow', ...ADMISSION },
   { name: 'lookAt', ...ADMISSION },
   { name: 'holdersSentence', ...ADMISSION },
@@ -44,28 +47,30 @@ const LIVE_READS = [
   { name: 'loadSampler', fixture: (args) => /\bcount\b/.test(args), why: 'the live admission and process list; a test hands it its `count`' },
 ];
 
-/** The text between the parenthesis at `at` and its pair. */
-function argumentsAt(text, at) {
+const LITERALS = /\/\/[^\n]*|\/\*[\s\S]*?\*\/|'(?:[^'\\\n]|\\.)*'|"(?:[^"\\\n]|\\.)*"/g;
+
+/** The text between the parenthesis at `at` and its pair, the pair found in `code` (comments and strings blanked), the text read from `text`. */
+function argumentsAt(code, text, at) {
   let depth = 0;
-  for (let i = at; i < text.length; i++) {
-    if (text[i] === '(') depth++;
-    else if (text[i] === ')' && --depth === 0) return text.slice(at + 1, i).trim();
+  for (let i = at; i < code.length; i++) {
+    if (code[i] === '(') depth++;
+    else if (code[i] === ')' && --depth === 0) return text.slice(at + 1, i).trim();
   }
   return text.slice(at + 1).trim();
 }
 
-/** The calls in a test's `text` that read the live machine's load, each `{ line, name, why }`. */
+/** The calls in a test's `text` that read the live machine's load, each `{ line, name, why }`; a name in a comment or a string is none. */
 export function liveLoadReads(text) {
+  const code = text.replace(LITERALS, (each) => each.replace(/[^\n]/g, ' '));
   const found = [];
   for (const { name, fixture, why } of LIVE_READS) {
-    for (const match of text.matchAll(new RegExp(`(?<![.\\w$])${name}\\s*\\(`, 'g'))) {
-      const start = text.lastIndexOf('\n', match.index) + 1;
-      const before = text.slice(start, match.index).trim();
-      if (/^(?:\/\/|\*|\/\*)/.test(before) || /(?:^|\s)function\*?$/.test(before)) continue;
-      if (!fixture(argumentsAt(text, match.index + match[0].length - 1))) found.push({ line: text.slice(0, match.index).split('\n').length, name, why });
+    for (const match of code.matchAll(new RegExp(`(?<![.\\w$])${name}\\s*\\(`, 'g'))) {
+      const before = code.slice(code.lastIndexOf('\n', match.index) + 1, match.index).trim();
+      if (/(?:^|\s)function\*?$/.test(before)) continue;
+      if (!fixture(argumentsAt(code, text, match.index + match[0].length - 1))) found.push({ line: text.slice(0, match.index).split('\n').length, name, why });
     }
   }
-  return found.sort((a, b) => a.line - b.line);
+  return found.sort((x, y) => x.line - y.line);
 }
 
 /** The census over the tree at `root`: `{ problems, count }`, one problem for each file no set holds and each set or script at fault. */

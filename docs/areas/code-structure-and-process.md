@@ -182,7 +182,7 @@ finishes first and the whole set runs once.
     five-minute line stays in `tools/merge/timing.ts`; the whole run's budget is the rule's alone, which `tools/dev-metrics` reads too.
     Which tests a gate runs and a change reaches is declared once, as sets of file patterns per runner in `daoris.gates.json`'s
     `tests` (`tools/test-sets.mjs`): a test file is in the first set whose pattern holds it, so a new one is run, censused and
-    reached with no list to edit, and no script or gate command names a test file, and no test under `tools/` reads the live machine's load, its admission or its process list, but hands the code a seam (`tools/tool-test-census.mjs`). The sets of
+    reached with no list to edit, and no script or gate command names a test file, and no test under `tools/` calls a reader of the live machine's load, its admission or its process list, without a seam of its own, a net over direct calls (`tools/tool-test-census.mjs`). The sets of
     `cli-tests` (the CLI's tests, the merge tool's `unit` project, the `tools/*.test.mjs` files; `npm run verify:tests`) are the CI's gate; `npm run verify` is both. The heavy tier
     (`tools/merge/heavy-tier.ts`: the classes of a suite whose gate runs with the Process settings, the rehearsals' classes) is never
     run by a merge: it counts them deferred (the merge record's `heavy.deferred`), and every way a merge lands starts

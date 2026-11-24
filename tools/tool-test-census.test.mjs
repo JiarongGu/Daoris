@@ -105,12 +105,15 @@ test('a tools test that reads the live machine\'s load is named by line; one tha
     `// ${call('heldNow')} in a comment reads nothing`,
     `function ${call('heldNow')} {}`,
     `const nested = ${call('foreignTrees', `own, { processes: () => ${call('list')} }`)};`,
+    `const made = ${call('createAdmission', '{ say: () => {} }')};`,
+    `const mine = [${call('createAdmission', '{ daorisHome: dir, say }')}, ${call('heldNow', "'/a/home'")}];`,
+    `assert.ok(x, '${call('heldNow')} is zero'); const y = 1; // ${call('readProcesses')}`,
   ].join('\n');
-  assert.deepEqual(liveLoadReads(source).map((read) => [read.line, read.name]), [[1, 'loadSeam'], [2, 'heldNow'], [3, 'lookAt'], [4, 'foreignTrees'], [5, 'loadSampler'], [6, 'readProcesses']]);
+  assert.deepEqual(liveLoadReads(source).map((read) => [read.line, read.name]), [[1, 'loadSeam'], [2, 'heldNow'], [3, 'lookAt'], [4, 'foreignTrees'], [5, 'loadSampler'], [6, 'readProcesses'], [11, 'createAdmission']], 'a name in a string or a trailing comment, and a literal home, are not reads');
   const dir = tree({ files: ['tools/a.test.mjs', 'tools/b.test.mjs', 'src/Daoris.Cli/tool-test/c.test.ts'] });
   writeFileSync(join(dir, 'tools', 'b.test.mjs'), source);
   writeFileSync(join(dir, 'src/Daoris.Cli/tool-test/c.test.ts'), source);
   const { problems } = checkToolTests(dir);
-  assert.deepEqual(problems.map((each) => each.split(' ')[0]), ['tools/b.test.mjs:1:', 'tools/b.test.mjs:2:', 'tools/b.test.mjs:3:', 'tools/b.test.mjs:4:', 'tools/b.test.mjs:5:', 'tools/b.test.mjs:6:'], 'only a test under tools/ is read, and each call is named');
+  assert.deepEqual(problems.map((each) => each.split(' ')[0]), ['tools/b.test.mjs:1:', 'tools/b.test.mjs:2:', 'tools/b.test.mjs:3:', 'tools/b.test.mjs:4:', 'tools/b.test.mjs:5:', 'tools/b.test.mjs:6:', 'tools/b.test.mjs:11:'], 'only a test under tools/ is read, and each call is named');
   assert.match(problems[1], /heldNow\( reads the live machine/);
 });

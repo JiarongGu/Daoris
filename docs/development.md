@@ -252,7 +252,7 @@ projects read their files from their sets; a change reaches a set's units by the
 a `bounded` set's only within its gate's `paths`; a pick (`of`) runs some of another set's files apart, as `web-rules` does.
 `node tools/tool-test-census.mjs`, a step of `verify:checks`, refuses a test file no set holds, a set that holds none or names
 an undeclared gate, a set run by its own config that would run an earlier set's file twice, and a script or gate command that
-names a test file, and a test under `tools/` that reads the live machine's load (`loadSeam`, `heldNow`, `lookAt`, `foreignTrees` and the rest with no seam or home of its own: FLOWLOADLEAK1). The .NET halves are their gates' `dotnet test` commands: a test project and its filter.
+names a test file, and a direct call in a test under `tools/` to a reader of the live machine's load (`loadSeam`, `heldNow`, `lookAt`, `createAdmission`, `foreignTrees` and the rest) with no seam or home of its own; a reader behind a helper passes this net. The .NET halves are their gates' `dotnet test` commands: a test project and its filter.
 
 A focused vitest run for a React warning (an `act` warning, a console error) passes `--reporter=default`: vitest 5 picks a
 quiet reporter for an agent's run, which prints no console output of a passing test, so the warning is there and unseen
