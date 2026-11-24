@@ -31,17 +31,17 @@ const readJson = (root, path) => {
 /** The test files a command names one by one: a word that is a test file's path, a glob not counted. */
 export const namedTests = (command) => command.split(/[\s"'&|;]+/).filter((word) => !word.includes('*') && TEST_FILE.test(word));
 
-const LIVE_HOME = /process.env|DAORIS_HOME/;
+const LIVE_HOME = /process\.env|DAORIS_HOME/;
 const ADMISSION = { fixture: (args) => args !== '' && !LIVE_HOME.test(args), why: 'the live admission of the Daoris home; a test names a home of its own' };
 /** The readers of the machine's load as it stands, each with what makes a call a fixture's: a test's words change with the load it runs beside. */
 const LIVE_READS = [
-  { name: 'loadSeam', fixture: () => false, why: 'the merge's own reading of the machine; a test hands the flow a seam of its own (`load`)' },
-  { name: 'readProcesses', fixture: () => false, why: 'the machine's process list; a test hands `foreignTrees` its `processes`' },
+  { name: 'loadSeam', fixture: () => false, why: 'the merge\'s own reading of the machine; a test hands the flow a seam of its own (`load`)' },
+  { name: 'readProcesses', fixture: () => false, why: 'the process list of the machine; a test hands `foreignTrees` its `processes`' },
   { name: 'heldNow', ...ADMISSION },
   { name: 'lookAt', ...ADMISSION },
   { name: 'holdersSentence', ...ADMISSION },
-  { name: 'foreignTrees', fixture: (args) => /seam|processes/i.test(args), why: 'the machine's process list; a test hands it `processes`' },
-  { name: 'loadSampler', fixture: (args) => /count/.test(args), why: 'the live admission and process list; a test hands it its `count`' },
+  { name: 'foreignTrees', fixture: (args) => /seam|processes/i.test(args), why: 'the process list of the machine; a test hands it `processes`' },
+  { name: 'loadSampler', fixture: (args) => /\bcount\b/.test(args), why: 'the live admission and process list; a test hands it its `count`' },
 ];
 
 /** The text between the parenthesis at `at` and its pair. */
