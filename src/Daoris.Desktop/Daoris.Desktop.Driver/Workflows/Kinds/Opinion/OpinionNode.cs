@@ -20,6 +20,8 @@ public sealed class OpinionNode : BuiltInNode, IObserves, IAsksReads, IWaitsOnRo
 
     public bool ObservesFailed(NodeStatus status) => OpinionStepWaits.EndedSaid(status.Code) is not null;
 
+    public bool PassesOverFailed => true;
+
     /// <summary>
     /// An opinion fails only on a pass that ended without giving one (<see cref="OpinionStepWaits.EndedSaid"/>); a required one nobody could
     /// read waits, and the person may pass it over, as its gate's unavailable reads as skipped. The gate's own record passes it over where its
