@@ -443,6 +443,7 @@
   "person.route.SET_PLACE_CAST": "选择某个地方的角色由谁担任",
   "person.route.POLICY_PROPOSE": "提出对风险策略的更改",
   "person.route.POLICY_APPLY": "应用对风险策略的更改",
+  "person.route.POLICY_SET": "设置风险策略的一行、一项角色分配或访问模式",
   "person.route.WORKFLOW_HOLD": "接下运行中的步骤、交给另一位担任者或交还",
   "person.route.SET_HELPERS": "更改会话可以请求哪些助手",
   "person.route.SET_HELP_MODE": "更改问道衍的访问权限",

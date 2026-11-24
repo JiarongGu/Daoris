@@ -61,7 +61,7 @@ public static class RiskActTable
         {
             table.Fault is { } fault
                 ? $"  The risk policy does not read ({fault}): every act reads `owner` until it is mended."
-                : $"  Each act at {table.Place} under {table.Mode} access, by the risk policy (revision {table.Revision}); passes and gates are of the last seven days:",
+                : $"  Each act at {table.Place} under {table.Mode} access, by the risk policy (revision {table.Revision}); counts are of the last seven days:",
         };
         foreach (var row in table.Rows)
         {
@@ -74,7 +74,7 @@ public static class RiskActTable
                 RiskVerdict.Unreadable => "",
                 var key => $", set at `{key}`",
             };
-            lines.Add($"    {row.Kind.PadRight(17)}{row.Class}{by}{answers}{from}  ({row.Passes} passed, {row.Gates} gated)");
+            lines.Add($"    {row.Kind.PadRight(17)}{row.Class}{by}{answers}{from}  ({row.Passes} passed, {row.Gates} asked)");
         }
 
         if (table.Unknown.Count > 0) lines.Add($"  Rows naming no act this build knows, not read: {string.Join(", ", table.Unknown)}.");

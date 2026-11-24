@@ -151,6 +151,15 @@ public sealed class PolicyChanges(string home, Func<DateTimeOffset> clock, Owner
         }
     }
 
+    /// <summary>The owner's own terminal setting one edit as <c>daoris settings risk set</c> sends it: the answer as the route says it.</summary>
+    public static JsonElement SetByOwnerTerminal(string home, DateTimeOffset now, JsonObject wire, string revision)
+    {
+        string? Text(string name) => wire[name] is JsonValue value && value.TryGetValue<string>(out var text) ? text : null;
+        var edit = new PolicyEdit(Text("place") ?? "", Text("act") ?? "", Text("class"), Text("by"), Text("mode")) { Subject = Text("subject") ?? PolicyEdit.RowSubject };
+        var outcome = new PolicyChanges(home, () => now, new OwnerTurns(_ => [])).Set(PolicyChannel.OwnerPress(null), PolicyChangeLine.Cli, [edit], revision);
+        return JsonSerializer.SerializeToElement(new { done = outcome.Done, code = outcome.Code, message = outcome.Said });
+    }
+
     /// <summary>The edits written under the caller's gate, each through the door that validates it; null where they were made.</summary>
     private PolicyOutcome? Make(IReadOnlyList<PolicyEdit> edits, string baseRevision, string id, string why)
     {

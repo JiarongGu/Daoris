@@ -26,7 +26,26 @@ public sealed class PolicyChannelTests
         Assert.Null(PolicyRoutes.ChannelOf(TerminalTierBy.Session, null, "s-ask").Session);
     }
 
+    [Fact]
+    public void The_owners_set_is_read_from_the_channel_it_proves_and_a_terminal_in_no_agents_job_is_the_owners_own()
+    {
+        Assert.Equal(PolicyChannel.OwnerPress(null), PolicyRoutes.SetChannelOf(TerminalTierBy.Window, null));
+        Assert.Equal(PolicyChannel.OwnerPress(null), PolicyRoutes.SetChannelOf(TerminalTierBy.Card, "s-ask"));
+        Assert.Equal(PolicyChannel.OwnerPress(null), PolicyRoutes.SetChannelOf(TerminalTierBy.Terminal, null));
+        Assert.Equal(PolicyChannel.Agent("s-work"), PolicyRoutes.SetChannelOf(TerminalTierBy.Session, "s-work"));
+        Assert.Equal(PolicyChannel.Keyless, PolicyRoutes.SetChannelOf(TerminalTierBy.AskDaoris, "s-ask"));
+    }
+
+    [Fact]
+    public void A_set_by_a_session_or_by_ask_daoris_goes_on_the_owners_card_and_the_table_is_an_open_read()
+    {
+        var set = new Shenora.Core.Ipc.IpcRequest { Module = DriverModule.Name, Type = "POLICY_SET", Payload = System.Text.Json.JsonDocument.Parse("{}").RootElement };
+        Assert.True(PipeOwnerOnly.Governs(set));
+    }
+
     [Theory]
+    [InlineData("POLICY_SET")]
+    [InlineData("RISK_TABLE")]
     [InlineData("POLICY_PROPOSE")]
     [InlineData("POLICY_APPLY")]
     [InlineData("POLICY_PROPOSALS")]

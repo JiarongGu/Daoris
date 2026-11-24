@@ -9,6 +9,7 @@ import { type GitAccessEdit, type RepositoryGitAccess, resolveGitAccess } from '
 import { repositoryRisk } from '../../settings/place/PlaceRisk';
 import { useSetPlaceRisk } from '../../bridge/repositories/placeRisk';
 import { placeCastBridge } from '../../bridge/repositories/cast';
+import { riskActsBridge } from '../../bridge/repositories/riskActs';
 import type { Answered } from '../../work/InlineConfirm';
 import { canBeAsked, type Registration, SESSION_ACTIVE } from '../../data/api';
 import { useSessions } from '../../data/queries';
@@ -411,6 +412,7 @@ export function useRepositorySetup({ registration, enabled, notify, onOpenGit }:
           ...repositoryRisk(state.placeRisk, repository, workspace),
           workspace,
           cast: placeCastBridge,
+          acts: riskActsBridge,
           onChange: (change) => setPlaceRisk.mutate({ workspace, repository, ...change }, {
             onSuccess: () => notify(t('settings.risk.saved', { name: repository })),
             onError: onDriverError,

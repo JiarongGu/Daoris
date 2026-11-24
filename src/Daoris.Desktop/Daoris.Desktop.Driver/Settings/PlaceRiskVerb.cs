@@ -105,41 +105,44 @@ public sealed class PlaceRiskVerb : ChoiceVerb
         });
     }
 
-    /// <summary><c>set</c>: an agent's is a proposal the owner confirms; the owner's own terminal writes at once on the revision it read.</summary>
-    private static ChoicePress Setting(IReadOnlyList<string> args, DriverConfig before, DriverChoicesWorld world)
+    /// <summary>The policy's revision a config reads and the owner's write of one edit at it: Workflows' policy, which Loop hands this verb (Settings is below it).</summary>
+    public Func<DriverConfig, string>? Revision { get; init; }
+
+    public Func<string, DateTimeOffset, JsonObject, string, JsonElement>? Writer { get; init; }
+
+    private ChoicePress Setting(IReadOnlyList<string> args, DriverConfig before, DriverChoicesWorld world)
     {
         Flags(args, SetValued, [], "settings risk set", SetUsage);
         var edit = EditOf(args);
         var conversation = FlagValue(args, "--conversation") ?? world.Instance.Environment(DriverChoicesCommand.SessionVariable);
         var agent = conversation is { Length: > 0 } || world.InAgentJob() == true;
-        var payload = new JsonObject { ["edits"] = new JsonArray(Wire(edit)) };
+        var payload = new JsonObject { ["edits"] = new JsonArray(edit) };
         if (agent)
         {
             if (conversation is { Length: > 0 }) payload["conversation"] = conversation;
             return Pressed("risk set", ChoiceRoutes.PolicyPropose, payload, world, _ => throw new ChoiceWords(AgentSet, 1));
         }
 
-        var revision = RiskPolicy.Of(before).Revision;
+        if (Revision is not { } revisionOf || Writer is not { } set) throw new ChoiceWords("this program was handed no policy to set; nothing was changed.");
+        var revision = revisionOf(before);
         payload["revision"] = revision;
         var home = DriverConfig.HomeOf(world.ConfigPath);
-        return Pressed("risk set", ChoiceRoutes.PolicySet, payload, world, _ =>
-        {
-            var outcome = new PolicyChanges(home, world.Now, new OwnerTurns(_ => [])).Set(PolicyChannel.OwnerPress(null), PolicyChangeLine.Cli, [edit], revision);
-            return Task.FromResult<object?>(JsonSerializer.SerializeToElement(new { done = outcome.Done, code = outcome.Code, message = outcome.Said }));
-        });
+        return Pressed("risk set", ChoiceRoutes.PolicySet, payload, world, _ => Task.FromResult<object?>(set(home, world.Now(), edit.DeepClone().AsObject(), revision)));
     }
 
     private const string AgentSet = "an agent's set of the risk policy is a proposal the owner confirms in Ask Daoris's conversation, so it needs Daoris running; nothing was changed.";
 
-    private static PolicyEdit EditOf(IReadOnlyList<string> args)
+    private static JsonObject EditOf(IReadOnlyList<string> args)
     {
         var words = Operands(args, SetValued).Skip(2).ToList();
-        if (words.Count > 0 && !PlaceKeyed(words[0])) throw new ChoiceWords($"`{words[0]}` is no place (machine, workspace/<name> or repository/<name>) — {SetUsage}");
+        if (words.Count > 0 && !Place(words[0])) throw new ChoiceWords($"`{words[0]}` is no place (machine, workspace/<name> or repository/<name>) — {SetUsage}");
         if (words.Count >= 3 && words[1] is "cast" or "access")
         {
             var cast = words[1] == "cast";
             if (cast ? words.Count != 4 : words.Count < 3) throw new ChoiceWords($"`settings risk set` takes a place, then cast <role> <holder> or access <setting> — {SetUsage}");
-            return cast ? PolicyEdit.Cast(words[0], words[2], words[3] == "default" ? null : words[3]) : PolicyEdit.Access(words[0], string.Join(';', words.Skip(2)));
+            return cast
+                ? new JsonObject { ["subject"] = "cast", ["place"] = words[0], ["act"] = words[2], ["by"] = words[3] == "default" ? null : words[3] }
+                : new JsonObject { ["subject"] = "access", ["place"] = words[0], ["act"] = "access", ["class"] = string.Join(';', words.Skip(2)) };
         }
 
         if (words.Count != 3) throw new ChoiceWords($"`settings risk set` takes a place, an act and a class — {SetUsage}");
@@ -157,17 +160,12 @@ public sealed class PlaceRiskVerb : ChoiceVerb
 
         if (by is not null && riskClass != RiskClasses.Role) throw new ChoiceWords($"--by names the role of a role row — {SetUsage}");
         if (mode is not (null or "full" or "restricted")) throw new ChoiceWords($"--mode is full or restricted — {SetUsage}");
-        return new PolicyEdit(place, act, riskClass, by, mode);
+        return new JsonObject { ["place"] = place, ["act"] = act, ["class"] = riskClass, ["by"] = by, ["mode"] = mode };
     }
 
-    private static bool PlaceKeyed(string place) => RiskPolicy.IsPlace(place);
-
-    private static JsonObject Wire(PolicyEdit edit)
-    {
-        var wire = new JsonObject { ["place"] = edit.Place, ["act"] = edit.Act, ["class"] = edit.Class, ["by"] = edit.By, ["mode"] = edit.Mode };
-        if (edit.Subject != PolicyEdit.RowSubject) wire["subject"] = edit.Subject;
-        return wire;
-    }
+    private static bool Place(string place) =>
+        place == PlaceRiskBook.MachineKey || (place.StartsWith("workspace/", StringComparison.Ordinal) && place.Length > 10)
+        || (place.StartsWith("repository/", StringComparison.Ordinal) && place.Length > 11);
 
     private static ChoicePress Applying(IReadOnlyList<string> args, DriverChoicesWorld world)
     {
