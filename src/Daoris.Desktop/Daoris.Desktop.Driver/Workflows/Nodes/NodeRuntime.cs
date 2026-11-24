@@ -593,7 +593,7 @@ public sealed class NodeRuntime(
         if (governed.Scope is { } run)
         {
             if (!atEnd) await Keeping.AfterRoundsAsync(governed, run, _config, said, ct).ConfigureAwait(false);
-            await Keeping.EndAsync(governed, run, said, git.Lacks, tip, ct).ConfigureAwait(false);
+            await Keeping.EndAsync(governed, run, said, git.Lacks, tip, tips.TipAsync, ct).ConfigureAwait(false);
             await Keeping.ReleaseStepsAsync(governed, run, ct).ConfigureAwait(false);
             Keeping.OwnTrees(run);
             AttemptTenures.KeepAt(records, governed.Unit.Id, governed.Graph.Nodes, run.Run.Binding.Workspace, run.Run.Binding.Repository, _config, clock());

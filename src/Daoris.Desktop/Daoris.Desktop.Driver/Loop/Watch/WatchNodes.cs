@@ -115,7 +115,11 @@ internal sealed class WatchNodes
         _handOffs = new OpenHandOffs(home, resolvers, said => Log?.Info("resolve.run", ("said", said)));
         nodes.Doors = NodeDoors.Wired(new NodeDoorWiring(home, () => HomeLease.HeldHere(home) && !watch.DrainsNow())
         {
-            Log = (code, said) => Log?.Info(code, ("said", said)),
+            Log = (code, said) =>
+            {
+                if (code == UnlandedRunEnds.Event) Log?.Error(code, ("said", said));
+                else Log?.Info(code, ("said", said));
+            },
             Clock = clock,
             Landing = () => new LandPerformer(home, new ServiceReviewLandingWorld(home, service), new SessionTrees(home, landingPlugins),
                 watch.Events ?? new SessionEvents(DaorisHome.Entry(home, HomeEntry.Sessions)), service.LandingSaid) { Told = hooks.Tell },
