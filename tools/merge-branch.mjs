@@ -1220,7 +1220,6 @@ export function memoryNeed(gate) {
   return 0;
 }
 
-// The memory read and the death of it: `merge-branch/memory.mjs`.
 export { memoryDeath, parseMeminfo, parseWindowsMemory, readMemory, reserveGb };
 
 const span = (ms) => (ms >= 60_000 && ms % 60_000 === 0 ? `${ms / 60_000} m` : duration(ms));
