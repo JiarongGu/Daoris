@@ -3,7 +3,7 @@ namespace Daoris.Knowledge;
 /// <summary>
 /// The schema of the service's event journal, <c>event_journal</c>, and
 /// the triggers on <c>sessions</c> that mint it. One row per raw transition of a record this machine owns, in the order the statements
-/// committed (<c>position</c>, never reused), read by nothing yet.
+/// committed (<c>position</c>, never reused); the families are sessions, quests, asks, channel, memory and opinions (<see cref="OpinionsSchema"/>).
 /// </summary>
 /// <remarks>
 /// <para><b>Minted by trigger</b>, in the statement that writes the record, so every writer mints it: the host, the driver through it, each
@@ -273,6 +273,25 @@ internal static class EventJournal
           INSERT INTO event_journal (at, record, family, change, state_old, state_new, op, entry, from_session, workspace)
           VALUES ({Now}, COALESCE(substr(NEW.id, 1, 64), ''), 'memory', 'memory', substr(OLD.state, 1, 32), substr(NEW.state, 1, 32),
                   substr(NEW.kind, 1, 32), substr(COALESCE(NEW.target, NEW.entry), 1, 64), substr(NEW.session, 1, 64), substr(NEW.workspace, 1, 64));
+          {Trim}
+        END;
+        """;
+
+    /// <summary>
+    /// The opinions' trigger (BUS2b2): an <c>answers-kept</c> row when a second opinion's answers change, naming the opinion, the session
+    /// that answered and the counts standing as codes (<c>fixed:1,rejected:0,unresolved:2</c>), never an answer's text.
+    /// </summary>
+    internal static readonly string OpinionsSchema = $"""
+        {Table}
+
+        CREATE TRIGGER IF NOT EXISTS event_journal_opinion_answers AFTER UPDATE OF answers ON opinions
+        WHEN NEW.answers IS NOT OLD.answers AND NEW.answers IS NOT NULL AND json_valid(NEW.answers) AND json_type(NEW.answers) = 'array'
+        BEGIN
+          INSERT INTO event_journal (at, record, family, change, from_session, marks)
+          VALUES ({Now}, COALESCE(substr(NEW.id, 1, 64), ''), 'opinions', 'answers-kept', substr(NEW.handed_to, 1, 64),
+                  'fixed:' || (SELECT count(*) FROM json_each(NEW.answers) AS a WHERE json_extract(a.value, '$.said') = 'fixed')
+                  || ',rejected:' || (SELECT count(*) FROM json_each(NEW.answers) AS a WHERE json_extract(a.value, '$.said') = 'rejected')
+                  || ',unresolved:' || (SELECT count(*) FROM json_each(NEW.answers) AS a WHERE json_extract(a.value, '$.said') = 'unresolved'));
           {Trim}
         END;
         """;

@@ -43,10 +43,14 @@ public static class BusTypes
     /// <summary>Where the service's ledger is heard (its change stream), the node runtime's records, and this process's standing choices.</summary>
     public const string Ledger = "driver/ledger", Nodes = "driver/nodes", Choices = "driver/choices", Sessions = "driver/sessions";
 
-    private const string Unmeasured = "no handling time measured yet: the install's `daoris bus stats` at cddcdac313 (2026-11-21) holds one check start, no settle and no pass, its quests paused";
+    /// <summary>The commit the install ran when its measures were read; the days they cover ran earlier builds too, so it dates the reading, not the figures.</summary>
+    public const string MeasuredAt = "99ce8edc60";
+
+    private const string Unmeasured = "no handling time of it is measured yet: the install's `daoris bus stats` at " + MeasuredAt
+        + " (2026-11-21 to 23) holds none for it (a consumer's acknowledgement time is the `handled` measure, which begins there)";
 
     private const string AtALook =
-        Unmeasured + "; its handler acts at a look, and the looks ran about once a minute there (each stage n=1356 that day), so ten minutes is ten looks";
+        Unmeasured + "; the run's step consumer began nodes at an ending fact a mean 68 s and at most 65 minutes after it (n=178, 2026-11-22 and 23), so ten minutes stands until its handling times are in";
 
     private static readonly IReadOnlyList<BusField> Settled =
     [
@@ -59,8 +63,10 @@ public static class BusTypes
     /// <summary>A check's attempt began, both its slots held: its executor must settle it.</summary>
     public static readonly BusType CheckStarted = new(
         "check.started", 1, BusClasses.Fact, Checks, Checks,
-        BusDeadline.Stated(TimeSpan.FromHours(2) + TimeSpan.FromMinutes(15),
-            Unmeasured + "; a check runs under its node's bound, two hours where it declares none, past which its executor settles it unknown, and a quarter hour more for that settle"),
+        BusDeadline.Measured(TimeSpan.FromMinutes(105),
+            "the checks' start-to-verdict times, read at " + MeasuredAt + ", 2026-11-21 to 23: n=214 (passed 154, failed 53, unknown 7), the means 9 to 27 minutes a day, the most 3,091,955 ms (51.5 minutes); "
+            + "twice the most, to a quarter hour. A check runs under its node's bound, two hours where it declares none, past which its executor settles it unknown, which ends the timer; "
+            + "one running longer than any measured is stalled once, said on Stalls, and tried again"),
         1, BusGiveUps.FinalExit,
         [new("invocation", BusShapes.Id), new("repository", BusShapes.Id), new("commit", BusShapes.Id), new("gates", BusShapes.Count), new("reach", BusShapes.Code)]);
 
@@ -91,8 +97,9 @@ public static class BusTypes
     /// <summary>A pass asked of a reviewer: its door must give it.</summary>
     public static readonly BusType OpinionAsked = new(
         "opinion.asked", 1, BusClasses.Request, Opinions, Reviewer,
-        BusDeadline.Stated(TimeSpan.FromMinutes(OpinionKey.DefaultMinutes + 10),
-            Unmeasured + "; a pass runs under its rule's bound, twenty minutes where the rule names none (5 to 120), and ten more are its answer's landing; a rule's longer bound outlasts it, which the shadow watchdog counts"),
+        BusDeadline.Measured(TimeSpan.FromMinutes(30),
+            "the passes' times, read at " + MeasuredAt + ", 2026-11-21 to 23: n=81, the means 8 to 9 minutes a day, the most 867,000 ms (14.5 minutes); twice the most, to five minutes. "
+            + "A pass runs under its rule's bound, twenty minutes where the rule names none (5 to 120); a rule's longer bound outlasts it, which the watchdog counts"),
         1, BusGiveUps.Refused,
         [new("session", BusShapes.Id), new("occasion", BusShapes.Code), new("pass", BusShapes.Code)]);
 
@@ -123,6 +130,11 @@ public static class BusTypes
     public static readonly BusType OpinionAnswered = new(
         "opinion.answered", 1, BusClasses.Fact, Opinions, OpinionGate, BusDeadline.Stated(TimeSpan.FromMinutes(10), AtTheGate), 2, BusGiveUps.Held,
         [new("fixed", BusShapes.Count), new("rejected", BusShapes.Count), new("unresolved", BusShapes.Count), new("notAnswered", BusShapes.Count)]);
+
+    /// <summary>Answers kept to a pass's findings mid-turn, as the service journalled them: an observation, so only the turn's end (<see cref="OpinionAnswered"/>) is judged.</summary>
+    public static readonly BusType OpinionKept = new(
+        "opinion.kept", 1, BusClasses.Fact, Ledger, Stalls, BusDeadline.Stated(TimeSpan.FromDays(1), Observed), 0, BusGiveUps.Dropped,
+        [new("session", BusShapes.Id), new("fixed", BusShapes.Count), new("rejected", BusShapes.Count), new("unresolved", BusShapes.Count)]);
 
     /// <summary>The person's word at a session's gate (<i>Go on anyway</i>, <i>I looked myself</i>, an Accept's answer): the opinion's gate must judge that session's owed opinions.</summary>
     public static readonly BusType OpinionSaid = new(
@@ -210,7 +222,7 @@ public static class BusTypes
     /// <summary>Every type, each once.</summary>
     public static readonly IReadOnlyList<BusType> All =
     [
-        OpinionOwed, OpinionAsked, OpinionGiven, OpinionDelivered, OpinionAnswered, OpinionSaid, QuestMoved, NodeBegun, ChoicesWritten, SessionTurnEnded, StepSettled, StepTurnEnded, PolicyPassed, LandOutcome, RunBound, CheckStarted, CheckPassed,
+        OpinionOwed, OpinionAsked, OpinionGiven, OpinionDelivered, OpinionAnswered, OpinionKept, OpinionSaid, QuestMoved, NodeBegun, ChoicesWritten, SessionTurnEnded, StepSettled, StepTurnEnded, PolicyPassed, LandOutcome, RunBound, CheckStarted, CheckPassed,
         CheckFailed, CheckUnknown, CheckRequeued, CheckEnded, Stalled, GiveUp, FlowRetry,
     ];
 

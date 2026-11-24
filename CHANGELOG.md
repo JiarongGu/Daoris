@@ -5,6 +5,9 @@ with the version and date at release.
 
 ## Unreleased
 
+- `daoris bus stats` now reads each consumer's handling time by kind (`handled`) and each day's share of the 128 MiB a day the bus log may
+  put on disk, and the log says once when a day passes it. A check's start and a second opinion's asking carry deadlines measured on the
+  install; the answers an author keeps to a second opinion's findings reach the bus's log as they are given, not only at the turn's end.
 - `daoris declaration split --dry-run` converts a repository's `daoris.gates.json` in scratch to the folder of small files the declaration is moving to (one file per gate
   with the test sets it runs, a small file per other concern) and the values that belong to one machine, then proves the folder resolves to the old file: each gate's
   commands, its expanded reach, the set holding each test file and the gates' order. A difference, a member nobody sorted and a test file held by two sets are named, exit 1.

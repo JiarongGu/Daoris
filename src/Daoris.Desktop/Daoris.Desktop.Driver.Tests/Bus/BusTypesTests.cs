@@ -54,16 +54,36 @@ public sealed class BusTypesTests
     }
 
     /// <summary>
-    /// 🔴 A provisional deadline stands on the bound it names, which lives above the bus (a check's own bound, a busy runner's offer, a
-    /// pass's bound), so a bound that moves fails here until its deadline moves with it.
+    /// 🔴 BUS2b2: where the install measured a type's handling (a check's start to its verdict, a pass's asking to its giving) its deadline
+    /// is the measured one, twice the most the install measured, naming its build, and no longer provisional; a deadline without a measure
+    /// stands on the bound it names, which lives above the bus, so a bound that moves fails here until its deadline moves with it.
     /// </summary>
     [Fact]
-    public void A_provisional_deadline_stands_on_the_bound_it_names()
+    public void A_deadline_is_measured_where_the_install_measured_the_handling_and_stands_on_its_bound_where_it_did_not()
     {
-        Assert.Equal(HeavyExecutor.DefaultBound + TimeSpan.FromMinutes(15), BusTypes.CheckStarted.Deadline.Within);
+        const long CheckMost = 3_091_955, PassMost = 867_000;
+        Assert.False(BusTypes.CheckStarted.Deadline.Provisional);
+        Assert.False(BusTypes.OpinionAsked.Deadline.Provisional);
+        Assert.InRange(BusTypes.CheckStarted.Deadline.Within.TotalMilliseconds, 2 * CheckMost, 2 * CheckMost + 15 * 60_000);
+        Assert.InRange(BusTypes.OpinionAsked.Deadline.Within.TotalMilliseconds, 2 * PassMost, 2 * PassMost + 5 * 60_000);
+        Assert.All([BusTypes.CheckStarted, BusTypes.OpinionAsked], type => Assert.Contains(BusTypes.MeasuredAt, type.Deadline.Basis, StringComparison.Ordinal));
         Assert.Equal(HeavyExecutor.BusyAgain + TimeSpan.FromMinutes(5), BusTypes.CheckRequeued.Deadline.Within);
-        Assert.Equal(TimeSpan.FromMinutes(OpinionKey.DefaultMinutes + 10), BusTypes.OpinionAsked.Deadline.Within);
-        Assert.True(BusTypes.CheckStarted.Deadline.Provisional);
+        Assert.True(BusTypes.CheckRequeued.Deadline.Provisional);
+        Assert.True(BusTypes.CheckEnded.Deadline.Provisional);
+    }
+
+    /// <summary>
+    /// 🔴 BUS2b2: the new observed fact, <c>opinion.kept</c>, is declared once with its counts, arms no timer and obliges no one, so the
+    /// turn's end stays what the gate judges.
+    /// </summary>
+    [Fact]
+    public void The_kept_answers_fact_is_an_observation_with_its_counts()
+    {
+        var kept = BusTypes.Of("opinion.kept/1")!;
+        Assert.Same(BusTypes.OpinionKept, kept);
+        Assert.False(BusTypes.Obliges(kept));
+        Assert.Equal(["session", "fixed", "rejected", "unresolved"], kept.Fields.Select(field => field.Name));
+        Assert.DoesNotContain(kept, BusTypes.EndedBy(BusTypes.OpinionAnswered.Kind).Select(end => end.Armed));
     }
 
     /// <summary>What a list kept, its ids joined by commas or <c>unknown</c>, and how many it dropped.</summary>

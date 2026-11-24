@@ -355,6 +355,7 @@ internal sealed class BusConsumerRun
     private readonly SemaphoreSlim _atOnce;
     private readonly List<Task> _running = [];
     private readonly long _epoch;
+    private readonly DateTimeOffset _began;
     private long _highest;
     private long _cursor;
     private bool _live;
@@ -369,6 +370,7 @@ internal sealed class BusConsumerRun
         _kinds = [.. consumer.Subscription.Types.Select(type => type.Kind)];
         _atOnce = new SemaphoreSlim(Math.Max(1, consumer.SubjectsAtOnce ?? queue.Options.SubjectsAtOnce));
         _epoch = claim.Epoch;
+        _began = queue.Log.Clock.GetUtcNow();
         _cursor = claim.Cursor;
         _highest = claim.Cursor;
         _claimedParked = claim.Parked;
@@ -578,7 +580,7 @@ internal sealed class BusConsumerRun
             {
                 foreach (var each in row)
                 {
-                    if (!Acknowledge(each, handled.Ends)) return;
+                    if (!Acknowledge(each, handled.Ends, timed: true)) return;
                 }
 
                 Dequeue(subject, row.Count);
@@ -664,7 +666,7 @@ internal sealed class BusConsumerRun
     private long CursorLocked() => _open.Count == 0 ? _highest : _open.Min - 1;
 
     /// <summary>The acknowledgement, its cursor and the timers it ends in one write; false where the store fenced this run off.</summary>
-    private bool Acknowledge(BusEnvelope entry, bool ends)
+    private bool Acknowledge(BusEnvelope entry, bool ends, bool timed = false)
     {
         long cursor;
         bool parked;
@@ -676,7 +678,9 @@ internal sealed class BusConsumerRun
         }
 
         var ended = ends && BusTypes.Of(entry.Kind) is { } type && BusTypes.Ends(type).Contains(BusEnd.Acknowledged) ? _consumer.Obliged : null;
-        return Written(() => _queue.Store.Acknowledge(new BusAck(Name, _epoch, cursor, entry) { Ends = ended, Unpark = parked, Writer = _queue.Log.WriterRead }), cursor) is not false;
+        var kept = Written(() => _queue.Store.Acknowledge(new BusAck(Name, _epoch, cursor, entry) { Ends = ended, Unpark = parked, Writer = _queue.Log.WriterRead }), cursor) is not false;
+        if (kept && timed) _queue.Log.Measured(BusMeasures.Handled, $"{Name}:{entry.Kind}", Math.Max(0, (long)(_queue.Log.Clock.GetUtcNow() - (entry.At > _began ? entry.At : _began)).TotalMilliseconds));
+        return kept;
     }
 
     /// <summary>

@@ -537,7 +537,7 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     (`OpinionGateRun`); a run that must return also hears the change stream for it and drains it before it ends, its queue quiet and
     what the gate began beside ended, within the gate's ten minutes, the watcher looking at the pace meanwhile so `--quiet-end` ends a
     quiet pass, and a run until idle looks again after a drain that judged, ran or moved the plan's view. The author's answers reach it as the go-on reads them at the
-    turn's end; the service journals none of its own yet (BUS2b2). Its findings reach the working session once, as its next
+    turn's end; each keep of them mid-turn is also journalled by the service and teed as the observed `opinion.kept`, which the gate does not judge. Its findings reach the working session once, as its next
     turn, a word into a conversation sent once by its effect key and never again after a crash left it uncertain (the findings then
     the person's, `word-uncertain`), a send that throws read as failed and tried again: a session awaiting its run's step takes them as an ended record does, through the one door and the one go-on, and the graph's
     `opinion` step then waits on that session's answer (`waiting`, its wait `answer` naming the session, held by that agent:

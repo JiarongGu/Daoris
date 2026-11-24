@@ -52,6 +52,10 @@ public sealed class OpinionStore
             CREATE INDEX IF NOT EXISTS opinions_session ON opinions (session);
             """;
         await command.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
+
+        await using var journal = _db.Command();
+        journal.CommandText = EventJournal.OpinionsSchema;
+        await journal.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
     }
 
     /// <summary>Keep a new pass, as asked: nothing given, handed or answered yet.</summary>
