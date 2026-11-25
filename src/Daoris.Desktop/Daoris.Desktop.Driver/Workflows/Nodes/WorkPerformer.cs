@@ -441,8 +441,8 @@ public sealed class WorkPerformer(NodeRecordFiles records, IWorkPerformPort port
                     // A check stopped meanwhile answers as a stale attempt's, settling it and moving nothing.
                     var stopped = With(record, current, current with { State = AttemptStates.Settled, Outcome = WorkStates.Unknown, Code = answer.Outcome?.Code, Generation = generation });
                     return (stopped with { Statuses = With(stopped.Statuses, NodeLifecycle.Reconciled(status, current.Attempt)) }, new WorkPerformed(unit, node.Id, PerformedWhat.Stale));
-                case ReconcileStates.Unknown when check && isCurrent && UnrunChecks.Is(answer.Outcome?.Code):
-                    return UnrunChecks.Again(record, current, node, generation, now, answer.Outcome?.Code, answer.Outcome?.Evidence?.Message);
+                case ReconcileStates.Unknown when check && isCurrent && UnrunChecks.Is(answer.Outcome?.Code ?? WorkStates.Unknown):
+                    return UnrunChecks.Again(record, current, node, generation, now, answer.Outcome?.Code ?? WorkStates.Unknown, answer.Outcome?.Evidence?.Message);
                 case ReconcileStates.Unknown when check && isCurrent && answer.Outcome?.Code == VerifyResult.Unaccounted:
                     return (null, new WorkPerformed(unit, node.Id, PerformedWhat.Unknown, VerifyResult.Unaccounted) { Detail = answer.Outcome?.Evidence?.Message });
                 default:

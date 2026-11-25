@@ -30,7 +30,8 @@ internal static partial class UnbuiltTrees
         ];
     }
 
-    [GeneratedRegex(@"\berror (CS|TS|FS|BC)\d{4}:", RegexOptions.CultureInvariant)]
+    // A source location before it: an error the code makes has one, while the compiler's own I/O (a locked output it cannot write) has none.
+    [GeneratedRegex(@"(\(\d+,\d+(,\d+,\d+)?\)|:\d+:\d+ -):? error (CS|TS|FS|BC)\d{4,5}:", RegexOptions.CultureInvariant)]
     private static partial Regex Compiler();
 
     [GeneratedRegex(@"\s+\[[^\[\]]+\.(cs|fs|vb)proj\]\s*$", RegexOptions.CultureInvariant)]

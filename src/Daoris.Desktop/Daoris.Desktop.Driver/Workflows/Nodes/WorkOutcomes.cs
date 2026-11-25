@@ -76,9 +76,10 @@ internal sealed class WorkOutcomes(Func<DateTimeOffset> clock)
         }
 
         var moved = NodeLifecycle.Apply(node, status, move);
-        if (!moved.Moved && OnPort(attempt) && status.State == NodeStates.Unknown)
+        if (!moved.Moved && OnPort(attempt) && status.State == NodeStates.Unknown
+            && (moved.Refused is NodeRefusal.NotBound or NodeRefusal.NoBinding or NodeRefusal.StaleAttempt || (moved.Refused == NodeRefusal.NoAcceptance && status.Binding is null)))
         {
-            // A check's verdict the one table refuses binds to no work: only a new attempt on the work as it stands answers it (UnrunChecks).
+            // A check's verdict that binds to no work: only a new attempt on the work as it stands answers it (UnrunChecks); a contract's refusal stays held.
             return UnrunChecks.Again(record, attempt, node, generation, now, moved.Refused,
                 $"its {outcome.State} did not bind to the work it was sent on ({moved.Refused})");
         }

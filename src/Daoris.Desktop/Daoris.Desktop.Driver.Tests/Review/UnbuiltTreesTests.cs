@@ -21,6 +21,8 @@ public sealed class UnbuiltTreesTests
             "    2 Error(s)",
             $@"{Tree}\src\Driver\Review\Heavy\LoadFailures.cs(14,91): error CS0117: 'CheckAdmission' does not contain a definition for 'Need' [{Tree}\src\Driver\Driver.csproj]",
             "src/web/api.ts(3,1): error TS2339: Property 'need' does not exist on type 'Admission'.",
+            "src/web/load.ts:9:4 - error TS18048: 'admission' is possibly 'undefined'.",
+            $@"{Tree}\src\Legacy\Module1.vb(12,5): error BC30451: 'Need' is not declared. [{Tree}\src\Legacy\Legacy.vbproj]",
             "contracts: the generator failed; its own words are above");
 
         Assert.Equal(
@@ -28,6 +30,8 @@ public sealed class UnbuiltTreesTests
                 @"src\Driver\Review\Heavy\LoadFailures.cs(14,91): error CS0117: 'CheckAdmission' does not contain a definition for 'Need'",
                 @"src\Driver\Review\Heavy\LoadFailures.cs(76,66): error CS0117: 'CheckAdmission' does not contain a definition for 'Need'",
                 "src/web/api.ts(3,1): error TS2339: Property 'need' does not exist on type 'Admission'.",
+                "src/web/load.ts:9:4 - error TS18048: 'admission' is possibly 'undefined'.",
+                @"src\Legacy\Module1.vb(12,5): error BC30451: 'Need' is not declared.",
             ],
             UnbuiltTrees.Errors(output, Tree));
     }
@@ -37,6 +41,8 @@ public sealed class UnbuiltTreesTests
     [InlineData(@"C:\Program Files\dotnet\sdk\Microsoft.Common.targets(5,5): error MSB3027: Could not copy ""obj\Driver.dll"": the file is locked by: ""Daoris (1234)""")]
     [InlineData(@"D:\repo\Driver.csproj : error NU1301: Unable to load the service index for source https://api.nuget.org/v3/index.json.")]
     [InlineData("contracts would not build: tsc is not recognized")]
+    [InlineData(@"CSC : error CS2012: Cannot open 'D:\repo\obj\Debug\net10.0\Driver.dll' for writing -- 'The process cannot access the file because it is being used by another process.' [D:\repo\Driver.csproj]")]
+    [InlineData(@"CSC : error CS0016: Could not write to output file 'D:\repo\obj\Debug\net10.0\Driver.pdb' -- 'Access is denied.'")]
     public void An_output_with_no_compiler_error_is_no_build_failure_of_the_work(string output) => Assert.Empty(UnbuiltTrees.Errors(output, Tree));
 
     [Fact]

@@ -422,6 +422,21 @@ public sealed class CheckPerformTests : IDisposable
     }
 
     [Fact]
+    public async Task A_check_unknown_with_no_code_at_all_is_asked_again_at_once_never_held_for_a_later_look_to_release()
+    {
+        var performer = Performer();
+        _checks.Answer = _ => new WorkReconcileAnswer(ReconcileStates.Unknown);
+        await StartAsync(performer);
+        _checks.Answers.Add(Attempt().Call.Invocation);
+
+        var asked = Assert.Single(await performer.ReconcileAsync(Declared, CancellationToken.None));
+
+        Assert.Equal((PerformedWhat.Retry, WorkStates.Unknown), (asked.What, asked.Code));
+        Assert.Equal((NodeStates.Ready, AttemptStates.Settled), (Status().State, Attempt().State));
+        Assert.Empty(HeldAttempts.Read(Files));
+    }
+
+    [Fact]
     public async Task A_check_said_done_with_no_verdict_is_asked_again_as_a_new_attempt()
     {
         var performer = Performer();
@@ -449,7 +464,7 @@ public sealed class CheckPerformTests : IDisposable
 
         var asked = Assert.Single(await performer.ReconcileAsync(Declared, CancellationToken.None));
 
-        Assert.Equal(PerformedWhat.Retry, asked.What);
+        Assert.Equal((PerformedWhat.Retry, NodeRefusal.NoAcceptance), (asked.What, asked.Code));
         Assert.Contains("did not bind to the work it was sent on", asked.Detail, StringComparison.Ordinal);
         Assert.Equal((NodeStates.Ready, AttemptStates.Settled, asked.Code), (Status().State, Attempt().State, Attempt().Code));
         Assert.Empty(HeldAttempts.Read(Files));
