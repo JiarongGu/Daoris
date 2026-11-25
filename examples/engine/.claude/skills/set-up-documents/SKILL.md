@@ -36,7 +36,9 @@ the way it is. Read that first. The templates are in `templates/`, beside this f
 3. **Write the area documents** from `templates/area.md`, one per part a change is made in, in one folder
    (`docs/areas/` unless the repository keeps one already). Fill each from what is already written about
    that part (its README, its design, the brief's lines about it) and from the code: the lines to start
-   at, one exemplar, the folder new behaviour goes in, the filtered test command, the traps. List them in
+   at, one exemplar, the folder new behaviour goes in, the filtered test command, the traps, and in *Adding to it*
+   one row per kind of addition the part takes (the place, the registration, the check that fails until it is
+   there). List them in
    the brief's *Areas* table. A folder whose own instructions an agent loads when working inside it may
    keep them as its room (`templates/room.md`), pointing at its area document.
 

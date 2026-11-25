@@ -300,6 +300,15 @@ part under `Web/work/`, `Web/asks/` and `Web/notifications/`.
 gate's `i18n:check` and `names:check -- --strict` for any visible word (glossary: *urgency*, *channel*, *co-worker*, *At work*),
 and `universal`. The twin fixtures (`senders.json`, `participant-work.json`, `helper-rules.json`) fail every side together.
 
+## Adding to it
+
+Each row names the place and the registration; the rule behind it is in *Where a change goes* above.
+
+| Kind | Place | Registered by | Fails until |
+|---|---|---|---|
+| a kind of request or wait | a source in `Exchanges.Of` (`Driver/WorkOrders/Domain/`) | its record owned in Participants; *At work*, the head, the brief and *What needs you* read it from there | `ExchangesTests` |
+| a kind of sender | the three sender readers and `fixtures/senders.json`, in one change | the twin fixture holds every side | `SendersTests` |
+
 ## Contradictions
 
 - D188 point 4 (the third answer alone waits, fixed) vs D225's note of 2026-11-03 (a fact, no number fixed; the note also

@@ -1124,6 +1124,16 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
   `DriverModuleWorkflow*Tests`, `PipeCensusTests`; web `src/workflow/**/*.test.ts*`. Gates: `driver`, `driver-process-git`,
   `modules`, `censuses`, `web-unit`, `web-rules`, `universal`.
 
+## Adding to it
+
+Each row names the place and the registration; the rule behind it is in *Where a change goes* above and rule 49.
+
+| Kind | Place | Registered by | Fails until |
+|---|---|---|---|
+| a step kind | its id in `NodeKinds` and a unit `Workflows/Kinds/<Kind>/<Kind>Node.cs` marked `[NodeKind]` | nothing else lists it: `NodeKit` is built from the marks and the page reads `NODE_KINDS` | `NodeKitTests` |
+| a shipped workflow | a JSON file under `Defaults/workflows/` | the presets derive from it | `WorkflowGraphPresetsTests` |
+| a gate or a hold on a graph | `Review/Domain/` (look, opinion) or `Workflows/Domain/GraphGate.cs` | a node's `Problems` for a rule about where it stands | `GraphGatesTests` |
+
 ## Contradictions
 
 - D190 point 4 (a version holds one `handed`) vs `NodeKinds` (no `handed`): D227 and D232.

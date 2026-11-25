@@ -1,5 +1,5 @@
 {
-  "_why": "The read-path bench's questions about this repository (D278): `present` asks how something works now, answered by a rule in an area document; `history` asks what happened or why, answered by the archive, the fix log or a decision, `by` an identifier as builders look it up or by its words. Each `answer` lists the files that count as right. Read by tools/read-path-bench.mjs and by the service's PresentFirstBenchTests.",
+  "_why": "The read-path bench's questions about this repository (D278): `present` asks how something works now, answered by a rule in an area document, or, where it asks where an addition goes, by the gathered page of the index (EXTENDSEAMS1), `before` then naming the areas read for it until that page; `history` asks what happened or why, answered by the archive, the fix log or a decision, `by` an identifier as builders look it up or by its words. Each `answer` lists the files that count as right. Read by tools/read-path-bench.mjs and by the service's PresentFirstBenchTests.",
   "present": [
     { "question": "what does the comment gate refuse", "answer": ["docs/areas/code-structure-and-process.md"] },
     { "question": "what does daoris check fail on", "answer": ["docs/areas/doctrine-and-cli.md"] },
@@ -12,7 +12,9 @@
     { "question": "which agents are built in and how does each connect", "answer": ["docs/areas/agents-and-harnesses.md"] },
     { "question": "which door changes a session's roles", "answer": ["docs/areas/roles-and-supervision.md"] },
     { "question": "how often does a knowledge server over one checkout read it again", "answer": ["docs/areas/knowledge-memory-records.md"] },
-    { "question": "what does a conversation do at its account's limit", "answer": ["docs/areas/conversations-and-context.md"] }
+    { "question": "what does a conversation do at its account's limit", "answer": ["docs/areas/conversations-and-context.md"] },
+    { "question": "add a machine setting", "answer": ["docs/index/adding.md"], "before": ["docs/areas/driving.md", "docs/areas/code-structure-and-process.md"] },
+    { "question": "add an agent door", "answer": ["docs/index/adding.md"], "before": ["docs/areas/agents-and-harnesses.md"] }
   ],
   "history": [
     { "question": "WORKFLOWCLEAN1", "by": "id", "answer": ["docs/task-archive.md"] },

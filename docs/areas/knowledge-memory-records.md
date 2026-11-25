@@ -258,6 +258,16 @@ in the full set and the CI wherever the service's sources or tests change); `cli
 gate that fails `src/Daoris.Service/README.md` more than seven days behind its code, and the sensitive scan); `web-unit` for the
 Knowledge view and session memory; `deployment` for the shared host.
 
+## Adding to it
+
+Each row names the place and the registration; the rule behind it is in *Where a change goes* above.
+
+| Kind | Place | Registered by | Fails until |
+|---|---|---|---|
+| a connector tool | its own `*Tools.cs` in the service's `Mcp/` | one line in `KnowledgeServer.ToolTypes`, a class in `ToolClasses`, its name in `fixtures/call-table.json`'s `registered` list | `ToolClassesTests`, `McpToolRegistrationTests` |
+| a kind of record that syncs | a `<Kind>Sync.cs` in `Service.Core/Remote/` | a door on `IRemote`; its route in the HTTP host's `PersonDoors` as a shared door | `HttpRemoteTests`, `RemoteConfigTests` |
+| a record shape or role a checkout is read for | `RepositoryScanner` and `Knowledge/Ingest/` | the declared path in `RepositoryDocuments` or `RepositoryLayout` | `RepositoryScannerTests`, `RepositoryDocumentsTests` |
+
 ## Contradictions
 
 1. D151 points 1-2 (the index is committed files, never text-merged) vs `.gitignore:13-14` and `tools/orient-index.mjs:18-26`

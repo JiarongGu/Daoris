@@ -477,6 +477,17 @@ one at a time, its verdict the session's next word. Off Windows there are no job
   the web folder's path hashes to (`freeE2ePort`), which also leases it (a socket on the port plus 1000, held while the gate's process lives), so two checkouts hashing to one port both bind even when both choose before either host starts; `web-measured`; `modules`,
   `modules-process` and `censuses`; `driver` for Ask Daoris's coverage. A story or a mocked bridge is no proof of the installed window.
 
+## Adding to it
+
+Each row names the place and the registration; the rule behind it is in *Where a change goes* above and `.claude/knowledge/bridge-presses.md`.
+
+| Kind | Place | Registered by | Fails until |
+|---|---|---|---|
+| a driver route (a press) | `Modules/Bridge/Routes/<Domain>Routes.cs`, a handler marked `[DriverRoute]` | the desktop README's row, the hook in `bridge/<domain>.ts`, its marks and its words (`bridge-presses.md` lists every place) | `DriverModuleRoutesTests`, `PipeCensusTests` |
+| a catalogue key (a word a person reads) | `src/Daoris.Web/src/locales/{en,zh}/<area>.json` | the same key in both languages; a glossary row for a name (`translation-parity.md`) | `i18n-check` and `names-check --strict`, in the web gate's build |
+| a pushed slice | a slice of the driver's state, per `.claude/knowledge/pushed-slices.md` | its scopes declared by the press that moves it (`[Publishes]`) | `StatePublisherTests`, `StateSlicesTests` |
+| a page piece | its place's folder under `src/Daoris.Web/src/`, its test and story beside it | no list; a folder past twenty sources splits into named scopes in `structure.json` | `test/structure.test.ts` |
+
 ## Contradictions
 
 - D55, D56, D66 §1, D75 §1–2 and D150 §2 (two frames, a six-item bar, other menus, a Daoris menu, seven Settings domains) vs

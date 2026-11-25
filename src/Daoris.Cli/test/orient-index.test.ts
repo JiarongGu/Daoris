@@ -514,7 +514,7 @@ test('the catalogue areas, the test fixtures and the files of the index come fro
   const fx = fixtureRepository('orient-index-sections');
   const planned = tool.planIndex(fx.root, FIXTURE_FILES);
   assert.deepEqual([...planned.keys()].sort(), [
-    'docs/index/README.md', 'docs/index/catalogues.md', 'docs/index/decisions.md', 'docs/index/fixtures.md',
+    'docs/index/README.md', 'docs/index/adding.md', 'docs/index/catalogues.md', 'docs/index/decisions.md', 'docs/index/fixtures.md',
     'docs/index/registered.md', 'docs/index/routes.md', 'docs/index/verbs.md',
   ]);
   const catalogues = planned.get('docs/index/catalogues.md')!;
@@ -561,7 +561,7 @@ test('the check names a missing, stale or stray file, and the write leaves nothi
   const fx = fixtureRepository('orient-index-staleness');
   const missing = tool.staleness(fx.root, tool.planIndex(fx.root, FIXTURE_FILES));
   assert.deepEqual(missing.map(({ path, fact }) => `${path}: ${fact}`), [
-    'docs/index/README.md: missing', 'docs/index/catalogues.md: missing', 'docs/index/decisions.md: missing',
+    'docs/index/README.md: missing', 'docs/index/adding.md: missing', 'docs/index/catalogues.md: missing', 'docs/index/decisions.md: missing',
     'docs/index/fixtures.md: missing', 'docs/index/registered.md: missing', 'docs/index/routes.md: missing',
     'docs/index/verbs.md: missing',
   ]);
@@ -630,6 +630,11 @@ test("this repository's index finds the routes, the verbs, the areas, the fixtur
 
   const areas = planned.get('docs/index/catalogues.md')!.split('\n').filter((line) => /^\| `[a-zA-Z]/.test(line));
   assert.ok(areas.length >= 70, `${areas.length} catalogue areas`);
+
+  const adding = planned.get('docs/index/adding.md')!;
+  for (const kind of ['a machine setting', 'an agent or a door', 'a step kind', 'a catalogue key', 'a shipped plugin']) {
+    assert.ok(adding.includes(`### Add ${kind}`), `adding.md lacks ${kind}`);
+  }
 
   const fixtures = planned.get('docs/index/fixtures.md')!;
   for (const name of ['GitFixture', 'LandedFixture', 'DaorisHost', 'shellHarness', 'makeFixture']) assert.ok(fixtures.includes(name), `fixtures.md lacks ${name}`);

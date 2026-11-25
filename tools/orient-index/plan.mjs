@@ -9,6 +9,7 @@ import { routesPage } from './routes.mjs';
 import { verbsPage } from './verbs.mjs';
 import { cataloguesPage, fixturesPage } from './catalogues.mjs';
 import { decisionsPage } from './decisions.mjs';
+import { addingPage } from './adding.mjs';
 import { outlineOf } from './outline.mjs';
 
 /** The code map: the projects, each with its path, written and checked by the devkit's `map`. */
@@ -64,6 +65,7 @@ function readmePage(ctx, large) {
     '',
     '| File | Answers |',
     '|---|---|',
+    '| `adding.md` | where a new kind of thing goes: the rows of each area\'s *Adding to it* by kind: the file or table that holds it, its registration and what fails until it is there |',
     '| `routes.md` | which module answers a bridge route, and which bridge function sends it; the service\'s HTTP routes |',
     '| `verbs.md` | where each terminal verb is routed and handled: `daoris`, `daoris-driver`, the devkit, `npm run desktop`, the npm scripts |',
     '| `catalogues.md` | which catalogue file holds a key, by area; the glossary\'s sections, kinds and terms by line |',
@@ -107,6 +109,7 @@ export function planIndex(root, files = listFiles(root)) {
   const large = largeFiles(ctx);
   const planned = new Map([
     [`${INDEX}/README.md`, readmePage(ctx, large)],
+    [`${INDEX}/adding.md`, addingPage(ctx)],
     [`${INDEX}/routes.md`, routesPage(ctx)],
     [`${INDEX}/verbs.md`, verbsPage(ctx)],
     [`${INDEX}/catalogues.md`, cataloguesPage(ctx)],

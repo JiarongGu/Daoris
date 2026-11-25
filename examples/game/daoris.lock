@@ -1,7 +1,7 @@
 {
   "version": 1,
   "canonVersion": "0.0.1",
-  "canonDigest": "ec8fb51181bbab919a6812fe1272ef89e87698b3363237396620f9d9d6905dcc",
+  "canonDigest": "6c8c2adfd5472398bee3269c19b70f248b230fafb9a57a27473f0bf7133859cc",
   "source": "daoris@0.0.1",
   "entries": [
     {
@@ -30,7 +30,7 @@
       "source": "core/knowledge/development-documents.md",
       "target": "knowledge/development-documents.md",
       "canonVersion": "0.0.1",
-      "sha256": "a65daa1387d47e0557603bc3989021a3bef4f5282580cc4978a41a2d7f749c86"
+      "sha256": "9e53a83051038bd7f61a1d114a73f554cb29564599e664e89dba1dd383c8ec4f"
     },
     {
       "pack": "core",
@@ -128,7 +128,7 @@
       "source": "core/rules/every-session.md",
       "target": "rules/every-session.md",
       "canonVersion": "0.0.1",
-      "sha256": "1bf75fd21ab73db2f3799278038a9654e811d0e5206fce300b720c69909b5280",
+      "sha256": "0d4f35cd59261504d0ba811d21287b428460c8c82d3e61784ba22ea5cd38bcd6",
       "in": "AGENTS.md"
     },
     {
@@ -158,7 +158,7 @@
       "source": "core/skills/set-up-documents/SKILL.md",
       "target": "skills/set-up-documents/SKILL.md",
       "canonVersion": "0.0.1",
-      "sha256": "f119740c2d1aed23b51351638718e79e9a49ae3d2b0f330afcd6858f924006da"
+      "sha256": "aa0a398ef1c06451592d9df71ed75cfe2c3cc34f72951e3652d856d2cda61727"
     },
     {
       "pack": "core",
@@ -172,7 +172,7 @@
       "source": "core/skills/set-up-documents/templates/area.md",
       "target": "skills/set-up-documents/templates/area.md",
       "canonVersion": "0.0.1",
-      "sha256": "e6e7d492b036455f091b4237699cba8154b976c86a6fe5efd6df28ca67992532"
+      "sha256": "1649cfb0d22997dc420045157eba82f4db107a1f3aa7686f5fe4e3c6080675a0"
     },
     {
       "pack": "core",

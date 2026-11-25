@@ -21,7 +21,7 @@
  * (`src/Daoris.Cli/test/orient-index.test.ts`). Its scratch is a gitignored folder of the repository.
  */
 import assert from 'node:assert/strict';
-import { mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { after, test } from 'node:test';
 import { fileURLToPath } from 'node:url';
@@ -298,4 +298,79 @@ test('a tree that keeps no index by hand says none, so an empty section is not a
   assert.doesNotMatch(readme.slice(0, readme.indexOf('## Kept by hand')), /INDEX\.md|code-map/, 'nothing absent is named');
   const generated = section(readme, 'Generated');
   for (const row of GENERATED_ROWS) assert.ok(generated.includes(`| ${row} |`), `${row} is still a generated row`);
+});
+
+// ---------------------------------------------------------------------------------------------------
+// Each area's *Adding to it*, gathered into one page
+
+const SECTION = 'Adding to it';
+
+/** A scratch tree whose area documents are `areas` (file name to text), the manifest declaring their folder. */
+function areasTree(name, areas) {
+  const at = join(scratch, name);
+  mkdirSync(join(at, 'docs', 'areas'), { recursive: true });
+  writeFileSync(join(at, 'daoris.json'), JSON.stringify({ documents: { areas: 'docs/areas' } }));
+  const files = ['daoris.json'];
+  for (const [file, text] of Object.entries(areas)) {
+    writeFileSync(join(at, 'docs', 'areas', file), text);
+    files.push(`docs/areas/${file}`);
+  }
+  return { at, files };
+}
+
+const TABLE_HEAD = ['| Kind | Place | Registered by | Fails until |', '|---|---|---|---|'];
+
+test("the gathered page lists each area's rows by kind, each with its area, and names an area with no section", () => {
+  const { at, files } = areasTree('adding-gather', {
+    'gates.md': ['# Gates', '', '## Adding to it', '', ...TABLE_HEAD,
+      '| a gate | `daoris.gates.json` | its row | `GatesTests` |', '| a route | `Routes/` | `ContractJson` | `RouteModulesTests` |', '', '## Traps', '', '- x'].join('\n'),
+    'pages.md': ['# Pages', '', '## Adding to it', '', ...TABLE_HEAD, '| a catalogue key | `locales/en.json` | its twin in `zh.json` | `i18n-check` |'].join('\n'),
+    'bare.md': '# Bare\n\n## Traps\n\n- x\n',
+  });
+  const page = planIndex(at, files).get('docs/index/adding.md');
+  assert.match(page, /never edit by hand/);
+  assert.deepEqual(page.split('\n').filter((line) => line.startsWith('### ')), ['### Add a catalogue key', '### Add a gate', '### Add a route']);
+  const gate = page.slice(page.indexOf('### Add a gate'), page.indexOf('### Add a route')).trim().split('\n');
+  assert.deepEqual(gate, [
+    '### Add a gate', '', '- **Place:** `daoris.gates.json`', '- **Registered by:** its row', '- **Fails until:** `GatesTests`', '- **Area:** `docs/areas/gates.md`',
+  ]);
+  assert.match(page, /no `## Adding to it`: `docs\/areas\/bare\.md`/, 'the area without a section is named, so it is not mistaken for one that takes nothing');
+});
+
+test('a section is read to the next heading, a row of another shape is named, and no areas is said so', () => {
+  const crooked = areasTree('adding-crooked', {
+    'odd.md': ['# Odd', '', '## Adding to it', '', 'Nothing is added here.', '', ...TABLE_HEAD, '| only two | cells |', '| a kind | `p` | `r` | `t` |', '', '## Next', '', '| a kind | `outside` | `x` | `y` |'].join('\n'),
+  });
+  const page = planIndex(crooked.at, crooked.files).get('docs/index/adding.md');
+  assert.match(page, /### Add a kind\n\n- \*\*Place:\*\* `p`\n- \*\*Registered by:\*\* `r`\n- \*\*Fails until:\*\* `t`\n- \*\*Area:\*\* `docs\/areas\/odd\.md`/);
+  assert.doesNotMatch(page, /outside/, 'a table under the next heading is not the section\'s');
+  assert.match(page, /`docs\/areas\/odd\.md`:\d+ .*cells/, 'a row of two cells is named with its line');
+
+  const none = join(scratch, 'adding-none');
+  mkdirSync(none, { recursive: true });
+  writeFileSync(join(none, 'daoris.json'), '{}');
+  assert.match(planIndex(none, ['daoris.json']).get('docs/index/adding.md'), /No area documents are declared/);
+});
+
+test("the index's front page says what the gathered page answers", () => {
+  const { at, files } = areasTree('adding-readme', { 'a.md': '# A\n' });
+  assert.match(planIndex(at, files).get('docs/index/README.md'), /\| `adding\.md` \| where a new[^|]*\|/);
+});
+
+test("this repository's every area document has an Adding to it section with a row, and the template carries the section", () => {
+  const areas = readdirSync(join(root, 'docs', 'areas')).filter((file) => file.endsWith('.md') && file !== 'README.md');
+  assert.ok(areas.length >= 13);
+  for (const file of areas) {
+    const text = readFileSync(join(root, 'docs', 'areas', file), 'utf8').replace(/\r\n/g, '\n');
+    const at = text.split('\n').findIndex((line) => line === `## ${SECTION}`);
+    assert.ok(at >= 0, `${file} has no \`## ${SECTION}\``);
+    const rows = text.split('\n').slice(at + 1).join('\n').split(/\n## /)[0].split('\n').filter((line) => /^\| .*\|$/.test(line) && !/^\| (Kind|-)/.test(line));
+    assert.ok(rows.length >= 1, `${file}'s section holds no row`);
+    for (const row of rows) assert.equal(row.split('|').length - 2, 4, `${file}: a row of four cells: ${row}`);
+  }
+  for (const template of ['canon/core/skills/set-up-documents/templates/area.md']) {
+    const text = readFileSync(join(root, template), 'utf8');
+    assert.match(text, /^## Adding to it$/m, template);
+    assert.match(text, /\| Kind \| Place \| Registered by \| Fails until \|/, template);
+  }
 });
