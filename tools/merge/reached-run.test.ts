@@ -19,6 +19,10 @@ const exits = (codes: number[]): { exec: Exec; calls: string[][] } => {
   return { calls, exec: (_command, args) => { calls.push(args); return codes.shift() ?? 0; } };
 };
 
+const loopTurns = async (count: number): Promise<void> => {
+  for (let turn = 0; turn < count; turn += 1) await new Promise((done) => setTimeout(done, 0));
+};
+
 const withStore = async (body: (store: PassedClasses, root: string) => Promise<void>): Promise<void> => {
   const { dir, remove } = fixtureFolder('reached-run');
   try {
@@ -141,14 +145,14 @@ test('a failed class runs again alone: after the build and every other group, wi
     order.push(`start ${label}`);
     running += 1;
     if (label.endsWith('again')) assert.equal(running, 1, `${label} ran beside another run: ${order.join(', ')}`);
-    await new Promise((done) => setTimeout(done, what === 'driver' ? 60 : 5));
+    await loopTurns(what === 'driver' ? 12 : 1);
     running -= 1;
     order.push(`end ${label}`);
     return what === 't' || what === 'c' ? (times === 1 ? 1 : 0) : 0;
   };
   const outcome = await runPlan({
     root, plan, keys: new Map(), store, exec, say: () => undefined, mainRedOf: () => false,
-    build: async () => { order.push('build'); await new Promise((done) => setTimeout(done, 30)); order.push('built'); return { ready: ['src/D.Tests'], failed: new Map() }; },
+    build: async () => { order.push('build'); await loopTurns(6); order.push('built'); return { ready: ['src/D.Tests'], failed: new Map() }; },
   });
   const firstAgain = Math.min(...['t again', 'c again'].map((label) => order.indexOf(`start ${label}`)));
   for (const done of ['built', 'end driver', 'end t', 'end c']) assert.ok(order.indexOf(done) < firstAgain, `${done} came before the first run again: ${order.join(', ')}`);
