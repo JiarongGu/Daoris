@@ -408,6 +408,115 @@ public sealed class IntegrationOwedGitTests : IAsyncLifetime
         Assert.Equal(0, owed.GitReads);
     }
 
+    /// <summary>Every git start the look's read asks, as arguments.</summary>
+    private async Task<List<string>> StartedAsync(IntegrationOwed owed, DriverConfig config)
+    {
+        var started = new List<string>();
+        GitFlow.Started.Value = arguments =>
+        {
+            lock (started) started.Add(string.Join(' ', arguments));
+        };
+        try
+        {
+            await owed.LookAsync(config, Registry, _now.AddMinutes(1), CancellationToken.None);
+        }
+        finally
+        {
+            GitFlow.Started.Value = null;
+        }
+
+        return started;
+    }
+
+    /// <summary>A tree that stood since the last look starts no git at all, whatever the line, acceptance or unjudged pair.</summary>
+    [Theory]
+    [InlineData("line set, nothing accepted", "set", null)]
+    [InlineData("line guessed, nothing accepted", "guess", null)]
+    [InlineData("an accepted blob this checkout holds not", "set", "unheld")]
+    [InlineData("a changed declaration judged", "set", "changed")]
+    [InlineData("a line the checkout does not hold", "absent", null)]
+    public async Task A_standing_tree_starts_no_git_at_the_next_look(string why, string line, string? accepted)
+    {
+        Assert.NotEmpty(why);
+        await CommitAsync(Declares);
+        var blob = accepted switch
+        {
+            null => null,
+            "unheld" => new string('a', 40),
+            _ => await CommitAsync(Declaring) is var other && other != "none" ? other : null,
+        };
+        if (accepted == "changed") await CommitAsync(Declares);
+        var config = line == "set" ? Choices(blob)
+            : line == "absent" ? DriverConfig.Empty.WithLine("engine", "gone")
+            : blob is null ? DriverConfig.Empty : DriverConfig.Empty.WithIntegrationGates("engine", blob);
+        var owed = new IntegrationOwed();
+        await owed.LookAsync(config, Registry, _now, CancellationToken.None);
+
+        var started = await StartedAsync(owed, config);
+
+        Assert.Empty(started);
+    }
+
+    /// <summary>A line that appears, and a pair whose wait has passed, are asked again; a git that failed is no answer to hold.</summary>
+    [Fact]
+    public async Task A_line_that_appears_after_a_miss_is_read_at_the_next_look()
+    {
+        await CommitAsync(Declares);
+        var config = DriverConfig.Empty.WithLine("engine", "gone");
+        var owed = new IntegrationOwed();
+        await owed.LookAsync(config, Registry, _now, CancellationToken.None);
+        Assert.Empty(owed.Owed);
+
+        Assert.Equal(0, (await GitFixture.RunAsync(Root, "branch", "gone")).ExitCode);
+        var started = await StartedAsync(owed, config);
+
+        Assert.Contains(started, arguments => arguments.StartsWith("ls-tree", StringComparison.Ordinal));
+        Assert.Single(owed.Owed);
+    }
+
+    [Fact]
+    public async Task A_pair_git_gave_no_text_for_is_asked_again_once_its_wait_has_passed()
+    {
+        await CommitAsync(Declares);
+        var config = Choices(new string('a', 40));
+        var owed = new IntegrationOwed();
+        await owed.LookAsync(config, Registry, _now, CancellationToken.None);
+
+        var started = new List<string>();
+        GitFlow.Started.Value = arguments =>
+        {
+            lock (started) started.Add(string.Join(' ', arguments));
+        };
+        try
+        {
+            await owed.LookAsync(config, Registry, _now.Add(IntegrationOwed.MissStands).AddMinutes(1), CancellationToken.None);
+        }
+        finally
+        {
+            GitFlow.Started.Value = null;
+        }
+
+        Assert.Contains(started, arguments => arguments.StartsWith("cat-file", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public async Task A_tip_read_that_git_failed_to_answer_is_asked_again_at_the_next_look()
+    {
+        await CommitAsync(Declares);
+        var owed = new IntegrationOwed();
+        await owed.LookAsync(Choices(), Registry, _now, CancellationToken.None);
+        var moved = await CommitAsync(Declaring);
+
+        using (GitFlow.Failing(ask => ask.Arguments.Count > 0 && ask.Arguments[0] == "ls-tree"))
+        {
+            await owed.LookAsync(Choices(), Registry, _now.AddMinutes(1), CancellationToken.None);
+        }
+
+        await owed.LookAsync(Choices(), Registry, _now.AddMinutes(2), CancellationToken.None);
+
+        Assert.Equal(moved, Assert.Single(owed.Owed).Blob);
+    }
+
     private const string TwoGates = """{ "gates": [ { "name": "build", "run": "dotnet build", "paths": ["src/"] }, { "name": "tools", "run": "npm test" } ], "integration": { "by": "daoris" } }""";
 
     private string ConfigPath => DaorisHome.Entry(_home, HomeEntry.DriverConfig);

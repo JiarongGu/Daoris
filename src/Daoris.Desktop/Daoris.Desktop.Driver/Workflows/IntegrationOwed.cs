@@ -54,7 +54,8 @@ internal sealed record DeclarationJudged(
 /// The tip commit is read from git's own files (<see cref="TreeTips.Named"/>, no process), and git is asked only when it moved since the last
 /// read: one <c>ls-tree</c> for the blob, and one <c>cat-file</c> only for a blob not seen before. Where the files cannot name the tip (a
 /// reftable repository) git is asked for the blob at every look. What is owed is judged from the reads against the choices each time it is
-/// asked (<see cref="Under"/>), so an acceptance ends its row at once with no git at all.
+/// asked (<see cref="Under"/>), so an acceptance ends its row at once with no git at all. A line that git's files name no ref for stands as
+/// a miss while those files stand, and a pair of blobs git gave no text for stands by time alone, each for <see cref="MissStands"/> at most.
 /// </remarks>
 public sealed class IntegrationOwed
 {
@@ -65,6 +66,17 @@ public sealed class IntegrationOwed
     private volatile DriverConfig _config = DriverConfig.Empty;
 
     private volatile IReadOnlyList<Read> _held = [];
+
+    /// <summary>How long an empty answer from git stands before git is asked again, while the files that name it stand.</summary>
+    internal static readonly TimeSpan MissStands = TimeSpan.FromMinutes(10);
+
+    /// <summary>A repository whose line git named no blob for: the checkout, the line, the stamp of its ref files and the time.</summary>
+    private sealed record Miss(string Root, string Line, string Stamp, DateTimeOffset At);
+
+    private readonly Dictionary<string, Miss> _misses = new(StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>Each pair of blobs git gave no text for (the accepted one is not held here) and the time it asked.</summary>
+    private Dictionary<(string Accepted, string Blob), DateTimeOffset> _unread = [];
 
     /// <summary>What the last look found owed under the choices it read, oldest first; none before a look.</summary>
     public IReadOnlyList<DeclarationOwed> Owed => Under(_config);
@@ -121,22 +133,35 @@ public sealed class IntegrationOwed
     /// Each held read not at the accepted blob judged against it once a pair, from git's objects; a pair no read holds is forgotten. A
     /// judgement that fails is kept as failed, so it waits for the person and is said once, and the look goes on to the next read.
     /// </summary>
-    private async Task JudgeAsync(DriverConfig config, IReadOnlyList<Read> held, CancellationToken ct)
+    private async Task JudgeAsync(DriverConfig config, IReadOnlyList<Read> held, DateTimeOffset now, CancellationToken ct)
     {
         var blobs = held.Select(read => read.Blob).ToHashSet(StringComparer.Ordinal);
         var next = _judged.Where(each => blobs.Contains(each.Key.Blob)).ToDictionary(each => each.Key, each => each.Value);
         var unjudged = new List<string>();
+        var unread = new Dictionary<(string Accepted, string Blob), DateTimeOffset>();
         foreach (var read in held)
         {
             if (Against(config, read) is not { } against || against == read.Blob || next.ContainsKey((against, read.Blob))) continue;
+            // A pair git gave no text for is asked again after a while, not at every look.
+            if (_unread.TryGetValue((against, read.Blob), out var asked) && now - asked < MissStands)
+            {
+                unread[(against, read.Blob)] = asked;
+                continue;
+            }
+
             GitReads++;
             var was = await IntegrationAcceptance.TextAsync(read.Root, against, ct).ConfigureAwait(false);
-            var now = await IntegrationAcceptance.TextAsync(read.Root, read.Blob, ct).ConfigureAwait(false);
-            if (now is null || (was is null && against != IntegrationAcceptance.None)) continue;
+            var text = await IntegrationAcceptance.TextAsync(read.Root, read.Blob, ct).ConfigureAwait(false);
+            if (text is null || (was is null && against != IntegrationAcceptance.None))
+            {
+                unread[(against, read.Blob)] = now;
+                continue;
+            }
+
             try
             {
                 var recorded = config.IntegrationUnits.TryGetValue(read.Repository.Trim(), out var accepted) && accepted.Blob == against ? accepted.Units : null;
-                next[(against, read.Blob)] = Judged(recorded, was, now);
+                next[(against, read.Blob)] = Judged(recorded, was, text);
             }
             catch (Exception error) when (error is not OperationCanceledException)
             {
@@ -147,6 +172,7 @@ public sealed class IntegrationOwed
         }
 
         _judged = next;
+        _unread = unread;
         Unjudged = unjudged;
     }
 
@@ -211,7 +237,8 @@ public sealed class IntegrationOwed
 
         // A repository the registry no longer holds is forgotten with its read.
         foreach (var gone in _reads.Keys.Where(key => !seen.Contains(key)).ToList()) _reads.Remove(gone);
-        await JudgeAsync(config, held, ct).ConfigureAwait(false);
+        foreach (var gone in _misses.Keys.Where(key => !seen.Contains(key)).ToList()) _misses.Remove(gone);
+        await JudgeAsync(config, held, now, ct).ConfigureAwait(false);
         _held = held;
     }
 
@@ -221,8 +248,23 @@ public sealed class IntegrationOwed
         var tip = TreeTips.CommonDirectory(root) is { } common ? TreeTips.Named(common, $"refs/heads/{line}") : null;
         if (held is not null && tip is not null && held.Root == root && held.Line == line && held.Tip == tip) return held;
 
+        // A line git named no blob for stays so while the ref files that name it stand, and for a few minutes at most.
+        var stamp = RefStamp(root, line);
+        if (stamp is not null && _misses.TryGetValue(repository, out var missed) && missed.Root == root && missed.Line == line
+            && missed.Stamp == stamp && now - missed.At < MissStands)
+        {
+            return held;
+        }
+
         GitReads++;
-        if (await IntegrationAcceptance.TipAsync(root, line, ct).ConfigureAwait(false) is not { } blob) return held;
+        if (await IntegrationAcceptance.TipAsync(root, line, ct).ConfigureAwait(false) is not { } blob)
+        {
+            // Only where git's own files name no such ref: a git that failed or timed out is no answer, and is asked again at the next look.
+            if (stamp is not null && tip is null) _misses[repository] = new Miss(root, line, stamp, now);
+            return held;
+        }
+
+        _misses.Remove(repository);
         // A blob is its text: one seen before is not read again, whatever commit carries it.
         var declares = held is not null && held.Blob == blob && held.Root == root
             ? held.Declares
@@ -231,6 +273,21 @@ public sealed class IntegrationOwed
         var read = new Read(root, workspace, repository, line, tip, blob, declares, since);
         _reads[repository] = read;
         return read;
+    }
+
+    /// <summary>What names the line in the files git reads (its loose ref and <c>packed-refs</c>) by write time and size; null where the files cannot say (reftable, no git directory).</summary>
+    private static string? RefStamp(string root, string line)
+    {
+        try
+        {
+            if (TreeTips.CommonDirectory(root) is not { } common || Directory.Exists(Path.Combine(common, "reftable"))) return null;
+            static string Of(string path) => new FileInfo(path) is { Exists: true } file ? $"{file.LastWriteTimeUtc.Ticks}:{file.Length}" : "-";
+            return Of(Path.Combine(common, "refs", "heads", line.Replace('/', Path.DirectorySeparatorChar))) + "|" + Of(Path.Combine(common, "packed-refs"));
+        }
+        catch (Exception error) when (error is IOException or UnauthorizedAccessException or ArgumentException or NotSupportedException)
+        {
+            return null;
+        }
     }
 
     private async Task<bool> DeclaresAsync(string root, string blob, CancellationToken ct)
