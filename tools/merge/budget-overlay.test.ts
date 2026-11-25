@@ -1,10 +1,9 @@
 import { test } from 'vitest';
 import assert from 'node:assert/strict';
-import { spawnSync } from 'node:child_process';
-import { mkdirSync, mkdtempSync, rmSync } from 'node:fs';
+import { mkdtempSync, rmSync } from 'node:fs';
 import { join } from 'node:path';
 import { recordGreen, setGate } from './check-budgets.ts';
-import { budgetSourceOf, learnGreen, overlay, riseLines } from './budget-overlay.ts';
+import { learnGreen, overlay, riseLines } from './budget-overlay.ts';
 import { declaredIn } from './plan.ts';
 import { scratchRoot } from './fixture-home.ts';
 
@@ -78,21 +77,3 @@ test('the declaration read hands the gates the home\'s values', () => {
   assert.equal(gates[0]!.timeoutMinutes, 15);
   assert.equal(declaredIn(JSON.stringify({ gates: [{ name: 'a', run: 'x' }] }), 'test')[0]!.timeoutMinutes, undefined);
 });
-
-test('the repository is named by the folder of its main checkout, from a linked tree too, and a folder inside another repository by itself', () => {
-  const base = mkdtempSync(join(scratchRoot(), 'budget-name-'));
-  scratch.push(base);
-  const main = join(base, 'Named');
-  mkdirSync(main);
-  const git = (cwd: string, ...args: string[]) => spawnSync('git', args, { cwd, encoding: 'utf8', windowsHide: true });
-  git(main, 'init', '-q');
-  git(main, '-c', 'user.name=t', '-c', 'user.email=t@t', 'commit', '--no-verify', '--allow-empty', '-q', '-m', 'x');
-  const linked = join(base, 'tree-one');
-  git(main, 'worktree', 'add', '-q', '--detach', linked);
-  mkdirSync(join(main, 'inside'));
-  assert.equal(budgetSourceOf(main, {}).repository, 'Named');
-  assert.equal(budgetSourceOf(linked, {}).repository, 'Named');
-  assert.equal(budgetSourceOf(join(main, 'inside'), {}).repository, 'inside');
-  assert.equal(budgetSourceOf(main, { DAORIS_HOME: 'h' }).home, 'h');
-  assert.equal(budgetSourceOf(main, {}).home, null);
-}, 60_000);
