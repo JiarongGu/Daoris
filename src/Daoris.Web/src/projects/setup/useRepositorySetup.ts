@@ -9,7 +9,7 @@ import { type GitAccessEdit, type RepositoryGitAccess, resolveGitAccess } from '
 import { repositoryRisk } from '../../settings/place/PlaceRisk';
 import { useSetPlaceRisk } from '../../bridge/repositories/placeRisk';
 import { placeCastBridge } from '../../bridge/repositories/cast';
-import { riskActsBridge } from '../../bridge/repositories/riskActs';
+import { riskActsBridge } from '../../bridge/repositories/policy';
 import type { Answered } from '../../work/InlineConfirm';
 import { canBeAsked, type Registration, SESSION_ACTIVE } from '../../data/api';
 import { useSessions } from '../../data/queries';

@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useTidiedBranches } from '../../bridge/logs/log';
 import { placeCastBridge } from '../../bridge/repositories/cast';
-import { riskActsBridge } from '../../bridge/repositories/riskActs';
+import { riskActsBridge } from '../../bridge/repositories/policy';
 import { sentence } from '../../locales/format';
 import { useRetireMachine, useSessions, useSyncStanding } from '../../data/queries';
 import { sessionTitle } from '../../work/identity';
