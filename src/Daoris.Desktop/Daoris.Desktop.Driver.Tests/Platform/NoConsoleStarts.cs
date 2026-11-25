@@ -135,13 +135,13 @@ internal static class NoConsoleStarts
         {
             var root = Path.Combine(src, folder);
             if (!Directory.Exists(root)) continue;
-            foreach (var file in SourceFiles.Under(root, "*.cs"))
+            foreach (var file in Directory.EnumerateFiles(root, "*.cs", SearchOption.AllDirectories))
             {
                 var sep = Path.DirectorySeparatorChar;
                 if (file.Contains($"{sep}obj{sep}") || file.Contains($"{sep}bin{sep}")) continue;
                 // The census's own cases hold the starts it refuses, as text.
                 if (Path.GetFileName(file) is "NoConsoleStarts.cs" or "ProcessStartsCensusTests.cs") continue;
-                yield return (Path.GetRelativePath(src, file).Replace('\\', '/'), SourceTexts.Of(file).Replace("\r\n", "\n"));
+                yield return (Path.GetRelativePath(src, file).Replace('\\', '/'), File.ReadAllText(file).Replace("\r\n", "\n"));
             }
         }
     }

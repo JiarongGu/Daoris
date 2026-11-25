@@ -46,6 +46,8 @@ public sealed partial class SourceTextsTests
 
         Assert.Equal(["A.cs:1", "A.cs:2", "A.cs:4"], OwnWalks([("A.cs", Planted)]));
         Assert.Empty(OwnWalks([("SourceFiles.cs", Planted)]));
+        // A file another test project compiles too walks as that project can, which has no shared scan yet.
+        Assert.Empty(OwnWalks([("Shared.cs", Planted)], new HashSet<string>(["Shared.cs"])));
     }
 
     [Fact]
@@ -53,16 +55,21 @@ public sealed partial class SourceTextsTests
     {
         var files = SourceFiles.All(SourceFiles.DriverTestsProject, "*.cs").Select(path => (Path.GetFileName(path), SourceTexts.Of(path)));
 
-        Assert.Empty(OwnWalks(files));
+        var linked = SourceFiles.Under(Path.Combine(WorkspaceRoot.Folder, "src"), "*.csproj")
+            .SelectMany(project => Linked().Matches(SourceTexts.Of(project)).Select(match => match.Groups[1].Value))
+            .ToHashSet(StringComparer.Ordinal);
+
+        Assert.Contains("NoConsoleStarts.cs", linked);
+        Assert.Empty(OwnWalks(files, linked));
     }
 
     /// <summary>A test's own walk of the sources (a wildcard or built name, at any depth) or read of a found source, as <c>file:line</c>.</summary>
-    internal static IReadOnlyList<string> OwnWalks(IEnumerable<(string File, string Text)> files)
+    internal static IReadOnlyList<string> OwnWalks(IEnumerable<(string File, string Text)> files, IReadOnlySet<string>? linked = null)
     {
         var found = new List<string>();
         foreach (var (file, text) in files)
         {
-            if (file is "SourceFiles.cs" or "SourceTextsTests.cs") continue;
+            if (file is "SourceFiles.cs" or "SourceTextsTests.cs" || linked?.Contains(file) == true) continue;
             var code = SourceTexts.Code(text);
             foreach (Match walk in Walk().Matches(code))
             {
@@ -94,4 +101,7 @@ public sealed partial class SourceTextsTests
 
     [GeneratedRegex(@"\bFile\.Read(?:AllText|AllLines|Lines)\(\s*SourceFiles\.")]
     private static partial Regex FoundRead();
+
+    [GeneratedRegex(@"Include=""[^""]*Daoris\.Desktop\.Driver\.Tests\\(?:[^""\\]+\\)*([^""\\]+\.cs)""")]
+    private static partial Regex Linked();
 }
