@@ -197,3 +197,20 @@ test('a vitest report names each failed test with its file, and a file that fail
   ] });
   assert.deepEqual(vitestFailures(json), [{ file: '/r/a.test.ts', test: 'it breaks' }, { file: '/r/b.test.ts', test: 'Cannot find module' }]);
 });
+
+test('the run says once that its builds are done: after the last build ended and before the first .NET run, or at once where no project builds', () => withStore(async (store, root) => {
+  const dotnetUnit = (name: string): ReachedUnit => ({ suite: 'driver', kind: 'dotnet', unit: `D.${name}`, name, file: `src/D.Tests/${name}.cs`, project: 'src/D.Tests' });
+  const plan: ReachedPlan = { groups: [{ runner: 'dotnet', suite: 'driver', project: 'src/D.Tests', settings: null, units: [dotnetUnit('ATests')] }], left: {}, reached: 1, replayed: {} };
+  const order: string[] = [];
+  const say = (line: string): void => { if (line.startsWith('reached-built:')) order.push('said'); };
+  await runPlan({
+    root, plan, keys: new Map(), store, say, mainRedOf: () => false,
+    exec: () => { order.push('run'); return 0; },
+    build: async () => { order.push('build'); return { ready: ['src/D.Tests'], failed: new Map() }; },
+  });
+  assert.deepEqual(order, ['build', 'said', 'run']);
+
+  const none: string[] = [];
+  await runPlan({ root, plan: planOf('a'), keys: keysOf('a'), store, exec: () => { none.push('run'); return 0; }, say: (line) => { if (line.startsWith('reached-built:')) none.push('said'); }, mainRedOf: () => false });
+  assert.deepEqual(none, ['said', 'run'], 'a plan with no build has nothing to wait for');
+}));

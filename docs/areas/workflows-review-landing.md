@@ -898,7 +898,8 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     floor, the setting `reserve` (`reserveGb` in `driver.json`, `daoris settings reserve <gb>|auto`, the window's `SET_RESERVE`,
     `ReserveSetting`; `auto`, the default, no floor, 0 the same). A run is admitted while the free commit, less what the runs still
     starting will take (their need, counted while their first gate has not ended; a Daoris check's one `reached` gate holds its build and
-    its suites, so it counts for its whole run) and less what is kept, holds its learned need, and the lower of free physical memory and
+    its suites, so it counts from its start until its runner says its builds are done: one `reached-built: {}` line in its log, read by
+    `BuiltWatch` into the holder's record, `HeavyHolder.Built`, CHECKSTART1b) and less what is kept, holds its learned need, and the lower of free physical memory and
     free commit holds it less the starting runs' need; the first run asks only the floor, so a machine with none of Daoris's runs on it
     never starves, and a pinned `checks` keeps only the floor. A wait says the number that held it (`CheckWait.Reserve`, `Memory`,
     `slot-reserve` on a check's step); memory that cannot be read runs one. The concurrency limit starts at the ceiling (a quarter of

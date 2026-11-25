@@ -14,7 +14,7 @@ import { onBuilt } from './reached-build.ts';
 import { classify, outcomeLine, type ClassOutcome, type FailedUnit } from './reached-classify.ts';
 import { failedTestLines, passesOf, runStartOf, withReport } from './reached-reports.ts';
 import { reachedCommands, type ReachedGroup, type ReachedPlan } from './reached.ts';
-import { outsideTests, seconds, stepsLine, type Step } from './reached-steps.ts';
+import { builtLine, outsideTests, seconds, stepsLine, type Step } from './reached-steps.ts';
 import type { Halt } from './heavy-halt.ts';
 import { isHeavySuite } from './heavy-tier.ts';
 
@@ -154,6 +154,7 @@ export async function runPlan(options: RunOptions): Promise<ClassOutcome> {
       // A run a newer heavy tier asked to stop before its build builds nothing: every group is handed on.
       if (options.build && projects.length && !halt?.asked()) builds = await options.build(projects);
       ready = new Set(builds.ready);
+      say(builtLine());
       await inTurn(entries.filter(([, group]) => !beside(group)));
     })(),
     ...besideLanes.map((lane) => inTurn(entries.filter(([, group]) => beside(group) && laneOf(group) === lane))),

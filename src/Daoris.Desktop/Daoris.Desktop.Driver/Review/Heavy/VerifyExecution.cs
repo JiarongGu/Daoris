@@ -238,7 +238,19 @@ internal sealed class VerifyExecution(string home, VerifySend send, CandidateJob
             if (await UnregeneratedAsync(tree, place, unrun, ct).ConfigureAwait(false) is { } regenerated) return regenerated;
             keep(holder => holder with { Gates = [ReachedVerdict.Gate], Now = new HeavyGateNow(ReachedVerdict.Gate, 0, world.Clock.GetUtcNow()) });
             var wall = Stopwatch.StartNew();
-            var exit = await StepAsync(place.Hold, command, folder, [ReachedVerdict.Gate], new Dictionary<string, string>(), log, runner.Clock, ct).ConfigureAwait(false);
+            using var running = CancellationTokenSource.CreateLinkedTokenSource(ct);
+            var watching = BuiltWatch.RunAsync(log, () => keep(holder => holder with { Built = world.Clock.GetUtcNow() }), world.Poll, world.Clock, running.Token);
+            int? exit;
+            try
+            {
+                exit = await StepAsync(place.Hold, command, folder, [ReachedVerdict.Gate], new Dictionary<string, string>(), log, runner.Clock, ct).ConfigureAwait(false);
+            }
+            finally
+            {
+                await running.CancelAsync().ConfigureAwait(false);
+                await watching.ConfigureAwait(false);
+            }
+
             if (exit is null) return Ended([new VerifyGate(ReachedVerdict.Gate, RunnerVerdicts.Ended) { Log = log, WallSeconds = wall.Elapsed.TotalSeconds }]);
             _failed = new FailedRun(ReachedVerdict.Gate, folder, runner.Clock, log, runner.Outcome);
             if (exit != 0) _seen = LoadFailures.Read(home, world, place.Hold?.Id);

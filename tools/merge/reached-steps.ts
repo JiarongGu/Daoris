@@ -10,7 +10,11 @@ export type Step = { step: string; ms: number; open?: true };
 
 const MARK = 'reached-step: ';
 
-export const seconds = (ms: number): string => {
+const BUILT = 'reached-built: ';
+
+export const builtLine = (): string => `${BUILT}{}`;
+
+export const seconds =(ms: number): string => {
   const whole = Math.round(ms / 1000);
   return whole < 60 ? `${whole} s` : `${Math.floor(whole / 60)} m ${whole % 60} s`;
 };
