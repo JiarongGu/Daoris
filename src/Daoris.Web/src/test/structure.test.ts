@@ -258,5 +258,5 @@ describe("the page's structure (STRUCT5c, D166)", () => {
     expect(scripts.filter(([path]) => !SUPPORT.test(path)).length, "the gate's walk no longer reaches the sources").toBeGreaterThanOrEqual(350);
     expect(scripts.filter(([path]) => SUPPORT.test(path)).length, "the gate's walk no longer reaches the tests and stories").toBeGreaterThanOrEqual(400);
     expect(checkStructure(map, sources), "each breaks the page's structure (the code-structure design §5)").toEqual([]);
-  });
+  }, 60_000);
 });

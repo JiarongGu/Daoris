@@ -7,6 +7,7 @@ import { spawnSync } from 'node:child_process';
 import { posix } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { readLanes } from './lanes.ts';
+import { repoBudgetSource } from './repo-home.ts';
 import { isLongGate, readPlan } from './plan.ts';
 import { BLOCKING, PATH_CHECKS, pathsReaching, selectGates } from './reach.ts';
 import type { Rule } from './reach-table.ts';
@@ -14,7 +15,7 @@ import type { Rule } from './reach-table.ts';
 // test-map: strings name paths as data — the tables and sources named here are what the lane table's tests hold it to
 
 export const repoRoot = fileURLToPath(new URL('../..', import.meta.url));
-export const repoPlan = readPlan(repoRoot);
+export const repoPlan = readPlan(repoRoot, repoBudgetSource());
 export const repoLanes = readLanes(repoRoot)!.lanes;
 export const ALL: string[] = repoPlan.map((gate) => gate.name);
 /** The gates only the full set runs: the Process halves and the deployment rehearsal. */

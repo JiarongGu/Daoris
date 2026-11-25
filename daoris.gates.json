@@ -1,6 +1,4 @@
 {
-  "devkit": "0.0.1",
-
   "tiers": {
     "needs": {
       "git": ["src/Daoris.Desktop/Daoris.Desktop.GitDoor/", "src/Daoris.Ports/Git/", "src/Daoris.Testing/Git/"],
@@ -11,10 +9,6 @@
       "filesystem": ["src/Daoris.Desktop/Daoris.Desktop.Driver/Store/", "src/Daoris.Desktop/Daoris.Desktop.Driver/Install/"]
     }
   },
-
-  "treeBaseline": "node tools/quick.mjs --record-base",
-
-  "localInputs": ["local/lyntai-local.props", "local/shenora-local.props"],
 
   "generated": [{ "paths": "tools/size-ratchet.json", "run": "node tools/size-ratchet.mjs --shrink" }],
 
@@ -51,7 +45,6 @@
   "verifyBudget": {
     "_why": "This workspace's own rule (D349, VERIFY10), not a product rule and not canon: one task's verification (a builder's checks, a run's check, a merge's gates for one branch) takes under budgetMinutes of wall time, scoped to what its paths reach, the heavy tier after the landing. A full run needs a reason the tools check against the change: a path of widePaths (the gates and the test tools, the dependency files and lockfiles, the build files, the shared contracts, and what is tracked, its line endings and the file and git helpers every rehearsal imports: the lane table's every-gate rule reads this list, its one source, apart from the budget, and fails at load where it is missing), a reach of reachShare or more of what the run could leave out (the gates the lane table can skip at a merge, not those every merge runs or no rule names; the census's classes in the reached run), or a run whose kind is one (the run after a landing, a release). A verification past the budget is said in its summary with where its time went and filed in overruns, which the steward reads.",
     "budgetMinutes": 10,
-    "overruns": "local/verify-overruns.jsonl",
     "fullRunReasons": {
       "widePaths": [
         "daoris.gates.json", "daoris.lanes.json", "tools/test-sets.mjs", "tools/test-map.mjs", "tools/test-map/**",
@@ -69,7 +62,7 @@
     { "name": "universal", "run": "node tools/orient-index.mjs && node tools/as-merged.mjs dotnet run --project src/Daoris.Devkit/Daoris.Devkit.Cli -- verify --universal-only" },
     { "name": "cli", "run": "npm run verify:checks", "clock": true, "handback": true, "regenerate": "node tools/contracts.mjs --if-stale" },
     { "name": "cli-tests", "run": "npm run verify:tests", "clock": true },
-    { "name": "tool-tests", "timeoutMinutes": 8, "timeoutWhy": "the unit tier alone ran 1.8 min (TOOLTIER1, 2026-11-17; its end-to-end specs moved to tool-e2e), its slowest file the set-up kit's; a full set's load has tripled the tools' cases: 1.8 x 4; re-set from the next green full-set wall time", "run": "npm run tooltests", "clock": true,
+    { "name": "tool-tests", "run": "npm run tooltests", "clock": true,
       "paths": [
         ".gitattributes", ".gitignore", "daoris.gates.json", "daoris.lanes.json", "package-lock.json", "package.json", ".codex/",
         "src/Daoris.Cli/src/platform/", "src/Daoris.Cli/src/tools/", "src/Daoris.Cli/test/_fixture.ts", "src/Daoris.Cli/tool-test/",
@@ -98,7 +91,7 @@
         "src/Daoris.Web/.storybook/", "src/Daoris.Web/public/", "src/Daoris.Web/scripts/", "src/Daoris.Web/src/", "tools/fsx.mjs",
         "tools/orient-index-fixtures/"
       ] },
-    { "name": "service-process", "timeoutMinutes": 15, "timeoutWhy": "green runs 1.6 to 6.8 min, but one quiet run was killed at 11.2 min: 11.2 x 1.3; re-set from the next green wall time", "run": "dotnet test src/Daoris.Service --settings src/Daoris.Desktop/process.runsettings",
+    { "name": "service-process", "run": "dotnet test src/Daoris.Service --settings src/Daoris.Desktop/process.runsettings",
       "paths": [
         ".gitattributes", ".gitignore", "daoris.gates.json", "daoris.lanes.json", "package-lock.json", "package.json", ".codex/",
         "src/Daoris.Cli/src/tools/", "src/Daoris.Service/Daoris.Service.slnx", "src/Daoris.Service/Directory.Build.props",
@@ -117,7 +110,7 @@
         "src/Daoris.Service/Daoris.Service.Shared/", "src/Daoris.Ports/Daoris.Ports.csproj", "src/Daoris.Ports/Memory/",
         "src/Daoris.Adapters/Daoris.Adapters.Memory.Lyntai/", "tools/fsx.mjs"
       ] },
-    { "name": "layers", "timeoutMinutes": 15, "timeoutWhy": "no recent green wall time (killed at 10.0 min on a quiet machine): 10 x 1.5; re-set from the next green wall time", "run": "node tools/layers-census.mjs && node tools/test-sets.mjs run --gate layers && dotnet test src/Daoris.Testing.Tests",
+    { "name": "layers", "run": "node tools/layers-census.mjs && node tools/test-sets.mjs run --gate layers && dotnet test src/Daoris.Testing.Tests",
       "paths": [
         ".gitattributes", ".gitignore", "daoris.gates.json", "daoris.lanes.json", "package-lock.json", "package.json", "Directory.Build.props",
         "src/", "tools/fsx.mjs", "tools/partials.mjs", "tools/merge/lanes-file.ts", "tools/layers-census.mjs", "tools/layers-census.json",
@@ -143,12 +136,12 @@
         "src/Daoris.Cli/src/tools/", "src/Daoris.Web/package-lock.json", "src/Daoris.Web/package.json", "src/Daoris.Web/scripts/",
         "src/Daoris.Web/vite.config.ts", "src/Daoris.Web/src/", "tools/fsx.mjs"
       ] },
-    { "name": "reached", "timeoutMinutes": 20, "timeoutWhy": "13.4 min p90 of the merges run with no budget (2026-11-14 to 20) x 1.5; under load it runs on past it (MERGENOKILL1)", "run": "node tools/reached-checks.mjs --tier fast --base {base}", "handback": "node tools/reached-checks.mjs --base main --tier fast", "memoryGb": 6, "reuse": "inputs+diff",
+    { "name": "reached", "run": "node tools/reached-checks.mjs --tier fast --base {base}", "handback": "node tools/reached-checks.mjs --base main --tier fast", "reuse": "inputs+diff",
       "paths": [
         ".gitattributes", ".gitignore", "daoris.gates.json", "daoris.lanes.json", "package-lock.json", "package.json",
         "src/", "tools/", "examples/", "canon/"
       ] },
-    { "name": "driver", "timeoutMinutes": 25, "timeoutWhy": "latest green run 18.8 min x 1.3; killed at its old 10 min budget on a loaded machine", "run": "dotnet test src/Daoris.Desktop/Daoris.Desktop.Driver.Tests --filter \"Category!=Process&Category!=Census\" --results-directory _fixtures/test-timing --logger \"trx;LogFileName=driver.trx\"",
+    { "name": "driver", "run": "dotnet test src/Daoris.Desktop/Daoris.Desktop.Driver.Tests --filter \"Category!=Process&Category!=Census\" --results-directory _fixtures/test-timing --logger \"trx;LogFileName=driver.trx\"",
       "paths": [
         ".gitattributes", ".gitignore", "daoris.gates.json", "daoris.lanes.json", "package-lock.json", "package.json",
         ".claude/knowledge/adoption.md", ".codex/", "canon/core/knowledge/rooms-and-classes.md", "docs/model-roles.md", "examples/plugins/", "src/Daoris.Cli/package.json",
@@ -184,14 +177,14 @@
         "src/Daoris.Web/tsconfig.tsbuildinfo", "src/Daoris.Web/vite.config.ts", "src/Daoris.Web/.storybook/", "src/Daoris.Web/public/",
         "src/Daoris.Web/scripts/", "src/Daoris.Web/src/", "tools/fsx.mjs"
       ] },
-    { "name": "censuses", "alone": true, "run": "dotnet test src/Daoris.Desktop/Daoris.Desktop.Driver.Tests --filter Category=Census --results-directory _fixtures/test-timing --logger \"trx;LogFileName=censuses-driver.trx\" && dotnet test src/Daoris.Desktop/Daoris.Desktop.Modules.Tests --filter Category=Census --results-directory _fixtures/test-timing --logger \"trx;LogFileName=censuses-modules.trx\"", "reuse": "inputs",
+    { "name": "censuses", "run": "dotnet test src/Daoris.Desktop/Daoris.Desktop.Driver.Tests --filter Category=Census --results-directory _fixtures/test-timing --logger \"trx;LogFileName=censuses-driver.trx\" && dotnet test src/Daoris.Desktop/Daoris.Desktop.Modules.Tests --filter Category=Census --results-directory _fixtures/test-timing --logger \"trx;LogFileName=censuses-modules.trx\"", "reuse": "inputs",
       "paths": [
         ".gitattributes", ".gitignore", "daoris.gates.json", "daoris.lanes.json", "package-lock.json", "package.json",
         "src/Daoris.Cli/src/tools/", "src/Daoris.Desktop/Daoris.Desktop.App/", "src/Daoris.Desktop/Daoris.Desktop.Driver/",
         "src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/", "src/Daoris.Desktop/Daoris.Desktop.Modules/",
         "src/Daoris.Desktop/Daoris.Desktop.Modules.Tests/", "src/Daoris.Service/Daoris.Service.Tests/fixtures/", "tools/fsx.mjs"
       ] },
-    { "name": "driver-process", "timeoutMinutes": 20, "timeoutWhy": "no recent green wall time (killed at 10.0 min): 10 x 2; re-set from the next green wall time", "run": "dotnet test src/Daoris.Desktop/Daoris.Desktop.Driver.Tests --settings src/Daoris.Desktop/process.runsettings",
+    { "name": "driver-process", "run": "dotnet test src/Daoris.Desktop/Daoris.Desktop.Driver.Tests --settings src/Daoris.Desktop/process.runsettings",
       "paths": [
         ".gitattributes", ".gitignore", "daoris.gates.json", "daoris.lanes.json", "package-lock.json", "package.json", ".codex/",
         "examples/plugins/", "src/Daoris.Cli/src/cli.ts", "src/Daoris.Cli/src/platform/", "src/Daoris.Cli/src/tools/",
@@ -202,7 +195,7 @@
         "src/Daoris.Desktop/Daoris.Desktop.Command/", "src/Daoris.Desktop/Daoris.Desktop.PieceStart/", "tools/fsx.mjs", "tools/machine-admission.mjs",
         "tools/machine-admission.test.mjs"
       ] },
-    { "name": "driver-rehearsals", "timeoutMinutes": 20, "timeoutWhy": "no recent green wall time (killed at 10.0 min): 10 x 2; re-set from the next green wall time", "run": "dotnet test src/Daoris.Desktop/Daoris.Desktop.Driver.Rehearsals --settings src/Daoris.Desktop/rehearsals.process.runsettings",
+    { "name": "driver-rehearsals", "run": "dotnet test src/Daoris.Desktop/Daoris.Desktop.Driver.Rehearsals --settings src/Daoris.Desktop/rehearsals.process.runsettings",
       "paths": [
         ".gitattributes", ".gitignore", "daoris.gates.json", "daoris.lanes.json", "package-lock.json", "package.json",
         "src/Daoris.Cli/src/cli.ts", "src/Daoris.Cli/src/platform/", "src/Daoris.Cli/src/tools/",
@@ -223,7 +216,7 @@
         "src/Daoris.Adapters/Daoris.Adapters.Clock/", "src/Daoris.Adapters/Daoris.Adapters.DesktopStore.Sqlite/",
         "src/Daoris.Adapters/Daoris.Adapters.Machine/", "tools/fsx.mjs"
       ] },
-    { "name": "driver-process-git", "timeoutMinutes": 46, "timeoutWhy": "latest green run 35.3 min x 1.3 (an earlier one took 174); killed at 10.0 min under the old default", "run": "dotnet test src/Daoris.Desktop/Daoris.Desktop.Driver.Tests --settings src/Daoris.Desktop/git.process.runsettings",
+    { "name": "driver-process-git", "run": "dotnet test src/Daoris.Desktop/Daoris.Desktop.Driver.Tests --settings src/Daoris.Desktop/git.process.runsettings",
       "paths": [
         ".gitattributes", ".gitignore", "daoris.gates.json", "daoris.lanes.json", "package-lock.json", "package.json", ".codex/",
         "src/Daoris.Cli/src/tools/", "src/Daoris.Desktop/Directory.Build.props", "src/Daoris.Desktop/Directory.Packages.props",
@@ -252,7 +245,7 @@
         "src/Daoris.Desktop/Daoris.Desktop.Modules.Tests/", "src/Daoris.Desktop/Daoris.Desktop.OwnerStandIn/",
         "src/Daoris.Desktop/Daoris.Desktop.Command/", "src/Daoris.Desktop/Daoris.Desktop.PieceStart/", "tools/fsx.mjs"
       ] },
-    { "name": "tool-e2e", "timeoutMinutes": 20, "timeoutWhy": "no green wall time of its own yet: its slowest spec ran 11.3 min beside the other gates (QUEUEDROP1, 2026-11-17) and runs alone here: 11.3 x 1.75; re-set from the next green wall time", "run": "npm run tooltests:e2e", "clock": true, "memoryGb": 6,
+    { "name": "tool-e2e", "run": "npm run tooltests:e2e", "clock": true,
       "paths": [
         ".gitattributes", ".gitignore", "daoris.gates.json", "daoris.lanes.json", "package-lock.json", "package.json",
         "src/Daoris.Cli/package.json", "src/Daoris.Cli/tool-test/", "tools/as-merged.mjs", "tools/as-merged.test.mjs",
@@ -274,7 +267,7 @@
         "src/Daoris.Web/vite.config.ts", "src/Daoris.Web/.storybook/", "src/Daoris.Web/e2e/", "src/Daoris.Web/public/",
         "src/Daoris.Web/scripts/", "src/Daoris.Web/src/", "tools/fsx.mjs"
       ] },
-    { "name": "web-unit", "timeoutMinutes": 25, "timeoutWhy": "green runs 8.7 to 18.9 min, p95 18.9 x 1.3; killed at 10.0 min on a quiet machine", "run": "npm run test:web:unit", "clock": true,
+    { "name": "web-unit", "run": "npm run test:web:unit", "clock": true,
       "paths": [
         ".gitattributes", ".gitignore", "daoris.gates.json", "daoris.lanes.json", "package-lock.json", "package.json", ".codex/",
         "docs/code-map.json", "src/Daoris.Cli/src/tools/", "src/Daoris.Contracts/", "src/Daoris.Desktop/Daoris.Desktop.Driver/Agents/",
@@ -324,13 +317,13 @@
       { "name": "tool-e2e", "gate": "tool-e2e", "runner": "node", "cwd": "src/Daoris.Cli", "bounded": true,
         "files": ["src/Daoris.Cli/tool-test/**/*.e2e.ts", "tools/as-merged.test.mjs"], "whole": ["src/Daoris.Cli/tsconfig.json", "src/Daoris.Cli/package.json"],
         "args": ["--test-concurrency=4", "--test-timeout=1800000", "--test-force-exit", "--test-reporter=spec", "--test-reporter-destination=stdout", "--test-reporter=junit", "--test-reporter-destination=../../_fixtures/test-timing/tool-e2e.xml"] },
-      { "name": "merge-e2e", "gate": "tool-e2e", "runner": "vitest", "config": "tools/vitest.config.ts", "project": "e2e", "timeoutMs": 120000, "bounded": true,
-        "files": ["tools/merge/**/*.e2e.ts"], "whole": ["tools/vitest.config.ts", "src/Daoris.Cli/package.json"],
+      { "name": "merge-e2e", "gate": "tool-e2e", "runner": "vitest", "config": "tools/vitest.config.ts", "project": "e2e", "bounded": true,
+        "files": ["tools/merge/**/*.e2e.ts"], "whole": ["tools/vitest.config.ts", "tools/merge/budget-overlay.ts", "tools/merge/check-budgets.ts", "src/Daoris.Cli/src/platform/home.ts", "src/Daoris.Cli/package.json"],
         "args": ["--reporter=default", "--reporter=json", "--outputFile.json=_fixtures/test-timing/tool-e2e.json"] },
       { "name": "cli", "gate": "cli-tests", "suite": "cli", "runner": "node", "cwd": "src/Daoris.Cli",
         "files": ["src/Daoris.Cli/test/**/*.ts"], "whole": ["src/Daoris.Cli/tsconfig.json", "src/Daoris.Cli/package.json"] },
-      { "name": "merge-unit", "gate": "cli-tests", "suite": "cli", "runner": "vitest", "config": "tools/vitest.config.ts", "project": "unit", "timeoutMs": 10000,
-        "files": ["tools/merge/**/*.test.ts"], "whole": ["tools/vitest.config.ts"],
+      { "name": "merge-unit", "gate": "cli-tests", "suite": "cli", "runner": "vitest", "config": "tools/vitest.config.ts", "project": "unit", 
+        "files": ["tools/merge/**/*.test.ts"], "whole": ["tools/vitest.config.ts", "tools/merge/budget-overlay.ts", "tools/merge/check-budgets.ts", "src/Daoris.Cli/src/platform/home.ts"],
         "args": ["--reporter=default", "--reporter=json", "--outputFile.json=_fixtures/test-timing/tool-unit.json"] },
       { "name": "lyntai-local", "gate": "cli-tests", "suite": "cli", "runner": "node", "last": true, "files": ["tools/lyntai-local.test.mjs"],
         "_why": "it rewrites the local props file the contracts test rewrites, and the two raced when run together" },
@@ -353,8 +346,6 @@
   },
 
   "sensitive": {
-    "patternsFile": "local/sensitive-patterns.txt",
-
     "_reviewedObjects": [
       "04801cb — src/Daoris.Devkit/Daoris.Devkit.Tests/SensitiveGateTests.cs as it stood in 1d331cd,",
       "before 469cc2d assembled those fixtures at runtime. It carries a placeholder Windows home path",

@@ -38,7 +38,7 @@ internal static class FoundReads
 
         if (why is null) return null;
         var kept = last?.Rules.Where(rule => rule.Kind == FileKind.Scratch && rule.Evidence.Contains(WrittenBySession)).SelectMany(rule => rule.Paths.Select(path => GitPattern.LiteralOf(rule, path))).OfType<string>().ToList() ?? [];
-        var reading = await FileAnalysis.ReadAsync(root, commit, FileSignatures.Shipped, kept, ct, now).ConfigureAwait(false);
+        var reading = await FileAnalysis.ReadAsync(root, commit, FileSignatures.Shipped, kept, ct, now, CheckBudgets.Of(home, repository)).ConfigureAwait(false);
         var digest = await DigestAsync(root, Commands(reading.Found.Rules), ask, ct).ConfigureAwait(false);
         FoundFiles.Write(home, repository, reading.Found with { Toolchain = digest });
         Asked[Key(home, repository)] = now;

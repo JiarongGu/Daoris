@@ -268,7 +268,7 @@ is not supplied by a mocked bridge, Storybook or a browser-only end-to-end test.
 Main is the development branch, and the cycle's aim is main green and the install current within the hour.
 
 1. **Set up.** A builder runs `node tools/worktree-setup.mjs` from its worktree first (`--plan` says what it would do, `--build`
-   builds the driver's and the modules' test projects too): the `localInputs` and sensitive-patterns file the main checkout's gates file declares copied as files, never linked, as a gate tree and a session's tree take them;
+   builds the driver's and the modules' test projects too): the local inputs and sensitive-patterns file the Daoris home's record of the repository names (the gates file's members where the home names none) copied as files, never linked, as a gate tree and a session's tree take them;
    dependencies installed from the lockfiles where missing or not from the lockfile as it stands; the merge drivers set, the
    index written, each gate's declared `regenerate` command run and the test projects restored, then the base recorded: `npm run quick`
    runs once (`--record-base`) and its verdicts are kept in `local/quick-base.json`, so a later `npm run quick` says which reds are
@@ -347,7 +347,7 @@ the other, and every other Process-lane gate alone (REHLANE1, REHLANE2, REHLANE2
 service suite (WEBSPLIT1), and the measured-box check (`web-measured`: the specs under `src/Daoris.Web/measured/`, the page's stories laid out and measured in Chromium) is another that builds none (FLOWCHART1e). The driver's Process half runs eight classes at once (PROCPAR1), and its
 slowest classes print by their own times beside the half's wall. Before a heavy gate (a suite that builds .NET or the
 page, a Process half, a rehearsal) the tool reads the machine's free commit and free physical memory, and waits, up to
-ten minutes, while either is below the gate's need (its class's, or `"memoryGb"` on the gate in `daoris.gates.json`), or the free
+ten minutes, while either is below the gate's need (its class's, or the gate's `memoryGb` in the Daoris home's record), or the free
 commit (the physical memory where no commit is read) is below that need plus the reserve the person keeps free for their own work
 (`daoris settings reserve`, the floor under what the person's own work is measured to take back, D362), as the driver's admission judges it; a gate
 that died of memory reads MEMORY, not a failed check, and runs again once, alone, at the run's end (MEMGATE1), as does one
@@ -424,7 +424,7 @@ the main checkout meanwhile, under load (GATEWT1). One runs at a time. Stage wha
 tree, never from the moving checkout:
 `npm run publish:desktop -- --to <install> --service --stage --from-gated <commit>`. A merge's prune
 removes the tree once its stage is done, and `--prune` once its run has ended; neither while it runs.
-Each run copies the private files a gate reads under `local/` (the declared `sensitive.patternsFile`, today
+Each run copies the private files a gate reads under `local/` (the sensitive patterns file the home names, today
 `local/sensitive-patterns.txt`) from the main checkout into the tree, refreshed, and keeps the run's logs in the main
 checkout's `local/scratch/beside-<sha7>/` when it ends, pass, fail or error, so a prune loses none (GATEWT1b, GATEWT1c).
 A run killed outright leaves its logs in the tree; the next run keeps them there before it clears them.

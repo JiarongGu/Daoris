@@ -12,20 +12,18 @@ test('a gate\'s budget is its declared timeoutMinutes, else the lane\'s: five mi
   assert.equal(budgetMs({ name: 'a', timeoutMinutes: -1 }, 'merge'), 5 * 60_000, 'a budget that does not read is the lane\'s');
 });
 
-test('the declared gates: each timeoutMinutes carries its reason, and the full set runs no package suite, only packages-lock', () => {
-  const { gates } = JSON.parse(readFileSync(new URL('../../daoris.gates.json', import.meta.url), 'utf8')) as {
-    gates: { name: string; timeoutMinutes?: number; timeoutWhy?: string }[];
-  };
-  for (const gate of gates.filter((each) => each.timeoutMinutes !== undefined)) {
-    assert.ok(Number.isInteger(gate.timeoutMinutes) && gate.timeoutMinutes! > 0, `${gate.name} declares a whole number of minutes`);
-    assert.ok((gate.timeoutWhy ?? '').length > 20, `${gate.name} says why its budget is what it is`);
+test('the declaration carries none of the members the home keeps, and the full set runs no package suite, only packages-lock', () => {
+  const declared = JSON.parse(readFileSync(new URL('../../daoris.gates.json', import.meta.url), 'utf8')) as {
+    gates: Record<string, unknown>[]; tests: { sets: Record<string, unknown>[] }; sensitive: Record<string, unknown>; verifyBudget: Record<string, unknown>;
+  } & Record<string, unknown>;
+  for (const gate of declared.gates) {
+    for (const member of ['timeoutMinutes', 'timeoutWhy', 'memoryGb', 'alone']) assert.equal(member in gate, false, `${gate['name']} keeps ${member} in the home`);
   }
-  assert.deepEqual(gates.map((each) => each.name).filter((name) => /^(adapters|packages)-/.test(name)), ['packages-lock']);
-  const over = gates.find((each) => each.name === 'tool-e2e')!;
-  const budget = budgetMs(over, 'ci')!;
-  assert.ok(budget > 10 * 60_000, 'a gate killed at the old budget has its measured one');
-  assert.match(overBudgetNote(budget + 1000, budget, []), /^over-budget: killed after/, 'a gate over its new budget still fails');
-  assert.equal(budgetMs(gates.find((each) => each.name === 'reached')!, 'merge'), 20 * 60_000, 'reached: 13.4 min p90 unbudgeted, times 1.5 (MERGENOKILL1)');
+  for (const set of declared.tests.sets) assert.equal('timeoutMs' in set, false, `${set['name']} keeps its timeout in the home`);
+  for (const member of ['devkit', 'treeBaseline', 'localInputs']) assert.equal(member in declared, false, `${member} is the home's`);
+  assert.equal('patternsFile' in declared.sensitive, false);
+  assert.equal('overruns' in declared.verifyBudget, false);
+  assert.deepEqual(declared.gates.map((each) => each['name'] as string).filter((name) => /^(adapters|packages)-/.test(name)), ['packages-lock']);
 });
 
 test('--no-timeout gives no budget and says so in the summary', () => {

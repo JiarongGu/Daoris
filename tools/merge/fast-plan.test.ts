@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { fileURLToPath } from 'node:url';
 import { fastPlan, scopedKind } from './fast-plan.ts';
 import { readPlan } from './plan.ts';
+import { repoBudgetSource } from './repo-home.ts';
 import { selectGates } from './reach.ts';
 import type { ScopedKind, ScopedSet } from './fast-plan.ts';
 // @ts-expect-error — untyped workspace tooling, read through the seam its own tests use
@@ -15,7 +16,7 @@ const ROOT = fileURLToPath(new URL('../..', import.meta.url));
 
 /** The queue's scoped set over this repository's own plan for `changed`, every Process, git and rehearsal gate holding a known red. */
 function chosen(changed: string[]) {
-  const plan = readPlan(ROOT);
+  const plan = readPlan(ROOT, repoBudgetSource());
   const kinds = new Map(plan.map((gate) => [gate.name, scopedKind(gate)]));
   const selection = selectGates(plan, changed, { gated: true });
   const reached = new Set(selection.gates.filter((entry) => entry.run || entry.reached).map((entry) => entry.gate.name));

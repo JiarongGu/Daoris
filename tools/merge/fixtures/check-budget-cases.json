@@ -1,0 +1,18 @@
+{
+  "_why": "One derivation, two readers: tools/merge/check-budgets.ts and the driver's CheckBudgets read these cases and must answer each the same. A case: a gate's record (green times in minutes, newest last, a pin, what was last said) and the lane, and the budget it gives.",
+  "constants": { "factor": 1.5, "floorMinutes": 5, "greensNeeded": 3, "greensKept": 20, "riseBound": 1.25, "mergeDefault": 5, "fullDefault": 10 },
+  "cases": [
+    { "name": "no record gives the merge default", "lane": "merge", "greens": [], "expect": { "minutes": 5, "source": "default" } },
+    { "name": "no record gives the full default", "lane": "full", "greens": [], "expect": { "minutes": 10, "source": "default" } },
+    { "name": "two greens teach nothing", "lane": "merge", "greens": [1, 1], "expect": { "minutes": 5, "source": "default" } },
+    { "name": "the slowest nearest-rank ninetieth percentile times the factor, rounded up", "lane": "merge", "greens": [10, 10, 10, 12, 14], "expect": { "minutes": 21, "source": "learned" } },
+    { "name": "a slower green moves it", "lane": "merge", "greens": [10, 10, 10, 12, 14, 30], "expect": { "minutes": 45, "source": "learned" } },
+    { "name": "a fast gate has the floor", "lane": "merge", "greens": [2, 2, 2, 2, 2, 2], "expect": { "minutes": 5, "source": "learned" } },
+    { "name": "a pin stands over the greens", "lane": "full", "greens": [10, 10, 10], "pin": { "minutes": 33, "why": "w" }, "expect": { "minutes": 33, "source": "pin", "why": "w" } },
+    { "name": "a pin of no positive number pins nothing", "lane": "merge", "greens": [10, 10, 10], "pin": { "minutes": 0, "why": "w" }, "expect": { "minutes": 15, "source": "learned" } },
+    { "name": "a rise within the bound is not said", "lane": "merge", "greens": [10, 10, 10, 12, 12, 12], "said": 15, "expect": { "minutes": 18, "source": "learned" } },
+    { "name": "a rise past the bound is said, from what was said", "lane": "merge", "greens": [10, 10, 10, 12, 12, 12, 20, 20, 20], "said": 15, "expect": { "minutes": 30, "source": "learned", "rise": { "from": 15, "to": 30 } } },
+    { "name": "a pinned gate says no rise", "lane": "merge", "greens": [20, 20, 20], "pin": { "minutes": 12, "why": "w" }, "said": 5, "expect": { "minutes": 12, "source": "pin", "why": "w" } },
+    { "name": "only the newest twenty count", "lane": "merge", "greens": [40, 40, 40, 40, 40, 40, 40, 40, 40, 40, 40, 40, 40, 40, 40, 40, 40, 40, 40, 40, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3], "expect": { "minutes": 5, "source": "learned" } }
+  ]
+}

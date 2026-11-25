@@ -128,7 +128,7 @@ internal sealed class LandingPress(
         {
             var checkout = Path.GetDirectoryName(here.CommonDir.Trim())!;
             if ((await context.LineAsync(checkout, repository, workspace, ct).ConfigureAwait(false)).Branch is { } lineName
-                && await SensitiveLandings.RefusalAsync(checkout, full, lineName, ct).ConfigureAwait(false) is { } sensitive)
+                && await SensitiveLandings.RefusalAsync(checkout, full, lineName, ct, CheckBudgets.Of(context.Home, repository)).ConfigureAwait(false) is { } sensitive)
             {
                 return new(false, sensitive) { Refusal = LandingCode.Refused };
             }

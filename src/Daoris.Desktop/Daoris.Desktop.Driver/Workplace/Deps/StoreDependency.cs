@@ -27,7 +27,7 @@ internal static class StoreDependencyRules
 {
     internal static async Task<StoreDependencies> ReadAsync(string home, string tree, string repository, string commit, CancellationToken ct)
     {
-        var reading = await FileAnalysis.ReadAsync(tree, commit, FileSignatures.Shipped, [], ct).ConfigureAwait(false);
+        var reading = await FileAnalysis.ReadAsync(tree, commit, FileSignatures.Shipped, [], ct, kept: CheckBudgets.Of(home, repository)).ConfigureAwait(false);
         var found = FoundFiles.Read(home, repository);
         var own = await RepositoryFilesReader.AtAsync(tree, commit, ct).ConfigureAwait(false);
         var person = PersonFiles.Read(home);

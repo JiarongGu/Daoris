@@ -9,6 +9,8 @@ import { COMMIT_FORMAT, commitProblems, parseCommits } from './attribution.ts';
 import { count, pad } from './format.ts';
 import { MAIN, git, requireBranch, treeState } from './git.ts';
 import { SCRATCH } from './paths.ts';
+import { budgetSourceOf, overlay, type BudgetSource } from './budget-overlay.ts';
+import type { Budget } from './check-budgets.ts';
 
 // test-map: strings name paths as data — the projects and commands named here are what the plan reads gates by, not reads
 
@@ -17,6 +19,7 @@ export type Kind = 'check' | 'suite' | 'rehearsal';
 /** A gate as the declaration writes it. */
 export type Gate = {
   name: string; run: string; cwd?: string; clock?: boolean; alone?: boolean; memoryGb?: number; reuse?: string; regenerate?: string; timeoutMinutes?: number;
+  budget?: Budget;
 };
 
 /** A gate as the plan orders it: its name made a path segment, its kind, and (for the declared runner) the name the declaration writes. */
@@ -381,19 +384,20 @@ export function gatePlan(declared: Gate[], workflow = '', { keepDeclared = false
         ...(typeof gate.reuse === 'string' ? { reuse: gate.reuse } : {}),
         ...(typeof gate.regenerate === 'string' ? { regenerate: gate.regenerate } : {}),
         ...(typeof gate.timeoutMinutes === 'number' ? { timeoutMinutes: gate.timeoutMinutes } : {}),
+        ...(gate.budget ? { budget: gate.budget } : {}),
       };
     });
 }
 
-/** `daoris.gates.json`'s gates, read as the devkit reads them: a name, a command line, an optional cwd. */
-export function readDeclared(root: string): Gate[] {
+/** `daoris.gates.json`'s gates, read as the devkit reads them, with the home's values for each laid over (`budget-overlay.ts`). */
+export function readDeclared(root: string, budgets: BudgetSource | null = budgetSourceOf(root)): Gate[] {
   const file = join(root, 'daoris.gates.json');
   if (!existsSync(file)) throw new Refusal(`no daoris.gates.json at ${root}: there is no declared gate to run`);
-  return declaredIn(readFileSync(file, 'utf8'), 'daoris.gates.json');
+  return declaredIn(readFileSync(file, 'utf8'), 'daoris.gates.json', budgets);
 }
 
 /** The gates of a declaration's text, as `readDeclared` reads a file's; `label` says whose text it is in a refusal (the declared runner reads one it is handed). */
-export function declaredIn(text: string, label: string): Gate[] {
+export function declaredIn(text: string, label: string, budgets: BudgetSource | null = null): Gate[] {
   let parsed: { gates?: unknown };
   try {
     parsed = JSON.parse(text) as { gates?: unknown };
@@ -417,19 +421,19 @@ export function declaredIn(text: string, label: string): Gate[] {
   // `"reuse"` (`inputs`, or `inputs+diff` for a gate that also reads the merge's changed paths) lets a standing pass on equal
   // inputs be replayed; `"regenerate"` is the command that makes a generated input the gate checks current before it runs.
   // `"timeoutMinutes"` is the gate's wall-clock budget; absent, the lane's (`merge/timeout.ts`).
-  return gates.map((gate) => {
+  return overlay(gates.map((gate) => {
     const { name, run, cwd, clock, alone, memoryGb, reuse, regenerate, timeoutMinutes } = gate as Gate & { clock?: unknown; alone?: unknown };
     return {
       name, run, ...(typeof cwd === 'string' ? { cwd } : {}), ...(clock === true ? { clock: true } : {}), ...(alone === true ? { alone: true } : {}),
       ...(typeof memoryGb === 'number' ? { memoryGb } : {}), ...(typeof timeoutMinutes === 'number' ? { timeoutMinutes } : {}),
       ...(typeof reuse === 'string' ? { reuse } : {}), ...(typeof regenerate === 'string' ? { regenerate } : {}),
-    };
-  });
+    } as Gate;
+  }), budgets);
 }
 
-export function readPlan(root: string): Planned[] {
+export function readPlan(root: string, budgets: BudgetSource | null = budgetSourceOf(root)): Planned[] {
   const workflow = join(root, '.github', 'workflows', 'release.yml');
-  return gatePlan(readDeclared(root), existsSync(workflow) ? readFileSync(workflow, 'utf8') : '');
+  return gatePlan(readDeclared(root, budgets), existsSync(workflow) ? readFileSync(workflow, 'utf8') : '');
 }
 
 export type Verdicted = { verdict: string; at: string };

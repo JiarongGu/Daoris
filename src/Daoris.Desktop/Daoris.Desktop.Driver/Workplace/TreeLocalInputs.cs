@@ -8,12 +8,10 @@ namespace Daoris.Driver;
 /// checkout. A sensitive scan that finds no private pattern list in a fresh tree falls back to its built-in patterns and passes.
 /// </summary>
 /// <remarks>
-/// <para><b>What is declared</b> is read from the checkout's <c>daoris.gates.json</c>, never the tree's: what leaves the checkout's
-/// private files is the checkout's say, never a branch's, and a chain's step grows from a branch a session wrote. Its
-/// <c>localInputs</c> names them, and its <c>sensitive.patternsFile</c> is one, as the merge tool's gate tree takes it;
-/// a gates file naming no patterns file implies the devkit's default, copied where the checkout holds it and unsaid where it does
-/// not, since a repository that never wrote one may scan with its built-in patterns on purpose. No gates file, or one that does not
-/// read, declares nothing: the repository's own gates refuse that one in its own words.</para>
+/// <para><b>What is declared</b> is this machine's (the home's <c>localInputs</c> and <c>patternsFile</c>), else the checkout's
+/// <c>daoris.gates.json</c> as an older repository holds them, never the tree's: what leaves the checkout's private files is the owner's say,
+/// never a branch's. The patterns file is one input; naming none implies the devkit's default, copied where the checkout holds it and
+/// unsaid where it does not. No gates file and nothing kept here, or a gates file that does not read, declares nothing.</para>
 ///
 /// <para><b>The gate</b>, for each: a file under <c>local/</c>, no part of its path empty, <c>.</c> or <c>..</c>; the checkout holds
 /// it; git ignores it in the tree, so the copy never reads as the tree's work; and no link stands on its way into the tree. A miss
@@ -25,9 +23,6 @@ namespace Daoris.Driver;
 /// </remarks>
 internal static class TreeLocalInputs
 {
-    /// <summary>The folder every input is under: the family's machine-local, ignored one, as the merge tool's gate tree takes it.</summary>
-    private const string Local = "local/";
-
     /// <summary>The devkit's private pattern list where the gates file names none (<c>SensitiveOptions</c>' default).</summary>
     internal const string DefaultPatternsFile = "local/sensitive-patterns.txt";
 
@@ -43,55 +38,48 @@ internal static class TreeLocalInputs
     /// What <paramref name="checkout"/>'s gates file declares its gates read from <c>local/</c>, each once in its first spelling, its
     /// slashes git's: <c>localInputs</c> in order, then <c>sensitive.patternsFile</c>, or the devkit's default, implied.
     /// </summary>
-    internal static IReadOnlyList<LocalInput> Declared(string checkout)
+    internal static IReadOnlyList<LocalInput> Declared(string checkout, RepositoryBudgets? kept = null)
     {
-        var file = Path.Combine(checkout, DeclarationNames.Gates);
+        var file = FromGatesFile(checkout);
         var found = new List<LocalInput>();
-        try
-        {
-            if (!File.Exists(file)) return found;
-            using var document = JsonDocument.Parse(File.ReadAllBytes(file));
-            var root = document.RootElement;
-            if (root.ValueKind != JsonValueKind.Object) return found;
-            if (root.TryGetProperty("localInputs", out var inputs) && inputs.ValueKind == JsonValueKind.Array)
-            {
-                foreach (var each in inputs.EnumerateArray())
-                {
-                    if (each.ValueKind == JsonValueKind.String && each.GetString() is { Length: > 0 } path) Add(found, new(Spelled(path), Declared: true));
-                }
-            }
-
-            Add(found, root.TryGetProperty("sensitive", out var sensitive) && sensitive.ValueKind == JsonValueKind.Object
-                && sensitive.TryGetProperty("patternsFile", out var patterns) && patterns.ValueKind == JsonValueKind.String
-                && patterns.GetString() is { Length: > 0 } named
-                    ? new(Spelled(named), Declared: true)
-                    : new(DefaultPatternsFile, Declared: false));
-            return found;
-        }
-        catch (Exception error) when (error is IOException or UnauthorizedAccessException or JsonException)
-        {
-            return [];
-        }
+        var inputs = kept?.LocalInputs ?? file?.Inputs;
+        var patterns = kept?.PatternsFile ?? file?.Patterns;
+        if (file is null && kept?.LocalInputs is null && patterns is null) return found;
+        foreach (var path in inputs ?? []) Add(found, new(Spelled(path), Declared: true));
+        Add(found, patterns is not null ? new(Spelled(patterns), Declared: true) : new(DefaultPatternsFile, Declared: false));
+        return found;
     }
 
-    /// <summary>
-    /// The private patterns file <paramref name="checkout"/>'s gates file names, or the devkit's default where it names none, in git's
-    /// spelling; null where there is no readable gates file or the path is not one an input may name.
-    /// </summary>
-    internal static string? PatternsFile(string checkout)
+    /// <summary>The private patterns file this machine keeps, else the gates file names, else the default, in git's spelling; null where neither is read or the path is no input's.</summary>
+    internal static string? PatternsFile(string checkout, RepositoryBudgets? kept = null)
+    {
+        var file = FromGatesFile(checkout);
+        if (file is null && kept?.PatternsFile is null) return null;
+        var path = Spelled(kept?.PatternsFile ?? file?.Patterns ?? DefaultPatternsFile);
+        return Within(path) ? path : null;
+    }
+
+    private sealed record GatesFileInputs(IReadOnlyList<string> Inputs, string? Patterns);
+
+    private static GatesFileInputs? FromGatesFile(string checkout)
     {
         try
         {
             var file = Path.Combine(checkout, DeclarationNames.Gates);
             if (!File.Exists(file)) return null;
             using var document = JsonDocument.Parse(File.ReadAllBytes(file));
-            var path = document.RootElement.ValueKind == JsonValueKind.Object
-                && document.RootElement.TryGetProperty("sensitive", out var sensitive) && sensitive.ValueKind == JsonValueKind.Object
-                && sensitive.TryGetProperty("patternsFile", out var named) && named.ValueKind == JsonValueKind.String
-                && named.GetString() is { Length: > 0 } declared
-                    ? Spelled(declared)
-                    : DefaultPatternsFile;
-            return Within(path) ? path : null;
+            var root = document.RootElement;
+            if (root.ValueKind != JsonValueKind.Object) return null;
+            var inputs = new List<string>();
+            if (root.TryGetProperty("localInputs", out var named) && named.ValueKind == JsonValueKind.Array)
+            {
+                inputs.AddRange(named.EnumerateArray().Where(each => each.ValueKind == JsonValueKind.String).Select(each => each.GetString()).OfType<string>().Where(path => path.Length > 0));
+            }
+
+            var patterns = root.TryGetProperty("sensitive", out var sensitive) && sensitive.ValueKind == JsonValueKind.Object
+                && sensitive.TryGetProperty("patternsFile", out var declared) && declared.ValueKind == JsonValueKind.String
+                && declared.GetString() is { Length: > 0 } path ? path : null;
+            return new(inputs, patterns);
         }
         catch (Exception error) when (error is IOException or UnauthorizedAccessException or JsonException)
         {
@@ -100,12 +88,12 @@ internal static class TreeLocalInputs
     }
 
     /// <summary>
-    /// The checkout's declared inputs copied into <paramref name="tree"/>, a tree of <paramref name="root"/> git has just checked out:
+    /// The declared inputs copied into <paramref name="tree"/>, a tree of <paramref name="root"/> git has just checked out:
     /// git says which it ignores there, and <see cref="Copy"/> does the rest. A cancel stops it and takes back what it copied.
     /// </summary>
-    internal static async Task<LocalCopy> CopyAsync(string root, string tree, Func<string, FileVerdict> permit, CancellationToken ct)
+    internal static async Task<LocalCopy> CopyAsync(string root, string tree, Func<string, FileVerdict> permit, CancellationToken ct, RepositoryBudgets? kept = null)
     {
-        var declared = Declared(root);
+        var declared = Declared(root, kept);
         if (declared.Count == 0) return LocalCopy.None;
         var asked = declared.Where(input => Candidate(root, input)).Select(input => input.Path).ToList();
         if (asked.Count == 0) return Copy(root, tree, declared, _ => false, permit, null, ct);
@@ -123,8 +111,8 @@ internal static class TreeLocalInputs
     }
 
     /// <summary>The gate and the copy, git's word on what it ignores in the tree handed in; the person's permissions are not asked.</summary>
-    internal static LocalCopy Reuse(string root, string tree, Func<string, bool> ignored, CancellationToken ct) =>
-        Copy(root, tree, Declared(root), ignored, _ => FileVerdict.Made, null, ct);
+    internal static LocalCopy Reuse(string root, string tree, Func<string, bool> ignored, CancellationToken ct, RepositoryBudgets? kept = null) =>
+        Copy(root, tree, Declared(root, kept), ignored, _ => FileVerdict.Made, null, ct);
 
     /// <summary>
     /// Each input judged and copied, or why not; where git could not say what it ignores (<paramref name="unsaid"/>), each the
@@ -224,10 +212,8 @@ internal static class TreeLocalInputs
     /// <summary>Whether a checkout's file is one to look at: its path one an input may name, and the checkout holding it.</summary>
     private static bool Candidate(string root, LocalInput input) => Within(input.Path) && File.Exists(Path.Combine(root, input.Path));
 
-    /// <summary>A path under <c>local/</c> in git's spelling, every part of it a name: none empty, <c>.</c>, <c>..</c>, or holding a colon.</summary>
-    internal static bool Within(string path) =>
-        path.StartsWith(Local, StringComparison.Ordinal)
-        && path.Split('/').All(part => part.Length > 0 && part is not ("." or "..") && !part.Contains(':'));
+    /// <summary>A path under <c>local/</c> in git's spelling, every part of it a name: the rule the owner's door judges a binding by.</summary>
+    internal static bool Within(string path) => CheckBudgets.UnderLocal(path);
 
     /// <summary>Whether a folder that stands between <paramref name="tree"/> and <paramref name="final"/> is a link, or the file's place is taken.</summary>
     private static bool LinkOnTheWay(string tree, string final)

@@ -37,6 +37,7 @@ public static class DriverChoicesCommand
                daoris settings notify on|off · cap <n> · cooloff <minutes> · quiet <minutes> · drain <minutes> · manifest files <n>|minutes <n>|copy <megabytes> · terminal ask|act
                daoris settings checks <n>|auto  (how many checks the machine runs at once; auto, the default, as many as its memory admits)
                daoris settings reserve <gb>|auto  (the floor of the memory kept free for your own work: a heavy run starts only while the larger of it and what your own work is measured to take back stays free after its need; auto, the default, no floor)
+               daoris settings checks <repository> [pin|memoryGb|alone|timeoutMs|treeBaseline|devkit|localInputs|patternsFile …]  (a repository's budgets on this machine: no word says them)
                daoris settings vacancy <hours>  (how long a step nobody's session answers stands before Daoris gives it up; 24 by default)
                daoris settings risk [<workspace>|machine] [--repository <name>] [low|medium|high] [--mark <marks>] [--unmark <marks>]
                daoris settings risk why <run> [<step>]  (what the risk policy said at each hold of a run, beside what happened)
@@ -113,6 +114,7 @@ public static class DriverChoicesCommand
         return verb switch
         {
             "list" or MachineSettingsSaid.Every => false,
+            "checks" when CheckBudgetsCommand.Asks(args) => CheckBudgetsCommand.Changes(args),
             _ when args.Count == 1 && MachineSettings.Of(verb) is not null => false,
             "workflow" => ChoiceGrammar.WorkflowChanges([.. args.Skip(1)]),
             "growth" => ChoiceGrammar.GrowthChanges(args),

@@ -10,8 +10,12 @@ public sealed class ChecksVerb : ChoiceVerb
 {
     public override string Word => ChecksSetting.File;
 
+    public override int? Said(IReadOnlyList<string> args, DriverConfig before, DriverChoicesWorld world) =>
+        CheckBudgetsCommand.Asks(args) && !CheckBudgetsCommand.Changes(args) ? CheckBudgetsCommand.Said(args, world) : null;
+
     public override ChoicePress Plan(IReadOnlyList<string> args, DriverConfig before, DriverChoicesWorld world)
     {
+        if (CheckBudgetsCommand.Asks(args)) return CheckBudgetsCommand.Plan(args, world);
         var path = world.ConfigPath;
         void Say(string line) => world.Instance.Out.WriteLine(line);
         var said = args.Skip(1).FirstOrDefault();

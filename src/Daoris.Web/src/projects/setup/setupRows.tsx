@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
 import { CommitField, commitRowSays, type RepositoryCommits, type CommitRule } from '../../settings/repository/Commits';
+import { CheckBudgetsRow } from '../../settings/repository/CheckBudgets';
 import { HeavyGates, heavySummary } from '../../settings/repository/HeavyGates';
 import { declarationStanding } from '../../settings/repository/DeclarationAcceptance';
 import { IntegrationDeclaration } from '../../settings/repository/IntegrationDeclaration';
@@ -209,6 +210,7 @@ export function setupRows({ driving, drivingLine, t, repository, busy, i18n, lin
             />
           )}
           <HeavyGates repository={repository} gates={heavy.gates} marks={heavy.marks} busy={busy} onSave={heavy.onSave} />
+          {heavy.budgets && <CheckBudgetsRow repository={repository} view={heavy.budgets.view} busy={busy} onChange={heavy.budgets.onChange} />}
         </>
       )
     : null;

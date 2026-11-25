@@ -17,6 +17,7 @@ public static class SettingTwins
         ("place checkout <repository> on|off", Driver("SET_CHECKOUT_WRITES"), $"{nameof(DriverConfig)}.{nameof(DriverConfig.WithCheckoutWrites)}"),
         ("place heavy <repository> <name>=<command>…|--clear", Driver("SET_HEAVY_GATES"), "HeavyMapping.Apply"),
         ("workflow values <repository> <workflow> <node> <name>=<json>…|--clear --why <reason>", Driver("SET_WORKFLOW_VALUES"), "WorkflowValuesKey.Apply"),
+        ("settings checks <repository> pin|memoryGb|alone|timeoutMs|treeBaseline|devkit|localInputs|patternsFile … [--clear] [--why <reason>]", Driver("SET_CHECK_BUDGETS"), "CheckBudgetsDoor.Apply"),
         ("ask-daoris mode restricted|full", Driver("SET_HELP_MODE"), $"{nameof(DriverConfig)}.{nameof(DriverConfig.WithHelpMode)}"),
         ("gate verify <repository> [--branch <name>|--commit <sha>]", Driver("WORKFLOW_VERIFY"), "VerifyCommand.BindAsync"),
         ("remote add <workspace> --url <url> [--key <key>]", new("DAORIS.REMOTES", "SET", RouteClass.Person), "RemoteOperations.Set"),

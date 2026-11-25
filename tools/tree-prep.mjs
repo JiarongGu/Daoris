@@ -5,18 +5,21 @@
  */
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
+import { budgetSourceOf, keptOf } from './merge/budget-overlay.ts';
 
-/** The declaration at `root`; empty where the file is absent or does not read. */
-export function declaredPrep(root) {
+/** The declaration at `root`, its tree baseline the home's where the home keeps one; empty where the file is absent or does not read. */
+export function declaredPrep(root, source = budgetSourceOf(root)) {
   let parsed;
   try {
     parsed = JSON.parse(readFileSync(join(root, 'daoris.gates.json'), 'utf8'));
   } catch {
     return { regenerate: [], baseline: null };
   }
+  const kept = keptOf(source).treeBaseline;
   const regenerate = [];
   for (const gate of Array.isArray(parsed?.gates) ? parsed.gates : []) {
     if (typeof gate?.regenerate === 'string' && gate.regenerate.trim() && !regenerate.includes(gate.regenerate)) regenerate.push(gate.regenerate);
   }
-  return { regenerate, baseline: typeof parsed?.treeBaseline === 'string' && parsed.treeBaseline.trim() ? parsed.treeBaseline : null };
+  const named = typeof kept === 'string' && kept.trim() ? kept : parsed?.treeBaseline;
+  return { regenerate, baseline: typeof named === 'string' && named.trim() ? named : null };
 }
