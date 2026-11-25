@@ -1,3 +1,4 @@
+using Daoris.Desktop.Driver.Tests;
 using Daoris.Driver;
 
 namespace Daoris.Driver.Tests;
@@ -571,10 +572,10 @@ public sealed class DrivenInboxTests
     {
         Assert.Equal(
             ["SendNowAsync"],
-            Callers(File.ReadAllText(Daoris.Desktop.Driver.Tests.SourceFiles.Driver("InboxStops.cs")), "StopThisTurn()"));
+            Callers(SourceTexts.Of(SourceFiles.Driver("InboxStops.cs")), "StopThisTurn()"));
         Assert.Equal(
             ["StopKeepingAsync"],
-            Callers(File.ReadAllText(Daoris.Desktop.Driver.Tests.SourceFiles.Driver("TurnStops.cs")), "StopKeeping()"));
+            Callers(SourceTexts.Of(SourceFiles.Driver("TurnStops.cs")), "StopKeeping()"));
     }
 
     /// <summary>
