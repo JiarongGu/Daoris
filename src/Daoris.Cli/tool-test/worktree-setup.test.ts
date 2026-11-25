@@ -17,6 +17,10 @@ const setup = await import(
 };
 
 import { declaredPrep } from '../../../tools/tree-prep.mjs';
+import { repoRoot } from '../../../tools/merge/repo-gates.ts';
+import { repoBudgetSource } from '../../../tools/merge/repo-home.ts';
+
+const ours = { prep: declaredPrep(repoRoot, repoBudgetSource()) };
 
 const lock = (versions: Record<string, string>) => JSON.stringify({
   lockfileVersion: 3, packages: { '': {}, ...Object.fromEntries(Object.entries(versions).map(([name, version]) => [`node_modules/${name}`, { version }])) },
@@ -77,7 +81,7 @@ test('a folder\'s dependencies are current by the stamp its install left or by n
 });
 
 test('the setup installs what is missing or stale from the lockfile, refuses a link, and always sets the merge drivers and primes the index, the declared regenerate steps, the restore and the base', () => {
-  const commands = setup.setupCommands({ '.': 'current', 'src/Daoris.Web': 'stale' });
+  const commands = setup.setupCommands({ '.': 'current', 'src/Daoris.Web': 'stale' }, ours);
   assert.deepEqual(commands.map((each) => each.label), [
     'install src/Daoris.Web', 'drivers', 'index', 'regenerate', 'restore', 'baseline',
   ]);
@@ -87,7 +91,7 @@ test('the setup installs what is missing or stale from the lockfile, refuses a l
   assert.equal(commands[0]!.cwd, 'src/Daoris.Web');
   assert.match(commands.find((each) => each.label === 'restore')!.command, /^dotnet restore src\/Daoris\.Desktop\/Daoris\.Desktop\.Driver\.Tests\b/);
   assert.throws(() => setup.setupCommands({ '.': 'linked' }), /node_modules is a link/);
-  assert.deepEqual(setup.setupCommands({ '.': 'current', 'src/Daoris.Web': 'current' }).map((each) => each.label), ['drivers', 'index', 'regenerate', 'restore', 'baseline']);
+  assert.deepEqual(setup.setupCommands({ '.': 'current', 'src/Daoris.Web': 'current' }, ours).map((each) => each.label), ['drivers', 'index', 'regenerate', 'restore', 'baseline']);
   const bare = setup.setupCommands({ '.': 'current', 'src/Daoris.Web': 'current' }, { prep: { regenerate: ['a', 'b'], baseline: null } });
   assert.deepEqual(bare.map((each) => each.label), ['drivers', 'index', 'regenerate', 'regenerate', 'restore'], 'nothing declared, no base run');
 });

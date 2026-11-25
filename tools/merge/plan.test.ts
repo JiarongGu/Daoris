@@ -5,6 +5,7 @@ import { join, posix } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { gitSight, manifestAt } from './packages.ts';
 import { git } from './git.ts';
+import { repoBudgetSource } from './repo-home.ts';
 import {
   BESIDE_GIT_HALF, LIGHT_WIDTH, SHARED_PROJECTS, dotnetComponent, gateComponents, gateKind, gatePlan, isGitHalf, isHeavyGate, isLongGate, isProcessGate,
   isProcessLane, isStageRehearsal, laneSchedule, noBuildCommand, planLines, readPlan, rerunPlan, reuseBuild, rootScripts, runsBesideGitHalf, stagePlan,
@@ -16,7 +17,7 @@ import {
 
 const repoRoot = fileURLToPath(new URL('../..', import.meta.url));
 const declared = (JSON.parse(readFileSync(join(repoRoot, 'daoris.gates.json'), 'utf8')) as { gates: { name: string; run: string }[] }).gates;
-const repoPlan = readPlan(repoRoot);
+const repoPlan = readPlan(repoRoot, repoBudgetSource());
 const scripts = rootScripts(repoRoot);
 const names = (gates: readonly { name: string }[]): string[] => gates.map((gate) => gate.name);
 const byRun = (pattern: RegExp): Planned[] => repoPlan.filter((gate) => pattern.test(gate.run));

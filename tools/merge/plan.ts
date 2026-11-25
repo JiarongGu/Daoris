@@ -431,9 +431,9 @@ export function declaredIn(text: string, label: string, budgets: BudgetSource | 
   }), budgets);
 }
 
-export function readPlan(root: string): Planned[] {
+export function readPlan(root: string, budgets: BudgetSource | null = budgetSourceOf(root)): Planned[] {
   const workflow = join(root, '.github', 'workflows', 'release.yml');
-  return gatePlan(readDeclared(root), existsSync(workflow) ? readFileSync(workflow, 'utf8') : '');
+  return gatePlan(readDeclared(root, budgets), existsSync(workflow) ? readFileSync(workflow, 'utf8') : '');
 }
 
 export type Verdicted = { verdict: string; at: string };

@@ -18,10 +18,11 @@ import { setTimeoutOf } from './merge/check-budgets.ts';
 type Declared = { name?: string; config?: string; project?: string; files: string[]; timeoutMs?: number };
 const kept = keptOf(budgetSourceOf(fileURLToPath(new URL('..', import.meta.url))));
 const declared = (JSON.parse(readFileSync(new URL('../daoris.gates.json', import.meta.url), 'utf8')) as { tests?: { sets?: Declared[] } }).tests?.sets ?? [];
+const DEFAULT_MS = { unit: 10_000, e2e: 120_000 };
 const projectOf = (name: 'unit' | 'e2e') => {
   const set = declared.find((each) => each.config === 'tools/vitest.config.ts' && each.project === name);
   if (!set) throw new Error(`daoris.gates.json declares no test set for the tools' Vitest project ${name}`);
-  return { include: [...set.files], timeoutMs: setTimeoutOf(kept, set.name ?? name, set.timeoutMs) ?? 10_000 };
+  return { include: [...set.files], timeoutMs: setTimeoutOf(kept, set.name ?? name, set.timeoutMs) ?? DEFAULT_MS[name] };
 };
 
 /** Each project's files and its per-test budget, as its test set declares them; the unit budget is the page's, an end-to-end case's a Process case's. */
