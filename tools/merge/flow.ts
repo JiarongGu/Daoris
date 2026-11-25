@@ -50,6 +50,7 @@ export type FlowDeps = {
   /** The slowest classes the gate's newest record knew. */
   lastSlowest: (gate: string) => Slow[];
   installs: LockInstalls;
+  source: (where: string) => ReturnType<typeof sourceReader>;
   load?: LoadSeam;
   replayAll?: boolean;
   privateOf?: (where: string) => string;
@@ -161,7 +162,7 @@ export async function runOne(deps: FlowDeps, { where, gate, logs, beside, tree, 
   const outcome = said ? parseOutcome(said) : null;
   const steps = outcome?.steps ?? parseSteps(said, Date.now() - started);
   if (steps.length) result.steps = steps;
-  const breaches = [...parseBreaches(said), ...hangBreaches(said, sourceReader(where), peak, { alone: first !== null })];
+  const breaches = [...parseBreaches(said), ...hangBreaches(said, deps.source(where), peak, { alone: first !== null })];
   if (hungUnderLoad(breaches) && expired === null && !first) {
     Object.assign(result, { verdict: 'FAIL', again: true, cause: 'load', note: `${result.note}; killed by the hang bound under load (${peak} heavy runs at its peak): run again alone once every other gate has ended and the machine is free`.replace(/^; /, '') });
   }

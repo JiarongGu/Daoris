@@ -52,7 +52,7 @@ public sealed record AccountTarget(string? Account, string? Missing);
 /// </summary>
 /// <remarks>
 /// <para><b>Beside the account, never inside it</b>: the folder is the tool's, and moving it would move a home a
-/// harness may have keyed its credential to. <b>Written only by a person's rename</b>: who signed
+/// harness may have keyed its credential to. <b>Written only by a person's rename or switch</b> (<see cref="AccountSwitch"/>): who signed
 /// in is offered as the name at a sign-in's end and written only where the person keeps it; a read writes nothing.</para>
 /// <para><b>A twin</b> of the CLI's <c>accountnames.ts</c>, over the same file; <c>AccountNamesTwinTests</c> and the CLI's
 /// <c>accountnames.test.ts</c> hold the same tables, row for row. The file's shape:
@@ -69,7 +69,7 @@ public static class AccountNames
     private const string NameKey = "name";
 
     // One writer at a time in this process: two screens may rename at once.
-    private static readonly object Gate = new();
+    internal static readonly object Gate = new();
 
 
     /// <summary>Where the file is: beside <c>reads.json</c>, under the home.</summary>

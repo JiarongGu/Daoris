@@ -443,6 +443,7 @@
   "person.route.SET_PLACE_CAST": "choose who fills a role at a place",
   "person.route.POLICY_PROPOSE": "propose a change to the risk policy",
   "person.route.POLICY_APPLY": "apply a change to the risk policy",
+  "person.route.POLICY_SET": "set a row, a cast or an access mode of the risk policy",
   "person.route.WORKFLOW_HOLD": "take a run’s step, hand it to another holder or give it back",
   "person.route.SET_HELPERS": "change which helpers sessions may ask",
   "person.route.SET_HELP_MODE": "change Ask Daoris's access",

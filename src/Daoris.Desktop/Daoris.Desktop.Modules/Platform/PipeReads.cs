@@ -228,6 +228,8 @@ internal static class PipeReads
 
     public static PipeGround PolicyRevision() => Setting("POLICY_PROPOSALS", ["edits", "conversation"], _ => null, (a, _) => Text(a, "revision") ?? "");
 
+    public static PipeGround PolicySet() => Setting("POLICY_PROPOSALS", ["edits", "revision"], _ => null, (a, _) => Text(a, "revision") ?? "");
+
     public static PipeGround PolicyProposal() => Setting("POLICY_PROPOSALS", ["proposal", "digest"], _ => null,
         (a, p) => Fp(Raw(Named(At(a, "proposals"), "id", Text(p, "proposal")))));
 

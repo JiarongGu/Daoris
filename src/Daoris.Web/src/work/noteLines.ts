@@ -207,6 +207,7 @@ export const OPENING_REASONS: Readonly<Record<string, { key: string; values: rea
   cooling: { key: 'note.opening.why.cooling', values: ['agent', 'over', 'until', 'cooling'] },
   refused: { key: 'note.opening.why.refused', values: ['agent', 'over'] },
   'signed-out': { key: 'note.opening.why.signed-out', values: ['agent', 'over'] },
+  off: { key: 'note.opening.why.off', values: ['agent', 'over'] },
   locked: { key: 'note.opening.why.locked', values: ['agent', 'over'] },
   unanswered: { key: 'note.opening.why.unanswered', values: ['over'] },
   'unanswered-self': { key: 'note.opening.why.unanswered-self', values: [] },

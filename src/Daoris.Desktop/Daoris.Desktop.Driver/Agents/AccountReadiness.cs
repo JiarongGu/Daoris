@@ -14,4 +14,6 @@ public enum AccountReadiness
 
     /// <summary>The agent says nobody is signed in there, or its key is gone: it waits for a person.</summary>
     SignedOut,
+
+    Off,
 }

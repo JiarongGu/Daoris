@@ -49,6 +49,7 @@
   "agents.read.never": "never read",
   "agents.read.failed": "the last read failed, {{when}}",
   "agents.read.unanswered": "its sign-in check did not answer, {{when}}",
+  "agents.read.off": "switched off by you",
   "agents.read.outSince": "signed out since {{since}}, read {{when}}",
   "agents.read.again": "Read again",
   "agents.read.againTip": "Asks {{agent}} about each of Daoris's accounts, one at a time. Your own sign-in is never asked. Opening this page asks no sign-in.",

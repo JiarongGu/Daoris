@@ -1,10 +1,9 @@
 import { test } from 'vitest';
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
+import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { join, posix } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { gitSight, manifestAt } from './packages.ts';
-import { git } from './git.ts';
+import { MANIFEST, manifestAt, PACKAGE_ROOTS } from './packages.ts';
 import { repoBudgetSource } from './repo-home.ts';
 import {
   BESIDE_GIT_HALF, LIGHT_WIDTH, SHARED_PROJECTS, dotnetComponent, gateComponents, gateKind, gatePlan, isGitHalf, isHeavyGate, isLongGate, isProcessGate,
@@ -123,9 +122,22 @@ test("a .NET gate's component is the first two folders of the project its comman
   assert.equal(dotnetComponent('npm run test:web'), null);
 });
 
+function projectsUnder(folder: string): string[] {
+  return readdirSync(join(repoRoot, folder), { withFileTypes: true }).flatMap((entry) => {
+    const path = `${folder}/${entry.name}`;
+    if (entry.isDirectory()) return ['node_modules', 'bin', 'obj'].includes(entry.name) ? [] : projectsUnder(path);
+    return path.endsWith('.csproj') ? [path] : [];
+  });
+}
+
+function packageFolders(): string[] {
+  return PACKAGE_ROOTS.flatMap((root) => existsSync(join(repoRoot, root, MANIFEST)) ? [root]
+    : readdirSync(join(repoRoot, root), { withFileTypes: true }).filter((entry) => entry.isDirectory() && !entry.name.endsWith('.Tests')).map((entry) => `${root}/${entry.name}`));
+}
+
 // What makes a component the unit of the build rule: two gates of two components never build one project.
 test('every project a .NET project references is in its own component', () => {
-  const projects = git(repoRoot, ['ls-files']).out.split('\n').filter((path) => path.startsWith('src/') && path.endsWith('.csproj'));
+  const projects = projectsUnder('src');
   assert.ok(projects.length >= 10, 'the .NET projects left src/');
   for (const project of projects) {
     const text = readFileSync(join(repoRoot, project), 'utf8');
@@ -267,7 +279,7 @@ test("this repository's light gates run three at once, never two that build one 
 
 test('a package is tested only in its own development: no gate runs its suite, and the lock is checked', () => {
   const files = { text: (path: string) => { try { return readFileSync(join(repoRoot, path), 'utf8'); } catch { return null; } } };
-  const suites = gitSight(repoRoot).packages().map((each) => manifestAt(each.folder, files).tests);
+  const suites = packageFolders().map((folder) => manifestAt(folder, files).tests);
   assert.ok(suites.length > 0);
   for (const gate of repoPlan) for (const tests of suites) assert.ok(!gate.run.includes(tests), `${gate.name} runs ${tests}`);
   assert.ok(repoPlan.some((gate) => gate.name === 'packages-lock' && gate.run === 'node tools/merge/packages.ts check'));

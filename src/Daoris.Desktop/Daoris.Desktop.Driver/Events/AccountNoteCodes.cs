@@ -31,6 +31,7 @@ public static class AccountNoteCodes
     // is named, since the note travels.
     public static readonly NoteCode AccountResumeSignedOut = new("account.resume-signed-out", []);
     public static readonly NoteCode AccountResumeRefused = new("account.resume-refused", []);
+    public static readonly NoteCode AccountResumeOff = new("account.resume-off", []);
     public static readonly NoteCode AccountResumeGone = new("account.resume-gone", []);
     public static readonly NoteCode AccountResumeOutside = new("account.resume-outside", []);
     public static readonly NoteCode AccountResumeKept = new("account.resume-kept", []);

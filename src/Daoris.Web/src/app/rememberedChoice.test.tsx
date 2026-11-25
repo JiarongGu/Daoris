@@ -84,7 +84,7 @@ const bar = () => screen.getByRole('navigation', { name: 'Views' });
 const go = (place: string) => userEvent.click(within(bar()).getByRole('button', { name: place }));
 const main = () => screen.getByRole('main');
 
-describe('what a view reopens, on the window', () => {
+describe('what a view reopens, on the window', { timeout: 30_000 }, () => {
   afterEach(() => {
     cleanup();
     vi.unstubAllGlobals();

@@ -27,7 +27,7 @@ public sealed class PlaceRiskVerb : ChoiceVerb
     /// <summary>Whether the words set anything: a risk, a mark or an unmark.</summary>
     public static bool Changes(IReadOnlyList<string> args) =>
         args.Any(arg => arg is "--mark" or "--unmark") || Operands(args, Valued).Skip(1).Any(PlaceRisks.Is)
-        || Operands(args, ProposeValued).Skip(1).FirstOrDefault() is Propose or Apply;
+        || Operands(args, SetValued).Skip(1).FirstOrDefault() is Set or Apply;
 
     public override int? Said(IReadOnlyList<string> args, DriverConfig before, DriverChoicesWorld world)
     {
@@ -36,24 +36,24 @@ public sealed class PlaceRiskVerb : ChoiceVerb
         var now = before.PlaceRisk.At(edit.Workspace, edit.Repository);
         world.Instance.Out.WriteLine($"daoris: {Named(edit)}: {now.Risk} ({now.Source}){Marks(now.Marks)}.");
         if (!before.PlaceRisk.Written) world.Instance.Out.WriteLine("  No record is written yet: Daoris writes it at its next start.");
-        foreach (var line in Acts?.Invoke(before, edit.Workspace, edit.Repository) ?? []) world.Instance.Out.WriteLine(line);
+        foreach (var line in Acts?.Invoke(before, DriverConfig.HomeOf(world.ConfigPath), world.Now(), edit.Workspace, edit.Repository) ?? []) world.Instance.Out.WriteLine(line);
         return 0;
     }
 
     /// <summary>The risk judge's table at a place and its journal's lines for a run: Workflows' readings, which Loop hands this verb.</summary>
-    public Func<DriverConfig, string?, string?, IReadOnlyList<string>>? Acts { get; init; }
+    public Func<DriverConfig, string, DateTimeOffset, string?, string?, IReadOnlyList<string>>? Acts { get; init; }
 
     public Func<string, string, string?, IReadOnlyList<string>>? Verdicts { get; init; }
 
     private const string Why = "why";
-    private const string Propose = "propose";
+    private const string Set = "set";
     private const string Apply = "apply";
 
-    private const string ProposeUsage = "usage: daoris settings risk propose <place> <act> none|role|owner|remove [--by <role>] [--mode full|restricted] [--conversation <session>], or <place> cast <role> <holder>|default, or <place> access full|clear|<pause>=<value>… — "
-        + "<place> is machine, workspace/<name> or repository/<name>; <act> is a kind of the census (policy.change is fixed at the owner); it proposes and changes nothing; "
-        + "daoris settings risk apply <proposal> <digest> applies it on the owner's own turn naming both.";
+    private const string SetUsage = "usage: daoris settings risk set <place> <act> none|role|owner|remove [--by <role>] [--mode full|restricted] [--conversation <session>], or <place> cast <role> <holder>|default, or <place> access full|clear|<pause>=<value>… — "
+        + "<place> is machine, workspace/<name> or repository/<name>; <act> is a kind of the census (policy.change is fixed at the owner); the owner's own terminal sets it at once on the revision it read, an agent's set is a proposal that changes nothing; "
+        + "daoris settings risk apply <proposal> <digest> applies a proposal on the owner's own turn naming both.";
 
-    private static readonly string[] ProposeValued = ["--by", "--mode", "--conversation"];
+    private static readonly string[] SetValued = ["--by", "--mode", "--conversation"];
 
     private int SaidWhy(IReadOnlyList<string> args, DriverChoicesWorld world)
     {
@@ -66,9 +66,9 @@ public sealed class PlaceRiskVerb : ChoiceVerb
 
     public override ChoicePress Plan(IReadOnlyList<string> args, DriverConfig before, DriverChoicesWorld world)
     {
-        switch (Operands(args, ProposeValued).Skip(1).FirstOrDefault())
+        switch (Operands(args, SetValued).Skip(1).FirstOrDefault())
         {
-            case Propose: return Proposing(args, world);
+            case Set: return Setting(args, before, world);
             case Apply: return Applying(args, world);
         }
 
@@ -105,62 +105,78 @@ public sealed class PlaceRiskVerb : ChoiceVerb
         });
     }
 
-    private static ChoicePress Proposing(IReadOnlyList<string> args, DriverChoicesWorld world)
+    /// <summary>The policy's revision a config reads and the owner's write of one edit at it: Workflows' policy, which Loop hands this verb (Settings is below it).</summary>
+    public Func<DriverConfig, string>? Revision { get; init; }
+
+    public Func<string, DateTimeOffset, JsonObject, string, JsonElement>? Writer { get; init; }
+
+    private ChoicePress Setting(IReadOnlyList<string> args, DriverConfig before, DriverChoicesWorld world)
     {
-        Flags(args, ProposeValued, [], "settings risk propose", ProposeUsage);
-        var words = Operands(args, ProposeValued).Skip(2).ToList();
+        Flags(args, SetValued, [], "settings risk set", SetUsage);
+        var edit = EditOf(args);
+        var conversation = FlagValue(args, "--conversation") ?? world.Instance.Environment(DriverChoicesCommand.SessionVariable);
+        var agent = conversation is { Length: > 0 } || world.InAgentJob() == true;
+        var payload = new JsonObject { ["edits"] = new JsonArray(edit) };
+        if (agent)
+        {
+            if (conversation is { Length: > 0 }) payload["conversation"] = conversation;
+            return Pressed("risk set", ChoiceRoutes.PolicyPropose, payload, world, _ => throw new ChoiceWords(AgentSet, 1));
+        }
+
+        if (Revision is not { } revisionOf || Writer is not { } set) throw new ChoiceWords("this program was handed no policy to set; nothing was changed.");
+        var revision = revisionOf(before);
+        payload["revision"] = revision;
+        var home = DriverConfig.HomeOf(world.ConfigPath);
+        return Pressed("risk set", ChoiceRoutes.PolicySet, payload, world, _ => Task.FromResult<object?>(set(home, world.Now(), edit.DeepClone().AsObject(), revision)));
+    }
+
+    private const string AgentSet = "an agent's set of the risk policy is a proposal the owner confirms in Ask Daoris's conversation, so it needs Daoris running; nothing was changed.";
+
+    private static JsonObject EditOf(IReadOnlyList<string> args)
+    {
+        var words = Operands(args, SetValued).Skip(2).ToList();
+        if (words.Count > 0 && !Place(words[0])) throw new ChoiceWords($"`{words[0]}` is no place (machine, workspace/<name> or repository/<name>) — {SetUsage}");
         if (words.Count >= 3 && words[1] is "cast" or "access")
         {
             var cast = words[1] == "cast";
-            if (cast ? words.Count != 4 : words.Count < 3) throw new ChoiceWords($"`settings risk propose` takes a place, then cast <role> <holder> or access <setting> — {ProposeUsage}");
-            var edit = cast
+            if (cast ? words.Count != 4 : words.Count < 3) throw new ChoiceWords($"`settings risk set` takes a place, then cast <role> <holder> or access <setting> — {SetUsage}");
+            return cast
                 ? new JsonObject { ["subject"] = "cast", ["place"] = words[0], ["act"] = words[2], ["by"] = words[3] == "default" ? null : words[3] }
                 : new JsonObject { ["subject"] = "access", ["place"] = words[0], ["act"] = "access", ["class"] = string.Join(';', words.Skip(2)) };
-            var body = new JsonObject { ["edits"] = new JsonArray(edit) };
-            if ((FlagValue(args, "--conversation") ?? world.Instance.Environment(DriverChoicesCommand.SessionVariable)) is { Length: > 0 } named) body["conversation"] = named;
-            return Pressed("risk propose", ChoiceRoutes.PolicyPropose, body, world);
         }
 
-        if (words.Count != 3) throw new ChoiceWords($"`settings risk propose` takes a place, an act and a class — {ProposeUsage}");
+        if (words.Count != 3) throw new ChoiceWords($"`settings risk set` takes a place, an act and a class — {SetUsage}");
         var riskClass = words[2] == "remove" ? null : words[2];
-        if (riskClass is not null && !RiskClasses.Is(riskClass)) throw new ChoiceWords($"`{riskClass}` is no class (none, role, owner or remove) — {ProposeUsage}");
+        if (riskClass is not null && !RiskClasses.Is(riskClass)) throw new ChoiceWords($"`{riskClass}` is no class (none, role, owner or remove) — {SetUsage}");
         var (place, act, by, mode) = (words[0], words[1], FlagValue(args, "--by"), FlagValue(args, "--mode"));
-        if (place != PlaceRiskBook.MachineKey && !place.StartsWith("workspace/", StringComparison.Ordinal) && !place.StartsWith("repository/", StringComparison.Ordinal))
-        {
-            throw new ChoiceWords($"`{place}` is no place (machine, workspace/<name> or repository/<name>) — {ProposeUsage}");
-        }
-
         try
         {
-            if (RiskAct.Of(act).Kind == RiskActs.PolicyChange) throw new ChoiceWords($"policy.change is fixed at the owner: no row changes it — {ProposeUsage}");
+            if (RiskAct.Of(act).Kind == RiskActs.PolicyChange) throw new ChoiceWords($"policy.change is fixed at the owner: no row changes it — {SetUsage}");
         }
         catch (ArgumentException)
         {
-            throw new ChoiceWords($"`{act}` names no act kind of the census — {ProposeUsage}");
+            throw new ChoiceWords($"`{act}` names no act kind of the census — {SetUsage}");
         }
 
-        if (by is not null && riskClass != RiskClasses.Role) throw new ChoiceWords($"--by names the role of a role row — {ProposeUsage}");
-        if (mode is not (null or "full" or "restricted")) throw new ChoiceWords($"--mode is full or restricted — {ProposeUsage}");
-        var payload = new JsonObject
-        {
-            ["edits"] = new JsonArray(new JsonObject { ["place"] = place, ["act"] = act, ["class"] = riskClass, ["by"] = by, ["mode"] = mode }),
-        };
-        // The conversation that proposes, where the press goes on the owner's card and its proof is not carried there: the terminal's own session.
-        if ((FlagValue(args, "--conversation") ?? world.Instance.Environment(DriverChoicesCommand.SessionVariable)) is { Length: > 0 } conversation) payload["conversation"] = conversation;
-        return Pressed("risk propose", ChoiceRoutes.PolicyPropose, payload, world);
+        if (by is not null && riskClass != RiskClasses.Role) throw new ChoiceWords($"--by names the role of a role row — {SetUsage}");
+        if (mode is not (null or "full" or "restricted")) throw new ChoiceWords($"--mode is full or restricted — {SetUsage}");
+        return new JsonObject { ["place"] = place, ["act"] = act, ["class"] = riskClass, ["by"] = by, ["mode"] = mode };
     }
+
+    private static bool Place(string place) =>
+        place == PlaceRiskBook.MachineKey || (place.StartsWith("workspace/", StringComparison.Ordinal) && place.Length > 10)
+        || (place.StartsWith("repository/", StringComparison.Ordinal) && place.Length > 11);
 
     private static ChoicePress Applying(IReadOnlyList<string> args, DriverChoicesWorld world)
     {
-        var words = Operands(args, ProposeValued).Skip(2).ToList();
-        if (words.Count != 2) throw new ChoiceWords($"`settings risk apply` takes a proposal and its digest — {ProposeUsage}");
-        return Pressed("risk apply", ChoiceRoutes.PolicyApply, new JsonObject { ["proposal"] = words[0], ["digest"] = words[1] }, world);
+        var words = Operands(args, SetValued).Skip(2).ToList();
+        if (words.Count != 2) throw new ChoiceWords($"`settings risk apply` takes a proposal and its digest — {SetUsage}");
+        return Pressed("risk apply", ChoiceRoutes.PolicyApply, new JsonObject { ["proposal"] = words[0], ["digest"] = words[1] }, world,
+            _ => throw new ChoiceWords("a proposed change to the risk policy is confirmed in the conversation that proposed it, so it needs Daoris running; nothing was changed.", 1));
     }
 
-    private static ChoicePress Pressed(string verb, InstanceRoute route, JsonObject payload, DriverChoicesWorld world) => new(
-        verb, route, payload,
-        _ => throw new ChoiceWords("a change to the risk policy is proposed by Ask Daoris and confirmed in its conversation, so it needs Daoris running; nothing was changed.", 1),
-        answer => answer.Clone(),
+    private static ChoicePress Pressed(string verb, InstanceRoute route, JsonObject payload, DriverChoicesWorld world, Func<CancellationToken, Task<object?>> alone) => new(
+        verb, route, payload, alone, answer => answer.Clone(),
         fields =>
         {
             var said = (JsonElement)fields!;

@@ -59,19 +59,28 @@ function argumentsAt(code, text, at) {
   return text.slice(at + 1).trim();
 }
 
-/** The calls in a test's `text` that read the live machine's load, each `{ line, name, why }`; a name in a comment or a string is none. */
-export function liveLoadReads(text) {
+/** Each call of `name` in `text` by that bare name (a method, a declaration, a string or a comment is none): its line and its arguments. */
+function callsOf(text, name) {
   const code = text.replace(LITERALS, (each) => each.replace(/[^\n]/g, ' '));
   const found = [];
-  for (const { name, fixture, why } of LIVE_READS) {
-    for (const match of code.matchAll(new RegExp(`(?<![.\\w$])${name}\\s*\\(`, 'g'))) {
-      const before = code.slice(code.lastIndexOf('\n', match.index) + 1, match.index).trim();
-      if (/(?:^|\s)function\*?$/.test(before)) continue;
-      if (!fixture(argumentsAt(code, text, match.index + match[0].length - 1))) found.push({ line: text.slice(0, match.index).split('\n').length, name, why });
-    }
+  for (const match of code.matchAll(new RegExp(`(?<![.\\w$])${name}\\s*\\(`, 'g'))) {
+    const before = code.slice(code.lastIndexOf('\n', match.index) + 1, match.index).trim();
+    if (/(?:^|\s)function\*?$/.test(before)) continue;
+    found.push({ line: text.slice(0, match.index).split('\n').length, args: argumentsAt(code, text, match.index + match[0].length - 1) });
   }
-  return found.sort((x, y) => x.line - y.line);
+  return found;
 }
+
+/** The calls in a test's `text` that read the live machine's load, each `{ line, name, why }`; a name in a comment or a string is none. */
+export function liveLoadReads(text) {
+  return LIVE_READS
+    .flatMap(({ name, fixture, why }) => callsOf(text, name).filter((call) => !fixture(call.args)).map((call) => ({ line: call.line, name, why })))
+    .sort((x, y) => x.line - y.line);
+}
+
+const STARTS = ['spawn', 'spawnSync', 'execFile', 'execFileSync', 'exec', 'execSync', 'fork', 'spawnGit', 'execGit', 'git', 'gitSight'];
+
+export const startedProcesses = (text) => STARTS.flatMap((name) => callsOf(text, name).map((call) => ({ line: call.line, name }))).sort((x, y) => x.line - y.line);
 
 /** The census over the tree at `root`: `{ problems, count }`, one problem for each file no set holds and each set or script at fault. */
 export function checkToolTests(root) {
@@ -85,6 +94,9 @@ export function checkToolTests(root) {
   for (const file of tests) if (!setOf(sets, file)) problems.push(`${file}: no test set holds it (add a pattern to a set in daoris.gates.json's tests)`);
   for (const file of tests.filter((each) => each.startsWith('tools/'))) {
     for (const read of liveLoadReads(readFileSync(join(root, file), 'utf8'))) problems.push(`${file}:${read.line}: ${read.name}( reads the live machine, so the test's words change with the load it runs beside: ${read.why}`);
+  }
+  for (const file of tests.filter((each) => setOf(sets, each)?.project === 'unit')) {
+    for (const start of startedProcesses(readFileSync(join(root, file), 'utf8'))) problems.push(`${file}:${start.line}: ${start.name}( starts a process in a unit test, whose time is the machine's load: hand the code under test a seam of its own, or move the case to the end-to-end project`);
   }
   sets.forEach((set, at) => {
     if (!gates.has(set.gate)) problems.push(`set ${set.name}: run by gate ${set.gate}, which daoris.gates.json does not declare`);

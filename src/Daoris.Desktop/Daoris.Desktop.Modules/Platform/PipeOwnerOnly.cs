@@ -25,6 +25,7 @@ public static class PipeOwnerOnly
         {
             "SET_PLACE_RISK" => true,
             "SET_PLACE_CAST" => true,
+            "POLICY_SET" => true,
             "WORKFLOW_HOLD" => request.Payload is { ValueKind: JsonValueKind.Object } hold && Text(hold, "act") == CastActs.Hand
                 && Text(hold, "holder")?.Trim() is { } holder && (holder == CastHolders.Agent || holder.StartsWith(CastHolders.AgentPrefix, StringComparison.Ordinal)),
             "SET_ROLE" => request.Payload is { } payload && GrantsAgent(payload),

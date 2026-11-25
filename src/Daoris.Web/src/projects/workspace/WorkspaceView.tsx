@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useTidiedBranches } from '../../bridge/logs/log';
 import { placeCastBridge } from '../../bridge/repositories/cast';
+import { riskActsBridge } from '../../bridge/repositories/policy';
 import { sentence } from '../../locales/format';
 import { useRetireMachine, useSessions, useSyncStanding } from '../../data/queries';
 import { sessionTitle } from '../../work/identity';
@@ -619,6 +620,7 @@ export function WorkspaceSetupPart({ workspace, notify, open, rows, onOpenGit }:
         ? {
             row: workspaceRisk(state.placeRisk, workspace),
             cast: placeCastBridge,
+            acts: riskActsBridge,
             onChange: (change) => setPlaceRisk.mutate({ workspace, ...change }, {
               onSuccess: () => notify(t('settings.risk.saved', { name: workspace })),
               onError,

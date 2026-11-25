@@ -94,7 +94,7 @@ public static class ReviewerHeld
     /// </summary>
     public const string NotOffered = "not-offered";
 
-    /// <summary>Refused for anything else, its provider's refusal among them.</summary>
+    /// <summary>Refused for anything else, its provider's refusal and an account the person switched off among them: its own sentence says which.</summary>
     public const string Refused = "refused";
 
     /// <summary>

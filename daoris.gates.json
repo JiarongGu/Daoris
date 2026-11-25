@@ -12,7 +12,7 @@
 
   "generated": [{ "paths": "tools/size-ratchet.json", "run": "node tools/size-ratchet.mjs --shrink" }],
 
-  "reached": { "run": "node tools/reached-checks.mjs --tier {tier} --base {base}", "clock": true, "outcome": "reached-classes: " },
+  "reached": { "run": "node tools/reached-checks.mjs --tier {tier} --base {base}", "rerun": "node tools/reached-checks.mjs --classes {classes} --base {base}", "clock": true, "outcome": "reached-classes: " },
 
   "admission": {
     "_why": "The line's admission (LANDGATES1): the gates every change passes before it moves the line, kept once. The merge tool selects its blocking gates from it (tools/merge/reach.ts) and the driver's check step, which judges a run's work as merged before its landing, runs the same gates (AdmissionGates); neither keeps a list of its own. always runs at every change; suites too, as the merge's one non-blocking suite; byPaths runs a gate where a changed path matches one of its globs (the lane table's grammar) or one of verifyBudget.fullRunReasons.widePaths, which change how every gate runs. Every name is a gate declared below.",
@@ -336,26 +336,6 @@
         "whole": ["src/Daoris.Web/playwright.config.ts", "src/Daoris.Web/package.json", "src/Daoris.Web/tsconfig.json"] },
       { "name": "web-measured", "gate": "web-measured", "runner": "playwright", "cwd": "src/Daoris.Web", "files": ["src/Daoris.Web/measured/**/*.spec.ts"],
         "whole": ["src/Daoris.Web/playwright.measured.config.ts", "src/Daoris.Web/package.json"] }
-    ]
-  },
-
-  "unasked": {
-    "_why": "What an agent may do here without asking, accepted once by the owner (2026-11-15) and read by tools: each grant an exact act. The owner calls are named as excluded, so the boundary is visible. A change to this entry takes effect once it has landed and the owner has accepted it.",
-    "may": [
-      "republish the local install when no driven session runs",
-      "merge a finished, checked branch through tools/merge-branch.mjs",
-      "push a landed main whose sensitive scan is clean to origin",
-      "stop a process the agent's own runs started",
-      "ask Codex for a second opinion within its cap",
-      "spend the DeepSeek harness's prepaid key on reviews"
-    ],
-    "ownerOnly": [
-      "money and budgets: raising a cap, a top-up",
-      "sign-ins and credentials",
-      "a production release the owner marked as theirs",
-      "a history rewrite",
-      "deleting the owner's data",
-      "publishing to people outside"
     ]
   },
 

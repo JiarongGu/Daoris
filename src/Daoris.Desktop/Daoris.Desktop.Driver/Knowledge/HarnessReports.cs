@@ -48,6 +48,9 @@ public sealed record ProfileReport(
 {
     /// <summary>Its sign-in state as the walk reads it (<see cref="SignInStates"/>), for the page to show the same; null where a probe's own report says none.</summary>
     public SignInState? SignIn { get; init; }
+
+    /// <summary>The person switched it off (<see cref="AccountSwitch"/>): it stays signed in and is read as before, and nothing starts or moves to it.</summary>
+    public bool Off { get; init; }
 }
 
 /// <summary>
