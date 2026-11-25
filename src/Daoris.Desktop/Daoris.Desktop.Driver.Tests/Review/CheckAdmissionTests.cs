@@ -85,7 +85,7 @@ public sealed class CheckAdmissionTests : IDisposable
     [Fact]
     public void Free_memory_just_short_of_the_need_is_floored_never_said_as_the_need()
     {
-        var wait = CheckAdmission.Judge([new HeavyHeld(Now, "k", false, "the verification run r-1")], Auto(7.99));
+        var wait = CheckAdmission.Judge(_fixture.Home, [new HeavyHeld(Now, "k", false, "the verification run r-1")], Auto(7.99), Check("r-2", _fixture.Other));
 
         Assert.Equal("memory: 7.9 GB free, a check needs 8 GB", wait!.Sentence);
     }
@@ -129,6 +129,7 @@ public sealed class CheckAdmissionTests : IDisposable
             Assert.Equal("a slot: 1 of 1 run", wait!.Sentence);
         }
 
+        File.Delete(RoomLedger.PathOf(_fixture.Home));
         var eight = new CheckRules(8, 4, 2, () => new MemoryReading(1 * Gb, 1 * Gb));
         Assert.Equal(2, eight.Slots);
         var taken = new[] { Take(eight, Check("a")).Taken, Take(eight, Check("b", _fixture.Tree)).Taken };
@@ -159,7 +160,7 @@ public sealed class CheckAdmissionTests : IDisposable
         }
 
         var two = new[] { new HeavyHeld(Now, "a", false, "x"), new HeavyHeld(Now, "b", false, "y") };
-        Assert.Equal("a slot: 2 of 2 run", CheckAdmission.Judge(two, unread)!.Sentence);
+        Assert.Equal("a slot: 2 of 2 run", CheckAdmission.Judge(_fixture.Home, two, unread, Check("r-3", _fixture.Other))!.Sentence);
     }
 
     [Theory]

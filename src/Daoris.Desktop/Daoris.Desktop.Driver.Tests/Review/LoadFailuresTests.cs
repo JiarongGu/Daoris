@@ -11,6 +11,7 @@ public sealed class LoadFailuresTests
     private static readonly DateTimeOffset Now = new(2026, 11, 24, 12, 0, 0, TimeSpan.Zero);
     private const long Roomy = 16L << 30;
     private const long Tight = 2L << 30;
+    private const long Need = 8L << 30;
 
     private static AdmissionEntry Entry(string id, string what = "driver gate", int minutes = 5) =>
         new(id, "session", 1, what, Now.AddMinutes(-minutes), Now, null, null, null);
@@ -68,26 +69,37 @@ public sealed class LoadFailuresTests
     [Fact]
     public void The_machine_is_loaded_while_another_heavy_run_holds_a_place_or_the_free_commit_is_short_of_what_one_run_needs()
     {
-        Assert.True(new LoadReading(1, Roomy).Loaded);
-        Assert.True(new LoadReading(0, Tight).Loaded);
-        Assert.False(new LoadReading(0, Roomy).Loaded);
-        Assert.False(new LoadReading(0, null).Loaded);
-        Assert.Equal("2 other heavy runs, 2.0 GB free commit", new LoadReading(2, Tight).Words);
+        Assert.True(new LoadReading(1, Roomy, Need).Loaded);
+        Assert.True(new LoadReading(0, Tight, Need).Loaded);
+        Assert.False(new LoadReading(0, Roomy, Need).Loaded);
+        Assert.False(new LoadReading(0, null, Need).Loaded);
+        Assert.Equal("2 other heavy runs, 2.0 GB free commit", new LoadReading(2, Tight, Need).Words);
+    }
+
+    [Fact]
+    public void What_one_more_run_needs_is_the_largest_need_learned_for_a_check_here_and_the_declared_cost_before_any()
+    {
+        using var fixture = new HeavyFixture("quiet-need");
+        Assert.Equal(LoadKind.Declared(LoadKind.Test).Memory, CheckAdmission.QuietNeed(fixture.Home));
+
+        var at = new DateTimeOffset(2026, 11, 25, 9, 0, 0, TimeSpan.Zero);
+        foreach (var gb in new[] { 3L, 4L }) LearnedNeeds.Record(fixture.Home, "k|test|reached", new RunSample(at, gb << 30, 2, 100, false));
+        Assert.Equal((long)((4L << 30) * 1.1), CheckAdmission.QuietNeed(fixture.Home));
     }
 
     [Fact]
     public void A_quiet_slot_is_one_no_other_working_run_holds_and_where_a_run_waiting_for_one_goes_by_the_order_it_asked_in()
     {
         var mine = Entry("a", $"verification {LoadFailures.Mark}", minutes: 5);
-        Assert.True(LoadFailures.Quiet(Look(mine), mine, Roomy));
-        Assert.False(LoadFailures.Quiet(Look(mine), mine, Tight));
-        Assert.False(LoadFailures.Quiet(Look(mine, Entry("b")), mine, Roomy));
+        Assert.True(LoadFailures.Quiet(Look(mine), mine, Roomy, Need));
+        Assert.False(LoadFailures.Quiet(Look(mine), mine, Tight, Need));
+        Assert.False(LoadFailures.Quiet(Look(mine, Entry("b")), mine, Roomy, Need));
 
         var later = Entry("c", $"verification {LoadFailures.Mark}", minutes: 1);
         var earlier = Entry("d", $"verification {LoadFailures.Mark}", minutes: 9);
-        Assert.True(LoadFailures.Quiet(Look(mine, later), mine, Roomy));
-        Assert.False(LoadFailures.Quiet(Look(mine, earlier), mine, Roomy));
-        Assert.True(LoadFailures.Quiet(Look(earlier, later), earlier, Roomy));
+        Assert.True(LoadFailures.Quiet(Look(mine, later), mine, Roomy, Need));
+        Assert.False(LoadFailures.Quiet(Look(mine, earlier), mine, Roomy, Need));
+        Assert.True(LoadFailures.Quiet(Look(earlier, later), earlier, Roomy, Need));
     }
 
     [Fact]

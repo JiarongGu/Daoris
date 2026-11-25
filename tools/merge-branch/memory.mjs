@@ -7,6 +7,7 @@
  */
 import { spawnSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { homeEntry } from '../../src/Daoris.Cli/src/platform/home.ts';
 import { freemem as osFreemem, totalmem as osTotalmem } from 'node:os';
 
@@ -82,21 +83,48 @@ export function keptFree(reserve, total) {
   }
 }
 
+/** The ten minutes a swing of the person's own use is read over, and the margin above it: `PersonMeasure` of the driver, twinned. */
+const ROOM_WINDOW_MS = 10 * 60 * 1000;
+const roomMarginGb = (total) => Math.max(1, typeof total === 'number' && total > 0 ? total / 50 / GB : 0);
+
 /**
- * The GB the machine keeps free for the person's own work: `reserveGb` of the Daoris home's `driver.json` (the file the driver's
- * `ReserveSetting` reads, at the place the home's table gives it), else a third of `total`, the machine's physical memory in bytes, to
- * the whole GB; 0 where the file says none, or where neither is known.
+ * What the person's own work is measured to take back, in GB: how far their use (the machine's in use less what Daoris's own
+ * processes hold) stood above its present in the last ten minutes of the samples the driver's admission keeps (`room.json` under the
+ * home's `locks`), and a margin of 2 % of `total` (1 GB at least). The margin alone where there are no samples; 0 where `total` is not known.
  */
-export function reserveGb({ total = null, home = null, read = (path) => readFileSync(path, 'utf8') } = {}) {
+export function measuredHeadroomGb({ total = null, home = null, now = Date.now(), read = (path) => readFileSync(path, 'utf8') } = {}) {
+  if (!(typeof total === 'number' && total > 0)) return 0;
+  let swing = 0;
+  if (home) {
+    try {
+      const samples = JSON.parse(read(join(homeEntry(home, 'locks'), 'admission', 'room.json')).replace(/^﻿/, '')).samples
+        .map((sample) => ({ at: Date.parse(sample.at), person: Math.max(0, Number(sample.used) - Number(sample.daoris)) }))
+        .filter((sample) => Number.isFinite(sample.at) && Number.isFinite(sample.person) && now - sample.at <= ROOM_WINDOW_MS)
+        .sort((a, b) => a.at - b.at);
+      if (samples.length > 0) swing = (Math.max(...samples.map((sample) => sample.person)) - samples[samples.length - 1].person) / GB;
+    } catch {
+      // No samples that read: the margin alone, as the driver's ledger reads a file that does not.
+    }
+  }
+  return swing + roomMarginGb(total);
+}
+
+/**
+ * The GB the machine keeps free for the person's own work: the larger of the person's floor (`reserveGb` of the Daoris home's
+ * `driver.json`, the file the driver's `ReserveSetting` reads, none where it says none or does not read) and what their own work is
+ * measured to take back (`measuredHeadroomGb`), so the merge tool keeps what the driver's admission keeps.
+ */
+export function reserveGb({ total = null, home = null, now = Date.now(), read = (path) => readFileSync(path, 'utf8') } = {}) {
+  let floor = 0;
   if (home) {
     try {
       const stored = JSON.parse(read(homeEntry(home, 'driver')).replace(/^﻿/, '')).reserveGb;
-      if (Number.isInteger(stored) && stored >= 0 && stored <= 1024) return stored;
+      if (Number.isInteger(stored) && stored >= 0 && stored <= 1024) floor = stored;
     } catch {
-      // A file that does not read keeps the default, as the driver's reader does.
+      // A file that does not read is no floor, as the driver's reader treats it.
     }
   }
-  return typeof total === 'number' && total > 0 ? Math.floor(total / 3 / GB) : 0;
+  return Math.max(floor, measuredHeadroomGb({ total, home, now, read }));
 }
 
 /** What a failed command said: its first `error:` or `fatal:` line, else its first line. */

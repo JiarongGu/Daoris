@@ -14,6 +14,7 @@ import type { HelperRule } from '../settings/repository/Helpers';
 import type { HandOverRule } from '../settings/repository/HandOver';
 import type { GrowthValue } from '../settings/repository/Growth';
 import type { PlaceRiskRow } from '../settings/place/PlaceRisk';
+import type { ReserveWhy } from '../settings/machine/ReserveSetting';
 import type { LanguageOption } from '../settings/repository/Languages';
 import type { OpinionRule } from '../settings/repository/Opinions';
 import type { ReviewLook, ReviewRule } from '../settings/repository/Reviews';
@@ -79,7 +80,7 @@ export type DriverState = {
   /** How long a step nobody's session answers stands before Daoris gives it up, in hours: the file's, or the default. */
   vacancy?: number;
   /** The memory the machine keeps free for the person's own work, with how the machine's memory stands, in GB. */
-  reserve?: { gb: number | null; kept: number; total?: number | null; freeCommit?: number | null; daoris?: number | null };
+  reserve?: { gb: number | null; kept: number; total?: number | null; freeCommit?: number | null; daoris?: number | null; why?: ReserveWhy | null };
   /** The most files, and the most minutes, a folder's manifest read spends: the file's, or the defaults. */
   manifestFiles?: number;
   manifestMinutes?: number;

@@ -29,11 +29,14 @@ with the version and date at release.
   with the test sets it runs, a small file per other concern) and the values that belong to one machine, then proves the folder resolves to the old file: each gate's
   commands, its expanded reach, the set holding each test file and the gates' order. A difference, a member nobody sorted and a test file held by two sets are named, exit 1.
   It writes only under `--out` (inside the repository, `_fixtures/declaration-split` by default), replacing only what an earlier dry run left there.
-- Daoris keeps a reserve of memory free for your own work. A heavy run, a check or a build starts only while the machine's free memory stays
-  at or above the reserve after its own need, and a new one waits while it is under, saying the reserve: "the reserve for your own work: 24.0 GB
-  free, a check needs 8 GB and 21 GB stays free" on a check's step, the same in the merge tool's memory wait. The reserve is a third of the
-  machine's memory unless you set it (`daoris settings reserve <gb>|auto`, 0 keeps none, or the Settings row), and the row shows the
-  machine's memory, its free commit and what Daoris's own processes hold. A pinned `checks` no longer runs whatever the memory.
+- The machine's room for Daoris's heavy work is measured, never a number. What a gate needs is learned from its own whole runs on this machine
+  (its peak memory and cores, once it has run twice; until then the kind's declared cost), what your own work takes is measured as the
+  machine's use outside Daoris with headroom from its swings in the last ten minutes, and a run starts while what is free now holds its
+  need beyond that. The number of runs at once backs off when memory runs under what is kept, several runs saturate the processors or a
+  run's tests time out, and grows back as they clear; projects and agents share it fairly, and an environment or the GPU is bounded per
+  repository and per agent and judged by memory. `daoris settings reserve <gb>|auto` is now the floor (auto, the default, has none; it
+  was a third of the memory), and the row says why the room is what it is: your share and its swing, the limit and its signal, and what
+  a gate needs.
 - A run's check asked again after a fix runs only the gates the fix's paths reach. Each gate that passed in the run's check before, on the
   same base and declaration, and that no path changed since reaches, is kept, and the check's words name it with the commit it passed at.
   A check that Daoris closing cut off goes on at the gate it reached when it is sent again, never starting over.

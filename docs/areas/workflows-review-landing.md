@@ -854,18 +854,33 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     lines' check slots (`locks/verify/`), every repository's heavy-run slots, and the sessions' `run-heavy`, a run holding both counted
     once. The judgement, the take of each slot and the write of each record happen under one lock (`locks/heavy/admitting.lock`), so two
     starts never both see no holder. The machine setting `checks` (`daoris settings checks <n>|auto`, the window's `SET_CHECKS`) pins a
-    number, never more than the machine's heavy-run admission holds. The machine keeps a reserve free for the person's own work (the
-    setting `reserve`, `reserveGb` in `driver.json`, `daoris settings reserve <gb>|auto`, the window's `SET_RESERVE`, `ReserveSetting`; `auto`,
-    the default, a third of the machine's physical memory to the whole GB, 0 none): whatever `checks` says, a heavy run, a check or a
-    build is admitted only while the free memory stays at or above the reserve after the run's own need (counted for the runs still
-    starting as below), the first run included, and a new admission waits while it is under, saying the reserve (`CheckWait.Reserve`,
-    `slot-reserve` on a check's step); the merge tool's memory wait reads the same field from the home's `driver.json` and holds it against free commit too (`memoryLacking`). The setting's row
-    and `daoris settings reserve` show the machine's memory, its free commit and what Daoris's own processes hold (`DaorisShare`: this
-    process and each slot holder, with their children). `auto`, the default, runs the first always (the reserve apart) and another while free
-    physical memory and free commit both hold a run's need (the merge tool's 8 GB for a Process suite, since a check runs the Process
-    classes its change reaches), counted again for each run whose first gate has not ended (its record says so; a Daoris check's one
-    `reached` gate holds its build and its suites, so it counts twice for its whole run), up to a quarter of the processors within the
-    machine's heavy-run admission, whose places each step still takes; memory that cannot be read runs one. A repository's heavy-run
+    number, never more than the machine's heavy-run admission holds. **The room is measured, never a number** (ADMITDYNAMIC1, D362; the
+    judgement is `RoomJudge`, its state `RoomLedger`, in `Review/Room/`). A run's need is learned per repository, kind and gate from its
+    own runs on this machine (`LearnedNeeds`, `admission/learned.json`: the job's peak memory and mean cores, a tenth over the larger
+    of the newest five peaks, kept by `RunMeter` as a run ends); until a gate has run twice its kind's declared cost stands
+    (`LoadKind.Declared`, the merge tool's 8 GB for a test run). The person's share is the machine's use outside Daoris's processes,
+    sampled at most every five seconds by the desktop's own admissions (a terminal's `daoris gate run` reads the samples and takes none) into `admission/room.json` (`PersonMeasure`), the machine's use less the resident memory of Daoris's processes (`DaorisShare.ReadResident`), both physical: their headroom is how far it stood above its
+    present in the last ten minutes, plus 2 % of the memory (1 GB at least). What is kept free is the larger of that and the person's
+    floor, the setting `reserve` (`reserveGb` in `driver.json`, `daoris settings reserve <gb>|auto`, the window's `SET_RESERVE`,
+    `ReserveSetting`; `auto`, the default, no floor, 0 the same). A run is admitted while the free commit, less what the runs still
+    starting will take (their need, counted while their first gate has not ended; a Daoris check's one `reached` gate holds its build and
+    its suites, so it counts for its whole run) and less what is kept, holds its learned need, and the lower of free physical memory and
+    free commit holds it less the starting runs' need; the first run asks only the floor, so a machine with none of Daoris's runs on it
+    never starves, and a pinned `checks` keeps only the floor. A wait says the number that held it (`CheckWait.Reserve`, `Memory`,
+    `slot-reserve` on a check's step); memory that cannot be read runs one. The concurrency limit starts at the ceiling (a quarter of
+    the processors within the machine's heavy-run admission) and backs off and grows back (`RoomPressure`): free memory under what is kept,
+    the processors nine in ten busy over ten seconds while more than one run holds, or a run whose tests timed out (`RunMeter.TimedOut`: a failed run's log with a
+    test runner's own timeout words) halves it, one at least and once in thirty seconds; a minute with none adds one; `checks` pinned overrides
+    it. The limit is shared by project and agent: a project asking beside another that asked in the last two minutes holds the limit
+    less one seat for each (one at least), an agent its project's seats less one for each other agent of it that asked as recently; where
+    none else has asked, one may hold the whole limit (`RoomJudge`). A kind has a bound a repository declares (`KindRule`: `max` at
+    once, `perAgent`, `share`): an environment's default is two a repository and one an agent, the GPU's one. An environment or the GPU
+    holds memory, not a place of the limit: it is judged by its kind's bounds and by memory alone, and takes no seat of the checks'. What an
+    environment shares and versions is SHAREDENV1's (D361); a first environment host asks this judgement before it starts one. The merge tool's memory wait keeps the same
+    (`reserveGb` of `tools/merge-branch/memory.mjs` reads the floor and the samples). The setting's row and `daoris settings reserve`
+    show the machine's memory, its free commit, what Daoris's own processes hold (`DaorisShare`: this process and each slot holder, with
+    their children) and why the room is what it is (`RoomWhy`: the person's share and swing, what keeps the room, the limit and its
+    signal, the largest learned need). `auto` runs the first always and another by the rule above; a repository's heavy-run
     slots (`HeavySlot`, `locks/heavy/<key>.lock` then `<key>-n.lock`, each with its holder's record and its own dead-holder clean-up)
     are as many as the admission's, so one repository's checks, its sessions' heavy runs and its integration's gated lines run side by
     side, each check in its slot's verification tree (`lines/trees/<key>`, `<key>-n`; a tree past the slots there are now, left by a

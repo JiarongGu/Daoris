@@ -266,6 +266,7 @@ public sealed class IntegrationTransport(string home, IntegrationTransportWorld?
                 () => new HeavyHolder(Environment.ProcessId, Started, root, [], now, null, null) { Run = integrating })
             {
                 Check = () => new VerifyHolder(Environment.ProcessId, Started, integrating, $"integration-{send.Repository}-{send.Line}", send.Repository, now),
+                Gate = "reached",
             };
             (held, var wait) = CheckAdmission.TryTake(home, _world.Rules(config.Checks, config.ReserveGb), ask);
             if (held is null)

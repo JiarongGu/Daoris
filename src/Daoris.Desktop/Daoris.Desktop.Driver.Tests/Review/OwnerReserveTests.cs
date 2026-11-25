@@ -5,7 +5,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// <summary>
 /// The machine keeps a reserve free for the person's own work. A heavy run, a check or a build is admitted only while the
 /// free memory stays at or above the reserve after the run's own need; a new admission waits while it is under it and says the reserve; the
-/// reserve is the person's setting (<c>reserveGb</c>), a third of the machine's memory by default. Files only, as the admission's own tests.
+/// reserve is the person's setting (<c>reserveGb</c>), the floor under the measured room, none by default. Files only, as the admission's own tests.
 /// </summary>
 public sealed class OwnerReserveTests : IDisposable
 {
@@ -13,13 +13,15 @@ public sealed class OwnerReserveTests : IDisposable
 
     private static readonly DateTimeOffset Now = new(2026, 11, 24, 9, 0, 0, TimeSpan.Zero);
 
+    private static readonly RoomWorld Calm = new(() => Now, () => null, _ => 0);
+
     private readonly HeavyFixture _fixture = new("owner-reserve");
 
     public void Dispose() => _fixture.Dispose();
 
     /// <summary>A machine of <paramref name="totalGb"/> GB with <paramref name="freeGb"/> free, its reserve <paramref name="reserveGb"/> (null: auto).</summary>
     private static CheckRules Machine(double freeGb, int totalGb = 64, int? reserveGb = null, int? pinned = null) =>
-        new(pinned, 16, 4, () => new MemoryReading((long)(freeGb * Gb), (long)(freeGb * Gb), totalGb * Gb), reserveGb);
+        new(pinned, 16, 4, () => new MemoryReading((long)(freeGb * Gb), (long)(freeGb * Gb), totalGb * Gb), reserveGb) { World = Calm };
 
     private HeavyAsk Check(string run, string? checkout = null)
     {
@@ -65,7 +67,7 @@ public sealed class OwnerReserveTests : IDisposable
     public void A_waiting_run_starts_once_the_person_s_own_work_lets_go_of_memory()
     {
         var free = 24.0;
-        var rules = new CheckRules(null, 16, 4, () => new MemoryReading((long)(free * Gb), (long)(free * Gb), 64 * Gb), 20);
+        var rules = new CheckRules(null, 16, 4, () => new MemoryReading((long)(free * Gb), (long)(free * Gb), 64 * Gb), 20) { World = Calm };
 
         Assert.Equal(CheckWait.Reserve, Take(rules, Check("r-1")).Wait!.Code);
         free = 30;
@@ -78,7 +80,7 @@ public sealed class OwnerReserveTests : IDisposable
     public void The_reserve_is_judged_against_free_commit_and_not_the_lower_physical_memory()
     {
         // Physical memory 10 GB is under need + reserve (28), free commit 40 GB is over it: the reserve is met, as the row says.
-        var rules = new CheckRules(null, 16, 4, () => new MemoryReading(10 * Gb, 40 * Gb, 64 * Gb), 20);
+        var rules = new CheckRules(null, 16, 4, () => new MemoryReading(10 * Gb, 40 * Gb, 64 * Gb), 20) { World = Calm };
 
         using var taken = Take(rules, Check("r-1")).Taken;
 
@@ -88,7 +90,7 @@ public sealed class OwnerReserveTests : IDisposable
     [Fact]
     public void A_second_run_short_of_its_own_need_waits_for_memory_never_for_the_reserve()
     {
-        var rules = new CheckRules(null, 16, 4, () => new MemoryReading(5 * Gb, 40 * Gb, 64 * Gb), 20);
+        var rules = new CheckRules(null, 16, 4, () => new MemoryReading(5 * Gb, 40 * Gb, 64 * Gb), 20) { World = Calm };
         using var first = Take(Machine(60, reserveGb: 20), Check("r-1")).Taken;
 
         var (second, wait) = Take(rules, Check("r-2", _fixture.Other));
@@ -131,21 +133,19 @@ public sealed class OwnerReserveTests : IDisposable
     }
 
     [Fact]
-    public void Auto_keeps_a_third_of_the_machine_s_memory_to_the_whole_gb()
+    public void Auto_has_no_floor_a_first_run_runs_on_a_machine_with_little_free_and_a_second_waits_only_on_its_need()
     {
-        // 64 GB: 21 GB. 28 GB free less the run's 8 is 20: under it; 29 less 8 is 21: met.
-        var (taken, wait) = Take(Machine(28), Check("r-1"));
+        using var first = Take(Machine(25), Check("r-1")).Taken;
+        Assert.NotNull(first);
 
-        Assert.Null(taken);
-        Assert.Equal("21", wait!.Values["reserve"]);
-        using var met = Take(Machine(29), Check("r-1")).Taken;
-        Assert.NotNull(met);
+        using var second = Take(Machine(25), Check("r-2", _fixture.Other)).Taken;
+        Assert.NotNull(second);
     }
 
     [Fact]
     public void A_machine_whose_memory_cannot_be_read_keeps_no_reserve_it_cannot_judge()
     {
-        using var taken = Take(new CheckRules(null, 16, 4, () => null), Check("r-1")).Taken;
+        using var taken = Take(new CheckRules(null, 16, 4, () => null) { World = Calm }, Check("r-1")).Taken;
 
         Assert.NotNull(taken);
     }
@@ -184,14 +184,8 @@ public sealed class OwnerReserveTests : IDisposable
         var share = DaorisShare.Read(_fixture.Home);
 
         Assert.True(share > 0, "this process holds some commit, and it is its own root");
+        Assert.True(DaorisShare.ReadResident(_fixture.Home) > 0, "and some resident memory, the unit the person's share is measured against");
     }
-
-    [Theory]
-    [InlineData(1, 0)]
-    [InlineData(64, 21)]
-    [InlineData(96, 32)]
-    public void The_default_is_a_third_of_the_memory_in_whole_gb(long totalGb, long reserveGb) =>
-        Assert.Equal(reserveGb * Gb, ReserveSetting.DefaultOf(totalGb * Gb));
 
     [Fact]
     public void The_setting_reads_what_it_takes_and_is_auto_otherwise()

@@ -3,12 +3,13 @@ using System.Globalization;
 namespace Daoris.Driver;
 
 /// <summary>
-/// What the machine keeps free for the person's own work: <c>reserveGb</c> in <c>driver.json</c>, a whole number of GB, or absent for
-/// <c>auto</c>, a third of the machine's physical memory. A heavy run, a check or a build is admitted only while the machine's free
-/// commit stays at or above the reserve after the run's own need, and a new admission waits while it is under it
-/// (<see cref="CheckAdmission.Judge"/>), saying so; 0 keeps none. Read at each look by the heavy executor, the integration's gated lines
-/// and the merge tool (<c>tools/merge-branch/memory.mjs</c> reads the same field), so a change needs no restart. Written only when
-/// set, so the list tells auto from a choice.
+/// What the machine keeps free at least for the person's own work: <c>reserveGb</c> in <c>driver.json</c>, a whole number of GB, or
+/// absent for <c>auto</c>, no floor. It is a floor under the room's measured headroom: the machine keeps free the larger of this
+/// and how far the person's own use has swung above its present in the last ten minutes, plus a margin (<see cref="PersonMeasure"/>).
+/// A heavy run, a check or a build is admitted only while the machine's free commit stays at or above that after the run's own need, and
+/// a new admission waits while it is under it (<see cref="CheckAdmission.Judge"/>), saying so; 0 is no floor, the measured room alone.
+/// Read at each look by the heavy executor, the integration's gated lines and the merge tool (<c>tools/merge-branch/memory.mjs</c> reads
+/// the same field), so a change needs no restart. Written only when set, so the list tells auto from a choice.
 /// </summary>
 public static class ReserveSetting
 {
@@ -39,11 +40,8 @@ public static class ReserveSetting
     /// <summary>The file's value as read: a whole number in bounds, or null for auto.</summary>
     public static int? Read(long? stored) => stored is { } gb && Takes(gb) ? (int)gb : null;
 
-    /// <summary>The reserve <c>auto</c> keeps on a machine with <paramref name="total"/> bytes of physical memory: a third, to the whole GB.</summary>
-    public static long DefaultOf(long total) => total / 3 >> 30 << 30;
-
-    /// <summary>The reserve in bytes: the pinned GB, else a third of <paramref name="total"/>, else none where the machine's memory is not known.</summary>
-    public static long Bytes(int? gb, long? total) => gb is { } pinned ? (long)pinned << 30 : total is { } all ? DefaultOf(all) : 0;
+    /// <summary>The floor in bytes: the pinned GB, else none (<c>auto</c> is the measured room alone).</summary>
+    public static long Bytes(int? gb) => gb is { } pinned ? (long)pinned << 30 : 0;
 
     /// <summary>The value in the file at <paramref name="path"/>, or auto where it does not read.</summary>
     public static int? At(string path)

@@ -147,7 +147,7 @@ export const tool = await import(
     platform?: string; run?: (command: string, args: string[], options: object) => { status: number | null; stdout?: string; stderr?: string; error?: Error };
     freemem?: () => number; totalmem?: () => number; read?: (path: string) => string;
   }) => Reading;
-  reserveGb: (options?: { total?: number | null; home?: string | null; read?: (path: string) => string }) => number;
+  reserveGb: (options?: { total?: number | null; home?: string | null; now?: number; read?: (path: string) => string }) => number;
   parseWindowsMemory: (text: string) => { physical: number | null; commit: number | null };
   parseMeminfo: (text: string) => { commit: number | null };
   flakeNote: (flakes: GateResult[]) => string;
