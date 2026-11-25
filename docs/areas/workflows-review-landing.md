@@ -426,6 +426,20 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     line carrying the executor's own reason from its answer. Past the three Daoris gives it up as said: its node is stopped by Daoris with
     that reason, which ends its run and holds no row for anyone (no held attempt, no kept failure, no final exit). A check whose old job could
     not be opened (`unaccounted`) may still run, so it is never sent beside it: it is asked again at each look until the job is accounted for.
+    A reached command that failed on tests that timed out while the machine was loaded (another heavy run doing work in the admission, or free
+    commit below what one run needs, read at the failure while the run's own place is still held) is a load failure, not the work's
+    (`LoadFailures`): every red class's own failure lines say a test timed out, or the test host was ended by the 60-second hang bound, which
+    no class's lines name; one red class that failed otherwise leaves the whole failure the work's. The red classes then run again alone, once,
+    at a quiet slot (no other working run holds a place and the commit is roomy; runs waiting for one go by the order they asked in and count as
+    no load) by the command the declaration's `reached.rerun` names (its `{classes}` and `{base}`): a declaration naming none leaves the failure
+    as it was, no flag is guessed (`VerifyExecution.LoadAsync`). Passed alone, with a class run, the check is reached, its words saying `load:`,
+    the load read and that no round was counted, and a hand-back's other gates go on once the rerun's place is let go; red alone it is the work's
+    as any red. It is unknown with `load`, asked again like an unrun check (`UnrunChecks`, three on one binding), when no quiet slot comes
+    within `VerifyWorld.QuietWait` (20 minutes) or half what is left of the attempt's bound, when the rerun timed out again while the machine
+    reads loaded again, or when it ran no class; a rerun the runner could not make is unknown `unrun`. A load failure is so never sent to the
+    work's session and never a red round, and one that cannot be told from the work's after three asks is given up by Daoris's stop with its
+    reason, never put to the person (rule 1 of the doctrine: work that cannot be finished is reported as gave up). A failure with no timeout in
+    its log, or on a quiet machine, is the work's as before.
     An unknown with a cause of its own (`changed`, `bound`, `stopped`, `busy`, `unprepared`) is a held attempt as ever. A step's start is
     tried again for a moment's sharing violation on its log (`HeavyStep.RetriedAsync`), the cause of the check's "could not be kept" unknown on 2026-11-22 and 23.
     The same rule holds for the other executors that end without an answer. A second opinion whose reviewer's session ended without giving one

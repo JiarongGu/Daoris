@@ -74,17 +74,14 @@ internal static class ReachedVerdict
         var kept = 0;
         foreach (var id in red.Take(RedIds))
         {
-            var token = TokenOf(NameOf(id));
-            var named = token is null ? [] : Enumerable.Range(0, lines.Count).Where(at => !Runner(lines[at]) && !Passing(lines[at]) && token.IsMatch(lines[at])).ToList();
-            var from = named.LastOrDefault(at => FailureWords.Any(word => lines[at].Contains(word, StringComparison.Ordinal)), named.Count > 0 ? named[^1] : -1);
             said.Append('\n').Append(WordsScan.Id(id)).Append(':');
-            if (from < 0)
+            if (Block(lines, id) is not { } span)
             {
                 said.Append(" its log names no failure of it");
                 continue;
             }
 
-            for (var at = from; at < lines.Count && at < from + RedLines && (at == from || lines[at].Length > 0) && !Runner(lines[at]) && !Passing(lines[at]); at++)
+            for (var at = span.Start; at < span.End; at++)
             {
                 var line = lines[at].Length > LineChars ? lines[at][..LineChars] + Gap : lines[at];
                 if (kept >= GateLogExcerpt.Lines || Encoding.UTF8.GetByteCount(said.ToString()) + Encoding.UTF8.GetByteCount(line) > GateLogExcerpt.Bytes)
@@ -101,6 +98,28 @@ internal static class ReachedVerdict
         return said.ToString();
     }
 
+    /// <summary>The span of a red class's own failure in the log (<paramref name="id"/>'s last failure line and those under it, to a blank line), or null where the log names none.</summary>
+    private static (int Start, int End)? Block(IReadOnlyList<string> lines, string id)
+    {
+        var token = TokenOf(NameOf(id));
+        var named = token is null ? [] : Enumerable.Range(0, lines.Count).Where(at => !Runner(lines[at]) && !Passing(lines[at]) && token.IsMatch(lines[at])).ToList();
+        var from = named.LastOrDefault(at => FailureWords.Any(word => lines[at].Contains(word, StringComparison.Ordinal)), named.Count > 0 ? named[^1] : -1);
+        if (from < 0) return null;
+        var to = from;
+        while (to < lines.Count && to < from + RedLines && (to == from || lines[to].Length > 0) && !Runner(lines[to]) && !Passing(lines[to])) to++;
+        return (from, to);
+    }
+
+    internal static IReadOnlyList<string> LinesOf(string log, string id)
+    {
+        var lines = WordsScan.Lines(log);
+        return Block(lines, id) is { } span ? [.. lines.Skip(span.Start).Take(span.End - span.Start)] : [];
+    }
+
+    internal static IReadOnlyList<string> RedOf(string log, string marker) => OutcomeOf(log, marker)?.Red ?? [];
+
+    internal static int RanOf(string log, string marker) => OutcomeOf(log, marker)?.Ran ?? 0;
+
     private static string Capped(IReadOnlyList<string> ids) =>
         ids.Count <= RedIds ? string.Join(", ", ids.Select(WordsScan.Id)) : string.Join(", ", ids.Take(RedIds).Select(WordsScan.Id)) +$", and {(ids.Count - RedIds).ToString(CultureInfo.InvariantCulture)} more";
 
@@ -113,7 +132,7 @@ internal static class ReachedVerdict
         return PassMarks.Any(mark => text.StartsWith(mark, StringComparison.Ordinal));
     }
 
-    private static string NameOf(string id)
+    internal static string NameOf(string id)
     {
         var unit = id.Contains('|', StringComparison.Ordinal) ? id[(id.IndexOf('|', StringComparison.Ordinal) + 1)..] : id;
         var slash = unit.LastIndexOfAny(['/', '\\']);

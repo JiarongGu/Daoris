@@ -29,6 +29,9 @@ internal sealed record ReachedRunner(string Run, string? Cwd, bool Clock, string
             string? Text(string name) => entry.TryGetProperty(name, out var value) && value.ValueKind == JsonValueKind.String && !string.IsNullOrWhiteSpace(value.GetString()) ? value.GetString() : null;
             return Text("run") is { } run
                 ? new ReachedRunner(run.Trim(), Text("cwd")?.Trim(), entry.TryGetProperty("clock", out var clock) && clock.ValueKind == JsonValueKind.True, Text("outcome") ?? DefaultOutcome)
+                {
+                    Rerun = Text("rerun")?.Trim(),
+                }
                 : null;
         }
         catch (JsonException)
@@ -36,6 +39,14 @@ internal sealed record ReachedRunner(string Run, string? Cwd, bool Clock, string
             return null;
         }
     }
+
+    /// <summary>The command that runs named classes again, where the declaration has one: its <c>{classes}</c> is the names, comma-separated, its <c>{base}</c> the ref; the runner's own flags are never guessed.</summary>
+    internal string? Rerun { get; init; }
+
+    internal string? RerunFor(IReadOnlyList<string> classes, string baseRef) =>
+        Rerun is { } command && PlainRef.IsMatch(baseRef)
+            ? command.Replace("{classes}", string.Join(',', classes), StringComparison.Ordinal).Replace("{base}", baseRef, StringComparison.Ordinal)
+            : null;
 
     internal const string FastTier = "fast";
 
