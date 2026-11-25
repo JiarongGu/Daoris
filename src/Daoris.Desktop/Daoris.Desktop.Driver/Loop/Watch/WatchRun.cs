@@ -531,7 +531,7 @@ internal sealed class WatchRun(
                 watch.Harnesses, watch.Usage, watch.Hooks, watch.Events, watch.Browser, Running)
             {
                 Share = Share, Runner = Runner, Stops = Stops, HandsOver = HandsOver, SendsBack = SendsBack, GoesOnLost = GoesOnLost, Log = Log, Noticed = Noticed,
-                Stages = Stages, Reviews = Reviews, Bus = watch.Bus, ConfigPath = ConfigPath,
+                Stages = Stages, Reviews = Reviews, Bus = watch.Bus, ConfigPath = ConfigPath, Landed = _landed,
             };
         driver.Context.Supervisor = Supervisor;
         driver.Context.Roles = Roles?.Invoke();

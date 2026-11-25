@@ -1,6 +1,6 @@
 namespace Daoris.Driver;
 
-/// <summary>What the look's landing reaches of the driver beyond <see cref="ILookWiring"/>: its plugins' wiring, whose types sit above Work orders.</summary>
+/// <summary>What the look's landing reaches of the driver beyond <see cref="ILookWiring"/>: its plugins' wiring, whose types sit above Work orders, and <see cref="Landed"/>, the watch's memory of its settlement, shared by each look's driver.</summary>
 internal interface ILandingWiring : ILookWiring
 {
     /// <summary>Where a landing's plugin says its lines on the console under its name, as at a press.</summary>
