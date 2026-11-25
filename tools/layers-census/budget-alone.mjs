@@ -16,13 +16,13 @@ export function overBudgetOf(records, list) {
 
 /**
  * Each unit test the newest `records` hold over the budget as a breach with its cause (`tools/time-why.mjs`): failing unless
- * `list.slowTests` holds it at no less. `source` reads a test's class's source by its key.
+ * `list.slowTests` holds it at no less. `source` reads a test's class's source by its key, `acts` its ledger entry.
  */
-export function budgetBreaches(records, list, source) {
+export function budgetBreaches(records, list, source, acts = () => null) {
   return [...latestRuns(records)].filter(([, { ms }]) => ms > BUDGET_MS).map(([key, { ms, gate }]) => {
     const listed = list.slowTests?.[key];
     return testBreach({
-      kind: 'census', key, ms, limit: BUDGET_MS, fails: !(listed >= ms), record: gate, source: source(key), ...(listed === undefined ? {} : { note: `listed at ${listed} ms` }),
+      kind: 'census', key, ms, limit: BUDGET_MS, fails: !(listed >= ms), record: gate, source: source(key), acts: acts(key), ...(listed === undefined ? {} : { note: `listed at ${listed} ms` }),
     });
   });
 }

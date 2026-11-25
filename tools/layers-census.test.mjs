@@ -236,6 +236,13 @@ test('each unit test over the second is a breach with its cause, failing unless 
   assert.equal(breaches[0].fix, 'UNITPURE1');
 });
 
+test('a unit test over the second is classed from its ledger entry where the census is handed one', () => {
+  const records = [{ gate: 'driver', tier: 'unit', at: 1, tests: [{ class: 'Ns.WaitsTests', test: 'a', ms: 3000 }] }];
+  const sources = { 'Ns.WaitsTests.a': { file: 'src/X/X.Tests/Loop/WaitsTests.cs', text: 'await Task.Delay(900);' } };
+  const [breach] = budgetBreaches(records, {}, (key) => sources[key] ?? null, () => ({ git: 3 }));
+  assert.deepEqual([breach.cause, breach.evidence], ['process', 'its ledger: 3 git starts']);
+});
+
 test('D294: a Process class\'s real waits, starts and git are not counted, and its reads of now still are', () => {
   const marked = '[Trait(Category.Name, Category.Process)]\npublic sealed class A {\n';
   const body = 'await Task.Delay(500);\nThread.Sleep(5);\nvar p = Process.Start(x);\nvar g = ".git";\nvar n = DateTimeOffset.UtcNow;\n}';

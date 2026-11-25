@@ -24,7 +24,7 @@ import { BUDGET_MS, checkBudget, parseTrx, readRecords, slowTestsOf } from './la
 import { budgetBreaches, checkBudgetAlone } from './layers-census/budget-alone.mjs';
 import { EMPTY, countProblems, treeAt } from './layers-census/counts.mjs';
 import { measureAlone } from './time-ratchet.mjs';
-import { sayBreach, sourceReader } from './time-why.mjs';
+import { sayBreach, sourceReader, readLedger } from './time-why.mjs';
 import { loadWorld } from './time-reach.mjs';
 import { checkGit, scanGit } from './layers-census/git.mjs';
 import { checkMemory } from './layers-census/memory.mjs';
@@ -94,7 +94,7 @@ export async function census({ root, argv = [], tree = null }) {
     const problems = [...countProblems(tree, list), ...budget.problems];
     for (const problem of problems) console.error(`layers-census: ${problem}`);
     const judged = budget.measured?.length ? readRecords(recordsAt) : records;
-    for (const breach of budgetBreaches(judged, list, sourceReader(root, tree))) console.log(sayBreach(breach));
+    for (const breach of budgetBreaches(judged, list, sourceReader(root, tree), readLedger(recordsAt))) console.log(sayBreach(breach));
     if (records.length === 0) console.log(`layers-census: no duration records under ${recordsAt.slice(root.length + 1).replace(/\\/g, '/')}, so the unit budget read nothing`);
     if (problems.length === 0) console.log('layers-census: the reference graph, the ambient ratchet, the process starts\' and git\'s allowances, the lanes\' boundaries and the unit budget hold');
     return problems.length === 0 ? 0 : 1;
