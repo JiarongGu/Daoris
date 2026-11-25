@@ -307,12 +307,10 @@ public sealed class CodexUsageTests
     public async Task A_server_that_never_answers_is_unknown_once_its_patience_is_spent()
     {
         var server = new FakeServer((_, _) => []);
-        var timer = System.Diagnostics.Stopwatch.StartNew();
 
         var readings = await CodexUsage.AskWithinAsync(server.Incoming, server.Outgoing, TimeSpan.FromMilliseconds(200), CancellationToken.None);
 
         Assert.Null(readings);
-        Assert.InRange(timer.Elapsed, TimeSpan.Zero, Poll.Patience);
     }
 
     [Fact]

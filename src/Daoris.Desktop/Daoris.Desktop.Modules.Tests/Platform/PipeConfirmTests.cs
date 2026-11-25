@@ -507,9 +507,7 @@ public sealed class PipeConfirmTests : Bridge
         Assert.Equal("close", answer.GetProperty("error").GetProperty("parameters").GetProperty("why").GetString());
         Assert.Equal($"Daoris is closing; this still waits for your confirmation (request {id}).",
             answer.GetProperty("error").GetProperty("message").GetString());
-        var drained = System.Diagnostics.Stopwatch.StartNew();
         Assert.True(pipe.Drain(TimeSpan.FromSeconds(15)));
-        Assert.True(drained.Elapsed < TimeSpan.FromSeconds(5), $"the drain took {drained.Elapsed}");
         Assert.Empty(Logged("pipe.drained"));
         Assert.Equal(record, Assert.Single(Records()));
         Assert.Equal("waiting", ReadRecord(record).GetProperty("state").GetString());

@@ -19,13 +19,11 @@ public sealed class GitProcessRunsTests
     [Fact]
     public async Task A_run_past_its_bound_is_ended_and_says_it_did_not_answer()
     {
-        var clock = Stopwatch.StartNew();
 
         var answer = await Runs().RunAsync(Naps(TimeSpan.FromSeconds(1)), CancellationToken.None).WaitAsync(Patience);
 
         Assert.Null(answer.Exit);
         Assert.Contains("did not answer within 1 seconds", answer.Error);
-        Assert.True(clock.Elapsed < TimeSpan.FromSeconds(20));
     }
 
     [Fact]

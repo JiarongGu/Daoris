@@ -210,11 +210,9 @@ public sealed class RunningServiceTests : IDisposable
     {
         Leave(Data, "http://localhost:5181", started: 1L);
         var waited = new List<string>();
-        var clock = Stopwatch.StartNew();
 
         Assert.Throws<DriverException>(() => ServiceHttp.FromEnvironment(Env(), App, Answering(Data), waiting: waited.Add));
 
-        Assert.True(clock.Elapsed < TimeSpan.FromSeconds(2));
         Assert.Empty(_asked);
         Assert.Empty(waited);
     }

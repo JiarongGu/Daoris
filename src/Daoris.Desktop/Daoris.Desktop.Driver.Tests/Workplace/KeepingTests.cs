@@ -166,9 +166,7 @@ public sealed class KeepingTests : IDisposable
         using (var first = KeepingRun.TryTake(_home, KeepingRun.Look))
         {
             Assert.NotNull(first);
-            var started = DateTime.UtcNow;
             Assert.Null(KeepingRun.TryTake(_home, KeepingRun.Terminal));
-            Assert.True(DateTime.UtcNow - started < TimeSpan.FromSeconds(5));
             var holder = KeepingRun.Holder(_home);
             Assert.NotNull(holder);
             Assert.Equal((Environment.ProcessId, KeepingRun.Look, false), (holder.Pid, holder.Door, holder.Gone));

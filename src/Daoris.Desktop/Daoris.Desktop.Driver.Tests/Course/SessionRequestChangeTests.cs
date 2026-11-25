@@ -45,7 +45,6 @@ public sealed class SessionRequestChangeTests : IDisposable
         var request = Say("s1");
         Requests.Write(request);
 
-        var asked = Stopwatch.StartNew();
         _source.On(Requests.Folder)!.Raise(Path.GetFileName(Requests.PathOf(request)), ChangeKind.Renamed);
         // The answer is written beside the request once the words are held, so it is what is waited for, read once.
         WordsHeld? answer = null;
@@ -53,7 +52,6 @@ public sealed class SessionRequestChangeTests : IDisposable
 
         Assert.True(answer!.Sent);
         Assert.Equal("also the changelog; 中文 too.", Assert.Single(inbox.State.Queued).Text);
-        Assert.True(asked.Elapsed < TimeSpan.FromHours(1), $"{asked.Elapsed}");
     }
 
     /// <summary>

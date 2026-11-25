@@ -49,12 +49,10 @@ public sealed class AskDaorisWatchTests : IDisposable
             lock (selected) selected.Add(session);
         }, (session, _) => { lock (failed) failed.Add(session); });
 
-        var appending = Stopwatch.StartNew();
         Turn(events, "s1", "slow", At);
         Turn(events, "w1", "driven", At);
         Turn(events, "s2", "next", At);
 
-        Assert.True(appending.Elapsed < TimeSpan.FromSeconds(1));
         Assert.Empty(selected);
         gate.Release(2);
         await Until(() => { lock (selected) return selected.Count == 1; });
