@@ -5,6 +5,13 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-11-25 - A reached run's run-again-alone ran beside builds, and a loaded assertion failure went back to the work (WEBROOTFLAKE1)
+
+- **Sighting:** `app/pageRoot`, `zoomed` and `pushedState` timed out at 10 s in reached runs on unrelated branches, in the "run again alone" step too, while the gate built other projects beside it; and 18 web tests (sessionsBadge, WorkFrame…) failed by assertion in a check under load and went back to the work, though they pass alone.
+- **Root cause:** the rerun was made inside each lane's own group (`runOne`, introduced with the classes' rerun in 91713fc1a6), so the build and the other lanes still ran beside it; and `LoadFailures.Timeouts` read only timeouts and hang kills as load (introduced with the load rerun in c60b648b6d, LOADFLAKE1).
+- **Fix:** `runPlan` collects the failed groups and runs them again after every lane has ended, one at a time, in the plan's order; the three whole-app web files declare 30 s (six times the slowest case alone); a loaded failure's every red class goes to the quiet rerun (`LoadFailures.Red`), and where no quiet slot comes an assertion failure is the work's.
+- **Verify:** `reached-run.test.ts` (the ordering), `wholeAppBudget.test.ts`, `LoadFailuresTests`, `HeavyExecutorLoadProcessTests`; not run: three loaded reached runs.
+
 ## 2026-11-25 - A publish built the web bundle against generated routes older than the C# (PUBLISHCONTRACTS1)
 
 - **Sighting:** a publish of main (f1709ef081) failed in `npm --prefix src/Daoris.Web run build` with TS2345, `"SET_RESERVE"` not assignable to `keyof DriverPayloads`: the checkout's ignored `src/Daoris.Web/src/bridge/generated/routes.ts` predated OWNERRESERVE1's route.

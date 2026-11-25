@@ -436,12 +436,13 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     no load) by the command the declaration's `reached.rerun` names (its `{classes}` and `{base}`): a declaration naming none leaves the failure
     as it was, no flag is guessed (`VerifyExecution.LoadAsync`). Passed alone, with a class run, the check is reached, its words saying `load:`,
     the load read and that no round was counted, and a hand-back's other gates go on once the rerun's place is let go; red alone it is the work's
-    as any red. It is unknown with `load`, asked again like an unrun check (`UnrunChecks`, three on one binding), when no quiet slot comes
+    as any red. It is unknown with `load`, asked again like an unrun check (`UnrunChecks`, three on one binding), when, every red class having timed out, no quiet slot comes
     within `VerifyWorld.QuietWait` (20 minutes) or half what is left of the attempt's bound, when the rerun timed out again while the machine
     reads loaded again, or when it ran no class; a rerun the runner could not make is unknown `unrun`. A load failure is so never sent to the
     work's session and never a red round, and one that cannot be told from the work's after three asks is given up by Daoris's stop with its
     reason, never put to the person (rule 1 of the doctrine: work that cannot be finished is reported as gave up). A failure on a quiet machine,
-    or one whose red classes fail again alone, is the work's as before.
+    or one whose red classes fail again alone, is the work's as before, and so is one with an assertion failure among its red classes when no quiet
+    slot comes: reached has already run them again alone and they failed again, so the wait ends in the work's red, not in a give-up.
     The same holds for every check whose answer does not bind to the work it was sent on, which only a new attempt on the work as it stands
     answers (CHECKUNBOUND1): its tree's preparation or a `regenerate` did not finish for a cause of the machine's (`unprepared`; a
     `regenerate` whose compiler named errors is the work's failure instead, see below), the runner's own run held its lock through

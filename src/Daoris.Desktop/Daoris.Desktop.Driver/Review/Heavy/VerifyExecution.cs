@@ -357,7 +357,7 @@ internal sealed class VerifyExecution(string home, VerifySend send, CandidateJob
 
         using (hold)
         {
-            var (quiet, stop) = await QuietAsync(hold, names, seen, ran, ct).ConfigureAwait(false);
+            var (quiet, stop) = await QuietAsync(hold, names, seen, ran, LoadFailures.Timeouts(text, failed.Marker) is not null, ct).ConfigureAwait(false);
             if (quiet is null) return stop;
 
             var log = Path.Combine(_folder, "load.log");
@@ -410,7 +410,7 @@ internal sealed class VerifyExecution(string home, VerifySend send, CandidateJob
     }
 
     /// <summary>Waits, holding <paramref name="hold"/>, for a quiet slot: the load then, or the result to answer with.</summary>
-    private async Task<(LoadReading? Quiet, VerifyResult? Stop)> QuietAsync(AdmissionHold hold, IReadOnlyList<string> names, LoadReading seen, VerifyResult ran, CancellationToken ct)
+    private async Task<(LoadReading? Quiet, VerifyResult? Stop)> QuietAsync(AdmissionHold hold, IReadOnlyList<string> names, LoadReading seen, VerifyResult ran, bool timedOut, CancellationToken ct)
     {
         var left = send.Bound - world.Clock.GetElapsedTime(_began);
         var allowed = left <= TimeSpan.Zero ? TimeSpan.Zero : TimeSpan.FromTicks(Math.Min(world.QuietWait.Ticks, left.Ticks / 2));
@@ -427,6 +427,13 @@ internal sealed class VerifyExecution(string home, VerifySend send, CandidateJob
             var waited = world.Clock.GetElapsedTime(started);
             if (waited >= allowed)
             {
+                if (!timedOut)
+                {
+                    var work = LoadFailures.Unrerun(names, seen, waited);
+                    world.Said.WriteLine($"verify: {work}");
+                    return (null, Told(ran, work));
+                }
+
                 var words = LoadFailures.Waited(names, seen, waited);
                 world.Said.WriteLine($"verify: {words}");
                 return (null, Unknown(words) with { Code = VerifyResult.Load });

@@ -132,7 +132,6 @@ test('a failed class runs again alone: after the build and every other group, wi
   };
   const order: string[] = [];
   let running = 0;
-  let mostBeside = 0;
   const seen = new Map<string, number>();
   const exec: Exec = async (command, args) => {
     const what = command === 'dotnet' ? 'driver' : args.find((arg) => arg.includes('.test.ts'))!.replace(/^.*\/(\w+)\.test\.ts$/, '$1');
@@ -141,7 +140,6 @@ test('a failed class runs again alone: after the build and every other group, wi
     const label = times > 1 ? `${what} again` : what;
     order.push(`start ${label}`);
     running += 1;
-    mostBeside = Math.max(mostBeside, running);
     if (label.endsWith('again')) assert.equal(running, 1, `${label} ran beside another run: ${order.join(', ')}`);
     await new Promise((done) => setTimeout(done, what === 'driver' ? 60 : 5));
     running -= 1;
@@ -154,7 +152,7 @@ test('a failed class runs again alone: after the build and every other group, wi
   });
   const firstAgain = Math.min(...['t again', 'c again'].map((label) => order.indexOf(`start ${label}`)));
   for (const done of ['built', 'end driver', 'end t', 'end c']) assert.ok(order.indexOf(done) < firstAgain, `${done} came before the first run again: ${order.join(', ')}`);
-  assert.ok(order.indexOf('end t again') < order.indexOf('start c again') || order.indexOf('end c again') < order.indexOf('start t again'), `the runs again took turns: ${order.join(', ')}`);
+  assert.ok(order.indexOf('end t again') < order.indexOf('start c again'), `the runs again took turns, in the plan's order: ${order.join(', ')}`);
   assert.deepEqual(outcome.flaked.sort(), ['cli|tools/c.test.ts', 'tool-tests|tools/t.test.ts']);
   assert.deepEqual(outcome.red, []);
 }));

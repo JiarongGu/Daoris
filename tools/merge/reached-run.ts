@@ -130,7 +130,7 @@ export async function runPlan(options: RunOptions): Promise<ClassOutcome> {
         hand(failed);
         return;
       }
-      say(`reached: ${group.suite}: ${failed.length} failed, run again alone once, after every other run has ended: ${failed.map((unit) => unit.unit).join(', ')}`);
+      say(`reached: ${group.suite}: ${failed.length} failed, run again alone once, after every other run of this check has ended: ${failed.map((unit) => unit.unit).join(', ')}`);
       const second = await runGroup({ ...group, units: failed }, `reached-${group.suite}-${index + 1}-again`, ready, options);
       const cut = halt?.ended(group) === true;
       for (const unit of failed) {
@@ -158,7 +158,7 @@ export async function runPlan(options: RunOptions): Promise<ClassOutcome> {
     })(),
     ...besideLanes.map((lane) => inTurn(entries.filter(([, group]) => beside(group) && laneOf(group) === lane))),
   ]);
-  for (const each of again) await runAgain(each);
+  for (const each of [...again].sort((a, b) => a.index - b.index)) await runAgain(each);
   const stillFailed = results.flatMap((result) => result.stillFailed);
   const passedAlone = new Set(results.flatMap((result) => result.passedAlone));
   const handed = results.flatMap((result) => result.handed);

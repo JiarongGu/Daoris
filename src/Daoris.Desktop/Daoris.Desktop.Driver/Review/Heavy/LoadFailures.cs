@@ -40,11 +40,7 @@ internal static class LoadFailures
     /// <summary>Whether a text says a test timed out, or its test host hit the hang bound.</summary>
     internal static bool TimedOut(string text) => Timeout.IsMatch(text) || HostHung.IsMatch(text);
 
-    /// <summary>
-    /// The names of the red classes a log's failure is load for, or null where it is not: each red class's own failure says a test timed out, or
-    /// the test host hit the hang bound, which no class's lines name. One red class that failed on anything else is the work's, and the
-    /// failure stands whole.
-    /// </summary>
+    /// <summary>The names of the red classes where every one's own failure says a test timed out, or the test host hit the hang bound; null otherwise. A rerun that fails so under load again, or no quiet slot, leaves such a failure unknown; any other failure is the work's.</summary>
     internal static IReadOnlyList<string>? Timeouts(string log, string marker)
     {
         var red = ReachedVerdict.RedOf(log, marker);
@@ -52,6 +48,7 @@ internal static class LoadFailures
         return HostHung.IsMatch(log) || red.All(id => ReachedVerdict.LinesOf(log, id).Any(Timeout.IsMatch)) ? Names(red) : null;
     }
 
+    /// <summary>The names of every red class a loaded failure puts to the quiet rerun.</summary>
     internal static IReadOnlyList<string>? Red(string log, string marker) => Names(ReachedVerdict.RedOf(log, marker));
 
     /// <summary>The names the red classes are run again by, or null where there are none or one is no plain name, which is never put in a command.</summary>
@@ -98,7 +95,11 @@ internal static class LoadFailures
         $"load: {Classes(names)} failed while the machine was loaded ({seen.Words}) and their rerun ran no class, so nothing says they pass; "
         + "a load failure is no failure of the work and counts no round, so the check is asked again";
 
-    /// <summary>What the record says of classes that failed under load while no quiet slot came.</summary>
+    /// <summary>What the record says of classes that failed by assertion under load while no quiet slot came: the work's, since each failed again alone in the reached run.</summary>
+    internal static string Unrerun(IReadOnlyList<string> names, LoadReading seen, TimeSpan waited) =>
+        $"{Classes(names)} failed while the machine was loaded ({seen.Words}), failed again alone in the reached run, and no quiet slot came in {(int)waited.TotalMinutes} min to run them again, so the failure is the work's";
+
+    /// <summary>What the record says of classes that timed out under load while no quiet slot came.</summary>
     internal static string Waited(IReadOnlyList<string> names, LoadReading seen, TimeSpan waited) =>
         $"load: {Classes(names)} failed while the machine was loaded ({seen.Words}) and no quiet slot came in {(int)waited.TotalMinutes} min to run them again alone; "
         + "a load failure is no failure of the work and counts no round, so the check is asked again";

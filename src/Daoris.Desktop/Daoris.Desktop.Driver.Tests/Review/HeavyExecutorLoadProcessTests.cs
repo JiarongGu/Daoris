@@ -245,6 +245,16 @@ public sealed class HeavyExecutorLoadProcessTests : IAsyncLifetime
     }
 
     [Fact]
+    public async Task An_assertion_failure_with_no_quiet_slot_within_the_bound_is_the_work_s_and_never_asked_again()
+    {
+        var result = await RunAsync(await RepositoryAsync(Declaring("assert", rerun: true)), loadedReads: int.MaxValue, quietWait: TimeSpan.FromMilliseconds(300));
+
+        Assert.Equal(VerifyVerdicts.Failed, result.Verdict);
+        Assert.Contains("no quiet slot came", result.Why);
+        Assert.Equal(["assert main "], Calls());
+    }
+
+    [Fact]
     public async Task No_quiet_slot_within_the_bound_is_unknown_with_the_load_code_and_never_a_failure()
     {
         var result = await RunAsync(await RepositoryAsync(Declaring("timeout", rerun: true)), loadedReads: int.MaxValue, quietWait: TimeSpan.FromMilliseconds(300));
