@@ -49,6 +49,8 @@ internal sealed class WatchRun(
     // tick counts it against the cap and its repository's lock. Retried each tick until the service has answered it once.
     private bool _swept;
 
+    private readonly LandingOnce _landed = new();
+
     // Once, as the loop starts: every repository with a checkout here registered from its line, since a line the person
     // moved outside Daoris is read nowhere else. Beside the first looks rather than before them: a workspace's lines are read with git,
     // seconds of it, and no start should wait on that. A pass the service did not answer is tried again at the next look.
@@ -489,7 +491,7 @@ internal sealed class WatchRun(
                 watch.Harnesses, watch.Usage, watch.Hooks, watch.Events, watch.Browser, Running)
             {
                 Share = Share, Runner = Runner, Stops = Stops, HandsOver = HandsOver, SendsBack = SendsBack, GoesOnLost = GoesOnLost, Log = Log, Noticed = Noticed, Stages = Stages, Reviews = Reviews,
-                Bus = watch.Bus,
+                Bus = watch.Bus, Landed = _landed,
                 Part = part, Wanted = token => WantedAsync(part, token), Makers = run => doors.Nodes?.Workers(run),
                 // An ended graph run whose chain came back here re-arms link 8, which a wake then judges on what is there now.
                 RunReturned = run =>
@@ -529,7 +531,7 @@ internal sealed class WatchRun(
                 watch.Harnesses, watch.Usage, watch.Hooks, watch.Events, watch.Browser, Running)
             {
                 Share = Share, Runner = Runner, Stops = Stops, HandsOver = HandsOver, SendsBack = SendsBack, GoesOnLost = GoesOnLost, Log = Log, Noticed = Noticed,
-                Stages = Stages, Reviews = Reviews, Bus = watch.Bus, ConfigPath = ConfigPath,
+                Stages = Stages, Reviews = Reviews, Bus = watch.Bus, ConfigPath = ConfigPath, Landed = _landed,
             };
         driver.Context.Supervisor = Supervisor;
         driver.Context.Roles = Roles?.Invoke();

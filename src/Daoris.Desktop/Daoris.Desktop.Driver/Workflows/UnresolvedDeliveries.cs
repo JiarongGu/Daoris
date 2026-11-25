@@ -10,8 +10,6 @@ namespace Daoris.Driver;
 [LookPass("landing", LookPhase.After)]
 internal sealed class UnresolvedDeliveries(ILandingWiring wiring) : ILookPass
 {
-    private bool _settled;
-
     public Task RunAsync(LookRound round, CancellationToken ct) => wiring.Stages.TimeAsync("landing", () => SettleAsync(round.Events, ct));
 
     private async Task SettleAsync(List<string> events, CancellationToken ct)
@@ -30,17 +28,28 @@ internal sealed class UnresolvedDeliveries(ILandingWiring wiring) : ILookPass
     }
 
     /// <summary>
-    /// A restart settles by phase, before any new start: every delivery left unresolved, once per driver. What is held for the person, or
+    /// A restart settles by phase, before any new start: every delivery left unresolved, once per watch (<see cref="LandingOnce"/>), and again at each look while one is held to the next look or the settlement failed. What is held for the person, or
     /// could not be read, is said; a delivery settled or going on says nothing, since its unit's next landing goes on from it.
     /// </summary>
     private async Task SettleDeliveriesAsync(List<string> events, CancellationToken ct)
     {
-        if (_settled) return;
-        _settled = true;
-        var store = new DeliveryStore(wiring.Home);
-        foreach (var settled in await new DeliveryReconciler(store, wiring.Home, DeliveryReconciler.Checkouts(wiring.Home)).StartAsync(ct).ConfigureAwait(false))
+        if (!wiring.Landed.Take()) return;
+        var clean = false;
+        try
         {
-            if (settled.Standing is DeliveryStandings.Unknown or DeliveryStandings.Held) events.Add(wiring.Lines.Retry("landing", $"landing  {settled.Said}"));
+            var store = new DeliveryStore(wiring.Home);
+            var left = false;
+            foreach (var settled in await new DeliveryReconciler(store, wiring.Home, DeliveryReconciler.Checkouts(wiring.Home)).StartAsync(ct).ConfigureAwait(false))
+            {
+                if (settled.Standing is DeliveryStandings.Unknown or DeliveryStandings.Held) events.Add(wiring.Lines.Retry("landing", $"landing  {settled.Said}"));
+                left |= settled.Standing == DeliveryStandings.Held;
+            }
+
+            clean = !left;
+        }
+        finally
+        {
+            if (!clean) wiring.Landed.Release();
         }
     }
 }
