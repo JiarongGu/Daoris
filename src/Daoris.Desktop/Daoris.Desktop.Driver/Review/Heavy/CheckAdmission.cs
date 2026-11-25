@@ -155,6 +155,18 @@ public static class CheckAdmission
 {
     public const string DefaultGate = "heavy";
 
+    /// <summary>What one more check run needs where the machine is quiet: the largest need learned for a check's gate here, else the test kind's declared cost.</summary>
+    public static long QuietNeed(string home)
+    {
+        var learned = LearnedNeeds.Read(LearnedNeeds.PathOf(home))
+            .Where(pair => pair.Key.EndsWith("|" + LoadKind.Test + "|reached", StringComparison.Ordinal))
+            .Select(pair => LearnedNeeds.Need(pair.Value, LoadKind.Declared(LoadKind.Test)))
+            .Where(need => need.Source == NeedReading.Learned)
+            .Select(need => need.Cost.Memory)
+            .ToList();
+        return learned.Count > 0 ? learned.Max() : LoadKind.Declared(LoadKind.Test).Memory;
+    }
+
 
     /// <summary>
     /// How often a run tries for the admission's lock before it waits as for a slot and looks again: spun, the later tries a millisecond's
