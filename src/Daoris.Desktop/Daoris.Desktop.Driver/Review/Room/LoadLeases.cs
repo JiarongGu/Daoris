@@ -100,7 +100,7 @@ public static class LoadLeases
     {
         try
         {
-            using var document = JsonDocument.Parse(File.ReadAllText(path));
+            using var document = JsonDocument.Parse(AtomicFile.ReadText(path));
             return [.. document.RootElement.GetProperty("leases").EnumerateArray().Select(lease => new LoadLease(
                 lease.GetProperty("id").GetString()!, lease.GetProperty("project").GetString()!, lease.GetProperty("kind").GetString()!, lease.GetProperty("name").GetString()!,
                 lease.TryGetProperty("owner", out var owner) ? owner.GetString() : null,

@@ -73,7 +73,7 @@ public static class LearnedNeeds
         var all = new Dictionary<string, IReadOnlyList<RunSample>>(StringComparer.Ordinal);
         try
         {
-            using var document = JsonDocument.Parse(File.ReadAllText(path));
+            using var document = JsonDocument.Parse(AtomicFile.ReadText(path));
             if (!document.RootElement.TryGetProperty("needs", out var needs) || needs.ValueKind != JsonValueKind.Object) return all;
             foreach (var entry in needs.EnumerateObject())
             {

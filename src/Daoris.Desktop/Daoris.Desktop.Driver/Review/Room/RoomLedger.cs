@@ -78,7 +78,7 @@ internal static class RoomLedger
     {
         try
         {
-            using var document = JsonDocument.Parse(File.ReadAllText(PathOf(home)));
+            using var document = JsonDocument.Parse(AtomicFile.ReadText(PathOf(home)));
             var root = document.RootElement;
             var limit = root.GetProperty("limit");
             return new RoomState(

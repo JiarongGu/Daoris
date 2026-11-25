@@ -30,7 +30,7 @@ namespace Daoris.Driver;
 /// all before the harness runs (<see cref="PieceLauncher"/>). The driver opens that own job by its name afterwards (<see cref="OpenHolding"/>)
 /// and reads and ends the session through it.</para>
 /// </remarks>
-public sealed partial class ProcessJob : IDisposable
+public sealed class ProcessJob : IDisposable
 {
     private IntPtr _handle;
 
@@ -214,6 +214,28 @@ public sealed partial class ProcessJob : IDisposable
                 {
                     Marshal.FreeHGlobal(buffer);
                 }
+            }
+        }
+    }
+
+    /// <summary>The most memory the job's processes have held at once, in bytes; null where there is no job or it did not read.</summary>
+    public long? PeakMemory
+    {
+        get
+        {
+            var handle = Volatile.Read(ref _handle);
+            if (handle == IntPtr.Zero) return null;
+            var size = Marshal.SizeOf<JobObjectExtendedLimitInformation>();
+            var buffer = Marshal.AllocHGlobal(size);
+            try
+            {
+                return QueryInformationJobObject(handle, ExtendedLimitInformation, buffer, (uint)size, IntPtr.Zero)
+                    ? (long)Marshal.PtrToStructure<JobObjectExtendedLimitInformation>(buffer).PeakJobMemoryUsed
+                    : null;
+            }
+            finally
+            {
+                Marshal.FreeHGlobal(buffer);
             }
         }
     }
