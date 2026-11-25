@@ -3,7 +3,7 @@
  * runs each .NET group on that build (`--no-build --no-restore`; a project whose build failed has its classes failed unrun), then each
  * end-to-end or Process group; beside it each light command (`runsBeside`) has a lane of its own, its chunks in turn. The outcome reads
  * the groups back in the plan's order. Each class its report shows passing is recorded under its key; a group that failed has its
- * failed classes run again alone once, so a pass alone is a flake, and a failure is main's red or new (`reached-classify.ts`). A
+ * failed classes run again alone once, after every lane has ended and one group at a time (so nothing beside them loads the machine), so a pass alone is a flake, and a failure is main's red or new (`reached-classify.ts`). A
  * flake is never recorded as a pass. Each build, and each suite's discovery and run, is a step on the run's clock
  * (`reached-steps.ts`). The run's counts, the projects it left built and its steps end as one line the merge reads.
  */
@@ -71,6 +71,8 @@ async function runGroup(group: ReachedGroup, name: string, ready: ReadonlySet<st
   return { passed, failed: status !== 0 && failed.length === 0 ? group.units : failed };
 }
 
+type Again = { group: ReachedGroup; index: number; failed: ReachedGroup['units'] };
+
 type GroupResult = { ran: number; stillFailed: FailedUnit[]; passedAlone: string[]; handed: string[] };
 
 /** A light suite's group (Vitest's, `node --test`'s; no end-to-end or Process suite's) needs nothing the build makes. */
@@ -84,6 +86,7 @@ export async function runPlan(options: RunOptions): Promise<ClassOutcome> {
   const { halt } = options;
   let builds: { ready: string[]; failed: ReadonlyMap<string, string> } = { ready: [], failed: new Map() };
   let ready = new Set<string>();
+  const again: Again[] = [];
   const results: GroupResult[] = plan.groups.map(() => ({ ran: 0, stillFailed: [], passedAlone: [], handed: [] }));
   const runOne = async (group: ReachedGroup, index: number): Promise<void> => {
     const result = results[index]!;
@@ -114,12 +117,24 @@ export async function runPlan(options: RunOptions): Promise<ClassOutcome> {
         return;
       }
       result.ran += group.units.length;
-      if (!first.failed.length) return;
-      say(`reached: ${group.suite}: ${first.failed.length} failed, run again alone once: ${first.failed.map((unit) => unit.unit).join(', ')}`);
-      const again = await runGroup({ ...group, units: first.failed }, `reached-${group.suite}-${index + 1}-again`, ready, options);
+      if (first.failed.length) again.push({ group, index, failed: first.failed });
+    });
+  };
+  /** The classes a group's first run failed run again alone: after every build and run of the plan has ended, one group at a time, so nothing beside them shares their machine. */
+  const runAgain = async ({ group, index, failed }: Again): Promise<void> => {
+    const result = results[index]!;
+    const hand = (units: readonly { suite: string; unit: string }[]): void => { result.handed.push(...units.map(unitId)); };
+    await place(group, async () => {
+      if (halt?.asked()) {
+        result.ran -= failed.length;
+        hand(failed);
+        return;
+      }
+      say(`reached: ${group.suite}: ${failed.length} failed, run again alone once, after every other run has ended: ${failed.map((unit) => unit.unit).join(', ')}`);
+      const second = await runGroup({ ...group, units: failed }, `reached-${group.suite}-${index + 1}-again`, ready, options);
       const cut = halt?.ended(group) === true;
-      for (const unit of first.failed) {
-        if (again.passed.includes(unit) && !again.failed.includes(unit)) result.passedAlone.push(unitId(unit));
+      for (const unit of failed) {
+        if (second.passed.includes(unit) && !second.failed.includes(unit)) result.passedAlone.push(unitId(unit));
         else if (cut) {
           result.ran -= 1;
           hand([unit]);
@@ -143,6 +158,7 @@ export async function runPlan(options: RunOptions): Promise<ClassOutcome> {
     })(),
     ...besideLanes.map((lane) => inTurn(entries.filter(([, group]) => beside(group) && laneOf(group) === lane))),
   ]);
+  for (const each of again) await runAgain(each);
   const stillFailed = results.flatMap((result) => result.stillFailed);
   const passedAlone = new Set(results.flatMap((result) => result.passedAlone));
   const handed = results.flatMap((result) => result.handed);

@@ -119,6 +119,46 @@ test('a light suite\'s groups run beside the build and the .NET runs, which need
   assert.equal(outcome.ran, 6);
 }));
 
+test('a failed class runs again alone: after the build and every other group, with no run beside it', () => withStore(async (store, root) => {
+  const dotnetUnit = (name: string): ReachedUnit => ({ suite: 'driver', kind: 'dotnet', unit: `D.${name}`, name, file: `src/D.Tests/${name}.cs`, project: 'src/D.Tests' });
+  const nodeUnit = (suite: string, name: string): ReachedUnit => ({ suite, kind: 'node', unit: `tools/${name}.test.ts`, name, file: `tools/${name}.test.ts` });
+  const plan: ReachedPlan = {
+    groups: [
+      { runner: 'dotnet', suite: 'driver', project: 'src/D.Tests', settings: null, units: [dotnetUnit('ATests')] },
+      { runner: 'node', suite: 'tool-tests', units: [nodeUnit('tool-tests', 't')] },
+      { runner: 'node', suite: 'cli', units: [nodeUnit('cli', 'c')] },
+    ],
+    left: {}, reached: 3, replayed: {},
+  };
+  const order: string[] = [];
+  let running = 0;
+  let mostBeside = 0;
+  const seen = new Map<string, number>();
+  const exec: Exec = async (command, args) => {
+    const what = command === 'dotnet' ? 'driver' : args.find((arg) => arg.includes('.test.ts'))!.replace(/^.*\/(\w+)\.test\.ts$/, '$1');
+    const times = (seen.get(what) ?? 0) + 1;
+    seen.set(what, times);
+    const label = times > 1 ? `${what} again` : what;
+    order.push(`start ${label}`);
+    running += 1;
+    mostBeside = Math.max(mostBeside, running);
+    if (label.endsWith('again')) assert.equal(running, 1, `${label} ran beside another run: ${order.join(', ')}`);
+    await new Promise((done) => setTimeout(done, what === 'driver' ? 60 : 5));
+    running -= 1;
+    order.push(`end ${label}`);
+    return what === 't' || what === 'c' ? (times === 1 ? 1 : 0) : 0;
+  };
+  const outcome = await runPlan({
+    root, plan, keys: new Map(), store, exec, say: () => undefined, mainRedOf: () => false,
+    build: async () => { order.push('build'); await new Promise((done) => setTimeout(done, 30)); order.push('built'); return { ready: ['src/D.Tests'], failed: new Map() }; },
+  });
+  const firstAgain = Math.min(...['t again', 'c again'].map((label) => order.indexOf(`start ${label}`)));
+  for (const done of ['built', 'end driver', 'end t', 'end c']) assert.ok(order.indexOf(done) < firstAgain, `${done} came before the first run again: ${order.join(', ')}`);
+  assert.ok(order.indexOf('end t again') < order.indexOf('start c again') || order.indexOf('end c again') < order.indexOf('start t again'), `the runs again took turns: ${order.join(', ')}`);
+  assert.deepEqual(outcome.flaked.sort(), ['cli|tools/c.test.ts', 'tool-tests|tools/t.test.ts']);
+  assert.deepEqual(outcome.red, []);
+}));
+
 test('a class that fails and passes alone is a flake: said, counted, and not recorded as a pass', () => withStore(async (store, root) => {
   const run = exits([1, 0]);
   const lines: string[] = [];
