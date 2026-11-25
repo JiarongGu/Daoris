@@ -595,7 +595,7 @@ test('--check exits 1 naming each stale file and the command that writes it, and
   assert.equal(written.status, 0, written.stderr);
   const fresh = run('--check');
   assert.equal(fresh.status, 0, fresh.stderr);
-  assert.match(fresh.stdout, /is fresh, 7 files/);
+  assert.match(fresh.stdout, /is fresh, 8 files/);
   assert.equal(run('--chek').status, 2, 'a word it does not know is a usage error');
   fx.cleanup();
 });
