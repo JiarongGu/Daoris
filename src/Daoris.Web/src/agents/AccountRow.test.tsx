@@ -8,7 +8,7 @@ import type { ToolDoor } from './tools';
 import { ACCOUNT_COLUMNS, AccountRow } from './AccountRow';
 import { type AgentActs, AgentPage } from './AgentPage';
 import type { AccountSaid } from '../settings/accounts/accounts';
-import { accountState, type WindowCell } from './agents';
+import { accountState, readLine, stateWhen, type WindowCell } from './agents';
 import { CLAUDE_USE, DOORS, READ, toolsOf } from './agentsFixtures';
 
 // An account's row as a person reads it: what its agent last said
@@ -242,6 +242,15 @@ describe('an account’s row without a pointer (ACCTUX2)', () => {
     await userEvent.click(within(on).getByRole('button', { name: /More for/ }));
     await userEvent.click(await screen.findByRole('menuitem', { name: 'Switch off' }));
     expect(switched.at(-1)).toEqual(['account-2', true, 'account-2']);
+  });
+
+  /** An off account is read as before: its time still carries the tip that says when it is read. */
+  it('keeps the read-time tip on an account that is off', async () => {
+    const state = accountState({ login: 'in', read: READ, off: true }, null, true);
+    render(<ul><AccountRow name="spare" state={state} menu={[]} /></ul>);
+
+    await userEvent.hover(screen.getByText(stateWhen(state)!));
+    expect((await screen.findAllByText(readLine(state)!)).length).toBeGreaterThan(0);
   });
 
   /** An account that is off and signed out says both, and its sign-in is still one press away in its ⋯ beside the one act, *Switch on*. */
