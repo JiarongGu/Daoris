@@ -416,6 +416,8 @@ public sealed class WorkPerformer(NodeRecordFiles records, IWorkPerformPort port
             {
                 case ReconcileStates.Done when answer.Outcome is { } outcome:
                     return Outcomes.Outcome(record, current, node, outcome, generation);
+                case ReconcileStates.Done when check && isCurrent:
+                    return UnrunChecks.Again(record, current, node, generation, now, NoOutcome, "its executor said it was done and named no verdict");
                 case ReconcileStates.Done:
                     return Hold(record, current, NoOutcome);
                 case ReconcileStates.Failed:
@@ -439,8 +441,8 @@ public sealed class WorkPerformer(NodeRecordFiles records, IWorkPerformPort port
                     // A check stopped meanwhile answers as a stale attempt's, settling it and moving nothing.
                     var stopped = With(record, current, current with { State = AttemptStates.Settled, Outcome = WorkStates.Unknown, Code = answer.Outcome?.Code, Generation = generation });
                     return (stopped with { Statuses = With(stopped.Statuses, NodeLifecycle.Reconciled(status, current.Attempt)) }, new WorkPerformed(unit, node.Id, PerformedWhat.Stale));
-                case ReconcileStates.Unknown when check && isCurrent && UnrunChecks.Is(answer.Outcome?.Code):
-                    return UnrunChecks.Again(record, current, node, generation, now, answer.Outcome?.Code, answer.Outcome?.Evidence?.Message);
+                case ReconcileStates.Unknown when check && isCurrent && UnrunChecks.Is(answer.Outcome?.Code ?? WorkStates.Unknown):
+                    return UnrunChecks.Again(record, current, node, generation, now, answer.Outcome?.Code ?? WorkStates.Unknown, answer.Outcome?.Evidence?.Message);
                 case ReconcileStates.Unknown when check && isCurrent && answer.Outcome?.Code == VerifyResult.Unaccounted:
                     return (null, new WorkPerformed(unit, node.Id, PerformedWhat.Unknown, VerifyResult.Unaccounted) { Detail = answer.Outcome?.Evidence?.Message });
                 default:

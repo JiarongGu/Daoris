@@ -397,6 +397,7 @@ public sealed class NodeRuntime(
             // held attempt, applied under the declaration governing now, before any new attempt.
             done.AddRange(await _performer.CheckLinksAsync(Declared, sends, ct).ConfigureAwait(false));
             done.AddRange(ChangedChecks.Again(records, unit => RunChecks.StandingOf(records.Home, unit), clock()));
+            done.AddRange(UnrunChecks.Released(records, Declared, clock()));
             done.AddRange(_performer.Resolve(Declared));
             // The person's word on a held close, a close's recovery, before the closer sends any close again below; judged on the quests this
             // pass read, so a word on a close for a submission reopened or replaced since never reaches the next one.

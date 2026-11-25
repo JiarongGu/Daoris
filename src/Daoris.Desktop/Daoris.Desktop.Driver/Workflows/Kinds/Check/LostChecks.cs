@@ -2,16 +2,18 @@ namespace Daoris.Driver;
 
 /// <summary>
 /// A check whose verification's process is gone when Daoris asks after it: no result and no job of it left (a restart, an update, a crash
-/// cut it off; an update or a stop of driving that closed its executor says so in its folder and is no loss to count). It is run once more under its key, as the same attempt; lost again with nothing to explain it, it is held for the person with the tail of its newest
-/// log, never sent a third time by itself and never taken as a red of the work. Held, it holds no slot: the machine's verification and
-/// heavy-run slots are its process's, gone with it, and the run's <c>again</c> asks it anew (<see cref="UnknownChecks"/>).
+/// cut it off; an update or a stop of driving that closed its executor says so in its folder and is no loss to count). It is run once more under its key, as the same attempt; lost again with nothing to explain it, it settles with the tail of its newest
+/// log and is asked again as a new attempt (<see cref="UnrunChecks"/>, held only once its asks are spent), never sent a third time under its
+/// key or taken as a red of the work. It holds no slot: the machine's verification and heavy-run slots are its process's, gone with it.
 /// </summary>
 public static class LostChecks
 {
-    /// <summary>Why a check is held: its process lost on its rerun too.</summary>
+    /// <summary>Why a check is asked again as a new attempt: its process lost on its rerun too.</summary>
     public const string Code = "lost";
 
-    /// <summary>The sends an attempt takes before a lost one is held: its first, and the one rerun.</summary>
+    public const string Lost = "its verification's process was lost on its rerun too, with nothing to say why";
+
+    /// <summary>The sends an attempt takes under its key before a lost one is asked again as a new attempt: its first, and the one rerun.</summary>
     public const int Sends = 2;
 
     /// <summary>The lines of its newest log kept with it, the last ones.</summary>
@@ -22,7 +24,7 @@ public static class LostChecks
 
     /// <summary>
     /// <paramref name="attempt"/>, the current attempt of <paramref name="node"/> whose executor found no result and no job of it: sent again
-    /// under its key while it has sent fewer than <see cref="Sends"/>, else held for the person with its log's tail.
+    /// under its key while it has sent fewer than <see cref="Sends"/>, else settled with its log's tail and asked again as a new attempt.
     /// </summary>
     internal static (NodeRecord? Next, WorkPerformed Result) Settle(
         NodeRecord record, NodeAttempt attempt, NodeDeclaration node, NodeStatus status, int generation, DateTimeOffset now, string home)
@@ -35,7 +37,7 @@ public static class LostChecks
                 new WorkPerformed(record.Unit, node.Id, PerformedWhat.Redelivered));
         }
 
-        return WorkPerformer.Hold(record, attempt with { Generation = generation, Tail = Tail(home, record.Unit, attempt.Call.Invocation) }, Code);
+        return UnrunChecks.Again(record, attempt with { Tail = Tail(home, record.Unit, attempt.Call.Invocation) }, node, generation, now, Code, Lost);
     }
 
     /// <summary>
