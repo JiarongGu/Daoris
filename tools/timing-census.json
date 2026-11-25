@@ -1,0 +1,60 @@
+{
+  "kept": {
+    "src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Agents/AcpBackgroundTests.cs": {
+      "count": 1,
+      "why": "a lower bound on a delay the session itself waits out in real time (the go-on goes a quiet period after the work ends); a loaded machine waits longer, never less, so it cannot flake, and the session has no clock seam to move"
+    },
+    "src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Bus/BusQueueTests.cs": {
+      "count": 1,
+      "why": "the queue's rate cap is a count over a span (at most sixty frames a second); load only widens the span the frames are stamped over, so the relation cannot fail on a slow machine"
+    },
+    "src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Events/ChangeWatchProcessTests.cs": {
+      "count": 1,
+      "why": "the claim is the watch's own debounce cap, a bound of the product measured in a Process test beside a real file watcher; the bound is also said in the output line, and no seam moves the watcher's clock"
+    },
+    "src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Loop/DriverWatchTopicsTests.cs": {
+      "count": 1,
+      "why": "the deadline is a count per second of the loop's real time (at most one a second and one more); load only lengthens the elapsed time, so the count it bounds cannot be over it"
+    },
+    "src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Loop/SessionChangeBenchProcessTests.cs": {
+      "count": 2,
+      "why": "a bench at scale: a change laid over the kept list must cost less than reading the whole list and stay inside its budget; the measured operation is the behaviour, run alone as a Process test, and the line it writes says both times"
+    },
+    "src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Store/DesktopStoreTests.cs": {
+      "count": 1,
+      "why": "a lower bound: the store waits the five seconds its design says before it refuses a busy write; a loaded machine waits longer, never less, and the wait is SQLite's own busy timeout, which no clock seam moves"
+    },
+    "src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/WorkOrders/SessionListBudgetProcessTests.cs": {
+      "count": 1,
+      "why": "a bench at scale: the session list over a large home must stay inside its budget, the operation's own time and not this test's; run alone as a Process test"
+    },
+    "src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Workplace/Deps/OpeningShapeProcessTests.cs": {
+      "count": 2,
+      "why": "a bench at scale: a session's opening, alone and four at once, must stay inside its budget over a real repository; the operation's own time is the behaviour, run alone as a Process test"
+    },
+    "src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Workplace/DownloadClearingTests.cs": {
+      "count": 1,
+      "why": "the claim is that a pin is not made to wait out the lock a clearing holds, a wait of real time inside the settings store's lock that no seam moves; without it the pin would pass after the wait"
+    },
+    "src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Workplace/RefWatchProcessTests.cs": {
+      "count": 1,
+      "why": "the claim is the watch's own debounce, a bound of the product measured in a Process test beside real git; the time is said in the output line, and no seam moves the watcher's clock"
+    },
+    "src/Daoris.Desktop/Daoris.Desktop.Modules.Tests/Loop/HostSupervisorTests.cs": {
+      "count": 1,
+      "why": "a lower bound: a host that ignores its input ending is killed only after the stop bound, a real process the supervisor waits on; a loaded machine waits longer, never less"
+    },
+    "src/Daoris.Desktop/Daoris.Desktop.Modules.Tests/Loop/SessionListRouteProcessTests.cs": {
+      "count": 1,
+      "why": "a bench at scale: the route's list over a large home must stay inside its budget, the operation's own time; run alone as a Process test"
+    },
+    "src/Daoris.Desktop/Daoris.Desktop.Modules.Tests/Loop/UsageStateSliceTests.cs": {
+      "count": 1,
+      "why": "the claim is a wake against the slice's fifteen-second period: a push that came only with the period proves no wake, and the slice's period is set by the loop, with no seam the test can move"
+    },
+    "src/Daoris.Service/Daoris.Service.Tests/Sessions/SaidSettledMeasureTests.cs": {
+      "count": 1,
+      "why": "a measurement at scale: its test says what each call took and fails only when a call takes seconds, the order of a hung store and no machine's load"
+    }
+  }
+}

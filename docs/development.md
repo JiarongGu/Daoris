@@ -237,7 +237,7 @@ file, the declarations test every `.d.mts` and script beside it), so `node tools
 and the merge's `reached` gate) runs it for a diff that touches those paths. A declared path is one read from the test, so no
 suite's bound leaves it out, and it reaches the test even where the census cannot bound its reach (a computed import). Every
 file of a declared test set (below) is a unit of the set's suite, run from the set's folder. The scripts (`partials`, `read-shares`,
-`optional-locks`, `live-logins`, `test-patience`, `tool-test-census`, `unit-pure`, the layers' counts) are steps of `verify:checks`, which `npm
+`optional-locks`, `live-logins`, `test-patience`, `tool-test-census`, `timing-census`, `unit-pure`, the layers' counts) are steps of `verify:checks`, which `npm
 run quick` runs whole. A census that reads a place its test does not name is a defect of the test: add the line. Each of the six
 reds that landed on 2026-11-17 and 18 past a green merge is replayed in `tools/merge/missed-reds.test.ts` (MAINRED1).
 

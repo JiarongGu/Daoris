@@ -1,7 +1,7 @@
 {
   "version": 1,
   "canonVersion": "0.0.1",
-  "canonDigest": "0e8245149c0e0c18a8f781d4653746546e354f59815b052a690ec75f888ba823",
+  "canonDigest": "1fc1b94268bf45ae7db11eaf3d00abbfd3cd582c0ca5aa6e3b5c0ab90840f6e5",
   "source": "daoris@0.0.1",
   "entries": [
     {
@@ -124,6 +124,13 @@
       "sha256": "845e9dc6bcf5d7ca0183ed05fc27b2618b09e8613f2d7cc8c15d55ac26e406eb"
     },
     {
+      "pack": "core",
+      "source": "core/knowledge/test-worth.md",
+      "target": "knowledge/test-worth.md",
+      "canonVersion": "0.0.1",
+      "sha256": "e5b444a7c1e67f74192f8801359800a844c993444faf09a30d562eed3b3d943e"
+    },
+    {
       "pack": "localized-ui",
       "source": "packs/localized-ui/knowledge/translation-parity.md",
       "target": "knowledge/translation-parity.md",
@@ -143,7 +150,7 @@
       "source": "core/rules/how-a-change-goes.md",
       "target": "rules/how-a-change-goes.md",
       "canonVersion": "0.0.1",
-      "sha256": "1eaed8f804cee42062a0801bb9f286f6bc30e2e0f130bca4a1537f438b678687",
+      "sha256": "e1555e22996c54e1a4111efc1b5589672b2e860da8b24e6f48d31a2ae3c4876a",
       "in": "AGENTS.md"
     },
     {

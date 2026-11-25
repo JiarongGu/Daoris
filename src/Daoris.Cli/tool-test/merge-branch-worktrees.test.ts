@@ -102,18 +102,17 @@ test('the newest write of a worktree is read from its top level, its folders\' c
     const path = join(dirname(repo.root), 'tree');
     git(repo.root, 'worktree', 'add', '--quiet', '-b', 'w', path, 'main');
     age(path, 300);
-    const idle = (Date.now() - tool.newestWrite(path)) / 60_000;
-    assert.ok(idle >= 299 && idle < 302, `all idle: ${idle}`);
+    assert.ok(tool.newestWrite(path) <= Date.now() - 270 * 60_000, 'an aged tree has no write in four and a half hours');
     const touched = (target: string) => {
       age(path, 300);
       writeFileSync(target, 'x\n');
-      return (Date.now() - tool.newestWrite(path)) / 60_000;
+      return tool.newestWrite(path) > Date.now() - 270 * 60_000;
     };
-    assert.ok(touched(join(path, 'top.txt')) < 2, 'a file at the top');
-    assert.ok(touched(join(path, 'src', 'b.ts')) < 2, 'a file in a folder');
+    assert.ok(touched(join(path, 'top.txt')), 'a file at the top');
+    assert.ok(touched(join(path, 'src', 'b.ts')), 'a file in a folder');
     const gitdir = /^gitdir: (.+)$/m.exec(readFileSync(join(path, '.git'), 'utf8'))![1]!.trim();
-    assert.ok(touched(join(gitdir, 'HEAD')) < 2, "the worktree's HEAD");
-    assert.ok(touched(join(gitdir, 'index')) < 2, "the worktree's index");
+    assert.ok(touched(join(gitdir, 'HEAD')), "the worktree's HEAD");
+    assert.ok(touched(join(gitdir, 'index')), "the worktree's index");
     assert.equal(tool.newestWrite(join(path, 'missing')), 0, 'a folder that is not there has no write');
   } finally {
     repo.cleanup();

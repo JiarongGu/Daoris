@@ -1,7 +1,7 @@
 {
   "version": 1,
   "canonVersion": "0.0.1",
-  "canonDigest": "ec8fb51181bbab919a6812fe1272ef89e87698b3363237396620f9d9d6905dcc",
+  "canonDigest": "1fc1b94268bf45ae7db11eaf3d00abbfd3cd582c0ca5aa6e3b5c0ab90840f6e5",
   "source": "daoris@0.0.1",
   "entries": [
     {
@@ -125,10 +125,17 @@
     },
     {
       "pack": "core",
+      "source": "core/knowledge/test-worth.md",
+      "target": "knowledge/test-worth.md",
+      "canonVersion": "0.0.1",
+      "sha256": "e5b444a7c1e67f74192f8801359800a844c993444faf09a30d562eed3b3d943e"
+    },
+    {
+      "pack": "core",
       "source": "core/rules/every-session.md",
       "target": "rules/every-session.md",
       "canonVersion": "0.0.1",
-      "sha256": "1bf75fd21ab73db2f3799278038a9654e811d0e5206fce300b720c69909b5280",
+      "sha256": "0d4f35cd59261504d0ba811d21287b428460c8c82d3e61784ba22ea5cd38bcd6",
       "in": "AGENTS.md"
     },
     {
@@ -136,7 +143,7 @@
       "source": "core/rules/how-a-change-goes.md",
       "target": "rules/how-a-change-goes.md",
       "canonVersion": "0.0.1",
-      "sha256": "1eaed8f804cee42062a0801bb9f286f6bc30e2e0f130bca4a1537f438b678687",
+      "sha256": "e1555e22996c54e1a4111efc1b5589672b2e860da8b24e6f48d31a2ae3c4876a",
       "in": "AGENTS.md"
     },
     {
