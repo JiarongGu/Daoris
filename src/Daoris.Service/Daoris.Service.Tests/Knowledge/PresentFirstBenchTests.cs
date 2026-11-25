@@ -8,7 +8,7 @@ namespace Daoris.Service.Tests;
 /// The read-path bench's questions (<c>tools/read-path-bench-questions.json</c>) asked of this repository as it is,
 /// through the deployment a workspace's own server is: one checkout, its <c>docs/</c> a section each, its index,
 /// SQLite, words only. A present question's area document answers first for most of them, and a history question's
-/// record is still within its first three. Each run writes its scorecard, the words' own rank beside it.
+/// record is within its first three; one naming <c>before</c> is the floor bench's. Each run writes a scorecard, the words' rank beside it.
 /// </summary>
 [Trait(Category.Name, Category.Process)]
 public sealed class PresentFirstBenchTests(PresentFirstBenchTests.Checkout checkout, ITestOutputHelper output)
@@ -61,6 +61,7 @@ public sealed class PresentFirstBenchTests(PresentFirstBenchTests.Checkout check
         var (first, withinThree, wordsFirst) = (0, 0, 0);
         foreach (var item in checkout.Questions.GetProperty(set).EnumerateArray())
         {
+            if (item.TryGetProperty("before", out _)) continue;
             var question = item.GetProperty("question").GetString()!;
             var right = item.GetProperty("answer").EnumerateArray().Select(path => path.GetString()).ToHashSet();
             // Local only, as knowledge_search asks unless told otherwise.

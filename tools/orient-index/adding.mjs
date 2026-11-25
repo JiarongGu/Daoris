@@ -46,14 +46,14 @@ function sectionOf(text) {
 
 /**
  * `docs/index/adding.md`: every area's *Adding to it* rows in one page, a heading per kind (`Add <kind>`, so a words search for
- * "add a machine setting" meets the heading) in the order of the kind's words, so "where does a new X go" is one read.
+ * "add a machine setting" meets the heading) over a one-row table (the knowledge server titles that row by its kind), in the order of the kind's words, so "where does a new X go" is one read.
  * A row's cells are copied as the area writes them with its area's path after them; the rule a row points at stays in its area.
  */
 export function addingPage(ctx) {
   const out = [
     '# Adding to it: where a new kind of thing goes',
     '',
-    `${GENERATED} Each heading is one kind of addition a part takes, its lines copied from its area document's \`## ${ADDING}\`: the file or table that holds it, the registration it needs and what fails until it is there. The rule behind a kind is in its area, never restated here.`,
+    `${GENERATED} Each heading is one kind of addition a part takes, its row copied from its area document's \`## ${ADDING}\`: the file or table that holds it, the registration it needs and what fails until it is there. The rule behind a kind is in its area, never restated here.`,
   ];
   const files = areaFiles(ctx);
   if (!files.length) {
@@ -74,8 +74,8 @@ export function addingPage(ctx) {
   }
   const byKind = (row) => row.cells[0].toLowerCase().replace(/^(an?|the) /, '');
   rows.sort((a, b) => compare(byKind(a), byKind(b)) || compare(a.path, b.path) || a.line - b.line);
-  for (const { cells: [kind, place, registered, fails], path } of rows) {
-    out.push('', `### Add ${kind}`, '', `- **Place:** ${place}`, `- **Registered by:** ${registered}`, `- **Fails until:** ${fails}`, `- **Area:** \`${path}\``);
+  for (const { cells, path } of rows) {
+    out.push('', `### Add ${cells[0]}`, '', '| Kind | Place | Registered by | Fails until | Area |', '|---|---|---|---|---|', `| ${cells.join(' | ')} | \`${path}\` |`);
   }
   if (refused.length) {
     out.push('', '## Rows read wrong', '');

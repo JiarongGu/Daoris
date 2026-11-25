@@ -332,7 +332,8 @@ test("the gathered page lists each area's rows by kind, each with its area, and 
   assert.deepEqual(page.split('\n').filter((line) => line.startsWith('### ')), ['### Add a catalogue key', '### Add a gate', '### Add a route']);
   const gate = page.slice(page.indexOf('### Add a gate'), page.indexOf('### Add a route')).trim().split('\n');
   assert.deepEqual(gate, [
-    '### Add a gate', '', '- **Place:** `daoris.gates.json`', '- **Registered by:** its row', '- **Fails until:** `GatesTests`', '- **Area:** `docs/areas/gates.md`',
+    '### Add a gate', '', '| Kind | Place | Registered by | Fails until | Area |', '|---|---|---|---|---|',
+    '| a gate | `daoris.gates.json` | its row | `GatesTests` | `docs/areas/gates.md` |',
   ]);
   assert.match(page, /no `## Adding to it`: `docs\/areas\/bare\.md`/, 'the area without a section is named, so it is not mistaken for one that takes nothing');
 });
@@ -342,7 +343,7 @@ test('a section is read to the next heading, a row of another shape is named, an
     'odd.md': ['# Odd', '', '## Adding to it', '', 'Nothing is added here.', '', ...TABLE_HEAD, '| only two | cells |', '| a kind | `p` | `r` | `t` |', '', '## Next', '', '| a kind | `outside` | `x` | `y` |'].join('\n'),
   });
   const page = planIndex(crooked.at, crooked.files).get('docs/index/adding.md');
-  assert.match(page, /### Add a kind\n\n- \*\*Place:\*\* `p`\n- \*\*Registered by:\*\* `r`\n- \*\*Fails until:\*\* `t`\n- \*\*Area:\*\* `docs\/areas\/odd\.md`/);
+  assert.match(page, /### Add a kind\n\n\| Kind \|[^\n]*\n\|---[^\n]*\n\| a kind \| `p` \| `r` \| `t` \| `docs\/areas\/odd\.md` \|/);
   assert.doesNotMatch(page, /outside/, 'a table under the next heading is not the section\'s');
   assert.match(page, /`docs\/areas\/odd\.md`:\d+ .*cells/, 'a row of two cells is named with its line');
 

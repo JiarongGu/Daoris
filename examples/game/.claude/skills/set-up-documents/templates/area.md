@@ -21,8 +21,8 @@ sentence here.>
 
 <One row per kind of addition this part takes (a gate, a route, a setting, a catalogue key, a plugin), so "where does a new
 X go" is answered here and nowhere else. A row names the place and the registration and points at the rule above; it does
-not restate it. A part that takes no addition says so in one sentence and keeps no table. The index gathers every area's
-rows into one page.>
+not restate it. A part that takes no addition says so in one sentence and keeps no table. Where the repository generates an
+index, that index can gather every area's rows into one page; without one, the areas are where to look.>
 
 | Kind | Place | Registered by | Fails until |
 |---|---|---|---|

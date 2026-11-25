@@ -3,6 +3,7 @@ import { mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { test } from 'node:test';
 import { fileURLToPath } from 'node:url';
+import { planIndex } from './orient-index.mjs';
 import { indexPassages } from './question-bench.mjs';
 import {
   DEFAULT_QUESTIONS, declaredRecords, exactLookup, main, readQuestions, scoreFloor, tenseOf,
@@ -118,8 +119,9 @@ test('the two questions about adding land on the gathered page, which is read in
   try {
     write('daoris.json', JSON.stringify({ documents: { index: 'docs/index/README.md', areas: 'docs/areas' } }));
     write('docs/index/README.md', '# Index\n');
-    write('docs/index/adding.md', '# Adding to it\n\n| a machine setting | `Settings/List/MachineSettings.cs` | its doors | `MachineSettingsCensusTests` |\n');
-    write('docs/areas/driving.md', `# Driving\n\n${'A quest starts when the planner says so and a machine setting is one of the many things a driver keeps.\n\n'.repeat(1)}${'A quest starts when the planner says so.\n\n'.repeat(80)}`);
+    const section = '\n## Adding to it\n\n| Kind | Place | Registered by | Fails until |\n|---|---|---|---|\n| a machine setting | `Settings/List/MachineSettings.cs` | its doors | `MachineSettingsCensusTests` |\n';
+    write('docs/areas/driving.md', `# Driving\n\n${'A quest starts when the planner says so and a machine setting is one of the many things a driver keeps.\n\n'.repeat(1)}${'A quest starts when the planner says so.\n\n'.repeat(80)}` + section);
+    write('docs/index/adding.md', planIndex(root, ['daoris.json', 'docs/areas/driving.md']).get('docs/index/adding.md'));
     write('questions.json', JSON.stringify({
       present: [{ question: 'add a machine setting', answer: ['docs/index/adding.md'], before: ['docs/areas/driving.md'] }],
       history: [],
