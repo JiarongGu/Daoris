@@ -67,11 +67,11 @@ public static class PersonMeasure
 /// <summary>What the concurrency limit stands at: its count, when it last changed, when pressure last showed and which signal set it.</summary>
 public sealed record RoomLimit(int Limit, DateTimeOffset ChangedAt, DateTimeOffset PressureAt, string Signal)
 {
-    public const string Start = "start";
-    public const string Memory = "memory";
-    public const string Cpu = "cpu";
-    public const string Timeouts = "timeouts";
-    public const string Clear = "clear";
+    public const string Start = RoomSignals.Start;
+    public const string Memory = RoomSignals.Memory;
+    public const string Cpu = RoomSignals.Cpu;
+    public const string Timeouts = RoomSignals.Timeouts;
+    public const string Clear = RoomSignals.Clear;
 
     /// <summary>A limit that has not been told anything: the ceiling.</summary>
     public static RoomLimit Initial(int ceiling) => new(ceiling, DateTimeOffset.MinValue, DateTimeOffset.MinValue, Start);

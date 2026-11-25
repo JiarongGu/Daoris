@@ -50,10 +50,10 @@ public sealed class ReserveVerb : ChoiceVerb
         yield return $"             why: your own work holds {MachineUse.Gb(why.Person)} GB and has swung {MachineUse.Gb(why.Swing)} GB above that in the last 10 minutes, plus a {MachineUse.Gb(why.Margin)} GB margin; kept by the {why.KeepBy}";
         var signal = why.Signal switch
         {
-            RoomLimit.Memory => "backed off: free memory under what is kept",
-            RoomLimit.Cpu => "backed off: the processors saturated",
-            RoomLimit.Timeouts => "backed off: a run's tests timed out under load",
-            RoomLimit.Clear => "grown back: the pressure cleared",
+            RoomSignals.Memory => "backed off: free memory under what is kept",
+            RoomSignals.Cpu => "backed off: the processors saturated",
+            RoomSignals.Timeouts => "backed off: a run's tests timed out under load",
+            RoomSignals.Clear => "grown back: the pressure cleared",
             _ => "no pressure seen",
         };
         var busy = why.Busy is { } value ? $", processors {Math.Round(value * 100)}% busy" : "";

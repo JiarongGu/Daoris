@@ -289,7 +289,7 @@ public sealed class RoomAdmissionTests : IDisposable
         RoomLedger.Observe(_fixture.Home, machine.Rules(), "k", null, 4);
         Learn(_fixture.Checkout, 5, 6);
 
-        var why = RoomWhy.Read(_fixture.Home, machine.Rules().Memory(), 8, machine.Now, 4);
+        var why = RoomWhys.Read(_fixture.Home, machine.Rules().Memory(), 8, machine.Now, 4);
 
         Assert.Equal("floor", why.KeepBy);
         Assert.Equal(8 * Gb, why.Keep);
