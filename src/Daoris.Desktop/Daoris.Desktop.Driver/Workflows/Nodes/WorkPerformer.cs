@@ -416,6 +416,8 @@ public sealed class WorkPerformer(NodeRecordFiles records, IWorkPerformPort port
             {
                 case ReconcileStates.Done when answer.Outcome is { } outcome:
                     return Outcomes.Outcome(record, current, node, outcome, generation);
+                case ReconcileStates.Done when check && isCurrent:
+                    return UnrunChecks.Again(record, current, node, generation, now, NoOutcome, "its executor said it was done and named no verdict");
                 case ReconcileStates.Done:
                     return Hold(record, current, NoOutcome);
                 case ReconcileStates.Failed:

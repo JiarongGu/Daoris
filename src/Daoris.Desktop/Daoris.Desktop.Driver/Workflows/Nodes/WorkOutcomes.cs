@@ -76,6 +76,13 @@ internal sealed class WorkOutcomes(Func<DateTimeOffset> clock)
         }
 
         var moved = NodeLifecycle.Apply(node, status, move);
+        if (!moved.Moved && OnPort(attempt) && status.State == NodeStates.Unknown)
+        {
+            // A check's verdict the one table refuses binds to no work: only a new attempt on the work as it stands answers it (UnrunChecks).
+            return UnrunChecks.Again(record, attempt, node, generation, now, moved.Refused,
+                $"its {outcome.State} did not bind to the work it was sent on ({moved.Refused})");
+        }
+
         if (!moved.Moved) return Hold(record, attempt with { Outcome = outcome.State, Generation = generation }, moved.Refused!);
         if (moved.Status is { State: NodeStates.Failed, Transient: true } failedStatus && failedStatus.Tries < UnansweredSteps.Attempts(node, failedStatus.Code))
         {

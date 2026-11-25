@@ -360,17 +360,122 @@ public sealed class CheckPerformTests : IDisposable
         Assert.Equal(NodeStates.Reached, Status().State);
     }
 
-    [Fact]
-    public async Task An_unknown_check_with_a_cause_of_its_own_is_still_held_for_the_person()
+    [Theory]
+    [InlineData(VerifyResult.Changed)]
+    [InlineData(VerifyResult.Stopped)]
+    [InlineData(VerifyResult.Bound)]
+    public async Task An_unknown_check_whose_cause_is_the_person_s_is_still_held_for_the_person(string code)
     {
         var performer = Performer();
-        _checks.Answer = attempt => CheckExecution.AnswerOf(Result(VerifyVerdicts.Unknown, attempt.Call.Invocation) with { Code = VerifyResult.Busy });
+        _checks.Answer = attempt => CheckExecution.AnswerOf(Result(VerifyVerdicts.Unknown, attempt.Call.Invocation) with { Code = code });
         await StartAsync(performer);
         _checks.Answers.Add(Attempt().Call.Invocation);
 
         await performer.ReconcileAsync(Declared, CancellationToken.None);
 
-        Assert.Equal((AttemptStates.Held, VerifyResult.Busy), (Attempt().State, Attempt().Code));
+        Assert.Equal((AttemptStates.Held, code), (Attempt().State, Attempt().Code));
+        Assert.Empty(UnrunChecks.Released(Files, Declared, _now));
+        Assert.Equal(AttemptStates.Held, Attempt().State);
+    }
+
+    [Theory]
+    [InlineData(VerifyResult.Unprepared)]
+    [InlineData(VerifyResult.Busy)]
+    public async Task A_check_whose_answer_did_not_bind_to_its_work_is_sent_again_by_itself_and_passes_with_no_row_for_the_person(string code)
+    {
+        const string Why = "the verification tree's preparation did not finish: npm ci exited 1";
+        var performer = Performer();
+        _checks.Answer = attempt => CheckExecution.AnswerOf(Result(VerifyVerdicts.Unknown, attempt.Call.Invocation) with { Code = code, Why = Why });
+        await StartAsync(performer);
+        _checks.Answers.Add(Attempt().Call.Invocation);
+
+        var asked = Assert.Single(await performer.ReconcileAsync(Declared, CancellationToken.None));
+
+        Assert.Equal((PerformedWhat.Retry, code, Why), (asked.What, asked.Code, asked.Detail));
+        Assert.Equal((NodeStates.Ready, AttemptStates.Settled, code), (Status().State, Attempt().State, Attempt().Code));
+        Assert.Empty(HeldAttempts.Read(Files));
+        Assert.Empty(CheckRounds.Reds(Record()));
+
+        _checks.Answer = attempt => CheckExecution.AnswerOf(Result(VerifyVerdicts.Reached, attempt.Call.Invocation));
+        await StartAsync(performer);
+        _checks.Answers.Add(Record().Attempts.Last().Call.Invocation);
+        await performer.ReconcileAsync(Declared, CancellationToken.None);
+
+        Assert.Equal((NodeStates.Reached, 2, 2), (Status().State, Record().Attempts.Count, _checks.Sent.Count));
+        Assert.Empty(HeldAttempts.Read(Files));
+    }
+
+    [Fact]
+    public async Task A_check_that_stays_unprepared_past_its_bound_is_given_up_with_its_reason_and_its_run_waits_for_a_new_attempt()
+    {
+        var performer = Performer();
+        _checks.Answer = attempt => CheckExecution.AnswerOf(Result(VerifyVerdicts.Unknown, attempt.Call.Invocation) with { Code = VerifyResult.Unprepared, Why = "npm ci exited 1" });
+        IReadOnlyList<WorkPerformed> last = [];
+        for (var ask = 1; ask <= UnrunChecks.Bound; ask++)
+        {
+            await StartAsync(performer);
+            _checks.Answers.Add(Record().Attempts.Last().Call.Invocation);
+            last = await performer.ReconcileAsync(Declared, CancellationToken.None);
+        }
+
+        await AssertGivenUpAsync(performer, last, "npm ci exited 1");
+    }
+
+    [Fact]
+    public async Task A_check_said_done_with_no_verdict_is_asked_again_as_a_new_attempt()
+    {
+        var performer = Performer();
+        _checks.Answer = _ => new WorkReconcileAnswer(ReconcileStates.Done);
+        await StartAsync(performer);
+        _checks.Answers.Add(Attempt().Call.Invocation);
+
+        var asked = Assert.Single(await performer.ReconcileAsync(Declared, CancellationToken.None));
+
+        Assert.Equal((PerformedWhat.Retry, WorkPerformer.NoOutcome), (asked.What, asked.Code));
+        Assert.Equal((NodeStates.Ready, AttemptStates.Settled), (Status().State, Attempt().State));
+        Assert.Empty(HeldAttempts.Read(Files));
+    }
+
+    [Fact]
+    public async Task A_check_s_verdict_the_one_table_refuses_is_asked_again_as_a_new_attempt_never_held()
+    {
+        var performer = Performer();
+        await StartAsync(performer);
+        _checks.Answers.Add(Attempt().Call.Invocation);
+        // The node holds no binding for the verdict to bind to, as after a restart that rebound it under the attempt.
+        var record = Record();
+        Files.Write(record with { Statuses = new Dictionary<string, NodeStatus>(record.Statuses, StringComparer.Ordinal) { [Check.Id] = Status() with { Binding = null } } });
+        _checks.Answer = attempt => CheckExecution.AnswerOf(Result(VerifyVerdicts.Reached, attempt.Call.Invocation));
+
+        var asked = Assert.Single(await performer.ReconcileAsync(Declared, CancellationToken.None));
+
+        Assert.Equal(PerformedWhat.Retry, asked.What);
+        Assert.Contains("did not bind to the work it was sent on", asked.Detail, StringComparison.Ordinal);
+        Assert.Equal((NodeStates.Ready, AttemptStates.Settled, asked.Code), (Status().State, Attempt().State, Attempt().Code));
+        Assert.Empty(HeldAttempts.Read(Files));
+    }
+
+    [Theory]
+    [InlineData(VerifyResult.Unprepared)]
+    [InlineData(VerifyResult.Busy)]
+    [InlineData(LostChecks.Code)]
+    [InlineData(WorkPerformer.NoOutcome)]
+    public async Task A_check_an_older_build_held_for_a_cause_only_a_new_attempt_answers_is_asked_again_by_itself(string code)
+    {
+        var performer = Performer();
+        _checks.Answer = attempt => CheckExecution.AnswerOf(Result(VerifyVerdicts.Unknown, attempt.Call.Invocation));
+        await StartAsync(performer);
+        _checks.Answers.Add(Attempt().Call.Invocation);
+        await performer.ReconcileAsync(Declared, CancellationToken.None);
+        Files.Write(WorkPerformer.With(Record(), Attempt(), Attempt() with { Code = code }));
+        Assert.Single(HeldAttempts.Read(Files));
+
+        var released = Assert.Single(UnrunChecks.Released(Files, Declared, _now));
+
+        Assert.Equal((PerformedWhat.Retry, code), (released.What, released.Code));
+        Assert.Equal((NodeStates.Ready, AttemptStates.Settled), (Status().State, Attempt().State));
+        Assert.Empty(HeldAttempts.Read(Files));
+        Assert.Empty(UnrunChecks.Released(Files, Declared, _now));
     }
 
     [Fact]
@@ -427,7 +532,7 @@ public sealed class CheckPerformTests : IDisposable
     }
 
     [Fact]
-    public async Task A_check_lost_to_a_restart_is_run_again_once_and_lost_again_is_held_with_its_log_s_tail()
+    public async Task A_check_lost_to_a_restart_is_run_again_once_and_lost_again_is_asked_again_as_a_new_attempt_its_log_s_tail_kept()
     {
         await StartAsync(Performer());
         var sent = Attempt();
@@ -442,16 +547,16 @@ public sealed class CheckPerformTests : IDisposable
         Began(sent, 4);
         var log = Path.Combine(Folder(sent), "gate-01-suite.log");
         File.WriteAllText(log, string.Join('\n', Enumerable.Range(1, 40).Select(line => $"line {line}")) + "\n");
-        var held = await LostAsync();
+        var again = await LostAsync();
 
-        Assert.Equal((PerformedWhat.Held, LostChecks.Code), (held.What, held.Code));
+        Assert.Equal((PerformedWhat.Retry, LostChecks.Code, LostChecks.Lost), (again.What, again.Code, again.Detail));
         Assert.Equal(4, _checks.Sent.Count);
-        Assert.Equal((NodeStates.Unknown, AttemptStates.Held, LostChecks.Code), (Status().State, Attempt().State, Attempt().Code));
+        Assert.Equal((NodeStates.Ready, AttemptStates.Settled, LostChecks.Code), (Status().State, Attempt().State, Attempt().Code));
         Assert.StartsWith($"line {40 - LostChecks.TailLines + 1}\n", Attempt().Tail);
         Assert.EndsWith("line 40", Attempt().Tail);
         Assert.Null(Attempt().Note);
-        Assert.Equal([HeldResolutions.Again, HeldResolutions.Stop], HeldResolutions.Of(Attempt()));
-        Assert.Equal(Attempt().Tail, Files.Read(Unit)!.Attempts.Single().Tail);
+        Assert.Empty(HeldAttempts.Read(Files));
+        Assert.Empty(CheckRounds.Reds(Record()));
     }
 
     [Fact]
@@ -472,7 +577,7 @@ public sealed class CheckPerformTests : IDisposable
     }
 
     [Fact]
-    public async Task A_check_whose_process_vanished_with_no_word_of_why_is_held_at_its_second_such_loss_whatever_closed_between()
+    public async Task A_check_whose_process_vanished_with_no_word_of_why_is_asked_again_at_its_second_such_loss_whatever_closed_between()
     {
         await StartAsync(Performer());
         var sent = Attempt();
@@ -483,9 +588,9 @@ public sealed class CheckPerformTests : IDisposable
         Closed(sent, 2);
         Assert.Equal(PerformedWhat.Redelivered, (await LostAsync()).What);
         Began(sent, 3);
-        var held = await LostAsync();
+        var again = await LostAsync();
 
-        Assert.Equal((PerformedWhat.Held, LostChecks.Code), (held.What, held.Code));
+        Assert.Equal((PerformedWhat.Retry, LostChecks.Code), (again.What, again.Code));
         Assert.Equal(3, _checks.Sent.Count);
     }
 
@@ -508,10 +613,9 @@ public sealed class CheckPerformTests : IDisposable
     {
         await StartAsync(Performer());
         var sent = Attempt();
-        Began(sent, 1);
-        Began(sent, 2);
-        Assert.Equal(PerformedWhat.Redelivered, (await LostAsync()).What);
-        Assert.Equal(PerformedWhat.Held, (await LostAsync()).What);
+        _checks.Answers.Add(sent.Call.Invocation);
+        _checks.Answer = attempt => CheckExecution.AnswerOf(Result(VerifyVerdicts.Unknown, attempt.Call.Invocation));
+        Assert.Equal(PerformedWhat.Held, Assert.Single(await Performer().ReconcileAsync(Declared, CancellationToken.None)).What);
         _checks.Stopped.Clear();
 
         var performer = Performer();

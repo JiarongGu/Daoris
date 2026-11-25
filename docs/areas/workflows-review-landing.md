@@ -442,7 +442,15 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     work's session and never a red round, and one that cannot be told from the work's after three asks is given up by Daoris's stop with its
     reason, never put to the person (rule 1 of the doctrine: work that cannot be finished is reported as gave up). A failure with no timeout in
     its log, or on a quiet machine, is the work's as before.
-    An unknown with a cause of its own (`changed`, `bound`, `stopped`, `busy`, `unprepared`) is a held attempt as ever. A step's start is
+    The same holds for every check whose answer does not bind to the work it was sent on, which only a new attempt on the work as it stands
+    answers (CHECKUNBOUND1): its tree's preparation or a `regenerate` did not finish (`unprepared`), the runner's own run held its lock through
+    every offer (`busy`), its process was lost again on its rerun (`lost`, its log's tail kept on the settled attempt), it said it was done and
+    named no verdict (`no-outcome`), or the one table refused its verdict (that refusal's code, its line saying the verdict did not bind): each
+    is asked again by `UnrunChecks`, three on one binding, then held `unsaid` as above. A check an older build held for one of these causes, with no
+    word on it and its node still on that attempt, is asked again the same way at the next look (`UnrunChecks.Released`), the reader of
+    records already written, ending when no install holds one. Only an unknown whose cause is the person's stays a held attempt from the first: a change to
+    the gates' commands they have not accepted (`changed`), their own stop (`stopped`), and a check that ran past its bound (`bound`), which a
+    new attempt would run as long again. A step's start is
     tried again for a moment's sharing violation on its log (`HeavyStep.RetriedAsync`, the wait doubling over six tries, about three seconds), the cause of the
     check's "could not be kept" unknown on 2026-11-22 and 23; so is Daoris's own line in a gate's log for a start that failed (`HeavyStep.WriteLogAsync`,
     written shared), which a process just ended may still hold a copy of the log's handle against, and a hold that stays never replaces the start's own error.
@@ -462,10 +470,11 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     that ends the job because it is closing itself (an update, a stop of driving) writes `closed-<send>`: a send that never began, or one
     that closed, is sent again each time and counts for nothing, and goes on at the gate it reached: each gate that passes is kept in the
     attempt's folder as it ends with its command (`progress.json`, `GateProgress`), and the same attempt sent again for the same work, base and declaration
-    runs only the gates after them, its why naming those carried (RECHECKKEEP1); the second send lost with a start mark and no close mark is held for the
-    person (`lost`, `LostChecks`) with the last 20 lines of its newest log on the attempt's own `tail` (whole lines, never a broken character;
-    the person's note stays theirs), shown on its held row and under its line in `daoris workflow run`, never run a third time by itself and
-    never a red round. The held check's *Run again*, applied, also tells the executor to stop the old invocation. A held check holds no slot: the machine's verification and heavy-run
+    runs only the gates after them, its why naming those carried (RECHECKKEEP1); the second send lost with a start mark and no close mark settles
+    (`lost`, `LostChecks`) with the last 20 lines of its newest log on the attempt's own `tail` (whole lines, never a broken character;
+    the person's note stays theirs) and is asked again as a new attempt (`UnrunChecks`, its bound counting), never sent a third time under its
+    key and never a red round; an older build's held `lost` check shows its tail on its held row and under its line in `daoris workflow run`
+    until the next look asks it again. A held check's *Run again*, applied, also tells the executor to stop the old invocation. A lost check holds no slot: the machine's verification and heavy-run
     slots are its process's and went with it. A plugin's outcome sent again for a settled attempt under another plugin id (a rename since) is a replay, not a
     counted refusal. A word names its author; a second on a node is
     refused `worded`, but the person's replaces a supervisor's pending one, and a supervisor's on a lapsed attempt or a dead
