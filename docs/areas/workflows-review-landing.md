@@ -844,7 +844,7 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     lines' check slots (`locks/verify/`), every repository's heavy-run slots, and the sessions' `run-heavy`, a run holding both counted
     once. The judgement, the take of each slot and the write of each record happen under one lock (`locks/heavy/admitting.lock`), so two
     starts never both see no holder. The machine setting `checks` (`daoris settings checks <n>|auto`, the window's `SET_CHECKS`) pins a
-    number, never more than the machine's heavy-run admission holds. **The room is measured, never a number** (ADMITDYNAMIC1, D361; the
+    number, never more than the machine's heavy-run admission holds. **The room is measured, never a number** (ADMITDYNAMIC1, D362; the
     judgement is `RoomJudge`, its state `RoomLedger`, in `Review/Room/`). A run's need is learned per repository, kind and gate from its
     own runs on this machine (`LearnedNeeds`, `admission/learned.json`: the job's peak memory and mean cores, a tenth over the larger
     of the newest five peaks, kept by `RunMeter` as a run ends); until a gate has run twice its kind's declared cost stands
