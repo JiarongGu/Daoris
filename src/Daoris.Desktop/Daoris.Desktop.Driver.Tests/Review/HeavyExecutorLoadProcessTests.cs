@@ -41,7 +41,10 @@ public sealed class HeavyExecutorLoadProcessTests : IAsyncLifetime
             if (mode === 'stays' && again) { console.log('FAIL X.Y > it waits\nAssertionError: expected 1 to be 2'); line({ ran: 1, red: ['dotnet|X.Y'] }); process.exit(1); }
             if (mode === 'twice' && again) { timeout(); line({ ran: 1, red: ['dotnet|X.Y'] }); process.exit(1); }
             if (mode === 'empty' && again) { line({ ran: 0 }); process.exit(0); }
-            if (mode === 'assert') { console.log('FAIL X.Y > it adds\nAssertionError: expected 1 to be 2'); line({ ran: 2, red: ['dotnet|X.Y'] }); process.exit(1); }
+            if (mode === 'assert') { console.log('FAIL X.Y > it adds\nAssertionError: expected 1 to be 2'); line({ ran: again ? 1 : 2, red: ['dotnet|X.Y'] }); process.exit(1); }
+            if (mode === 'assertpass' && again) { line({ ran: 1 }); process.exit(0); }
+            if (mode === 'assertpass') { console.log('FAIL X.Y > it adds\nAssertionError: expected 1 to be 2'); line({ ran: 2, red: ['dotnet|X.Y'] }); process.exit(1); }
+            if (mode === 'other' && again) { line({ ran: 1 }); process.exit(0); }
             if (mode === 'other') { console.log('FAIL Z.W > it waits\nError: Test timed out in 10000ms.\n\nFAIL X.Y > it adds\nAssertionError: expected 1 to be 2'); line({ ran: 2, red: ['dotnet|X.Y'] }); process.exit(1); }
             process.exit(2);
             """);
@@ -136,7 +139,7 @@ public sealed class HeavyExecutorLoadProcessTests : IAsyncLifetime
         var result = await RunAsync(await RepositoryAsync(Declaring("timeout", rerun: true)), loadedReads: 3);
 
         Assert.True(result.Verdict == VerifyVerdicts.Reached, result.Why);
-        Assert.Contains("load: X.Y timed out while the machine was loaded", result.Why);
+        Assert.Contains("load: X.Y failed while the machine was loaded", result.Why);
         Assert.Contains("passed run again alone at a quiet slot", result.Why);
         Assert.Contains("counted no round", result.Why);
         Assert.Equal(["timeout main ", "timeout main --classes X.Y"], Calls());
@@ -149,7 +152,7 @@ public sealed class HeavyExecutorLoadProcessTests : IAsyncLifetime
         var result = await RunAsync(await RepositoryAsync(Declaring("timeout", rerun: true, handback: true), work: true), loadedReads: 3, handback: true);
 
         Assert.True(result.Verdict == VerifyVerdicts.Reached, result.Why);
-        Assert.Contains("load: X.Y timed out", result.Why);
+        Assert.Contains("load: X.Y failed", result.Why);
         Assert.DoesNotContain("when Daoris closed", result.Why);
         Assert.Equal(["reached", "after"], result.Gates.Select(gate => gate.Name));
         Assert.Equal(["timeout main ", "timeout main --classes X.Y"], Calls());
@@ -157,22 +160,42 @@ public sealed class HeavyExecutorLoadProcessTests : IAsyncLifetime
     }
 
     [Fact]
-    public async Task A_real_assertion_failure_is_the_work_s_and_is_not_run_again()
+    public async Task An_assertion_failure_under_load_runs_again_alone_and_passing_there_is_a_load_failure_that_counts_no_round()
     {
-        var result = await RunAsync(await RepositoryAsync(Declaring("assert", rerun: true)), loadedReads: 99);
+        var result = await RunAsync(await RepositoryAsync(Declaring("assertpass", rerun: true)), loadedReads: 3);
+
+        Assert.True(result.Verdict == VerifyVerdicts.Reached, result.Why);
+        Assert.Contains("load: X.Y failed while the machine was loaded", result.Why);
+        Assert.Contains("counted no round", result.Why);
+        Assert.Equal(["assertpass main ", "assertpass main --classes X.Y"], Calls());
+    }
+
+    [Fact]
+    public async Task An_assertion_failure_under_load_that_fails_again_alone_is_the_work_s()
+    {
+        var result = await RunAsync(await RepositoryAsync(Declaring("assert", rerun: true)), loadedReads: 3);
 
         Assert.Equal(VerifyVerdicts.Failed, result.Verdict);
-        Assert.Contains("X.Y", result.Why);
+        Assert.Contains("failed again run alone at a quiet slot", result.Why);
+        Assert.Equal(["assert main ", "assert main --classes X.Y"], Calls());
+    }
+
+    [Fact]
+    public async Task An_assertion_failure_while_the_machine_is_quiet_is_the_work_s_and_is_not_run_again()
+    {
+        var result = await RunAsync(await RepositoryAsync(Declaring("assert", rerun: true)), loadedReads: 0);
+
+        Assert.Equal(VerifyVerdicts.Failed, result.Verdict);
         Assert.Equal(["assert main "], Calls());
     }
 
     [Fact]
-    public async Task A_timeout_elsewhere_in_the_log_does_not_make_another_class_s_assertion_failure_a_load_failure()
+    public async Task A_timeout_elsewhere_in_the_log_does_not_keep_another_class_s_assertion_failure_from_running_again_alone()
     {
-        var result = await RunAsync(await RepositoryAsync(Declaring("other", rerun: true)), loadedReads: 99);
+        var result = await RunAsync(await RepositoryAsync(Declaring("other", rerun: true)), loadedReads: 3);
 
-        Assert.Equal(VerifyVerdicts.Failed, result.Verdict);
-        Assert.Equal(["other main "], Calls());
+        Assert.True(result.Verdict == VerifyVerdicts.Reached, result.Why);
+        Assert.Equal(["other main ", "other main --classes X.Y"], Calls());
     }
 
     [Fact]

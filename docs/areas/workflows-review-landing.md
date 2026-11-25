@@ -428,10 +428,10 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     stays unknown, nothing asks the executor again by itself, and the run waits for a new attempt, which the person or the work's session
     asks with `daoris workflow again <run> <check>` (its asks counted afresh). A check whose old job could
     not be opened (`unaccounted`) may still run, so it is never sent beside it: it is asked again at each look until the job is accounted for.
-    A reached command that failed on tests that timed out while the machine was loaded (another heavy run doing work in the admission, or free
-    commit below what one run needs, read at the failure while the run's own place is still held) is a load failure, not the work's
-    (`LoadFailures`): every red class's own failure lines say a test timed out, or the test host was ended by the 60-second hang bound, which
-    no class's lines name; one red class that failed otherwise leaves the whole failure the work's. The red classes then run again alone, once,
+    A reached command that failed while the machine was loaded (another heavy run doing work in the admission, or free
+    commit below what one run needs, read at the failure while the run's own place is still held) may be a load failure, not the work's
+    (`LoadFailures`): a timeout and an assertion failure alike, since a class that fails under load and passes run again alone is load. Its red
+    classes run again alone, once,
     at a quiet slot (no other working run holds a place and the commit is roomy; runs waiting for one go by the order they asked in and count as
     no load) by the command the declaration's `reached.rerun` names (its `{classes}` and `{base}`): a declaration naming none leaves the failure
     as it was, no flag is guessed (`VerifyExecution.LoadAsync`). Passed alone, with a class run, the check is reached, its words saying `load:`,
@@ -440,8 +440,8 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     within `VerifyWorld.QuietWait` (20 minutes) or half what is left of the attempt's bound, when the rerun timed out again while the machine
     reads loaded again, or when it ran no class; a rerun the runner could not make is unknown `unrun`. A load failure is so never sent to the
     work's session and never a red round, and one that cannot be told from the work's after three asks is given up by Daoris's stop with its
-    reason, never put to the person (rule 1 of the doctrine: work that cannot be finished is reported as gave up). A failure with no timeout in
-    its log, or on a quiet machine, is the work's as before.
+    reason, never put to the person (rule 1 of the doctrine: work that cannot be finished is reported as gave up). A failure on a quiet machine,
+    or one whose red classes fail again alone, is the work's as before.
     The same holds for every check whose answer does not bind to the work it was sent on, which only a new attempt on the work as it stands
     answers (CHECKUNBOUND1): its tree's preparation or a `regenerate` did not finish for a cause of the machine's (`unprepared`; a
     `regenerate` whose compiler named errors is the work's failure instead, see below), the runner's own run held its lock through

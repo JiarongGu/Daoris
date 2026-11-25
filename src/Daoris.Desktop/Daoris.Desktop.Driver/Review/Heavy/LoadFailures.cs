@@ -19,7 +19,7 @@ internal sealed record LoadReading(int Others, long? FreeCommit, long Need)
 }
 
 /// <summary>
-/// A failure that is the machine's load and not the work's: tests of a reached run that timed out while the machine ran other
+/// A failure that may be the machine's load and not the work's: classes of a reached run that failed while the machine ran other
 /// heavy runs, or had little free commit. Such a failure is never sent back to the work as its own and never spends a round: its red
 /// classes run again alone, at a quiet slot, before the result counts. Passed alone, the check is reached and says load; red alone
 /// it is the work's, as any red; no quiet slot within the bound, it is unknown with <see cref="VerifyResult.Load"/>, asked again as
@@ -52,6 +52,9 @@ internal static class LoadFailures
         return HostHung.IsMatch(log) || red.All(id => ReachedVerdict.LinesOf(log, id).Any(Timeout.IsMatch)) ? Names(red) : null;
     }
 
+    /// <summary>Every red class, whatever its failure said.</summary>
+    internal static IReadOnlyList<string>? Red(string log, string marker) => Names(ReachedVerdict.RedOf(log, marker));
+
     /// <summary>The names the red classes are run again by, or null where there are none or one is no plain name, which is never put in a command.</summary>
     internal static IReadOnlyList<string>? Names(IReadOnlyList<string> red)
     {
@@ -77,27 +80,27 @@ internal static class LoadFailures
 
     private static string Classes(IReadOnlyList<string> names) => string.Join(", ", names);
 
-    /// <summary>What the record says of classes that timed out under load and passed run again alone.</summary>
+    /// <summary>What the record says of classes that failed under load and passed run again alone.</summary>
     internal static string Passed(IReadOnlyList<string> names, LoadReading seen, LoadReading quiet) =>
-        $"load: {Classes(names)} timed out while the machine was loaded ({seen.Words}) and passed run again alone at a quiet slot ({quiet.Words}); "
+        $"load: {Classes(names)} failed while the machine was loaded ({seen.Words}) and passed run again alone at a quiet slot ({quiet.Words}); "
         + "a load failure is no failure of the work and counted no round";
 
-    /// <summary>What the record says of classes that timed out under load and failed again run alone at a quiet slot: the work's.</summary>
+    /// <summary>What the record says of classes that failed under load and failed again run alone at a quiet slot: the work's.</summary>
     internal static string Failed(IReadOnlyList<string> names, LoadReading seen) =>
-        $"{Classes(names)} timed out while the machine was loaded ({seen.Words}) and failed again run alone at a quiet slot, so the failure is the work's";
+        $"{Classes(names)} failed while the machine was loaded ({seen.Words}) and failed again run alone at a quiet slot, so the failure is the work's";
 
-    /// <summary>What the record says of classes that timed out under load and timed out again run alone while the machine read loaded again.</summary>
+    /// <summary>What the record says of classes that failed under load and timed out again run alone while the machine read loaded again.</summary>
     internal static string Again(IReadOnlyList<string> names, LoadReading seen, LoadReading now) =>
-        $"load: {Classes(names)} timed out while the machine was loaded ({seen.Words}) and timed out again run alone, the machine loaded again ({now.Words}); "
+        $"load: {Classes(names)} failed while the machine was loaded ({seen.Words}) and timed out again run alone, the machine loaded again ({now.Words}); "
         + "a load failure is no failure of the work and counts no round, so the check is asked again";
 
     /// <summary>What the record says where the classes could not be run again as declared.</summary>
     internal static string Empty(IReadOnlyList<string> names, LoadReading seen) =>
-        $"load: {Classes(names)} timed out while the machine was loaded ({seen.Words}) and their rerun ran no class, so nothing says they pass; "
+        $"load: {Classes(names)} failed while the machine was loaded ({seen.Words}) and their rerun ran no class, so nothing says they pass; "
         + "a load failure is no failure of the work and counts no round, so the check is asked again";
 
-    /// <summary>What the record says of classes that timed out under load while no quiet slot came.</summary>
+    /// <summary>What the record says of classes that failed under load while no quiet slot came.</summary>
     internal static string Waited(IReadOnlyList<string> names, LoadReading seen, TimeSpan waited) =>
-        $"load: {Classes(names)} timed out while the machine was loaded ({seen.Words}) and no quiet slot came in {(int)waited.TotalMinutes} min to run them again alone; "
+        $"load: {Classes(names)} failed while the machine was loaded ({seen.Words}) and no quiet slot came in {(int)waited.TotalMinutes} min to run them again alone; "
         + "a load failure is no failure of the work and counts no round, so the check is asked again";
 }
