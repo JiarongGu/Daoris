@@ -54,14 +54,12 @@ public sealed class BuiltWatchTests : IDisposable
         var watching = BuiltWatch.RunAsync(Log, () => said++, TimeSpan.FromSeconds(1), clock, CancellationToken.None);
         await Poll.Until(() => clock.Waiting, () => "the watch never waited for its next look");
 
-        File.WriteAllText(Log, "reached: start
-");
+        File.WriteAllText(Log, "reached: start\n");
         clock.Advance(TimeSpan.FromSeconds(1));
         await Poll.Until(() => clock.Waiting, () => "the watch did not look again");
         Assert.Equal(0, said);
 
-        File.AppendAllText(Log, "reached-built: {}
-");
+        File.AppendAllText(Log, "reached-built: {}\n");
         clock.Advance(TimeSpan.FromSeconds(1));
         await watching;
         Assert.Equal(1, said);
