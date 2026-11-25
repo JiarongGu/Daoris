@@ -44,6 +44,8 @@ const pageErrors = () => invoke.mock.calls
   .filter(([module, type, request]) => module === 'DAORIS.LOG' && type === 'EVENT' && request?.payload?.event === 'page.error')
   .map(([, , request]) => request.payload.data as Record<string, unknown>);
 
+const COLD_APP_IMPORT_MS = 60_000;
+
 /** The page's root, read as a fresh page reads it. */
 const freshRoot = async () => {
   vi.resetModules();
@@ -89,7 +91,7 @@ describe("the page's root", { timeout: 30_000 }, () => {
 
     expect(await screen.findByRole('heading', { level: 1, name: "This window's page stopped on an error" })).toBeInTheDocument();
     expect(screen.getByText('the query client broke')).toBeInTheDocument();
-  });
+  }, COLD_APP_IMPORT_MS);
 
   /** The view a failure's line names is the window's, a secondary window's from before anything is drawn. */
   it("names a secondary window's view in its failure's line", async () => {
@@ -101,7 +103,7 @@ describe("the page's root", { timeout: 30_000 }, () => {
 
     await screen.findByRole('heading', { level: 1, name: "This window's page stopped on an error" });
     expect(pageErrors()).toEqual([expect.objectContaining({ where: 'render', view: 'window:monitor', message: 'the query client broke' })]);
-  });
+  }, COLD_APP_IMPORT_MS);
 
   it("names the main window's view, as the window shows it", async () => {
     const PageRoot = await freshRoot();
@@ -111,7 +113,7 @@ describe("the page's root", { timeout: 30_000 }, () => {
     (await import('../bridge/logs/log')).reportPageStopped(new Error('a later failure'));
 
     expect(pageErrors()).toEqual([expect.objectContaining({ where: 'render', view: 'overview' })]);
-  });
+  }, COLD_APP_IMPORT_MS);
 
   it('hands the window its handshake and lifts its splash again on a second load', async () => {
     const First = await freshRoot();
@@ -126,5 +128,5 @@ describe("the page's root", { timeout: 30_000 }, () => {
 
     await waitFor(() => expect(closeSplash).toHaveBeenCalledTimes(2), { timeout: 15_000 });
     expect(notifyReady).toHaveBeenCalledTimes(2);
-  });
+  }, COLD_APP_IMPORT_MS);
 });
