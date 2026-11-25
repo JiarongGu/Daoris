@@ -139,7 +139,8 @@ public sealed class HeavyExecutorRegenerateProcessTests : IAsyncLifetime
         Assert.Contains("exited 2", result.Why);
         Assert.Contains($"src{Path.DirectorySeparatorChar}LoadFailures.cs(14,91): error CS0117: 'CheckAdmission' does not contain a definition for 'Need'\n", result.Why);
         Assert.DoesNotContain("CA2255", result.Why);
-        Assert.DoesNotContain(_folder, result.Why);
+        Assert.DoesNotContain(Checkout + "-verify", result.Why);
+        Assert.DoesNotContain(Home, result.Why);
         Assert.True(File.Exists(result.Gates.Single(gate => gate.Name == "regenerate").Log));
         Assert.False(File.Exists(Called));
         Assert.Equal((WorkStates.Failed, HeavyExecutor.GateFailed), (CheckExecution.AnswerOf(result).Outcome!.State, CheckExecution.AnswerOf(result).Outcome!.Code));
