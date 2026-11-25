@@ -382,6 +382,18 @@ where a seam, route, verb or fixture is. Which folder owns which job:
     door's recorded frames, with their program and adapter versions, are `fixtures/providers/<id>/corpus.jsonl`. `AcpAdapterDoorProcessTests` drives each protocol door's pinned adapter through `AcpSession` against the stub model
     (`tools/fake-model.mjs`): a steer mid-tool answered `injected`, a `codex-acp` resume that carries the first sitting's words, and each update read as that pin's corpus frames read (`docs/2026-10-03-steer-evidence.md` §10).
 
+50. Daoris knows each agent process it starts, and ends one its session left. As a process is tracked (`SessionProcesses.Track`)
+    a record is kept beside the session's marker (`run/sessions/<session>.<pid>.agent`, `StartRecords`: its id and start time, the
+    session and the rooted paths of its start), and removed as the tracking ends with the process gone. A look (`StrayAgentsLook`,
+    after the stored sign-ins, `StrayAgents`) reads those records and nothing else: one whose process still runs as the one it
+    recorded, whose start names a program of the toolchain (`cache/toolchain/<agent>/<version>`), and whose session the service
+    does not list as active and this registry does not run, is left. The first look to find it says `agent.stray` in the machine log
+    (pid, agent, pin, age, session) and keeps the time in the record; one past five minutes (`StrayAgents.Grace`) ends it and its tree
+    and says `agent.stray.stopped`, and a session that runs again clears the time. A process at a version no pin of its agent names
+    any more (the machine's or a workspace's) waits no grace. A record whose process has gone is removed; a service that did not
+    answer makes no look, since "cannot tell" is never "left". A process of another program, at the same path or any other, has no
+    record and is never read, said or ended; neither is one started before records were kept. (STRAYAGENT1)
+
 ## Where a change goes
 
 Agents sits after Knowledge and before Workplace, Roles, Participants, Context, Course and Loop (`Driver.Tests/StructureTests.cs`).
