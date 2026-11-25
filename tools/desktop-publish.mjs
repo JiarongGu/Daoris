@@ -88,6 +88,8 @@ import { layCli } from './desktop-publish/cli.mjs';
 import { bundleCli } from './desktop-publish/cli-bundle.mjs';
 import { installedNote } from './desktop-publish/install-note.mjs';
 import { buildVersion } from './desktop-publish/version.mjs';
+import { freshContracts } from './desktop-publish/contracts.mjs';
+export { freshContracts } from './desktop-publish/contracts.mjs';
 export { MARKER, MARKER_HEADER, LAUNCHER, SHELL_HOME, SHELL_EXE, SHELL_FILES, HOST_HOME, HOST_EXE, CONNECTOR_HOME, CONNECTOR_EXE, servicePlan, carriedHosts, isInstall } from './desktop-publish/names.mjs';
 export { KEPT_LOCALES, HOME, PLUGIN_OFFERS, OFFERED_PLUGINS, layOffers, RESOURCES, RESOURCES_SOURCE, layResources } from './desktop-publish/lay.mjs';
 export { CLI_HOME, CLI_BUNDLE, CLI_BIN, CLI_LAUNCHERS, DRIVER_PROJECT, DRIVER_HOME, DRIVER_EXE } from './desktop-publish/launchers.mjs';
@@ -231,6 +233,9 @@ async function main() {
 
   // The dependency order, and it is not cosmetic: the platform builds INTO the host's wwwroot, so a
   // host published before the bundle carries the previous one — and the window shows it.
+  // The bundle typechecks against the page's generated contracts, ignored files a checkout keeps from its last generation.
+  const contracts = freshContracts(repoRoot);
+  if (contracts !== 0) process.exit(contracts);
   console.log('desktop-publish: building the platform bundle…');
   run(`npm --prefix ${WEB} run build`);
 

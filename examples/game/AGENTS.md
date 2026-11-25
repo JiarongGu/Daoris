@@ -11,16 +11,19 @@ Generated from the shared canon; edit the canon, not this. `daoris reconcile` sa
 
 ## Rules for every session
 
-1. **Ask the owner only owner things,** a closed list: direction and targets, money and budgets, sign-ins and
-   credentials, releases they marked as theirs, history rewrites, deleting their data, and publishing to people
-   outside beyond what the repository declares. The owner owns the outcome, not the steps: decide the rest, alone or
-   with another agent; record why and go on. A question to the owner says what it is, what yes does, what no does
+1. **Ask the owner only what the risk policy puts to them.** Whether an act needs a yes, and whose, is one declared
+   policy: where it declares no risk nothing waits, a role's yes is a role's, and the owner is asked only for acts it
+   classes theirs and for a change to the policy itself. With none declared the owner's calls are direction and
+   targets, money and budgets, sign-ins and credentials, releases they marked, history rewrites, deleting their data,
+   publishing outside. The owner owns the outcome, not the steps: decide the rest, alone or with another agent; record
+   why and go on. A question to the owner says what it is, what yes does, what no does
    and where to look. Work you cannot finish is reported as "gave up" with what you tried, never asked about.
 2. **Ownership is local.** Change only this repository. What another needs is a request to whoever works there, with
    the evidence: a quest where a request system exists, a message to its owner where none does. Already touched one?
    Stop and say so (`reaching-in`).
-3. **Delivery follows risk, as the repository declares it:** what may run, land and publish unasked is a declaration
-   its brief names; add no human step it does not name. Before landing come two agent reviews, wide (design, effects
+3. **Delivery follows the risk policy:** what may run, land and publish unasked, and whose yes an act needs, is
+   declared (a policy where the repository keeps one, else a declaration beside its gates) and its brief names where;
+   add no human step it does not name. Before landing come two agent reviews, wide (design, effects
    beyond the change) and close (details, edge cases, tests), from different agent families where two are ready.
 4. **One way per job.** A better way deletes the old one in the same change: code, commands, options, words, defaults.
    An older reader kept for records already written names the condition that ends it.

@@ -117,7 +117,7 @@ test('a gate whose private files changed is run again, not replayed', async () =
       runGate: async (_w: string, each: never) => { ran += 1; return { gate: each, code: 0, verdict: 'PASS', note: '', ms: 1, log: join(dir, 'logs', 'g.log') }; },
       reaching: (_g: string, paths: string[]) => paths, reachSource: 't', readVerdicts: () => stored, entriesOf: () => [{ path: 'a', blob: 'b' }], diffOf: () => [],
       toolchain: { node: 'v', dotnet: '1' }, slowestOf: () => [], failuresOf: () => [], isProcessGate: () => false, ledger: new BuildLedger(), listProcesses: () => [],
-      killTree: () => true, timeoutMs: () => null, lastSlowest: () => [], replayAll: true, privateOf: () => digest,
+      killTree: () => true, timeoutMs: () => null, lastSlowest: () => [], source: () => () => null, replayAll: true, privateOf: () => digest,
       installs: new LockInstalls({ changed: () => [], current: () => false, install: async () => ({ ok: true, note: '' }), say: () => {} }),
     } as unknown as FlowDeps;
     const ask = () => runOne(deps, { where: dir, gate: { name: 'g', run: 'x', reuse: '' }, logs: join(dir, 'logs'), beside: {}, tree: 'T', trees: null, step: undefined, noBuild: false });

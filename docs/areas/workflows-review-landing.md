@@ -370,7 +370,7 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     every write (`unreadable-casts`) and are said in the machine log and in the cast's Settings; a rewrite keeps a holder word and a field
     it did not read. The
     owner role, an approver at a destination marked as the person's and every role at high risk stay the person's, the high-risk branch
-    standing until RISKGATE1j retires `placeRisk`), the keys' keeper (`credentials-keeper`) the person's where no cast names another, a
+    standing until `placeRisk` retires (RISKGATE1l)), the keys' keeper (`credentials-keeper`) the person's where no cast names another, a
     sign-in being their act in a browser (`sign-in`, D354 point 1), and every other role no cast names its agent's (`default`, *the role's
     agent fills it until a choice names another*): the person holds a role only by their own cast, a mark, the owner role or a high-risk
     place, never by default (D354 point 4). A role its agent holds only by default hands no plugin's role act (`CastReading.AgentHolds`),
@@ -423,11 +423,29 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     A check whose executor could not say what became of it (unknown with the code `unrun`, or with no cause of its own: a result that does
     not read, a gate log another process held for the instant its step opened it) is no question for the person: it settles with no verdict
     and is asked again as a new attempt, up to three on one binding (`UnrunChecks`), counting as neither a red round nor a pass, each retry's
-    line carrying the executor's own reason from its answer. Past the three Daoris gives it up as said: its node is stopped by Daoris with
-    that reason, which ends its run and holds no row for anyone (no held attempt, no kept failure, no final exit). A check whose old job could
+    line carrying the executor's own reason from its answer. Past the three Daoris gives it up as said, but never by ending the run (a stopped node
+    does, with the work unlanded and its quest still taken): the last attempt is held with the code `unsaid` and the reason kept on it and said (the driver's line, `daoris work held`, the run view, the page), the node
+    stays unknown, nothing asks the executor again by itself, and the run waits for a new attempt, which the person or the work's session
+    asks with `daoris workflow again <run> <check>` (its asks counted afresh). A check whose old job could
     not be opened (`unaccounted`) may still run, so it is never sent beside it: it is asked again at each look until the job is accounted for.
+    A reached command that failed on tests that timed out while the machine was loaded (another heavy run doing work in the admission, or free
+    commit below what one run needs, read at the failure while the run's own place is still held) is a load failure, not the work's
+    (`LoadFailures`): every red class's own failure lines say a test timed out, or the test host was ended by the 60-second hang bound, which
+    no class's lines name; one red class that failed otherwise leaves the whole failure the work's. The red classes then run again alone, once,
+    at a quiet slot (no other working run holds a place and the commit is roomy; runs waiting for one go by the order they asked in and count as
+    no load) by the command the declaration's `reached.rerun` names (its `{classes}` and `{base}`): a declaration naming none leaves the failure
+    as it was, no flag is guessed (`VerifyExecution.LoadAsync`). Passed alone, with a class run, the check is reached, its words saying `load:`,
+    the load read and that no round was counted, and a hand-back's other gates go on once the rerun's place is let go; red alone it is the work's
+    as any red. It is unknown with `load`, asked again like an unrun check (`UnrunChecks`, three on one binding), when no quiet slot comes
+    within `VerifyWorld.QuietWait` (20 minutes) or half what is left of the attempt's bound, when the rerun timed out again while the machine
+    reads loaded again, or when it ran no class; a rerun the runner could not make is unknown `unrun`. A load failure is so never sent to the
+    work's session and never a red round, and one that cannot be told from the work's after three asks is given up by Daoris's stop with its
+    reason, never put to the person (rule 1 of the doctrine: work that cannot be finished is reported as gave up). A failure with no timeout in
+    its log, or on a quiet machine, is the work's as before.
     An unknown with a cause of its own (`changed`, `bound`, `stopped`, `busy`, `unprepared`) is a held attempt as ever. A step's start is
-    tried again for a moment's sharing violation on its log (`HeavyStep.RetriedAsync`), the cause of the check's "could not be kept" unknown on 2026-11-22 and 23.
+    tried again for a moment's sharing violation on its log (`HeavyStep.RetriedAsync`, the wait doubling over six tries, about three seconds), the cause of the
+    check's "could not be kept" unknown on 2026-11-22 and 23; so is Daoris's own line in a gate's log for a start that failed (`HeavyStep.WriteLogAsync`,
+    written shared), which a process just ended may still hold a copy of the log's handle against, and a hold that stays never replaces the start's own error.
     The same rule holds for the other executors that end without an answer. A second opinion whose reviewer's session ended without giving one
     (`ended`, `out-of-time`, `transient`) is asked again by the gate's own judgment, the rule's next ready reviewer first (`OpinionAgain.Rotated`), up to three
     passes in a row (`OpinionAgain`, counted back to the person's own ask, which counts afresh, and not across tips), the ended pass named in the look's line; meanwhile the step
@@ -437,8 +455,8 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     step an older build failed for it included (`failed>skipped` by the opinion's record). A plugin step that declares a `goal` whose session ended without
     `step_answer` (`no-answer`) is asked again as a new attempt, up to three on one binding (`UnansweredSteps`), then stopped by Daoris with its reason; a
     session refused for its sign-in (`sign-in`) is the person's to mend. A plugin's performed step whose process cannot say (unknown) stays a held
-    attempt: its effect may have happened, so it is never sent again by itself. A given-up step is Daoris's stop, which takes no failure wire a graph
-    declares out of it, as a check's never did.
+    attempt: its effect may have happened, so it is never sent again by itself. A given-up reviewer or `goal` step is Daoris's stop, which takes no failure wire a graph
+    declares out of it (a given-up check is no stop: it is held, as above).
     A check whose executor finds neither its result nor its job (its process gone: a restart, an update, a crash) is sent once more as the
     same attempt under its key. A send writes a start mark in the attempt's folder (`began-<send>`) when it holds its slots, and an executor
     that ends the job because it is closing itself (an update, a stop of driving) writes `closed-<send>`: a send that never began, or one

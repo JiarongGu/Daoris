@@ -19,6 +19,7 @@ public static class ChoiceRoutes
     public static InstanceRoute Checks { get; } = Person("SET_CHECKS");
     public static InstanceRoute Vacancy { get; } = Person("SET_VACANCY");
     public static InstanceRoute PolicyPropose { get; } = Person("POLICY_PROPOSE");
+    public static InstanceRoute PolicySet { get; } = Person("POLICY_SET");
     public static InstanceRoute PolicyApply { get; } = Person("POLICY_APPLY");
     public static InstanceRoute Reserve { get; } = Person("SET_RESERVE");
     public static InstanceRoute Manifest { get; } = Person("SET_MANIFEST");
@@ -69,7 +70,8 @@ public static class ChoiceRoutes
         ("driver handover", HandOver, "the hand-over rule"),
         ("driver growth", Growth, "the growth switch on opening repositories and rooms, the person's alone"),
         ("driver risk", PlaceRisk, "a place's risk and the owner's marks, an agent's press on the owner's card"),
-        ("driver risk propose", PolicyPropose, "the assistant's proposal of a change to the policy, which changes nothing until the owner confirms it"),
+        ("driver risk set", PolicySet, "the owner's own set of a row, a cast or an access mode of the policy, written at the revision it read"),
+        ("driver risk propose", PolicyPropose, "an agent's set of the policy, a proposal that changes nothing until the owner confirms it"),
         ("driver risk apply", PolicyApply, "a proposed change applied on the owner's own turn or press"),
         ("driver cast", PlaceCast, "a place's cast of a role to its holder, journaled with its reason, an agent's press on the owner's card"),
         ("driver commits", Commits, "the commit rule"),

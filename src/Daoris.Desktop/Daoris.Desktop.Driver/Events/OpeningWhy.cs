@@ -16,6 +16,9 @@ public static class OpeningWhy
     /// <summary>The account its scope begins at is not signed in.</summary>
     public const string SignedOut = "signed-out";
 
+    /// <summary>The person switched off the account its scope begins at.</summary>
+    public const string Off = "off";
+
     /// <summary>The account its scope begins at is passed because another question holds its lock past the start's patience.</summary>
     public const string Locked = "locked";
 

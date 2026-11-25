@@ -12,6 +12,14 @@ network.
 
 ## Unreleased
 
+- **Rules 1 and 3 of `every-session` read the repository's risk policy.** Whether an act needs a yes, and whose, is one
+  declared policy: where it declares no risk nothing waits, a role's yes is a role's, and the owner is asked only for acts
+  it classes theirs and for a change to the policy itself. The closed list of owner calls (direction, money, sign-ins,
+  marked releases, history rewrites, deleting their data, publishing outside) is the default where none is declared.
+  `autonomous-development` and `development-documents` say the same, and keep the declaration beside the gates as the
+  path for a repository without the tool. **Adopting repositories:** run `daoris sync`; a repository that keeps a
+  declaration of unasked work keeps it.
+
 - **The always-loaded doctrine is two rule files and a list of places.** `every-session` (ten rules: the closed list of
   owner calls, local ownership, delivery as the repository declares it, one way per job, no private names, act on what
   you read now, done is not the work's end, stop only what you start, the file tools, project facts in the repository)

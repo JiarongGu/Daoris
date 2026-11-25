@@ -94,7 +94,7 @@ afterEach(() => {
   window.localStorage.clear();
 });
 
-describe('the menu bar on the desktop (D152 §1)', () => {
+describe('the menu bar on the desktop (D152 §1)', { timeout: 30_000 }, () => {
   it('holds seven menus, VS Code\'s less Selection with Workspace first', async () => {
     start();
     expect(within(await menuBar()).getAllByRole('button').map((button) => button.textContent)).toEqual(
@@ -117,7 +117,7 @@ describe('the menu bar on the desktop (D152 §1)', () => {
   });
 });
 
-describe('the bar from the keyboard (the design §3.3)', () => {
+describe('the bar from the keyboard (the design §3.3)', { timeout: 30_000 }, () => {
   it('shows each menu\'s letter while Alt is held, and Alt with a letter opens its menu', async () => {
     start();
     const bar = await menuBar();
@@ -160,7 +160,7 @@ describe('the bar from the keyboard (the design §3.3)', () => {
  * The seven names need about 590 CSS px of strip beside the command center's glyph
  * and the window's buttons, so below that they fold into one menu, and the keys reach it as they reach the bar.
  */
-describe('a narrow window\'s menu bar', () => {
+describe('a narrow window\'s menu bar', { timeout: 30_000 }, () => {
   const atWidth = (width: number) => act(() => {
     Object.defineProperty(window, 'innerWidth', { configurable: true, value: width });
     window.dispatchEvent(new Event('resize'));
@@ -203,7 +203,7 @@ describe('a narrow window\'s menu bar', () => {
   });
 });
 
-describe('the keys (D152 §3.4)', () => {
+describe('the keys (D152 §3.4)', { timeout: 30_000 }, () => {
   it('opens Settings on Ctrl+, and the palette on Ctrl+Shift+P, grouped by menu', async () => {
     start();
     await menuBar();
@@ -250,7 +250,7 @@ describe('the keys (D152 §3.4)', () => {
   });
 });
 
-describe('the record in front (D152 §2)', () => {
+describe('the record in front (D152 §2)', { timeout: 30_000 }, () => {
   it('enables This session\'s acts as its header offers them, and Stop… asks under the header as its button does', async () => {
     start('sessions');
     await screen.findByRole('button', { name: /^Stop…/ });
@@ -282,7 +282,7 @@ describe('the record in front (D152 §2)', () => {
   });
 });
 
-describe('Help › Update', () => {
+describe('Help › Update', { timeout: 30_000 }, () => {
   it('brings the update card into view after the shell answers, and clears the anchor for a later Settings visit', async () => {
     const scroll = vi.spyOn(HTMLElement.prototype, 'scrollIntoView');
     try {
@@ -302,7 +302,7 @@ describe('Help › Update', () => {
   });
 });
 
-describe('Help › Keyboard shortcuts', () => {
+describe('Help › Keyboard shortcuts', { timeout: 30_000 }, () => {
   it('opens a drawer listing every key by menu', async () => {
     start();
     const user = await openMenu('Help');

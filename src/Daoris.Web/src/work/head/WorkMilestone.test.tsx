@@ -338,6 +338,14 @@ describe('an attempt held for the person', () => {
     attempt: 1, nodeState: 'failed', why: 'failure-kept', code: 'broken', outcome: 'failed', words: ['again'], said: 'its plugin said it failed', ...over,
   });
 
+  it('words a check given up as waiting for a new attempt, in both languages, never as an outcome that did not bind', async () => {
+    const given = heldAttempt({ plugin: 'check', why: 'unsaid', nodeState: 'unknown' });
+    expect(heldRow(given).detail).toContain('none could say whether the work passes, so the run waits');
+    expect(heldRow(given).detail).not.toContain('did not bind');
+    await i18n.changeLanguage('zh');
+    expect(heldRow(given).detail).toContain('所以运行在等待');
+  });
+
   it('offers a failure kept for the person their new attempt alone, saying its code, and presses it', async () => {
     const row = heldRow(keptFailure());
     expect(row).toMatchObject({ kind: 'work', title: 'deploy, attempt 1', where: 'u1' });

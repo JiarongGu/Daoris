@@ -8,7 +8,7 @@ import type { ToolDoor } from './tools';
 import { ACCOUNT_COLUMNS, AccountRow } from './AccountRow';
 import { type AgentActs, AgentPage } from './AgentPage';
 import type { AccountSaid } from '../settings/accounts/accounts';
-import { accountState, type WindowCell } from './agents';
+import { accountState, readLine, stateWhen, type WindowCell } from './agents';
 import { CLAUDE_USE, DOORS, READ, toolsOf } from './agentsFixtures';
 
 // An account's row as a person reads it: what its agent last said
@@ -19,7 +19,7 @@ const render = (node: ReactElement) => rtlRender(<Tooltip.Provider>{node}</Toolt
 const nothing = () => {};
 const ACTS: AgentActs = {
   onReadAgain: nothing, onReadOne: nothing, onReadNow: nothing, onSignInNew: nothing, onAddKey: nothing, onReplaceKey: nothing, onRemoveKey: nothing, onSignIn: nothing, onTryNow: nothing,
-  onRemove: nothing, onRename: nothing, onAddedAnswer: nothing, onPooledSaid: nothing, onSaveSettings: nothing, onDoor: nothing, onPin: nothing,
+  onRemove: nothing, onSwitch: nothing, onRename: nothing, onAddedAnswer: nothing, onPooledSaid: nothing, onSaveSettings: nothing, onDoor: nothing, onPin: nothing,
   scope: { onOrder: nothing, onUse: nothing },
   rules: { onSwitchDefault: nothing, onRemove: nothing, onAdd: nothing, onAnswer: nothing },
 };
@@ -28,8 +28,8 @@ const CLAUDE = DOORS.find((door) => door.door === 'claude-code')!;
 const HOME = 'C:/somewhere/data/harnesses/claude-code/';
 
 /** Claude Code's page with these accounts, each in the set's order, as every account is; its sessions speak unless told. */
-function page(profiles: NonNullable<ToolDoor['profiles']>, { speaks = true, said = {} }: {
-  speaks?: boolean; said?: Record<string, AccountSaid>;
+function page(profiles: NonNullable<ToolDoor['profiles']>, { speaks = true, said = {}, acts = ACTS }: {
+  speaks?: boolean; said?: Record<string, AccountSaid>; acts?: AgentActs;
 } = {}) {
   const [tool] = toolsOf([{ ...CLAUDE, profiles }]);
   const use = {
@@ -38,7 +38,7 @@ function page(profiles: NonNullable<ToolDoor['profiles']>, { speaks = true, said
     accounts: profiles.map((profile) => ({ name: profile.name, running: 0, said: said[profile.name] ?? null })),
     scopes: [{ ...CLAUDE_USE.scopes[0]!, default: null, begins: profiles[0]!.name, list: profiles.map((profile) => profile.name) }],
   };
-  return render(<AgentPage tool={tool!} use={use} rules={null} usage={[]} acts={ACTS} />);
+  return render(<AgentPage tool={tool!} use={use} rules={null} usage={[]} acts={acts} />);
 }
 
 const SESSION_88: WindowCell = {
@@ -213,6 +213,59 @@ describe('an account’s row without a pointer (ACCTUX2)', () => {
     await userEvent.click(within(unchecked).getByRole('button', { name: "About API key …wxyz's state" }));
     expect(within(unchecked).getByText(/^The tool says signed in for any key/)).toBeTruthy();
   });
+
+  /** The person's switch, the same on every agent's page: an off account says so, its one act undoes it, and the ⋯ switches an on one off. */
+  it.each(['claude-code', 'codex-acp'])('says %s’s switched-off account is off and presses its switch both ways', async (agent) => {
+    const switched: [string, boolean, string][] = [];
+    const [tool] = toolsOf([{
+      ...DOORS.find((door) => door.door === agent)!,
+      profiles: [
+        { name: 'account-1', home: `${HOME}account-1`, login: 'in', read: READ, off: true },
+        { name: 'account-2', home: `${HOME}account-2`, login: 'in', read: READ },
+      ],
+    }]);
+    const use = {
+      ...CLAUDE_USE, accounts: [{ name: 'account-1', running: 0, said: null }, { name: 'account-2', running: 0, said: null }],
+      scopes: [{ ...CLAUDE_USE.scopes[0]!, default: null, begins: 'account-2', list: ['account-1', 'account-2'] }],
+    };
+    render(<AgentPage tool={tool!} use={use} rules={null} usage={[]} acts={{ ...ACTS, onSwitch: (...press) => switched.push(press) }} />);
+
+    const off = screen.getByRole('listitem', { name: 'account-1' });
+    // Off is said beside the state its agent last said, never in its place.
+    expect(within(off).getByText('off')).toBeTruthy();
+    expect(within(off).getByText('signed in')).toBeTruthy();
+    await userEvent.click(within(off).getByRole('button', { name: 'switch account-1 on' }));
+    expect(switched).toEqual([['account-1', false, 'account-1']]);
+
+    const on = screen.getByRole('listitem', { name: 'account-2' });
+    expect(within(on).queryByRole('button', { name: /switch account-2 on/ })).toBeNull();
+    await userEvent.click(within(on).getByRole('button', { name: /More for/ }));
+    await userEvent.click(await screen.findByRole('menuitem', { name: 'Switch off' }));
+    expect(switched.at(-1)).toEqual(['account-2', true, 'account-2']);
+  });
+
+  /** An off account is read as before: its time still carries the tip that says when it is read. */
+  it('keeps the read-time tip on an account that is off', async () => {
+    const state = accountState({ login: 'in', read: READ, off: true }, null, true);
+    render(<ul><AccountRow name="spare" state={state} menu={[]} /></ul>);
+
+    await userEvent.hover(screen.getByText(stateWhen(state)!));
+    expect((await screen.findAllByText(readLine(state)!)).length).toBeGreaterThan(0);
+  });
+
+  /** An account that is off and signed out says both, and its sign-in is still one press away in its ⋯ beside the one act, *Switch on*. */
+  it('keeps a signed-out account’s state and its sign-in beside off', async () => {
+    page([{ name: 'account-1', home: `${HOME}account-1`, login: 'out', read: READ, off: true }]);
+
+    const row = screen.getByRole('listitem', { name: 'account-1' });
+    expect(within(row).getByText('off')).toBeTruthy();
+    expect(within(row).getByText('signed out')).toBeTruthy();
+    expect(within(row).getByRole('button', { name: 'switch account-1 on' })).toBeTruthy();
+    within(row).getByRole('button', { name: /More for/ }).focus();
+    await userEvent.keyboard('{Enter}');
+    expect(await screen.findByRole('menuitem', { name: 'Sign in again' })).toBeTruthy();
+    expect(screen.queryByRole('menuitem', { name: 'Switch off' })).toBeNull();
+  }, 20_000);
 
   it('offers no such press where the state needs no explanation', () => {
     render(<ul><AccountRow name="spare" state={accountState({ login: 'in', read: READ }, null, true)} menu={[]} /></ul>);

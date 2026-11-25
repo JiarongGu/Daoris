@@ -117,10 +117,11 @@ public static class AccountRotation
                 AccountReadiness.Cooling => new WalkChoice(WalkStep.Cooling),
                 AccountReadiness.Refused => new WalkChoice(WalkStep.Refused),
                 AccountReadiness.SignedOut => new WalkChoice(WalkStep.SignedOut),
+                AccountReadiness.Off => new WalkChoice(WalkStep.Off),
                 _ when passed.Locked => new WalkChoice(WalkStep.Locked),
                 _ => Ahead(ran, begins),
             };
-        if (!goal || step.Step is not (WalkStep.Kept or WalkStep.Cooling or WalkStep.Refused or WalkStep.SignedOut or WalkStep.Locked)) return step;
+        if (!goal || step.Step is not (WalkStep.Kept or WalkStep.Cooling or WalkStep.Refused or WalkStep.SignedOut or WalkStep.Off or WalkStep.Locked)) return step;
 
         var rest = Next(ran, begins) is { } runnerUp ? Ahead(ran, runnerUp) : new WalkChoice(WalkStep.List);
         return rest.Step == WalkStep.List && !SignInStates.RanksLast(facts.GetValueOrDefault(ran)?.SignIn)
@@ -233,6 +234,7 @@ public static class AccountRotation
             AccountReadiness.Cooling => new(state.Account, NextHold.Cooling, state.Cooling?.Until),
             AccountReadiness.Refused => new(state.Account, NextHold.Refused),
             AccountReadiness.SignedOut => new(state.Account, NextHold.SignedOut),
+            AccountReadiness.Off => new(state.Account, NextHold.Off),
             _ => new(state.Account,
                 listed && state.Account is { } name && AccountReadings.Near(facts.GetValueOrDefault(name)?.Said, scope.Use, now)
                     ? NextHold.Near

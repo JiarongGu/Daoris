@@ -40,9 +40,9 @@ public static class DriverChoicesCommand
                daoris settings vacancy <hours>  (how long a step nobody's session answers stands before Daoris gives it up; 24 by default)
                daoris settings risk [<workspace>|machine] [--repository <name>] [low|medium|high] [--mark <marks>] [--unmark <marks>]
                daoris settings risk why <run> [<step>]  (what the risk policy said at each hold of a run, beside what happened)
-               daoris settings risk propose <place> <act> none|role|owner|remove [--by <role>] [--mode full|restricted]  (Ask Daoris proposes a change to the policy; nothing changes)
-               daoris settings risk propose <place> cast <role> <holder>|default  or  <place> access full|clear|<pause>=<value>…  (a cast or an access mode, proposed the same way)
-               daoris settings risk apply <proposal> <digest>  (applies it on the owner's own turn naming both)
+               daoris settings risk set <place> <act> none|role|owner|remove [--by <role>] [--mode full|restricted]  (your own terminal sets the row at once on the revision it read; an agent's set is a proposal that changes nothing)
+               daoris settings risk set <place> cast <role> <holder>|default  or  <place> access full|clear|<pause>=<value>…  (a cast or an access mode, set the same way)
+               daoris settings risk apply <proposal> <digest>  (applies a proposal on the owner's own turn naming both)
                daoris settings cast [<workspace>|machine] [--repository <name>] [<role> person|agent|agent:<name>|default] [--why "…"]
                daoris quest retry <quest> [--at <n> | --session <id>]
                daoris place line <repository>|--workspace <name> [<branch>|--clear] [--commit merge|rebase|squash] [--batch <1 to 8>]

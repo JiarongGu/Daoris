@@ -8,6 +8,8 @@ public sealed record VerifyWorld
 
     public TimeSpan Poll { get; init; } = TimeSpan.FromSeconds(1);
 
+    public TimeSpan QuietWait { get; init; } = TimeSpan.FromMinutes(20);
+
     /// <summary>The environment every job is composed from (<see cref="GateEnvironment.Compose"/>): the driver's own, never a shell's.</summary>
     public IReadOnlyList<KeyValuePair<string, string>> Start { get; init; } = Own();
 

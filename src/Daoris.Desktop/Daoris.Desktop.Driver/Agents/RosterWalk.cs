@@ -524,7 +524,7 @@ internal sealed class RosterWalk(HarnessRoster roster)
         // each is named with its sign-in, where the first account's refusal alone names only its own.
         var byKey = roster.AgentOf(owner) is { Accounts.KeyOnly: true };
         var signedOut = RotationWords.SignedOut(states) is { Count: > 0 } passed ? SignedOutAccounts.Of(owner, passed, names) : null;
-        var held = states.Count == 1 || (first is null && signedOut is null)
+        var held = states.Count == 1 || (first is null && signedOut is null && states.All(state => state.Readiness != AccountReadiness.Off))
             ? new HarnessSelection(states[0].Refusal)
             {
                 Cooling = states[0].Cooling, NotReady = states[0].Readiness, SignedOut = signedOut, RefusalNote = states[0].RefusalNote,

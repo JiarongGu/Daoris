@@ -862,7 +862,7 @@
     "src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Workplace/RoomsDeclaredCensusTests.cs": 1,
     "src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Workplace/SpaceFloorTests.cs": 1,
     "src/Daoris.Desktop/Daoris.Desktop.Driver/Agents/LineageTokens.cs": 1,
-    "src/Daoris.Desktop/Daoris.Desktop.Driver/Agents/SessionProcesses.cs": 2,
+    "src/Daoris.Desktop/Daoris.Desktop.Driver/Agents/SessionProcesses.cs": 1,
     "src/Daoris.Desktop/Daoris.Desktop.Driver/Install/HeldFiles.cs": 1,
     "src/Daoris.Desktop/Daoris.Desktop.Driver/Install/ReleaseChannels.cs": 1,
     "src/Daoris.Desktop/Daoris.Desktop.Driver/Install/StagedBuild.cs": 1,

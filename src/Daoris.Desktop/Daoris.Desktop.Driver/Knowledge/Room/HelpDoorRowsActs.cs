@@ -17,6 +17,8 @@ internal static class HelpDoorRowsActs
         // An account's name is the person's, its id the folder's. Daoris's accounts are one set, and its order says where starts begin.
         ("name an account: its id stays, so every list, default and record keeps it", "(no screen yet)",
             "`daoris agent account rename <agent> <account> <name>`"),
+        ("switch an account off or on: it stays signed in and read as before, but Daoris starts no session on it and moves none to it",
+            Agent + "Accounts", "`daoris agent account on|off <agent> <account>`"),
         // The order and *Try now*, the terminal's doors; one set's.
         ("choose the order of Daoris's accounts, one set for every workspace: where starts begin one by one, and the last tie "
             + "otherwise", Agent + "How accounts are used → Use, up and down",

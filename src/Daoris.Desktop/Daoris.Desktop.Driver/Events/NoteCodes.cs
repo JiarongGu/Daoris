@@ -116,6 +116,7 @@ public static class NoteCodes
         new(OpeningWhy.Cooling, ["agent", "over", "until", "cooling"], "note.opening.why.cooling"),
         new(OpeningWhy.Refused, ["agent", "over"], "note.opening.why.refused"),
         new(OpeningWhy.SignedOut, ["agent", "over"], "note.opening.why.signed-out"),
+        new(OpeningWhy.Off, ["agent", "over"], "note.opening.why.off"),
         new(OpeningWhy.Locked, ["agent", "over"], "note.opening.why.locked"),
         new(OpeningWhy.Unanswered, ["over"], "note.opening.why.unanswered"),
         new(OpeningWhy.UnansweredSelf, [], "note.opening.why.unanswered-self"),

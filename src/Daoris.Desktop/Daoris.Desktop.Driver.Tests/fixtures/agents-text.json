@@ -3022,7 +3022,7 @@
       "exit": 2,
       "out": [],
       "err": [
-        "daoris: unknown agent profile verb 'frobnicate' — one of: list, add, remove, order, ready, use, rename"
+        "daoris: unknown agent profile verb 'frobnicate' — one of: list, add, remove, order, ready, use, rename, on, off"
       ],
       "after": {}
     },

@@ -371,7 +371,7 @@ internal sealed class WatchNodes
         .. pass.Performed
             .Where(done => done.What is PerformedWhat.Sent or PerformedWhat.Redelivered or PerformedWhat.Applied or PerformedWhat.Retry
                 or PerformedWhat.Unknown or PerformedWhat.Held or PerformedWhat.Stale)
-            .Select(done => $"work  {done.Unit}'s {done.Node}: {done.What}{(done.Code is { } code ? $" ({code})" : "")}{(done is { What: PerformedWhat.Retry or PerformedWhat.Unknown or PerformedWhat.Stale, Detail: { Length: > 0 } why } ? $": {why}" : "")}"),
+            .Select(done => $"work  {done.Unit}'s {done.Node}: {done.What}{(done.Code is { } code ? $" ({code})" : "")}{(done is { What: PerformedWhat.Retry or PerformedWhat.Unknown or PerformedWhat.Stale or PerformedWhat.Held, Detail: { Length: > 0 } why } ? $": {why}" : "")}"),
         .. pass.Said,
     ];
 

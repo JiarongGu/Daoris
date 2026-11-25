@@ -6,7 +6,7 @@
  *   node tools/commit-checks.mjs [--root <dir>]   exit 0 passed or not run · 1 refused: a comment rise, a file grown past the size
  *                                                 list, a layers count breached (nothing else ever blocks a commit)
  *
- * A size shrink is written to `tools/size-ratchet.json` and staged into the commit; a stale contract is regenerated in the work tree
+ * A size change within what main's list allows (a shrink, or a rise where a merge left the entry below the file) is written to `tools/size-ratchet.json` and staged into the commit; a stale contract is regenerated in the work tree
  * (its files are ignored). A step that cannot run says so and lets the commit go on. `DAORIS_COMMIT_HOOK=0`, a merge in progress and a
  * commit with nothing staged run nothing.
  */
@@ -109,7 +109,7 @@ export function runCommitChecks({ root, env = process.env, say = console.log, er
       if (lowered) {
         writeAtomic(join(root, SIZE_LIST), `${JSON.stringify(settled.list, null, 2)}\n`);
         git(root, ['add', '--', SIZE_LIST]);
-        done.push(`size list lowered (${lowered})`);
+        done.push(`size list settled (${lowered})`);
       } else {
         done.push('size clean');
       }

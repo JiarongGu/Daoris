@@ -55,6 +55,34 @@ public sealed class DriverModuleAccountNamesTests : DriverModuleBridge
     }
 
     /// <summary>
+    /// The window's switch writes the account's record beside its name and nothing else, for either agent's door, and the roster
+    /// reports it: the terminal's <c>profile on|off</c> reads and writes the same key.
+    /// </summary>
+    [Theory]
+    [InlineData("claude-code", "claude-code-acp")]
+    [InlineData("codex", "codex-acp")]
+    public async Task A_switch_marks_the_account_off_and_on_and_leaves_the_wiring_and_the_name(string agent, string door)
+    {
+        Accounts(agent, "account-1", "account-2");
+        Wiring($$"""{ "rotation": { "{{agent}}": ["account-1", "account-2"] } }""");
+        var wiring = File.ReadAllText(HarnessSettingsPath);
+        AccountNames.Rename(Home, agent, HarnessSettings.Profiles(Home, agent), "account-1", "work");
+
+        var off = await AnswerAsync(Module(), "HARNESS_ACTION", new { door, action = "profile-off", profile = "account-1" });
+
+        Assert.True(off.GetProperty("changed").GetBoolean());
+        Assert.True(AccountSwitch.IsOff(Home, agent, "account-1"));
+        Assert.Equal("work", AccountNames.NameOf(Home, agent, "account-1"));
+        Assert.Equal(wiring, File.ReadAllText(HarnessSettingsPath));
+        var again = await AnswerAsync(Module(), "HARNESS_ACTION", new { door, action = "profile-off", profile = "account-1" });
+        Assert.False(again.GetProperty("changed").GetBoolean());
+
+        var on = await AnswerAsync(Module(), "HARNESS_ACTION", new { door, action = "profile-on", profile = "account-1" });
+        Assert.True(on.GetProperty("changed").GetBoolean());
+        Assert.False(AccountSwitch.IsOff(Home, agent, "account-1"));
+    }
+
+    /// <summary>
     /// The sign-in's end says who signed in and what the machine lists it as; where the name is the email (the
     /// screen offers it), the email is said once, folded as the page and the terminal fold it.
     /// </summary>

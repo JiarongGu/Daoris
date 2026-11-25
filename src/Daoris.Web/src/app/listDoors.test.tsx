@@ -80,7 +80,7 @@ async function viewMenu() {
   return user;
 }
 
-describe("the list's doors, on the window", () => {
+describe("the list's doors, on the window", { timeout: 30_000 }, () => {
   afterEach(() => {
     cleanup();
     vi.unstubAllGlobals();

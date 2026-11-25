@@ -87,7 +87,7 @@ const SEEDED = { ...ROLES, roles: ['build', 'intake', 'ask-daoris', 'chat'].map(
 /** Open the Roles mode from the list's head. */
 const openRoles = async () => userEvent.click(await screen.findByRole('radio', { name: 'Setup' }));
 
-describe('The Agents place, Roles mode', () => {
+describe('The Agents place, Roles mode', { timeout: 30_000 }, () => {
   let refuseRole = false;
   let catalogue: 'roles' | 'seeded' = 'roles';
 

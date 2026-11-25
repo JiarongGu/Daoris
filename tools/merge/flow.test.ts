@@ -1,7 +1,6 @@
 import { test } from 'vitest';
 import assert from 'node:assert/strict';
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
-import { spawnSync } from 'node:child_process';
 import { join } from 'node:path';
 import { BuildLedger } from './build-once.ts';
 import { fixtureFolder } from './fixture-home.ts';
@@ -35,6 +34,7 @@ function harness(over: Partial<FlowDeps> = {}) {
     killTree: () => true,
     timeoutMs: () => null,
     lastSlowest: () => [],
+    source: () => () => null,
     installs: new LockInstalls({ changed: () => [], current: () => false, install: async () => ({ ok: true, note: '' }), say: () => {} }),
     ...over,
   };
@@ -453,9 +453,11 @@ const HUNG_LOG = 'Data collector \'Blame\' message: The specified inactivity tim
 
 function hangHarness(peaks: number[]) {
   const dir = { ref: '' };
+  const read = { trees: [] as string[], keys: [] as string[] };
   const h = harness({
     timeoutMs: () => 60_000,
     load: { sample: () => { const peak = peaks.shift() ?? 1; return { peak: () => peak, stop: () => {} }; }, free: () => true, sleep: async () => {}, now: () => 0 },
+    source: (where) => { read.trees.push(where); return (key) => { read.keys.push(key); return null; }; }, // the hung test's source, with no git started
     runGate: async (_w, each) => {
       const log = join(dir.ref, 'logs', 'hung.log');
       writeFileSync(log, HUNG_LOG);
@@ -463,8 +465,7 @@ function hangHarness(peaks: number[]) {
     },
   });
   dir.ref = h.dir;
-  spawnSync('git', ['init', '-q'], { cwd: h.dir, windowsHide: true }); // the hung test's source is read from the tree
-  return h;
+  return { ...h, read };
 }
 
 test('a gate whose hang bound killed a test under load fails nothing yet and runs again alone; a hang killed alone fails', async () => {
@@ -480,11 +481,12 @@ test('a gate whose hang bound killed a test under load fails nothing yet and run
     assert.equal(againWhy(first), 'killed by its hang bound under load');
     const once = await call(alone, { gate: { ...gate, reuse: '' } });
     assert.deepEqual([once.verdict, once.again, once.breaches?.[0]?.fails], ['FAIL', undefined, true]);
+    assert.deepEqual([loaded.read.trees, loaded.read.keys], [[loaded.dir, loaded.dir], ['A.B.Waits', 'A.B.Waits']], 'the hung test\'s source is asked of the deps\' seam, which starts no git of its own');
   } finally {
     loaded.done();
     alone.done();
   }
-}, 60_000);
+});
 
 test('a gate that writes its timing records stamps them with the peak load of its run, and one that does not leaves the marks alone', async () => {
   const timed = { name: 'censuses', run: 'dotnet test src/A --results-directory _fixtures/test-timing --logger "trx;LogFileName=c.trx"', reuse: '' };

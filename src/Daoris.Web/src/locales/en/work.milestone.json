@@ -112,6 +112,7 @@
   "work.milestone.held.failed": "{{node}}, attempt {{attempt}}: {{why}}. It waits for you to try it again.",
   "work.milestone.held.failedDetail": "{{why}}. Nothing goes on until you try it again ({{step}}).",
   "work.milestone.held.why.failure-kept": "Its plugin said it failed ({{code}}), and Daoris does not try it again by itself",
+  "work.milestone.held.why.unsaid": "Daoris asked this check three times and none could say whether the work passes, so the run waits: run it again as a new attempt",
   "work.milestone.held.why.tries-spent": "Its plugin said it failed ({{code}}) and its tries are spent, so Daoris does not try it again by itself",
   "work.milestone.held.act.again": "Try again",
   "work.milestone.held.word.again": "try again",

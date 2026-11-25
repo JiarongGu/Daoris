@@ -35,6 +35,7 @@ public sealed class DriverModuleHeldTests : DriverModuleBridge
         ["WORKFLOW_SHOW"] = new { id = "web-verify" },
         ["WORKFLOW_PALETTE"] = new { },
         ["POLICY_PROPOSALS"] = new { },
+        ["RISK_TABLE"] = new { },
         ["PLACE_CAST"] = new { workspace = "aurora", repository = "engine" },
         ["PLACE_PLAN"] =new { repositories = new[] { "engine" }, preset = "merge-after-accept" },
         ["REGISTRY_CREATE_PLAN"] = new { name = "ledger", purpose = "keeps the books", workspace = "aurora" },

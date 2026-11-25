@@ -1,8 +1,9 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { BUDGET, checkSizes, lowered, scanSizes, settleStaged, sizeOf } from './size-ratchet.mjs';
+import { BUDGET, breaches, lowered, scanSizes, settleStaged, sizeOf } from './size-ratchet.mjs';
 
 const big = 'x'.repeat(BUDGET + 10);
+const checkSizes = (found, list, base) => breaches(found, list, base).map((each) => each.text);
 
 test('CODESHAPE1: a source file over the budget is found, with its LF size, and the rest are not', () => {
   const files = { 'src/a/Big.cs': big, 'src/a/Small.cs': 'x', 'docs/Big.md': big, 'src/a/obj/Gen.cs': big };
@@ -17,6 +18,11 @@ test('a file does not pass the size main\'s list gives it, whatever its own list
   assert.match(checkSizes({ 'a.cs': 50500 }, own, { 'a.cs': 50000 })[0], /grew from 50000 to 50500/);
   assert.match(checkSizes({ 'a.cs': 50500 }, own, {})[0], /over the \d+-byte budget/);
   assert.match(checkSizes({ 'a.cs': 49900 }, own, { 'a.cs': 50000 })[0], /shrank/);
+});
+
+test('a file over its own entry fails though main\'s list allows it, and a commit writes the entry up to what main allows', () => {
+  assert.match(checkSizes({ 'a.cs': 50150 }, { 'a.cs': 50100 }, { 'a.cs': 50200 })[0], /^a\.cs is 50150 bytes, over the 50100 its entry holds \(main's list allows 50200\)/);
+  assert.deepEqual(settleStaged({ 'a.cs': 50150 }, { 'a.cs': 50100 }, { 'a.cs': 50200 }), { list: { 'a.cs': 50150 }, problems: [] });
 });
 
 test('CODESHAPE1: a listed file may not grow, a new one may not pass the budget, and the list only tightens', () => {

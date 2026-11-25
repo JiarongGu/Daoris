@@ -188,7 +188,16 @@ where a seam, route, verb or fixture is. Which folder owns which job:
     *Set key…*), never a sign-in. (D66, D67)
 27. Each agent's accounts are one set serving every workspace, with one order and one set of use settings. The person's pick at
     a start is the one exception; a pick whose folder is gone is refused, never moved; a handed quest's named account that is gone
-    walks on. (D197)
+    walks on. (D197) The person's switch is part of that one record, the same for every agent: an account switched off (`daoris agent
+    account off <agent> <account>`, the window's *Switch off*, a key of `accounts.json` beside the name, `AccountSwitch`) stays signed in
+    and is read as before, and the roster's `Before` reads the switch first (`AccountReadiness.Off`, `NextHold.Off`), so no start, move or
+    resume is chosen onto it while another account is ready, and a pick of it is refused, never moved. A session already on it goes on to
+    its turn's end; the next resume reads its own account off and moves it by the walk (the line that switches), or holds it for the
+    switch where no other account is ready or the line does not move: it never waits for a reset it has not got. A running
+    conversation's turn-end move (`CurveMove`) moves by the account's curve and a running session is never moved *to* an off account
+    (`SwitchCandidates` reads `Before`), but it does not yet read its own account's switch: that conversation stays until its next
+    resume (ACCOUNTSWITCH1). Only the person's press
+    writes it, as a sign-in is theirs: the window and the terminal on their own, a session's terminal refused.
 28. The person's own sign-in is outside the set: Daoris never signs it in or out, asks it anything or starts work in it. On the
     agent's page it is the list's last row; *Ways in* says each way in by what it gives, and one not installed says what to do.
     A protocol door has no sign-in of its own: the window's *Sign in*, a step's sign-in words and `daoris agent login` all sign in as the agent
@@ -381,6 +390,18 @@ where a seam, route, verb or fixture is. Which folder owns which job:
     never the machine's own look. A held-pending case of the conformance suite names an open backlog row (`TASKS.md`), and each real
     door's recorded frames, with their program and adapter versions, are `fixtures/providers/<id>/corpus.jsonl`. `AcpAdapterDoorProcessTests` drives each protocol door's pinned adapter through `AcpSession` against the stub model
     (`tools/fake-model.mjs`): a steer mid-tool answered `injected`, a `codex-acp` resume that carries the first sitting's words, and each update read as that pin's corpus frames read (`docs/2026-10-03-steer-evidence.md` §10).
+
+50. Daoris knows each agent process it starts, and ends one its session left. As a process is tracked (`SessionProcesses.Track`)
+    a record is kept beside the session's marker (`run/sessions/<session>.<pid>.agent`, `StartRecords`: its id and start time, the
+    session and the rooted paths of its start), and removed as the tracking ends with the process gone. A look (`StrayAgentsLook`,
+    after the stored sign-ins, `StrayAgents`) reads those records and nothing else: one whose process still runs as the one it
+    recorded, whose start names a program of the toolchain (`cache/toolchain/<agent>/<version>`), and whose session the service
+    does not list as active and this registry does not run, is left. The first look to find it says `agent.stray` in the machine log
+    (pid, agent, pin, age, session) and keeps the time in the record; one past five minutes (`StrayAgents.Grace`) ends it and its tree
+    and says `agent.stray.stopped`, and a session that runs again clears the time. A process at a version no pin of its agent names
+    any more (the machine's or a workspace's) waits no grace. A record whose process has gone is removed; a service that did not
+    answer makes no look, since "cannot tell" is never "left". A process of another program, at the same path or any other, has no
+    record and is never read, said or ended; neither is one started before records were kept. (STRAYAGENT1)
 
 ## Where a change goes
 

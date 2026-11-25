@@ -150,6 +150,9 @@ public enum LineRepair
     /// <summary>The set to change: the work does not use the account, or it is kept for conversations.</summary>
     ChangeSet,
 
+    /// <summary>The account to switch on: the person switched it off.</summary>
+    SwitchOn,
+
     /// <summary>The agent to install: nothing of it is here, or a pin has nothing installed at it.</summary>
     InstallAgent,
 }
@@ -230,6 +233,7 @@ public static class LineAccount
         { SignedOut: not null } => LineRepair.SignIn,
         { NotReady: AccountReadiness.SignedOut } => LineRepair.SignIn,
         { NotReady: AccountReadiness.Refused } => LineRepair.ClearRefusal,
+        { NotReady: AccountReadiness.Off } => LineRepair.SwitchOn,
         { Absent: not null } => LineRepair.InstallAgent,
         { NotOffered.Count: > 0 } => LineRepair.OfferModel,
         _ => LineRepair.None,
@@ -242,6 +246,7 @@ public static class LineAccount
         {
             NextHold.SignedOut => LineRepair.SignIn,
             NextHold.Refused => LineRepair.ClearRefusal,
+            NextHold.Off => LineRepair.SwitchOn,
             NextHold.Missing => LineRepair.AddAccount,
             NextHold.Outside or NextHold.Kept => LineRepair.ChangeSet,
             _ => LineRepair.None,
@@ -295,6 +300,19 @@ public static class LineAccount
             }
 
             return new LineAnswer.Wait(cooling, [cooling], ResetSet.Switch, held, OwnFirst: true);
+        }
+
+        // Switched off by the person: its words go on in a new part where another account is ready, as a cool-off's do where the line
+        // switches, and else are held for the person's switch, never waiting for a reset it does not have.
+        if (held == NextHold.Off && line.Switches)
+        {
+            var walked = walk(new LineAsk(LineWalkPlace.Switch, line.WalkCounts));
+            if (walked.Allowed) return new LineAnswer.Elsewhere(walked, held, Switched: true);
+
+            // Every other account cooling: the words wait for the first of those resets, which comes by itself.
+            return walked.Cooling is { } soonest
+                ? new LineAnswer.Wait(soonest, [soonest], ResetSet.Walk, held, walked)
+                : new LineAnswer.Hold(held, LineRepair.SwitchOn, walked);
         }
 
         if (!ready) return Elsewhere(own, held, notOffered: false, line, walk);
