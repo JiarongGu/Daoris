@@ -81,7 +81,7 @@ internal static class ReachedVerdict
                 continue;
             }
 
-            for (var at = span.From; at < span.To; at++)
+            for (var at = span.Start; at < span.End; at++)
             {
                 var line = lines[at].Length > LineChars ? lines[at][..LineChars] + Gap : lines[at];
                 if (kept >= GateLogExcerpt.Lines || Encoding.UTF8.GetByteCount(said.ToString()) + Encoding.UTF8.GetByteCount(line) > GateLogExcerpt.Bytes)
@@ -99,7 +99,7 @@ internal static class ReachedVerdict
     }
 
     /// <summary>The span of a red class's own failure in the log (<paramref name="id"/>'s last failure line and those under it, to a blank line), or null where the log names none.</summary>
-    private static (int From, int To)? Block(IReadOnlyList<string> lines, string id)
+    private static (int Start, int End)? Block(IReadOnlyList<string> lines, string id)
     {
         var token = TokenOf(NameOf(id));
         var named = token is null ? [] : Enumerable.Range(0, lines.Count).Where(at => !Runner(lines[at]) && !Passing(lines[at]) && token.IsMatch(lines[at])).ToList();
@@ -113,7 +113,7 @@ internal static class ReachedVerdict
     internal static IReadOnlyList<string> LinesOf(string log, string id)
     {
         var lines = WordsScan.Lines(log);
-        return Block(lines, id) is { } span ? [.. lines.Skip(span.From).Take(span.To - span.From)] : [];
+        return Block(lines, id) is { } span ? [.. lines.Skip(span.Start).Take(span.End - span.Start)] : [];
     }
 
     internal static IReadOnlyList<string> RedOf(string log, string marker) => OutcomeOf(log, marker)?.Red ?? [];
