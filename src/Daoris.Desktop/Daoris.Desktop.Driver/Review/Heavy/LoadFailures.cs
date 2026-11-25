@@ -52,7 +52,6 @@ internal static class LoadFailures
         return HostHung.IsMatch(log) || red.All(id => ReachedVerdict.LinesOf(log, id).Any(Timeout.IsMatch)) ? Names(red) : null;
     }
 
-    /// <summary>Every red class, whatever its failure said.</summary>
     internal static IReadOnlyList<string>? Red(string log, string marker) => Names(ReachedVerdict.RedOf(log, marker));
 
     /// <summary>The names the red classes are run again by, or null where there are none or one is no plain name, which is never put in a command.</summary>
