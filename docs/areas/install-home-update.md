@@ -229,6 +229,16 @@ Each type is in a file of its name; `docs/index/README.md` says where a seam, ve
 47. The launcher writes no log. The next start says the outcome once (`update.installed`, `update.rolled-back`,
     `update.refused`), and every state carries `last` from the journal. Log lines name things and count them, never a path or
     a command line. (from D94, D139)
+47a. A staged build starts clean on a copy of the home before it is swapped in (`HomeProbe`, the last of `UpdateRefusal.Of`'s checks, asked at the
+    close by the application's `InstallUpdater.Proof` and by `daoris update --now`, so both answer one sentence). The running build reads the home
+    (`HomeProof.Read`: the agent accounts it lists, the sessions' records and runs' bindings it meets, each workflow's file, the runs that bind a
+    workflow the home does not hold, and the paths no entry names), copies it into `update/probe/<id>/` (the home's own folder whole, a file over 64 MB
+    as an empty one; every other folder of the Daoris folder as names to five levels, empty, with no link followed; the source is read and never
+    written), and has the staged build's own driver read the copy (`daoris home proof`, one line of JSON; routed before the lease and the machine log,
+    so it writes nothing). The swap is refused with `home` unless every account the running build lists is still listed and the staged build's report
+    holds no problem; a build that gives no readable report (no driver, no such verb, past two minutes) is refused as one that found the home amiss.
+    A refusal closes nothing, this build keeps running and the sentence says why; it is kept as rule 40's is. The copy is removed when the proof ends,
+    and one whose proof no longer runs (a mark file beside it, held open by the proof) by the next. (from UPGRADEPROOF1, FIX-LOG 2026-11-20)
 48. A build that confirms and fails later is not rolled back. A launcher refuses a `build.json` schema it does not read. (from D139)
 48a. Daoris publishes its own releases: GitHub releases of its public repository, each carrying `Daoris-<version>-win-x64.zip`, one staged build
     (the launcher, `app/`, `INSTALLED.md`, `build.json`), and `Daoris-<version>-win-x64.zip.sha256` beside it. `desktop-release.yml` makes them and runs only
@@ -311,7 +321,9 @@ Each type is in a file of its name; `docs/index/README.md` says where a seam, ve
   them. **When to update:** `Mod/Update/InstallUpdater.cs`, over the loop's work (`Mod/Loop/DriverLoop.cs`, `Work`), its plugin
   steps in flight counted by `Drv/Workflows/Nodes/PluginStepsInFlight.cs` through `NodeRuntime`. **The request:**
   `Drv/Install/InstallUpdate.cs`.
-- **A refusal to go back:** `Drv/Workflows/InstallRollback.cs`.
+- **A refusal to go back:** `Drv/Workflows/InstallRollback.cs`. **The proof on a copy of the home:** `Drv/Install/HomeProbe.cs` (the copy and the
+  comparison), `HomeProof.cs` (what a build reads of a home: a new thing a start must still read goes here), the verb `home proof` in
+  `HomePurgeCommand`.
 - **A changed stored shape:** the shape, its writer, its reader and its tests in one change, with no reader of the old shape
   left (rule 51).
 - **A store table or column:** a new numbered step in `DesktopStoreSteps.All` (`Store/DesktopStoreSteps.cs`). Raise the writer stamp only when older builds must
@@ -320,7 +332,7 @@ Each type is in a file of its name; `docs/index/README.md` says where a seam, ve
 - **Daoris's own releases:** `Drv/Install/DaorisReleases.cs` (what the channel says), `DaorisReleaseDownloads.cs` (the fetch), `UpdateFetch.cs` (the staging) and the
   `desktop-release.yml`; the package's name is spelled in both `DaorisReleases.Package` and the workflow.
 
-**Tests that pin the area.** Driver: the `Install/`, `Platform/` and `Store/` tests beside each unit (`DaorisReleasesTests` and `UpdateFetchTests` for rule 48a),
+**Tests that pin the area.** Driver: the `Install/`, `Platform/` and `Store/` tests beside each unit (`HomeProofTests`, `HomeProbeTests` and `HomeProofProcessTests` for rule 47a; `DaorisReleasesTests` and `UpdateFetchTests` for rule 48a),
 `ServiceHostLocatorTests`, `PinnedUpdatesTests`, `PluginStepsInFlightTests`. Modules: the `Update/` tests, `TaskbarIdentityTests`,
 `EveryModuleChildIsHandedTheToolsTests`. Service: `Platform/DaorisHomeTests`. CLI: `test/platform/home.test.ts`,
 `home-census.test.ts`, `tool-test/desktop-publish.test.ts` and `desktop-publish-not-now.test.ts`, `test/deployment-rehearsal.test.ts`.

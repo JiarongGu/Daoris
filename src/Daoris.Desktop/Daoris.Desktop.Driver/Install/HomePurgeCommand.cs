@@ -17,12 +17,13 @@ namespace Daoris.Driver;
 /// or a purge stopped, said with what moved · 2 a word it does not answer.</para>
 /// </remarks>
 // The group's other verb, `account-ids`, is AccountIdsCommand's, which the host hands its words before these.
-[CommandGroup("home", "purge", "account-ids", Bare = true)]
+[CommandGroup("home", "purge", "account-ids", "proof", Bare = true)]
 public static class HomePurgeCommand
 {
     public const string Usage =
         "usage: daoris home purge --history --plan     what a purge would move out of the home, with sizes and counts\n"
         + "       daoris home purge --history --yes      move the home's history into purged/<UTC stamp>/ in the install; configuration stays\n"
+        + "       daoris home proof                      what this build reads of the home, as one line of JSON; an update runs it on a copy\n"
         + "       daoris home                            the paths no entry of the home's table names, with sizes (Not in the table)";
 
     /// <param name="args">The words after <c>home</c>.</param>
@@ -48,6 +49,12 @@ public static class HomePurgeCommand
         if (args.Length == 0)
         {
             Strays(home, output);
+            return 0;
+        }
+
+        if (args is ["proof"])
+        {
+            output.AppendLine(HomeProof.Say(HomeProof.Read(home)));
             return 0;
         }
 
