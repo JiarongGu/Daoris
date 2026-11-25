@@ -408,7 +408,56 @@ public sealed class IntegrationOwedGitTests : IAsyncLifetime
         Assert.Equal(0, owed.GitReads);
     }
 
-    private const string TwoGates = """{ "gates": [ { "name": "build", "run": "dotnet build", "paths": ["src/"] }, { "name": "tools", "run": "npm test" } ], "integration": { "by": "daoris" } }""";
+    /// <summary>Every git start the look's read asks, as arguments.</summary>
+    private async Task<List<string>> StartedAsync(IntegrationOwed owed, DriverConfig config)
+    {
+        var started = new List<string>();
+        GitFlow.Started.Value = arguments =>
+        {
+            lock (started) started.Add(string.Join(' ', arguments));
+        };
+        try
+        {
+            await owed.LookAsync(config, Registry, _now.AddMinutes(1), CancellationToken.None);
+        }
+        finally
+        {
+            GitFlow.Started.Value = null;
+        }
+
+        return started;
+    }
+
+    /// <summary>A tree that stood since the last look starts no git at all, whatever the line, acceptance or unjudged pair.</summary>
+    [Theory]
+    [InlineData("line set, nothing accepted", "set", null)]
+    [InlineData("line guessed, nothing accepted", "guess", null)]
+    [InlineData("an accepted blob this checkout holds not", "set", "unheld")]
+    [InlineData("a changed declaration judged", "set", "changed")]
+    [InlineData("a line the checkout does not hold", "absent", null)]
+    public async Task A_standing_tree_starts_no_git_at_the_next_look(string why, string line, string? accepted)
+    {
+        Assert.NotEmpty(why);
+        await CommitAsync(Declares);
+        var blob = accepted switch
+        {
+            null => null,
+            "unheld" => new string('a', 40),
+            _ => await CommitAsync(Declaring) is var other && other != "none" ? other : null,
+        };
+        if (accepted == "changed") await CommitAsync(Declares);
+        var config = line == "set" ? Choices(blob)
+            : line == "absent" ? DriverConfig.Empty.WithLine("engine", "gone")
+            : blob is null ? DriverConfig.Empty : DriverConfig.Empty.WithIntegrationGates("engine", blob);
+        var owed = new IntegrationOwed();
+        await owed.LookAsync(config, Registry, _now, CancellationToken.None);
+
+        var started = await StartedAsync(owed, config);
+
+        Assert.Empty(started);
+    }
+
+    private const string TwoGates ="""{ "gates": [ { "name": "build", "run": "dotnet build", "paths": ["src/"] }, { "name": "tools", "run": "npm test" } ], "integration": { "by": "daoris" } }""";
 
     private string ConfigPath => DaorisHome.Entry(_home, HomeEntry.DriverConfig);
 
