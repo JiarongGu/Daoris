@@ -47,6 +47,15 @@ learned about world streaming is answerable from `engine` — or from Knowledge 
 without opening `game` at all. Convergence detection then finds where two projects learned the same
 lesson independently, which is how doctrine gets promoted rather than duplicated.
 
+## How the family is pinned
+
+[`daoris.family.json`](daoris.family.json) sits in the folder the two checkouts share, as a workspace keeps it beside its
+members and never inside one: it puts `engine` in the lower layer and `game` above it, so `game` may use `engine` and never
+the other way (D364). `game` says it uses `engine` in its `daoris.json`; once `engine` lands a commit, `game` pins that one
+full commit in its own `daoris.family.lock`, and `daoris family check`, run from `game`, judges the graph and the pin with
+no service. No lock is tracked here: these examples are folders of this repository, not repositories with lines of their
+own, so the rehearsal makes `engine` one and writes the pin.
+
 ## How it is proven
 
 `npm run rehearse:family` (`tools/family-rehearsal.mjs`) runs the whole story end to end and leaves a
@@ -54,6 +63,8 @@ transcript in `_fixtures/rehearsal-logs/`:
 
 - both examples hold **current, clean doctrine** — a canon change that forgot to re-sync them fails
   here, which is the same discipline this repository applies to its own `.claude/`;
+- the **family's pins hold** (D364): `game` pinned to a landed `engine` commit checks green, and a
+  planted cycle and a planted branch pin are each refused;
 - the HTTP host comes up over a scratch store rooted at `examples/`;
 - both projects register, through the real `daoris repository connect`;
 - a quest goes `game → engine`; one to a stranger is **refused naming who is addressable**; declining

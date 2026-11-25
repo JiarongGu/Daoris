@@ -21,6 +21,7 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { setTimeout as sleep } from 'node:timers/promises';
 import { copyTree, treeDiff } from './fsx.mjs';
+import { familyPinsStage } from './family-pins.mjs';
 import { apartVerbs } from './rehearsal-apart.mjs';
 // Every home place is asked of the home table, never joined here.
 import { homeEntry } from '../src/Daoris.Cli/src/platform/home.ts';
@@ -55,10 +56,9 @@ const family = join(scratch, 'family');
 
 const EXAMPLES = ['engine', 'game'];
 
-// Hermetic by construction: every host and driver in this rehearsal points its remote-config lookup at
-// a file that does not exist, so the developer's real remotes map can never leak a real deployment
-// into a gate run. The remote phases then opt in per process — by env pair, or by pointing the lookup
-// at a map this run wrote itself.
+// Hermetic: every host and driver here looks for its remote config in a file that does not exist, so the developer's
+// real remotes never leak a deployment into a gate run; the remote phases opt in per process (an env pair, or a map
+// this run wrote itself).
 const NO_REMOTE = { DAORIS_REMOTE_CONFIG: join(scratch, 'no-remote.json') };
 
 // The same guard for the toolchain. Profiles live BESIDE this file, so pointing it into
@@ -357,13 +357,11 @@ function stopEverything() {
 
 // -------------------------------------------------- 1. doctrine is current
 
-section('1. The examples hold current, clean doctrine');
+section('1. The examples hold current, clean doctrine, and their family\'s pins');
 
-// What the question is: WOULD sync change anything? Asked of a copy, compared file by file with the
-// example. Synced in place, the first run would repair the examples it had just found stale, and every
-// later run would pass on the repair. A gate must not fix the tree it is judging. A git diff would
-// read an in-progress edit to `examples/README.md`, a file sync never touches, as
-// a canon change nobody synced.
+// WOULD sync change anything? Asked of a copy, file by file: synced in place, the first run would repair the examples it
+// found stale and every later run pass on the repair; a gate never fixes the tree it judges. A git diff would read an
+// edit to `examples/README.md`, which sync never touches, as a canon change nobody synced.
 rmSync(scratch, { recursive: true, force: true });
 const changedBySync = [];
 for (const name of EXAMPLES) {
@@ -383,6 +381,7 @@ for (const name of EXAMPLES) {
   const gate = run(`node "${cliBin}" check`, join(examplesRoot, name));
   check(`${name}: check is clean`, gate.code === 0, gate.out);
 }
+familyPinsStage({ examplesRoot, cliBin, scratch: join(scratch, 'pins'), run, check });
 
 // -------------------------------------------------- 2. the service comes up
 
