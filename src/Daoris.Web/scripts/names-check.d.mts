@@ -58,3 +58,4 @@ export function validate(glossary: Glossary, en: Catalogue, zh: Catalogue, other
 export function check(glossary: Glossary, en: Catalogue, zh: Catalogue, options?: { all?: boolean; others?: Record<string, Catalogue> }): Finding[];
 export function report(findings: Finding[], options?: { labels?: number; accepted?: number }): string;
 export function verdict(findings: Finding[], options: { strict: boolean }): 0 | 1;
+export function run(argv?: string[]): { code: 0 | 1 | 2; stdout: string; stderr: string };

@@ -15,13 +15,12 @@
 // - shared: no word names two things across the glossary, the driver's seeded roles and the reporting line's levels (`shared-words.mjs`);
 // - reword: a word a term lists under `avoid.later` is one a later rewording will forbid. Strings that still say it are
 //  reported; nothing fails on it. The glossary lists none now.
-// Alone it REPORTS and exits 0. It exits 2 when the glossary itself is malformed, since a glossary that
-// cannot be read has stopped checking anything. `--strict` exits 1 on a glossary, form or door finding
-// (facts) and never on a budget (a judgement: a character count estimates a width, and the window is where
-// a width is a fact). The web's build runs `--strict`,
-// beside the parity check; `--all` also reads every sentence for the words a term must not be called, and
-// reports. A budget judgement looked at and kept is the glossary's `accepted`, with the name it accepted and
-// why: it stops being reported while the name stands, and a rename brings it back to be judged again.
+// Alone it REPORTS and exits 0. It exits 2 when the glossary itself is malformed, since a glossary that cannot be read has stopped
+// checking anything. `--strict` exits 1 on a glossary, form or door finding (facts) and never on a budget (a judgement: a character
+// count estimates a width, and the window is where a width is a fact). The web's build runs `--strict`, beside the parity check;
+// `--all` also reads every sentence for the words a term must not be called, and reports. A budget judgement looked at and kept is
+// the glossary's `accepted`, with the name it accepted and why: it stops being reported while the name stands, and a rename brings
+// it back to be judged again.
 import { readdirSync, readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -381,29 +380,19 @@ export function verdict(findings, { strict }) {
   return strict && findings.some((finding) => finding.rule !== 'budget' && finding.rule !== 'reword') ? 1 : 0;
 }
 
-if (isMain(import.meta.url)) {
-  const flags = new Set(process.argv.slice(2));
+/** The check as the command runs it, for the flags `argv`: its exit code and what it says on each stream. */
+export function run(argv = []) {
+  const flags = new Set(argv);
+  const ended = (code, stderr) => ({ code, stdout: '', stderr });
   const { glossary, en, zh, others } = load();
   const problems = validate(glossary, en, zh, others);
-  if (problems.length) {
-    console.error(`names-check: the glossary is malformed:\n  ${problems.join('\n  ')}`);
-    process.exit(2);
-  }
+  if (problems.length) return ended(2, `names-check: the glossary is malformed:\n  ${problems.join('\n  ')}`);
   const words = readPersonWords();
-  if (!words) {
-    console.error('names-check: src/bridge/generated/routes.ts lists no person\'s presses: run `node tools/contracts.mjs`');
-    process.exit(2);
-  }
+  if (!words) return ended(2, 'names-check: src/bridge/generated/routes.ts lists no person\'s presses: run `node tools/contracts.mjs`');
   const kinds = readNodeKinds();
-  if (!kinds) {
-    console.error('names-check: src/data/generated/service.ts lists no node kinds: run `node tools/contracts.mjs`');
-    process.exit(2);
-  }
+  if (!kinds) return ended(2, 'names-check: src/data/generated/service.ts lists no node kinds: run `node tools/contracts.mjs`');
   const registers = readRegisters();
-  if (!registers.roles || !registers.levels) {
-    console.error('names-check: the driver\'s seeded roles or the reporting line\'s levels do not read (Defaults/roles.json, Roles/ReportingLine.cs)');
-    process.exit(2);
-  }
+  if (!registers.roles || !registers.levels) return ended(2, 'names-check: the driver\'s seeded roles or the reporting line\'s levels do not read (Defaults/roles.json, Roles/ReportingLine.cs)');
   const findings = [
     ...check(glossary, en, zh, { all: flags.has('--all'), others }), ...unworded(words, { en, zh, ...others }), ...unwordedKinds(kinds, { en, zh, ...others }),
     ...shared(things(glossary, registers)),
@@ -411,6 +400,13 @@ if (isMain(import.meta.url)) {
   const kindFor = kindOf(glossary);
   const labels = Object.keys(en).filter((key) => LABELS.has(kindFor(key)) && !PLURAL.test(key)).length;
   const accepted = acceptances(glossary).size;
-  console.log(flags.has('--json') ? JSON.stringify(findings, null, 2) : report(findings, { labels, accepted }));
-  process.exit(verdict(findings, { strict: flags.has('--strict') }));
+  const stdout = flags.has('--json') ? JSON.stringify(findings, null, 2) : report(findings, { labels, accepted });
+  return { code: verdict(findings, { strict: flags.has('--strict') }), stdout, stderr: '' };
+}
+
+if (isMain(import.meta.url)) {
+  const ran = run(process.argv.slice(2));
+  if (ran.stderr) console.error(ran.stderr);
+  else console.log(ran.stdout);
+  process.exit(ran.code);
 }

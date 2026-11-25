@@ -1,10 +1,9 @@
-import { spawnSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { BUDGET_LEFT, STRAY_AUDITED } from './namesAudit';
 import {
-  type Catalogue, type Finding, type Glossary, check, kindOf, load, measure, report, validate, verdict,
+  type Catalogue, type Finding, type Glossary, check, kindOf, load, measure, report, run, validate, verdict,
 } from '../../scripts/names-check.mjs';
 
 /**
@@ -476,14 +475,13 @@ describe('the real glossary and catalogues', { timeout: 30_000 }, () => {
       .toEqual([]);
     expect(report(found)).toMatch(/budget/);
 
-    const script = join(process.cwd(), 'scripts', 'names-check.mjs');
-    const reported = spawnSync(process.execPath, [script], { encoding: 'utf8', windowsHide: true });
-    expect(reported.status, reported.stderr).toBe(0);
+    const reported = run([]);
+    expect(reported.code, reported.stderr).toBe(0);
     expect(reported.stdout).toMatch(/names-check: \d+ label keys/);
-    const strict = spawnSync(process.execPath, [script, '--strict'], { encoding: 'utf8', windowsHide: true });
-    expect(strict.status, strict.stdout).toBe(0);
-    // It runs the check twice in a process of its own: under the CI beside five workers that took past the 20 s default.
-  }, 90_000);
+    const strict = run(['--strict']);
+    expect(strict.code, strict.stdout).toBe(0);
+    // The script's own entry point only prints what `run` says and exits with its code; the web's build runs it as a process.
+  });
 
   /**
  * The role is 角色 in both its shapes, so a label that says Actor, Actors or Roles in English must say it
