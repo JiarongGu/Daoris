@@ -130,6 +130,26 @@ public sealed class UpdateDrainBoundTests : Bridge
         Assert.Equal(0, _closed);
     }
 
+    /// <summary>A session that always has a next turn lets the build install at the look between two of its turns, within the bound.</summary>
+    [Fact]
+    public async Task A_session_that_always_has_a_next_turn_lets_the_build_install_at_the_look_between_two_of_its_turns()
+    {
+        using var updater = Updater();
+        var turns = new Queue<UpdateWork>([new UpdateWork(1, 0), new UpdateWork(1, 0), new UpdateWork(0, 0), new UpdateWork(0, 0)]);
+        _reads = () => turns.Count > 0 ? turns.Dequeue() : new UpdateWork(1, 0);
+
+        Assert.Equal(UpdateStates.Draining, (await updater.LookAsync()).State);
+        _now = Now.AddMinutes(1);
+        Assert.Equal(UpdateStates.Draining, (await updater.LookAsync()).State);
+        _now = Now.AddMinutes(2);
+        var applying = await updater.LookAsync();
+
+        Assert.Equal(UpdateStates.Applying, applying.State);
+        Assert.Equal(1, _closed);
+        Assert.True(_now - Now < _bound);
+        Assert.Equal("idle", Logged("update.applying").Single()["by"]!.GetValue<string>());
+    }
+
     /// <summary>The bound is the machine's setting, read at each look.</summary>
     [Fact]
     public async Task The_bound_is_the_machine_s_setting_read_at_each_look()

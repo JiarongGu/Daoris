@@ -214,6 +214,17 @@ public sealed class SessionWatch
         watched.Works = works;
     }
 
+    /// <summary>Where a session's door says it runs no turn and waits on its own work (<see cref="AcpSession.BetweenTurns"/>).</summary>
+    public void Between(string session, Func<bool> between)
+    {
+        if (_watched.TryGetValue(session, out var watched)) watched.Between = between;
+    }
+
+    /// <summary>How many of the sessions <paramref name="mine"/> names run no turn: an update's drain does not wait on them.</summary>
+    public int BetweenTurns(Func<string, bool> mine) =>
+        _watched.Values.Count(
+            watched => !watched.Gone && mine(watched.Session) && watched.Between?.Invoke() == true);
+
     /// <summary>
     /// Where a session's door says it waits between a transient episode's tries: on Daoris's own
     /// timer, never its agent, so the watch reads it as a call held for the person's permission is read, a wait that is not the agent's,
@@ -580,6 +591,7 @@ public sealed class SessionWatch
         public readonly WatchedRun Run = run;
         public Func<bool>? OwnWork = run.WaitsOnOwnWork;
         public Func<IReadOnlyList<string>>? Works;
+        public Func<bool>? Between;
         public Func<bool>? Transient;
         public LongCallLook? Long;
         public long HeardTicks = heard;

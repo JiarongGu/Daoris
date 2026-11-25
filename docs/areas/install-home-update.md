@@ -185,15 +185,20 @@ Each type is in a file of its name; `docs/index/README.md` says where a seam, ve
     loop's starts and the presses go on, the mode stays *when idle*, and the build installs at the first look that reads the work
     idle, or at the person's word; a newer build drains anew. The banner says until when a drain holds new work, and of a deferred
     build that it waits, on what and since when, with *Update now* and *Not now*. (from D139, D327)
-39. Idle is no driven session running, no conversation's turn in flight and no run's plugin step in flight: an attempt a plugin
+39. Idle is no driven session with a turn running, no conversation's turn in flight and no run's plugin step in flight: an attempt a plugin
     performs that is recorded, sent or unknown on a run that goes on, which the runtime governs at a node its graph declares while
     its plugin's process is up, and whose step waits on no role's act (`PluginStepsInFlight`), so a release or a deploy is never
     cut off and left not known. The loop hands that count in its work beside the sessions and the turns; the updater reads no run
-    record. A conversation between turns, a parked session, the terminal, a held or settled attempt, a step whose progress names
+    record. A driven session of this loop that waits on its own background work, with no turn its harness woke running and no prompt
+    open (`AcpSession.BetweenTurns`, counted out by `DriverWatch.RunsInTurn`), runs no turn and is idle too: a busy Daoris, with
+    sessions always at some stage of a next turn, would otherwise never install. The close that follows is *Update now*'s: such a
+    session is recorded stopped for the update and carried on at the next start (rule 41), and the background work it waited on, a
+    check or a landing it ran itself, stops with its process; the carry-on words say so (`ShellClose.Words`). A turn its harness
+    wakes between the last look and the close is cut too. A conversation between turns, a parked session, the terminal, a held or settled attempt, a step whose progress names
     the role it waits on (an approver, a deployer, whoever holds it), a watch whose plugin declares it acts on nothing
     (`perform.acts: false`), Daoris's own steps, an ended run's, and an attempt the runtime does not ask after (a run it does not
     govern, a node no graph declares, a plugin down) are idle, and an attempt not known is idle 15 minutes after the loop first
-    counts it so (`PluginStepsInFlight.UnknownBound`); the banner names the steps it waits on. (from D139, D301)
+    counts it so (`PluginStepsInFlight.UnknownBound`); the banner names the steps it waits on. (from D139, D301, D363)
 40. Before closing for a build, the application checks it: every listed file with its size and hash, nothing unlisted, the
     launcher, the application and its library, and the host where the install carries one. It refuses going back to an older
     version while a delivery is unresolved, and below the first build that saved a workflow whose step names a role other than its

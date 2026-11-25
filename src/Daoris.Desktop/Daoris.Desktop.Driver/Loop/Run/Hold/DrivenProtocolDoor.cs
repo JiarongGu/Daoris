@@ -139,6 +139,7 @@ internal sealed class DrivenProtocolDoor(IRunWiring wiring)
                 // Whether it waits on its own background work, and a wait between a transient episode's tries, which is Daoris's,
                 // never quiet.
                 wiring.Watch.OwnWork(sessionId, () => session.WaitsOnOwnWork, () => [.. session.BackgroundRunning.Select(task => task.Name)]);
+                wiring.Watch.Between(sessionId, () => session.BetweenTurns);
                 if (retry is not null) wiring.Watch.Transient(sessionId, () => session.WaitsOnTransient);
 
                 using var stops = context.Output is null ? null : context.Processes.OpenTaskStops(sessionId, session.StopTaskAsync);
