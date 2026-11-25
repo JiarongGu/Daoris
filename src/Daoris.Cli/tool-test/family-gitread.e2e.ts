@@ -2,9 +2,9 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { mkdirSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
-import { makeFixture } from '../_fixture.ts';
-import { openRepository } from '../../src/family/gitread.ts';
-import { commit, git, history, initWithCommit } from './_git.ts';
+import { makeFixture } from '../test/_fixture.ts';
+import { openRepository } from '../src/family/gitread.ts';
+import { commit, git, history, initWithCommit } from './support/family-git.ts';
 
 /**
  * The family check's git reading: refs and commits read from git's own files, never by starting git (the CLI's one spawn is the

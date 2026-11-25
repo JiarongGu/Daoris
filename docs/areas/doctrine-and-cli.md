@@ -267,7 +267,7 @@ skill, and `co-working` as a pack.
     loose and packed refs, loose objects, version-2 packs with their deltas and alternates; a reftable store is refused by name. Exit 0
     green, 1 refused, 2 a file of the wrong shape. (from D364)
 57. `npm run rehearse:family`'s first section runs it on a copy of the examples (`tools/family-pins.mjs`, run whole by
-    `family-pins.test.mjs`): `examples/daoris.family.json` puts engine below game, and the check is green on game pinned to a landed
+    `tool-test/family-pins.e2e.ts`): `examples/daoris.family.json` puts engine below game, and the check is green on game pinned to a landed
     engine commit and red on a planted cycle and a planted branch pin. (from D364)
 
 ## Where a change goes
@@ -293,8 +293,9 @@ skill, and `co-working` as a pack.
 - CLI: `test/doctrine/` (`sync`, `check`, `switchoff`, `keep`, `reconcile`, `update-check`, `newer-lock`, `upstream`,
   `upstream-request`, `region`, `tierrender`, `indexgen`, `packapi`); `test/layout/` (`layout-move`, `layout-mirror`,
   `layout-rooms`, `layout-links`, `documents-*`); `test/cli/` (`cli`, `cli-usage`, `cli-tree`, `containment`); `test/declaration/` (`split`, `proof`, `dryrun`: this
-  repository's own file converts with no difference); `test/family/` (`family`, `gitread`, `family-check`: real git lays each
-  repository out and the reader is held to it);
+  repository's own file converts with no difference); `test/family/family.test.ts` (the graph); the family's real-git cases are
+  end-to-end, in `tool-test/` (`family-gitread`, `family-check`, `family-pins`: git lays each repository out and the reader is held
+  to it);
   `test/platform/driverprogram.test.ts`.
 - `test/dogfood.test.ts`: canon frontmatter, no private names in the canon, this repository checks clean, no CLI module on
   the network, one spawn, `check` with no canon. `test/structure.test.ts` holds the CLI's module structure.

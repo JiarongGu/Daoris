@@ -1,9 +1,9 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { join } from 'node:path';
-import { makeFixture, type Fixture } from '../_fixture.ts';
-import { runCli } from '../../src/cli.ts';
-import { commit, git, history } from './_git.ts';
+import { makeFixture, type Fixture } from '../test/_fixture.ts';
+import { runCli } from '../src/cli.ts';
+import { commit, git, history } from './support/family-git.ts';
 
 /**
  * `daoris family check` with no service: the family file in the folder the members' checkouts share,

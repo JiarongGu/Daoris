@@ -2,7 +2,8 @@
  * The family rehearsal's pin stage: the example family's file, game's pin of a landed engine commit, and `daoris family check` run
  * from game's checkout, green on game to engine, red on a planted cycle and on a planted branch pin.
  *
- * Its own module so its fast test (`family-pins.test.mjs`) runs it whole, where the rehearsal around it is a real-process run.
+ * Its own module so its end-to-end test (`src/Daoris.Cli/tool-test/family-pins.e2e.ts`) runs it whole, where the rehearsal
+ * around it is a run of every real process.
  * Each step is said through the rehearsal's `check(label, ok, detail)`. It writes only under `scratch`, a copy of the examples.
  */
 import { copyFileSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
