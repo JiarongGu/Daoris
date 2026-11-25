@@ -8,10 +8,10 @@ namespace Daoris.Driver;
 /// </summary>
 /// <param name="Others">The live heavy runs holding a place other than this check's own.</param>
 /// <param name="FreeCommit">The machine's free commit in bytes, null where it cannot be read.</param>
-internal sealed record LoadReading(int Others, long? FreeCommit)
+internal sealed record LoadReading(int Others, long? FreeCommit, long Need)
 {
-    /// <summary>Loaded: another heavy run holds a place, or the free commit is below what one more run needs (<see cref="CheckAdmission.Need"/>).</summary>
-    internal bool Loaded => Others > 0 || FreeCommit is { } free && free < CheckAdmission.Need;
+    /// <summary>Loaded: another heavy run holds a place, or the free commit is below what one more run needs (<see cref="Need"/>, <see cref="CheckAdmission.QuietNeed"/>).</summary>
+    internal bool Loaded => Others > 0 || FreeCommit is { } free && free < Need;
 
     /// <summary>The reading as a clause: the count, and the free commit where it reads.</summary>
     internal string Words => string.Create(CultureInfo.InvariantCulture,
@@ -64,16 +64,16 @@ internal static class LoadFailures
     internal static LoadReading Read(string home, VerifyWorld world, string? except = null)
     {
         var look = MachineAdmission.Look(home, world.Admission.Alive, world.Admission.Clock(), world.Capacity);
-        return new LoadReading(look.Holds.Count(hold => hold.Id != except && !hold.What.EndsWith(Mark, StringComparison.Ordinal)), world.Memory()?.Commit);
+        return new LoadReading(look.Holds.Count(hold => hold.Id != except && !hold.What.EndsWith(Mark, StringComparison.Ordinal)), world.Memory()?.Commit, CheckAdmission.QuietNeed(home));
     }
 
     /// <summary>
     /// Whether the run holding <paramref name="mine"/> may run now: no other run holds a place that works, and the free commit is what one run
     /// needs. A run also waiting for its quiet slot goes by the order it asked in, so two never wait on each other, and the earlier goes first.
     /// </summary>
-    internal static bool Quiet(AdmissionLook look, AdmissionEntry mine, long? freeCommit) =>
+    internal static bool Quiet(AdmissionLook look, AdmissionEntry mine, long? freeCommit, long need) =>
         look.Holds.All(hold => hold.Id == mine.Id || hold.What.EndsWith(Mark, StringComparison.Ordinal) && (hold.Since, hold.Id).CompareTo((mine.Since, mine.Id)) > 0)
-        && (freeCommit is not { } free || free >= CheckAdmission.Need);
+        && (freeCommit is not { } free || free >= need);
 
     private static string Classes(IReadOnlyList<string> names) => string.Join(", ", names);
 

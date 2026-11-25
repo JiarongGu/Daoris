@@ -58,7 +58,13 @@ public sealed record HeavyWaiting(TimeSpan Poll, TimeSpan SayEvery, Func<DateTim
 }
 
 /// <summary>What admits a run waiting for its repository's slot: the rules and the repository's accepted slots (<see cref="AcceptedSlots"/>), read at each look, and its record.</summary>
-public sealed record HeavyAdmit(Func<CheckRules> Rules, Func<CancellationToken, Task<int?>> Declared, Func<HeavyHolder> Holder);
+public sealed record HeavyAdmit(Func<CheckRules> Rules, Func<CancellationToken, Task<int?>> Declared, Func<HeavyHolder> Holder)
+{
+    /// <summary>The driven session (the agent) whose run it is: its fair share of its project's places.</summary>
+    public string? Agent { get; init; }
+
+    public string Gate { get; init; } = CheckAdmission.DefaultGate;
+}
 
 /// <summary>A wait for a repository's slot as it ended: the slot, or none and why the admission refused it (null where none judged).</summary>
 public sealed record HeavyTake(HeavySlot? Slot, CheckWait? Wait);
@@ -222,7 +228,7 @@ public sealed class HeavySlot : IDisposable
                 }
                 else
                 {
-                    (var taken, wait) = CheckAdmission.TryTake(home, admit.Rules(), new HeavyAsk(key, repository, await admit.Declared(ct).ConfigureAwait(false), admit.Holder));
+                    (var taken, wait) = CheckAdmission.TryTake(home, admit.Rules(), new HeavyAsk(key, repository, await admit.Declared(ct).ConfigureAwait(false), admit.Holder) { Agent = admit.Agent, Gate = admit.Gate });
                     slot = taken?.Repository;
                 }
 

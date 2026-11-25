@@ -218,6 +218,28 @@ public sealed class ProcessJob : IDisposable
         }
     }
 
+    /// <summary>The most memory the job's processes have held at once, in bytes; null where there is no job or it did not read.</summary>
+    public long? PeakMemory
+    {
+        get
+        {
+            var handle = Volatile.Read(ref _handle);
+            if (handle == IntPtr.Zero) return null;
+            var size = Marshal.SizeOf<JobObjectExtendedLimitInformation>();
+            var buffer = Marshal.AllocHGlobal(size);
+            try
+            {
+                return QueryInformationJobObject(handle, ExtendedLimitInformation, buffer, (uint)size, IntPtr.Zero)
+                    ? (long)Marshal.PtrToStructure<JobObjectExtendedLimitInformation>(buffer).PeakJobMemoryUsed
+                    : null;
+            }
+            finally
+            {
+                Marshal.FreeHGlobal(buffer);
+            }
+        }
+    }
+
     /// <summary>
     /// The CPU every process that ever joined the job has used, user and kernel, cumulative:
     /// busy is read as the difference between two reads, never from one. Null where there is no job or the accounting did not read.

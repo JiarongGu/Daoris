@@ -349,7 +349,7 @@ slowest classes print by their own times beside the half's wall. Before a heavy 
 page, a Process half, a rehearsal) the tool reads the machine's free commit and free physical memory, and waits, up to
 ten minutes, while either is below the gate's need (its class's, or `"memoryGb"` on the gate in `daoris.gates.json`), or the free
 commit (the physical memory where no commit is read) is below that need plus the reserve the person keeps free for their own work
-(`daoris settings reserve`, a third of the machine's memory by default), as the driver's admission judges it; a gate
+(`daoris settings reserve`, the floor under what the person's own work is measured to take back, D362), as the driver's admission judges it; a gate
 that died of memory reads MEMORY, not a failed check, and runs again once, alone, at the run's end (MEMGATE1), as does one
 whose hang bound killed a test under load, once the machine is free; one past its budget under load runs on instead (D346,
 *Choose the checks*). Add

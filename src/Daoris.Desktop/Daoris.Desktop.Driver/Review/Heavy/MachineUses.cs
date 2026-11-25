@@ -9,17 +9,19 @@ public static class MachineUses
 
     private static readonly object Gate = new();
 
-    private static (long At, string Home, MachineUse Use)? _last;
+    private static (long At, string Home, int? Reserve, MachineUse Use)? _last;
 
     /// <summary>This machine now, read at most every few seconds: the share walks every process, which a state read each look would repeat.</summary>
     public static MachineUse Read(string home, int? reserveGb)
     {
         lock (Gate)
         {
-            if (_last is { } last && last.Home == home && Environment.TickCount64 - last.At < FreshMilliseconds) return last.Use with { Reserve = ReserveSetting.Bytes(reserveGb, last.Use.Total) };
+            if (_last is { } last && last.Home == home && last.Reserve == reserveGb && Environment.TickCount64 - last.At < FreshMilliseconds) return last.Use;
             var reading = MachineMemory.Read();
-            var use = new MachineUse(reading?.Total, reading?.Commit ?? reading?.Physical, DaorisShare.Read(home), ReserveSetting.Bytes(reserveGb, reading?.Total));
-            _last = (Environment.TickCount64, home, use);
+            var ceiling = CheckRules.Of(null, Environment.ProcessorCount, null, Environment.GetEnvironmentVariable, () => null).Ceiling;
+            var why = RoomWhys.Read(home, reading, reserveGb, RoomWorld.Machine.Clock(), ceiling);
+            var use = new MachineUse(reading?.Total, reading?.Commit ?? reading?.Physical, DaorisShare.Read(home), why.Keep) { Why = why };
+            _last = (Environment.TickCount64, home, reserveGb, use);
             return use;
         }
     }
@@ -48,6 +50,23 @@ public static class DaorisShare
         }
     }
 
+    /// <summary>The resident memory of the same trees and of every place held in the admission: the unit of the machine's physical use.</summary>
+    public static long? ReadResident(string home)
+    {
+        try
+        {
+            var roots = new HashSet<int> { Environment.ProcessId };
+            foreach (var (_, holder) in HeavySlot.Holders(home)) roots.Add(holder.Pid);
+            foreach (var holder in VerifySlot.Look(home).Holders) roots.Add(holder.Pid);
+            foreach (var hold in MachineAdmission.Look(home).Holds) roots.Add(hold.Pid);
+            return Of(roots, Parents(), Resident);
+        }
+        catch (Exception error) when (error is IOException or UnauthorizedAccessException or InvalidOperationException or DllNotFoundException or EntryPointNotFoundException)
+        {
+            return null;
+        }
+    }
+
     /// <summary>The commit of every process in the trees under <paramref name="roots"/>, each counted once, from each process's parent.</summary>
     public static long? Of(IEnumerable<int> roots, IReadOnlyDictionary<int, int>? parents, Func<int, long?> commit)
     {
@@ -67,14 +86,19 @@ public static class DaorisShare
     }
 
     /// <summary>One process's private memory, asked of that process alone (never through <c>Process</c>, whose lookup reads every process on the machine); null where it is gone or not ours to read.</summary>
-    private static long? Commit(int pid)
+    private static long? Commit(int pid) => Held(pid, false);
+
+    private static long? Resident(int pid) => Held(pid, true);
+
+    private static long? Held(int pid, bool resident)
     {
         try
         {
-            if (OperatingSystem.IsWindows()) return WindowsCommit(pid);
+            if (OperatingSystem.IsWindows()) return WindowsHeld(pid, resident);
             if (!OperatingSystem.IsLinux()) return null;
-            var line = File.ReadLines($"/proc/{pid}/status").FirstOrDefault(each => each.StartsWith("VmData:", StringComparison.Ordinal));
-            return line is not null && long.TryParse(line["VmData:".Length..].Trim().Split(' ')[0], out var kilobytes) ? kilobytes * 1024 : null;
+            var field = resident ? "VmRSS:" : "VmData:";
+            var line = File.ReadLines($"/proc/{pid}/status").FirstOrDefault(each => each.StartsWith(field, StringComparison.Ordinal));
+            return line is not null && long.TryParse(line[field.Length..].Trim().Split(' ')[0], out var kilobytes) ? kilobytes * 1024 : null;
         }
         catch (Exception error) when (error is IOException or UnauthorizedAccessException)
         {
@@ -82,14 +106,14 @@ public static class DaorisShare
         }
     }
 
-    private static long? WindowsCommit(int pid)
+    private static long? WindowsHeld(int pid, bool resident)
     {
         var handle = OpenProcess(QueryLimited, false, (uint)pid);
         if (handle == IntPtr.Zero) return null;
         try
         {
             var counters = new ProcessMemory { Size = (uint)Marshal.SizeOf<ProcessMemory>() };
-            return GetProcessMemoryInfo(handle, ref counters, counters.Size) ? (long)counters.PrivateUsage : null;
+            return GetProcessMemoryInfo(handle, ref counters, counters.Size) ? (long)(resident ? counters.WorkingSet : counters.PrivateUsage) : null;
         }
         finally
         {
