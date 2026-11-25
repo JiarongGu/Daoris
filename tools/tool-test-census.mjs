@@ -10,13 +10,14 @@
  * one that holds an earlier set's file would run it twice; a pick of another set (`of`) names files that set holds. A test under
  * `tools/` that calls a reader of the live machine's load (its heavy-run admission or its process list) with no seam of its own is
  * named. It is a net over direct calls, read by name from the source: a reader behind a helper, or a home set from the environment
- * elsewhere, passes it.
+ * elsewhere, passes it. What a unit test starts, reads through a git helper or waits on is `tools/unit-pure.mjs`'s.
  */
 import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { isMain } from './fsx.mjs';
 import { declaredSets, filesBySet, listFiles, setOf } from './test-sets.mjs';
+import { callsOf } from './unit-pure/reads.mjs';
 
 const TEST_FILE = /\.(?:test\.(?:mjs|ts|tsx)|e2e\.ts|spec\.ts)$/;
 const HELD = [{ files: ['tools/**', 'src/Daoris.Cli/**', 'src/Daoris.Web/**'] }];
@@ -47,40 +48,12 @@ const LIVE_READS = [
   { name: 'loadSampler', fixture: (args) => /\bcount\b/.test(args), why: 'the live admission and process list; a test hands it its `count`' },
 ];
 
-const LITERALS = /\/\/[^\n]*|\/\*[\s\S]*?\*\/|'(?:[^'\\\n]|\\.)*'|"(?:[^"\\\n]|\\.)*"/g;
-
-/** The text between the parenthesis at `at` and its pair, the pair found in `code` (comments and strings blanked), the text read from `text`. */
-function argumentsAt(code, text, at) {
-  let depth = 0;
-  for (let i = at; i < code.length; i++) {
-    if (code[i] === '(') depth++;
-    else if (code[i] === ')' && --depth === 0) return text.slice(at + 1, i).trim();
-  }
-  return text.slice(at + 1).trim();
-}
-
-/** Each call of `name` in `text` by that bare name (a method, a declaration, a string or a comment is none): its line and its arguments. */
-function callsOf(text, name) {
-  const code = text.replace(LITERALS, (each) => each.replace(/[^\n]/g, ' '));
-  const found = [];
-  for (const match of code.matchAll(new RegExp(`(?<![.\\w$])${name}\\s*\\(`, 'g'))) {
-    const before = code.slice(code.lastIndexOf('\n', match.index) + 1, match.index).trim();
-    if (/(?:^|\s)function\*?$/.test(before)) continue;
-    found.push({ line: text.slice(0, match.index).split('\n').length, args: argumentsAt(code, text, match.index + match[0].length - 1) });
-  }
-  return found;
-}
-
 /** The calls in a test's `text` that read the live machine's load, each `{ line, name, why }`; a name in a comment or a string is none. */
 export function liveLoadReads(text) {
   return LIVE_READS
     .flatMap(({ name, fixture, why }) => callsOf(text, name).filter((call) => !fixture(call.args)).map((call) => ({ line: call.line, name, why })))
     .sort((x, y) => x.line - y.line);
 }
-
-const STARTS = ['spawn', 'spawnSync', 'execFile', 'execFileSync', 'exec', 'execSync', 'fork', 'spawnGit', 'execGit', 'git', 'gitSight'];
-
-export const startedProcesses = (text) => STARTS.flatMap((name) => callsOf(text, name).map((call) => ({ line: call.line, name }))).sort((x, y) => x.line - y.line);
 
 /** The census over the tree at `root`: `{ problems, count }`, one problem for each file no set holds and each set or script at fault. */
 export function checkToolTests(root) {
@@ -94,9 +67,6 @@ export function checkToolTests(root) {
   for (const file of tests) if (!setOf(sets, file)) problems.push(`${file}: no test set holds it (add a pattern to a set in daoris.gates.json's tests)`);
   for (const file of tests.filter((each) => each.startsWith('tools/'))) {
     for (const read of liveLoadReads(readFileSync(join(root, file), 'utf8'))) problems.push(`${file}:${read.line}: ${read.name}( reads the live machine, so the test's words change with the load it runs beside: ${read.why}`);
-  }
-  for (const file of tests.filter((each) => setOf(sets, each)?.project === 'unit')) {
-    for (const start of startedProcesses(readFileSync(join(root, file), 'utf8'))) problems.push(`${file}:${start.line}: ${start.name}( starts a process in a unit test, whose time is the machine's load: hand the code under test a seam of its own, or move the case to the end-to-end project`);
   }
   sets.forEach((set, at) => {
     if (!gates.has(set.gate)) problems.push(`set ${set.name}: run by gate ${set.gate}, which daoris.gates.json does not declare`);

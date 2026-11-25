@@ -1,0 +1,364 @@
+{
+  "files": {
+    "src/Daoris.Cli/test/declaration/dryrun.test.ts": {
+      "process": 1,
+      "git": 3,
+      "row": "UNITPURE1"
+    },
+    "src/Daoris.Cli/test/deployment-rehearsal.test.ts": {
+      "process": 2,
+      "row": "UNITPURE1"
+    },
+    "src/Daoris.Cli/test/driver-names.test.ts": {
+      "process": 1,
+      "git": 2,
+      "row": "UNITPURE1"
+    },
+    "src/Daoris.Cli/test/knowledge-server.test.ts": {
+      "process": 1,
+      "clock": 2,
+      "row": "UNITPURE1"
+    },
+    "src/Daoris.Cli/test/one-word.test.ts": {
+      "git": 1,
+      "row": "UNITPURE1"
+    },
+    "src/Daoris.Cli/test/orient-index.test.ts": {
+      "process": 4,
+      "row": "UNITPURE1"
+    },
+    "src/Daoris.Cli/test/orient-report.test.ts": {
+      "process": 2,
+      "row": "UNITPURE1"
+    },
+    "src/Daoris.Cli/test/platform/shellword.test.ts": {
+      "process": 4,
+      "row": "UNITPURE1"
+    },
+    "src/Daoris.Cli/test/readme-quickstart.test.ts": {
+      "process": 2,
+      "row": "UNITPURE1"
+    },
+    "src/Daoris.Cli/test/tools-main.test.ts": {
+      "process": 2,
+      "row": "UNITPURE1"
+    },
+    "src/Daoris.Cli/tool-test/bounded-node.test.ts": {
+      "clock": 1,
+      "row": "UNITPURE1"
+    },
+    "src/Daoris.Cli/tool-test/desktop-publish-cli-bundle.test.ts": {
+      "process": 1,
+      "row": "UNITPURE1"
+    },
+    "src/Daoris.Cli/tool-test/desktop-publish.test.ts": {
+      "process": 4,
+      "git": 30,
+      "row": "UNITPURE1"
+    },
+    "src/Daoris.Cli/tool-test/heavy-admission.test.ts": {
+      "clock": 2,
+      "row": "UNITPURE1"
+    },
+    "src/Daoris.Cli/tool-test/merge-branch-reruns.test.ts": {
+      "process": 1,
+      "row": "UNITPURE1"
+    },
+    "src/Daoris.Cli/tool-test/merge-branch-scheduling-a.test.ts": {
+      "clock": 1,
+      "row": "UNITPURE1"
+    },
+    "src/Daoris.Cli/tool-test/merge-branch/ci-steps.test.ts": {
+      "clock": 1,
+      "row": "UNITPURE1"
+    },
+    "src/Daoris.Cli/tool-test/move-code.test.ts": {
+      "process": 2,
+      "row": "UNITPURE1"
+    },
+    "src/Daoris.Cli/tool-test/setup-kit.test.ts": {
+      "process": 5,
+      "git": 24,
+      "clock": 3,
+      "row": "UNITPURE1"
+    },
+    "src/Daoris.Cli/tool-test/stand-ins.test.ts": {
+      "process": 1,
+      "clock": 1,
+      "row": "UNITPURE1"
+    },
+    "src/Daoris.Cli/tool-test/temp-folder-census.test.ts": {
+      "git": 2,
+      "row": "UNITPURE1"
+    },
+    "src/Daoris.Web/src/agents/AgentsView.test.tsx": {
+      "clock": 1,
+      "row": "UNITPURE1"
+    },
+    "src/Daoris.Web/src/app/sessionEnd.test.tsx": {
+      "clock": 1,
+      "row": "UNITPURE1"
+    },
+    "src/Daoris.Web/src/app/setupStart.test.tsx": {
+      "clock": 1,
+      "row": "UNITPURE1"
+    },
+    "src/Daoris.Web/src/app/splash.test.tsx": {
+      "clock": 1,
+      "row": "UNITPURE1"
+    },
+    "src/Daoris.Web/src/app/windowChrome.test.tsx": {
+      "clock": 2,
+      "row": "UNITPURE1"
+    },
+    "src/Daoris.Web/src/bridge/help.test.ts": {
+      "clock": 2,
+      "row": "UNITPURE1"
+    },
+    "src/Daoris.Web/src/bridge/person.browser.test.tsx": {
+      "clock": 1,
+      "row": "UNITPURE1"
+    },
+    "src/Daoris.Web/src/bridge/sessions/asks.test.tsx": {
+      "clock": 1,
+      "row": "UNITPURE1"
+    },
+    "src/Daoris.Web/src/bridge/state/stateHub.presses.test.tsx": {
+      "clock": 1,
+      "row": "UNITPURE1"
+    },
+    "src/Daoris.Web/src/bridge/system.test.tsx": {
+      "clock": 1,
+      "row": "UNITPURE1"
+    },
+    "src/Daoris.Web/src/help/AskDaoris.test.tsx": {
+      "clock": 2,
+      "row": "UNITPURE1"
+    },
+    "src/Daoris.Web/src/menus/ContextMenu.test.tsx": {
+      "clock": 1,
+      "row": "UNITPURE1"
+    },
+    "src/Daoris.Web/src/notifications/StandingNotes.test.tsx": {
+      "clock": 1,
+      "row": "UNITPURE1"
+    },
+    "src/Daoris.Web/src/notifications/messagesRead.test.tsx": {
+      "clock": 1,
+      "row": "UNITPURE1"
+    },
+    "src/Daoris.Web/src/projects/ProjectsView.test.tsx": {
+      "clock": 1,
+      "row": "UNITPURE1"
+    },
+    "src/Daoris.Web/src/settings/DriverDomain.test.tsx": {
+      "clock": 1,
+      "row": "UNITPURE1"
+    },
+    "src/Daoris.Web/src/test/waitPatience.test.ts": {
+      "clock": 1,
+      "row": "UNITPURE1"
+    },
+    "src/Daoris.Web/src/work/WorkFrame.terminal.test.tsx": {
+      "clock": 1,
+      "row": "UNITPURE1"
+    },
+    "src/Daoris.Web/src/work/rail/SessionRail.entries.test.tsx": {
+      "clock": 1,
+      "row": "UNITPURE1"
+    },
+    "src/Daoris.Web/src/work/rail/SessionRail.test.tsx": {
+      "clock": 1,
+      "row": "UNITPURE1"
+    },
+    "src/Daoris.Web/src/work/review/DiffPane.loading.test.tsx": {
+      "clock": 1,
+      "row": "UNITPURE1"
+    },
+    "src/Daoris.Web/src/workflow/edit/WorkflowEditor.staffing.test.tsx": {
+      "clock": 1,
+      "row": "UNITPURE1"
+    },
+    "tools/comment-gate.test.mjs": {
+      "process": 3,
+      "git": 13,
+      "row": "UNITPURE1"
+    },
+    "tools/commit-checks-layers.test.mjs": {
+      "git": 11,
+      "row": "UNITPURE1"
+    },
+    "tools/commit-checks.test.mjs": {
+      "git": 7,
+      "row": "UNITPURE1"
+    },
+    "tools/console-windows.test.mjs": {
+      "process": 2,
+      "row": "UNITPURE1"
+    },
+    "tools/contracts.test.mjs": {
+      "process": 3,
+      "row": "UNITPURE1"
+    },
+    "tools/dev-metrics-families.test.mjs": {
+      "process": 1,
+      "row": "UNITPURE1"
+    },
+    "tools/dev-metrics-landing.test.mjs": {
+      "process": 1,
+      "row": "UNITPURE1"
+    },
+    "tools/dev-metrics.test.mjs": {
+      "process": 2,
+      "git": 5,
+      "row": "UNITPURE1"
+    },
+    "tools/doc-current.test.mjs": {
+      "process": 1,
+      "git": 6,
+      "row": "UNITPURE1"
+    },
+    "tools/fabric-probe.test.mjs": {
+      "process": 2,
+      "clock": 1,
+      "row": "UNITPURE1"
+    },
+    "tools/file-designs.test.mjs": {
+      "process": 1,
+      "git": 5,
+      "row": "UNITPURE1"
+    },
+    "tools/fsx.test.mjs": {
+      "process": 1,
+      "git": 30,
+      "row": "UNITPURE1"
+    },
+    "tools/hook-seeds.test.mjs": {
+      "process": 1,
+      "git": 10,
+      "row": "UNITPURE1"
+    },
+    "tools/index-fresh.test.mjs": {
+      "git": 2,
+      "row": "UNITPURE1"
+    },
+    "tools/index-hook.test.mjs": {
+      "process": 1,
+      "git": 42,
+      "row": "UNITPURE1"
+    },
+    "tools/index-lock.test.mjs": {
+      "git": 1,
+      "row": "UNITPURE1"
+    },
+    "tools/knowledge-bench.test.mjs": {
+      "process": 1,
+      "row": "UNITPURE1"
+    },
+    "tools/layers-census-plant.test.mjs": {
+      "process": 2,
+      "row": "UNITPURE1"
+    },
+    "tools/lyntai-local.test.mjs": {
+      "process": 1,
+      "row": "UNITPURE1"
+    },
+    "tools/machine-admission.test.mjs": {
+      "process": 2,
+      "clock": 11,
+      "row": "UNITPURE1"
+    },
+    "tools/merge-rows.test.mjs": {
+      "process": 1,
+      "git": 1,
+      "row": "UNITPURE1"
+    },
+    "tools/merge/flow.test.ts": {
+      "clock": 4,
+      "row": "UNITPURE1"
+    },
+    "tools/merge/heavy-halt.test.ts": {
+      "clock": 1,
+      "row": "UNITPURE1"
+    },
+    "tools/merge/lock-install.test.ts": {
+      "clock": 1,
+      "row": "UNITPURE1"
+    },
+    "tools/merge/preflight.test.ts": {
+      "clock": 3,
+      "row": "UNITPURE1"
+    },
+    "tools/merge/reached-admit.test.ts": {
+      "clock": 1,
+      "row": "UNITPURE1"
+    },
+    "tools/merge/reached-run.test.ts": {
+      "clock": 1,
+      "row": "UNITPURE1"
+    },
+    "tools/move-files.test.mjs": {
+      "process": 1,
+      "git": 8,
+      "row": "UNITPURE1"
+    },
+    "tools/optional-locks.test.mjs": {
+      "git": 1,
+      "row": "UNITPURE1"
+    },
+    "tools/question-bench.test.mjs": {
+      "process": 3,
+      "row": "UNITPURE1"
+    },
+    "tools/quick.test.mjs": {
+      "process": 1,
+      "git": 9,
+      "clock": 1,
+      "row": "UNITPURE1"
+    },
+    "tools/rehearsal-kit.test.mjs": {
+      "process": 6,
+      "git": 22,
+      "clock": 7,
+      "row": "UNITPURE1"
+    },
+    "tools/shell-edit-guard.test.mjs": {
+      "process": 4,
+      "row": "UNITPURE1"
+    },
+    "tools/shenora-local.test.mjs": {
+      "process": 2,
+      "git": 7,
+      "row": "UNITPURE1"
+    },
+    "tools/size-ratchet-main.test.mjs": {
+      "git": 11,
+      "row": "UNITPURE1"
+    },
+    "tools/time-ratchet.test.mjs": {
+      "process": 1,
+      "row": "UNITPURE1"
+    },
+    "tools/time-why.test.mjs": {
+      "git": 2,
+      "row": "UNITPURE1"
+    },
+    "tools/tree-base.test.mjs": {
+      "process": 2,
+      "row": "UNITPURE1"
+    },
+    "tools/ux-count.test.mjs": {
+      "process": 4,
+      "row": "UNITPURE1"
+    },
+    "tools/verify-checks.test.mjs": {
+      "clock": 1,
+      "row": "UNITPURE1"
+    },
+    "tools/worktree-remove.test.mjs": {
+      "process": 1,
+      "git": 8,
+      "row": "UNITPURE1"
+    }
+  }
+}

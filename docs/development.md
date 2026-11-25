@@ -132,7 +132,7 @@ strings name, a tsconfig's files and theirs); a step whose tool lists the tree b
 merge in place, a preflight and the queue's scoped run hand every gate their changed paths (`MERGE_BRANCH_CHANGED`,
 `tools/merge/gate-hands.ts`), and the gate then runs only the steps a changed path reaches, the devkit's universal step standing
 aside since the `universal` gate runs it in every merge with the private patterns; a docs-only merge runs twelve of its
-twenty-six steps. The layers' census's source counts (`tools/layers-census/counts.mjs`, about 12 s) are one, run where a `.cs` or
+twenty-eight steps. The layers' census's source counts (`tools/layers-census/counts.mjs`, about 12 s) are one, run where a `.cs` or
 `.csproj` file, the lanes or the census's list changes, so a merge sees the allowance or boundary its sources move (MAINRED1). Handed no paths (a developer's run, `--full`, the watch after a landing, the release workflow) it runs every
 step. `node tools/verify-checks.mjs --plan` says what it would run and why each other step would not. A new check is a step of
 that list with its reads, never a link of a chain. Quick judges no test time; the merge's gates and the full set judge it, on classes measured again alone. Last,
@@ -237,7 +237,7 @@ file, the declarations test every `.d.mts` and script beside it), so `node tools
 and the merge's `reached` gate) runs it for a diff that touches those paths. A declared path is one read from the test, so no
 suite's bound leaves it out, and it reaches the test even where the census cannot bound its reach (a computed import). Every
 file of a declared test set (below) is a unit of the set's suite, run from the set's folder. The scripts (`partials`, `read-shares`,
-`optional-locks`, `live-logins`, `test-patience`, `tool-test-census`, the layers' counts) are steps of `verify:checks`, which `npm
+`optional-locks`, `live-logins`, `test-patience`, `tool-test-census`, `unit-pure`, the layers' counts) are steps of `verify:checks`, which `npm
 run quick` runs whole. A census that reads a place its test does not name is a defect of the test: add the line. Each of the six
 reds that landed on 2026-11-17 and 18 past a green merge is replayed in `tools/merge/missed-reds.test.ts` (MAINRED1).
 
@@ -252,7 +252,14 @@ projects read their files from their sets; a change reaches a set's units by the
 a `bounded` set's only within its gate's `paths`; a pick (`of`) runs some of another set's files apart, as `web-rules` does.
 `node tools/tool-test-census.mjs`, a step of `verify:checks`, refuses a test file no set holds, a set that holds none or names
 an undeclared gate, a set run by its own config that would run an earlier set's file twice, and a script or gate command that
-names a test file, and a direct call in a test under `tools/` to a reader of the live machine's load (`loadSeam`, `heldNow`, `lookAt`, `createAdmission`, `foreignTrees` and the rest) with no seam or home of its own, and a direct call in a test of a unit project to a process start (`spawn`, `spawnSync`, `execFileSync`, `spawnGit`, the merge tool's `git` and `gitSight` and the rest); a reader behind a helper passes this net. The .NET halves are their gates' `dotnet test` commands: a test project and its filter.
+names a test file, and a direct call in a test under `tools/` to a reader of the live machine's load (`loadSeam`, `heldNow`, `lookAt`, `createAdmission`, `foreignTrees` and the rest) with no seam or home of its own; a reader behind a helper passes this net. The .NET halves are their gates' `dotnet test` commands: a test project and its filter.
+
+`node tools/unit-pure.mjs`, a step of `verify:checks`, holds a unit test to what the loaded machine does not break: a test file of a set no real
+dependency owns (the `tool-e2e` gate's sets and Playwright ones are real) that calls a process start, a git helper that starts git or a real timer
+is named by file, line and act unless `tools/unit-pure.json` lists it at no less, with the TASKS.md row that owns cutting it (a row that leaves the
+backlog leaves no entry). A count only falls: `--shrink` lowers it, `--measure` ranks what is left by folder and act. A case that must run the
+real thing goes to a real-dependency set; one that does not is handed a seam (the names test runs `run()` of the check in its process, not two
+node processes). A .NET unit class is held by the layers census and the `Process` trait.
 
 A focused vitest run for a React warning (an `act` warning, a console error) passes `--reporter=default`: vitest 5 picks a
 quiet reporter for an agent's run, which prints no console output of a passing test, so the warning is there and unseen
