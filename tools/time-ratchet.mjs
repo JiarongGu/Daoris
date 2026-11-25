@@ -21,7 +21,7 @@ import { isMain, writeAtomic } from './fsx.mjs';
 import { judgeByOwner, loadWorld, unitsOf } from './time-reach.mjs';
 import { mainFile, mainRecord, onMainOf, readMain, recordRun } from './time-main.mjs';
 import { ALONE_HOLDS, foreignTrees, heldNow, isLoaded, readMarks } from './time-load.mjs';
-import { causeOf, ratchetBreaches, readActs, sayBreach, sourceReader } from './time-why.mjs';
+import { causeOf, ratchetBreaches, readLedger, sayBreach, sourceReader } from './time-why.mjs';
 
 /** The owner's per-test budget, in milliseconds, by the kind of record. */
 export const LIMITS = { unit: 30_000, process: 120_000, web: 10_000, tool: 120_000, toolUnit: 10_000 };
@@ -197,12 +197,14 @@ export function reasonLines(found, list) {
 /** A test's class: its key without the case's arguments and its last name part, or the file of a `file::name` key. */
 const classOf = (key) => (key.includes('::') ? key.split('::')[0] : key.split('(')[0].replace(/\.[^.]*$/, ''));
 
-const ACT_NAMES = ['process', 'git', 'disk', 'network', 'wait'];
+const ACT_NAMES = ['process', 'git', 'disk', 'network', 'clock'];
 
-function classActs(keys, acts) {
-  const found = keys.map((key) => acts(key)).filter(Boolean);
+function classActs(name, keys, acts) {
+  const own = keys.map((key) => acts(key, { own: true }));
+  const whole = own.some((each) => !each) ? acts(name, { own: true }) : null;
+  const found = [whole, ...own].filter(Boolean);
   if (!found.length) return null;
-  return Object.fromEntries(ACT_NAMES.map((name) => [name, found.reduce((sum, each) => sum + (each[name] ?? 0), 0)]));
+  return Object.fromEntries(ACT_NAMES.map((act) => [act, found.reduce((sum, each) => sum + (each[act] ?? 0), 0)]));
 }
 
 /** The `count` slowest classes as { name, ms, count, reason, row }; `read` ({ source, acts, record }) adds each one's cause and evidence. */
@@ -215,7 +217,7 @@ export function slowestClasses(tests, count, list = {}, read = null) {
   }
   return [...classes.values()].sort((a, b) => b.ms - a.ms).slice(0, count).map(({ keys, ...each }) => {
     const entry = entryFor(list, each.name) ?? Object.keys(list).find((key) => key.startsWith(`${each.name}.`) || key.startsWith(`${each.name}::`));
-    const reading = read ? causeOf({ ...(read.source(keys[0]) ?? {}), record: read.record ?? '', acts: read.acts ? classActs(keys, read.acts) : null }) : null;
+    const reading = read ? causeOf({ ...(read.source(keys[0]) ?? {}), record: read.record ?? '', acts: read.acts ? classActs(each.name, keys, read.acts) : null }) : null;
     return { ...each, reason: entry === undefined ? '' : list[entry].why, row: entry === undefined ? '' : (list[entry].row ?? ''), ...(reading ? { cause: reading.cause, evidence: reading.evidence } : {}) };
   });
 }
@@ -310,7 +312,7 @@ async function main() {
     if (process.argv.includes('--classes')) {
       for (const { file, tests } of readRecords(dir, root, { since })) {
         console.log(`${file}:`);
-        for (const c of slowestClasses(tests, 15, list, { source: sourceReader(root), acts: readActs(dir), record: file })) console.log(classLine(c));
+        for (const c of slowestClasses(tests, 15, list, { source: sourceReader(root), acts: readLedger(dir, { since }), record: file })) console.log(classLine(c));
       }
       return 0;
     }
@@ -318,7 +320,7 @@ async function main() {
     for (const line of reasonLines(found, list)) console.log(`time-ratchet: over budget: ${line}`);
     const loaded = Object.fromEntries(unmeasured.map((key) => [key, settled.loaded[key]]));
     const records = () => new Map(readRecords(dir, root, { since }).flatMap(({ file, tests }) => tests.map(({ key }) => [key, file])));
-    const breaches = ratchetBreaches({ found, inherited, loaded, listedAt: (key) => list[entryFor(list, key)]?.ms, records, source: sourceReader(root), acts: readActs(dir) });
+    const breaches = ratchetBreaches({ found, inherited, loaded, listedAt: (key) => list[entryFor(list, key)]?.ms, records, source: sourceReader(root), acts: readLedger(dir, { since }) });
     for (const each of breaches.filter((breach) => breach.inherited)) {
       console.log(`time-ratchet: inherited from main, a known red that fails nothing: ${each.name} took ${each.ms} ms, over its ${each.limit} ms limit; cause ${each.cause}, owned by ${each.fix}`);
     }

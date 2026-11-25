@@ -1,8 +1,8 @@
 import assert from 'node:assert/strict';
-import { mkdirSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdirSync, rmSync, utimesSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import test from 'node:test';
-import { ACTS_FILE, breachLine, breachLines, domainOf, gateBreach, hangBreaches, hungUnderLoad, parseBreaches, ratchetBreaches, readActs, sayBreach, separations, sourceReader, testBreach } from './time-why.mjs';
+import { LEDGER_END, breachLine, breachLines, domainOf, gateBreach, hangBreaches, hungUnderLoad, parseBreaches, ratchetBreaches, readLedger, sayBreach, separations, sourceReader, testBreach } from './time-why.mjs';
 
 const PROJECT = 'src/Daoris.Desktop/Daoris.Desktop.Driver.Tests';
 const cls = (name, body, trait = '') => `namespace Daoris.Desktop.Driver.Tests;\n\n${trait}public sealed class ${name}\n{\n    [Fact]\n    public async Task Runs()\n    {\n        ${body}\n    }\n}\n`;
@@ -148,15 +148,14 @@ test('a breach said as a machine line reads back, and the summary names its caus
 });
 
 test('a test\'s cause is read from the ledger of what it did where one is kept, never from its class\'s text over it', () => {
-  const source = reader('Daoris.Desktop.Driver.Tests.CpuTests.Runs');
   const of = (acts, given = {}) => planted(given.name ?? 'CpuTests', { acts, ...given });
   assert.deepEqual([of({ process: 2, git: 1 }).cause, of({ process: 2, git: 1 }).evidence], ['process', 'its ledger: 2 process starts and 1 git start']);
   assert.equal(of({ disk: 1 }).cause, 'disk');
   assert.equal(of({ network: 4 }).cause, 'network');
-  assert.deepEqual([of({ wait: 3 }).cause, of({ wait: 3 }).evidence], ['clock', 'its ledger: 3 waits on a wall clock']);
-  assert.equal(of({ wait: 3 }).fix, 'UNITPURE1');
-  assert.equal(of({ git: 1, wait: 9 }).cause, 'process', 'a process or git start reads before a wait');
-  const none = of({ process: 0, git: 0, disk: 0, network: 0, wait: 0 }, { name: 'StartsGitTests' });
+  assert.deepEqual([of({ clock: 3 }).cause, of({ clock: 3 }).evidence], ['clock', 'its ledger: 3 waits on a wall clock']);
+  assert.equal(of({ clock: 3 }).fix, 'UNITPURE1');
+  assert.equal(of({ git: 1, clock: 9 }).cause, 'process', 'a process or git start reads before a wait');
+  const none = of({ process: 0, git: 0, disk: 0, network: 0, clock: 0 }, { name: 'StartsGitTests' });
   assert.equal(none.cause, 'unclassed');
   assert.match(none.evidence, /its ledger says it started, opened and waited on nothing/);
   assert.equal(of(null, { name: 'StartsGitTests' }).cause, 'process', 'no ledger entry: the text reads as before');
@@ -164,34 +163,52 @@ test('a test\'s cause is read from the ledger of what it did where one is kept, 
   assert.equal(of({ process: 0 }, { name: 'ScansTests' }).cause, 'scan');
   const key = 'Daoris.Desktop.Driver.Tests.RealGitTests.Runs';
   const text = cls('RealGitTests', 'var a = 1;', '[Trait(Category.Name, Category.Process)]\n');
-  assert.equal(testBreach({ key, ms: 1, limit: 0, fails: false, acts: { wait: 1 }, source: { file: `${PROJECT}/Workplace/RealGitTests.cs`, text } }).cause, 'process');
-  assert.ok(source);
+  assert.equal(testBreach({ key, ms: 1, limit: 0, fails: false, acts: { clock: 1 }, source: { file: `${PROJECT}/Workplace/RealGitTests.cs`, text } }).cause, 'process');
 });
 
-test('the ledger is read from the records folder, a test by its own entry else its class\'s; a missing or broken file reads none', () => {
+test('the ledger is a file beside each record, read as the records are by their time: a test by its own entry else its class\'s; none, broken or empty reads none', () => {
   const dir = join('_fixtures', 'time-why-acts');
   rmSync(dir, { recursive: true, force: true });
   mkdirSync(dir, { recursive: true });
+  const put = (name, ledger, at) => {
+    writeFileSync(join(dir, name), typeof ledger === 'string' ? ledger : JSON.stringify(ledger));
+    utimesSync(join(dir, name), at / 1000, at / 1000);
+  };
   try {
-    assert.equal(readActs(dir)('A.B.c'), null, 'no file, no entry');
-    writeFileSync(join(dir, ACTS_FILE), '{ not json');
-    assert.equal(readActs(dir)('A.B.c'), null, 'a broken file reads none');
-    writeFileSync(join(dir, ACTS_FILE), JSON.stringify({ 'A.B.c': { process: 1 }, 'A.Class': { wait: 2, git: 'x' }, 'tools/a.test.mjs': { disk: 3 }, 'A.Bad': 'no' }));
-    const acts = readActs(dir);
-    assert.deepEqual(acts('A.B.c'), { process: 1 });
-    assert.deepEqual(acts('A.Class.other(x: 1)'), { wait: 2 }, 'the class\'s entry, its non-number counts dropped');
+    assert.equal(readLedger(dir)('A.B.c'), null, 'no file, no entry');
+    assert.equal(readLedger(join(dir, 'missing'))('A.B.c'), null, 'no folder, no entry');
+    put(`a${LEDGER_END}`, '{ not json', 1000);
+    assert.equal(readLedger(dir)('A.B.c'), null, 'a broken file reads none');
+    put(`old${LEDGER_END}`, { 'A.B.c': { process: 9 }, 'Z.Old.case': { git: 1 } }, 2000);
+    put(`new${LEDGER_END}`, { 'A.B.c': { process: 1 }, 'A.Class': { clock: 2, git: 'x' }, 'tools/a.test.mjs': { disk: 3 }, 'A.Bad': 'no', 'A.Words': { git: 'x' } }, 5000);
+    const acts = readLedger(dir);
+    assert.deepEqual(acts('A.B.c'), { process: 1 }, 'the newer file\'s entry replaces the older\'s');
+    assert.deepEqual(acts('A.Class.other(x: 1)'), { clock: 2 }, 'the class\'s entry, its non-number counts dropped');
+    assert.equal(acts('A.Class.other', { own: true }), null, 'own: that exact entry alone');
+    assert.deepEqual(acts('A.Class', { own: true }), { clock: 2 });
     assert.deepEqual(acts('tools/a.test.mjs::a case'), { disk: 3 });
     assert.equal(acts('A.Bad.case'), null);
+    assert.equal(acts('A.Words.case'), null, 'an entry with no count reads none, so the text reading applies');
     assert.equal(acts('Z.Other.case'), null);
+    assert.equal(readLedger(dir, { since: 4000 })('Z.Old.case'), null, 'a file older than the run is not read');
+    assert.deepEqual(readLedger(dir, { since: 4000 })('A.B.c'), { process: 1 });
   } finally {
     rmSync(dir, { recursive: true, force: true });
   }
 });
 
+test('a test timed by a Process half\'s record is a process though its source is not found, whatever its ledger says', () => {
+  const key = 'Daoris.Desktop.Driver.Tests.NoSuchTests.Runs';
+  const timed = (acts) => testBreach({ key, ms: 1, limit: 0, fails: false, record: 'reached-driver-process-git-1.trx', acts });
+  assert.equal(timed({ clock: 2 }).cause, 'process');
+  assert.equal(timed(null).cause, 'process');
+  assert.equal(testBreach({ key, ms: 1, limit: 0, fails: false, record: 'reached-driver-1.trx', acts: { clock: 2 } }).cause, 'clock');
+});
+
 test('the ratchet\'s breaches read each test\'s ledger entry', () => {
   const [breach] = ratchetBreaches({
     found: { 'Daoris.Desktop.Driver.Tests.CpuTests.Runs': { ms: 40_000, limit: 30_000 } },
-    source: reader, acts: (key) => (key.includes('CpuTests') ? { wait: 5 } : null),
+    source: reader, acts: (key) => (key.includes('CpuTests') ? { clock: 5 } : null),
   });
   assert.deepEqual([breach.cause, breach.evidence], ['clock', 'its ledger: 5 waits on a wall clock']);
 });

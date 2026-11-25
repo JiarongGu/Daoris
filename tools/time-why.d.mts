@@ -11,14 +11,15 @@ export type Breach = {
 };
 export type Separation = { domain: string; cause: Cause; classes: string[]; fix: string };
 /** What a test started, opened and waited on, in counts: the runtime ledger's entry. */
-export type Acts = { process?: number; git?: number; disk?: number; network?: number; wait?: number };
+export type Acts = { process?: number; git?: number; disk?: number; network?: number; clock?: number };
 export type Source = { file: string; text: string };
 export type StepTime = { step: string; ms: number; open?: true };
 export type LoadSeam = { sample: () => { peak: () => number; stop: () => void }; free: () => boolean; sleep: (ms: number) => Promise<void>; now: () => number };
 
 export declare function causeOf(given: { text?: string | undefined; file?: string | undefined; record?: string; acts?: Acts | null }): { cause: Cause; evidence: string; real?: true };
-export declare const ACTS_FILE: string;
-export declare function readActs(dir: string): (key: string) => Acts | null;
+export declare const LEDGER_END: string;
+export type Ledger = (key: string, seam?: { own?: boolean }) => Acts | null;
+export declare function readLedger(dir: string, seam?: { since?: number | null }): Ledger;
 export declare function domainOf(file: string): string;
 export declare function sourceReader(root: string, seams?: { files?: string[] | null; read?: (path: string) => string }): (key: string) => Source | null;
 type Over = Record<string, { ms: number; limit: number }>;

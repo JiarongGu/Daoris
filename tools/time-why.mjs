@@ -18,18 +18,18 @@
  * - `scan`: a walk of the repository's sources (`SourceFiles`, a compilation, `repositoryFiles`, `git ls-files`);
  * - `load`: timed only while other heavy runs are under way (`tools/time-load.mjs`);
  * - `unclassed`: none of these, or no source found for the class. Never a guess.
- * Where a ledger of what each test did is kept (`acts.json` in the records folder, `readActs`), a test's cause is read from it
- * (a process or git start, then the disk, the network, a wait) and its class's text is not blamed on it: a test the ledger says did
- * none of these is `unclassed` unless its text scans the sources. Without an entry the reading is the test's category and its class's
- * source. A gate killed at its budget is `load` where more than its own place is held at the load
- * sampler's peak during its run (the merge then runs it again alone once the machine is free); otherwise the cause is its longest
- * step's (reached's census and plan a scan; a restore, a build or a discovery a process; a suite's run its category), and with no
- * step clocks its own category's.
+ * Where a ledger of what each test did is kept (a `<record>.acts.json` beside each timing record, `readLedger`), a test's cause is
+ * read from it (a process or git start, then the disk, the network, a clock wait) after the Process category, which still reads
+ * first, and its class's text is not blamed on it: a test the ledger says did none of these is `scan` where its class's text scans
+ * the sources, else `unclassed`. Without an entry the reading is the test's category and its class's source. A gate killed at its
+ * budget is `load` where more than its own place is held at the load sampler's peak during its run (the gate then runs on to its
+ * own end); otherwise the cause is its longest step's (reached's census and plan a scan; a restore, a build or a discovery a
+ * process; a suite's run its category), and with no step clocks its own category's.
  *
  * Where three or more classes of one domain (a test project's first folder, a tool test's folder) share a cause other than load or
  * unclassed in one run, the domain is a separation candidate: a package of its own with its ports.
  */
-import { readFileSync } from 'node:fs';
+import { readdirSync, readFileSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 import { repositoryFiles, writeAtomic } from './fsx.mjs';
 import { clockSites } from './layers-census/clock.mjs';
@@ -59,7 +59,7 @@ const sites = (count, one, many) => `${count} ${count === 1 ? one : many}`;
 
 const LEDGER_NONE = 'its ledger says it started, opened and waited on nothing';
 
-/** The cause a test's ledger entry `acts` ({ process, git, disk, network, wait }, counts) reads as, and the counts that say it; null where it shows none. */
+/** The cause a test's ledger entry `acts` ({ process, git, disk, network, clock }, counts) reads as, and the counts that say it; null where it shows none. */
 function fromActs(acts) {
   const n = (name) => (Number.isFinite(acts[name]) && acts[name] > 0 ? acts[name] : 0);
   const [started, git] = [n('process'), n('git')];
@@ -69,21 +69,25 @@ function fromActs(acts) {
   }
   if (n('disk')) return { cause: 'disk', evidence: `its ledger: ${sites(n('disk'), 'open beyond its scratch', 'opens beyond its scratch')}` };
   if (n('network')) return { cause: 'network', evidence: `its ledger: ${sites(n('network'), 'socket or listener', 'sockets or listeners')}` };
-  if (n('wait')) return { cause: 'clock', evidence: `its ledger: ${sites(n('wait'), 'wait on a wall clock', 'waits on a wall clock')}` };
+  if (n('clock')) return { cause: 'clock', evidence: `its ledger: ${sites(n('clock'), 'wait on a wall clock', 'waits on a wall clock')}` };
   return null;
 }
 
-/** The test's category, said, where the source, the record or the file says it is a real-process one; else null. */
+/** The test's category, said, where the source, the record or the file says it is a real-process one; else null. A missing source leaves the record's word. */
 function categoryOf(text, file, record) {
-  if (file.endsWith('.cs') && isRealProcess(text)) return 'its Process category';
+  if (file && file.endsWith('.cs') && isRealProcess(text)) return 'its Process category';
   if (/process|git|rehears/i.test(record)) return `its record ${record}, a Process half's`;
-  if (/\.e2e\.[cm]?[jt]sx?$/.test(file)) return 'the end-to-end tier';
+  if (file && /\.e2e\.[cm]?[jt]sx?$/.test(file)) return 'the end-to-end tier';
   return null;
 }
 
 /** The cause of one test's time, read from its class's source `text` at `file`, and the reading that names it. */
 export function causeOf({ text, file, record = '', acts = null }) {
-  if (typeof text !== 'string' || !file) return acts ? fromActs(acts) ?? { cause: 'unclassed', evidence: LEDGER_NONE } : { cause: 'unclassed', evidence: 'no source found for its class' };
+  if (typeof text !== 'string' || !file) {
+    const category = categoryOf('', '', record);
+    if (category) return { cause: 'process', evidence: category, real: true };
+    return acts ? fromActs(acts) ?? { cause: 'unclassed', evidence: LEDGER_NONE } : { cause: 'unclassed', evidence: 'no source found for its class' };
+  }
   const cs = file.endsWith('.cs');
   const lang = cs ? 'cs' : 'js';
   const category = categoryOf(text, file, record);
@@ -130,28 +134,40 @@ export function domainOf(file) {
 /** The class a test key names: the file of a `file::name` key, else the key less its arguments and its method. */
 const unitOf = (key) => (key.includes('::') ? key.split('::')[0] : key.split('(')[0].replace(/\.[^.]*$/, ''));
 
-/** The ledger of what each test did: its file in the records folder. */
-export const ACTS_FILE = 'acts.json';
-const ACT_NAMES = ['process', 'git', 'disk', 'network', 'wait'];
+/** A ledger file's end: each timing record may have one beside it, `<record>.acts.json`, written by whatever ran that record's tests. */
+export const LEDGER_END = '.acts.json';
+const ACT_NAMES = ['process', 'git', 'disk', 'network', 'clock'];
 
 /**
- * The ledger's reader over the records folder `dir`: a test key -> { process, git, disk, network, wait } (counts of what it started,
- * opened and waited on), by the test's own entry, else its class's; null where there is none, the file is missing or it does not parse.
+ * The ledger's reader over the records folder `dir`: the `*.acts.json` files written at or after `since` (as the timing records are),
+ * each a map from a test key, or a class name, to counts { process, git, disk, network, clock } of what it started, opened and waited
+ * on; a newer file's entry replaces an older one's. `reader(key)` is the test's own entry, else its class's; `reader(name, { own: true })`
+ * is that exact entry alone. Null where there is none, the folder or a file is missing or does not parse, or an entry holds no count.
  */
-export function readActs(dir) {
-  let ledger = {};
+export function readLedger(dir, { since = null } = {}) {
+  const ledger = {};
+  let files = [];
   try {
-    const read = JSON.parse(readFileSync(join(dir, ACTS_FILE), 'utf8'));
-    if (read && typeof read === 'object' && !Array.isArray(read)) ledger = read;
+    files = readdirSync(dir).filter((name) => name.endsWith(LEDGER_END)).map((name) => ({ name, at: statSync(join(dir, name)).mtimeMs }))
+      .filter(({ at }) => since === null || at >= since).sort((x, y) => x.at - y.at || x.name.localeCompare(y.name));
   } catch {
-    ledger = {};
+    files = [];
+  }
+  for (const { name } of files) {
+    try {
+      const read = JSON.parse(readFileSync(join(dir, name), 'utf8'));
+      if (read && typeof read === 'object' && !Array.isArray(read)) Object.assign(ledger, read);
+    } catch {
+      // a file that does not parse reads none
+    }
   }
   const entry = (at) => {
     const found = ledger[at];
     if (!found || typeof found !== 'object') return null;
-    return Object.fromEntries(ACT_NAMES.filter((name) => Number.isFinite(found[name])).map((name) => [name, found[name]]));
+    const counts = Object.fromEntries(ACT_NAMES.filter((name) => Number.isFinite(found[name])).map((name) => [name, found[name]]));
+    return Object.keys(counts).length ? counts : null;
   };
-  return (key) => entry(key) ?? entry(unitOf(key));
+  return (key, { own = false } = {}) => (own ? entry(key) : entry(key) ?? entry(unitOf(key)));
 }
 
 /**
@@ -198,7 +214,7 @@ export function testBreach({ kind = 'test', key, ms, limit, fails, record = '', 
 /**
  * The time ratchet's breaches: `found` (the merge's, failing unless `listedAt` holds it at no less), `inherited` (main's: a known
  * red with its cause and row, failing nothing; `main`, main's alone record, where there is one) and `loaded` (timed only under
- * load), each key -> { ms, limit }. `records()` maps a key to its record; `acts` is the ledger's reader (`readActs`).
+ * load), each key -> { ms, limit }. `records()` maps a key to its record; `acts` is the ledger's reader (`readLedger`).
  */
 export function ratchetBreaches({ found, inherited = {}, loaded = {}, listedAt = () => undefined, records = () => new Map(), source = () => null, acts = () => null }) {
   if (!Object.keys(found).length && !Object.keys(inherited).length && !Object.keys(loaded).length) return [];
