@@ -26,6 +26,9 @@ test('refs are read loose, packed and through a symbolic ref, and a missing one 
   assert.equal(repository.ref('refs/tags/v1'), first, 'a packed tag');
   assert.equal(repository.ref('HEAD'), third, 'HEAD through its symbolic ref');
   assert.equal(repository.ref('refs/heads/nothing'), null);
+  for (const outside of ['refs/heads/../../HEAD', 'refs/heads/..\\..\\HEAD', '/HEAD', 'refs/heads/C:/HEAD']) {
+    assert.equal(repository.ref(outside), null, `${outside} names no ref: a name never leads out of the refs`);
+  }
   assert.ok(repository.isAncestor(second, [third]));
   assert.ok(!repository.isAncestor(third, [first]));
   fixture.cleanup();

@@ -71,6 +71,9 @@ class FileRepository implements Repository {
   }
 
   ref(name: string): string | null {
+    // A pin's text is asked as a branch and a tag, so a name is read only where git could have written it: never out of the refs.
+    if (name !== 'HEAD' && !/^refs\/(?:[A-Za-z0-9._-]+\/)*[A-Za-z0-9._-]+$/.test(name)) return null;
+    if (name.split('/').some((part) => part === '..' || part === '.')) return null;
     let current = name;
     for (let depth = 0; depth < 10; depth++) {
       const loose = this.loose(current);
