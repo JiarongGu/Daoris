@@ -231,7 +231,7 @@ Each type is in a file of its name; `docs/index/README.md` says where a seam, ve
     a command line. (from D94, D139)
 47a. A staged build starts clean on a copy of the home before it is swapped in (`HomeProbe`, the last of `UpdateRefusal.Of`'s checks, asked at the
     close by the application's `InstallUpdater.Proof` and by `daoris update --now`, so both answer one sentence). The running build reads the home
-    (`HomeProof.Read`: the agent accounts it lists, the sessions' records and runs' bindings it meets, each workflow's file, the runs that bind a
+    (`HomeProof.Read`, over Workflows' `HomeProofReading` installed into Install's port: the agent accounts it lists, the sessions' records and runs' bindings it meets, each workflow's file, the runs that bind a
     workflow the home does not hold, and the paths no entry names), copies it into `update/probe/<id>/` (the home's own folder whole, a file over 64 MB
     as an empty one; every other folder of the Daoris folder as names to five levels, empty, with no link followed; the source is read and never
     written), and has the staged build's own driver read the copy (`daoris home proof`, one line of JSON; routed before the lease and the machine log,
@@ -322,7 +322,7 @@ Each type is in a file of its name; `docs/index/README.md` says where a seam, ve
   steps in flight counted by `Drv/Workflows/Nodes/PluginStepsInFlight.cs` through `NodeRuntime`. **The request:**
   `Drv/Install/InstallUpdate.cs`.
 - **A refusal to go back:** `Drv/Workflows/InstallRollback.cs`. **The proof on a copy of the home:** `Drv/Install/HomeProbe.cs` (the copy and the
-  comparison), `HomeProof.cs` (what a build reads of a home: a new thing a start must still read goes here), the verb `home proof` in
+  comparison), `HomeProof.cs` (the report and its words) and `Workflows/HomeProofReading.cs` (what a build reads of a home: a new thing a start must still read goes here), the verb `home proof` in
   `HomePurgeCommand`.
 - **A changed stored shape:** the shape, its writer, its reader and its tests in one change, with no reader of the old shape
   left (rule 51).

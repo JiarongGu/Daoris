@@ -116,7 +116,7 @@ public sealed class HomeProbeTests : IDisposable
         var refusal = HomeProbe.Refused(_install, Home, "0.0.9");
 
         Assert.Equal(HomeProbe.Code, refusal?.Code);
-        Assert.Contains("daoris-driver", refusal?.Sentence);
+        Assert.Contains("carries no program", refusal?.Sentence);
         Assert.Contains("keeps running", refusal?.Sentence);
     }
 

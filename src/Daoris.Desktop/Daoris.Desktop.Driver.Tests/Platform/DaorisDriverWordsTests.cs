@@ -16,6 +16,7 @@ public sealed class DaorisDriverWordsTests
         ["src/Daoris.Desktop/Daoris.Desktop.Driver/Agents/Acp.cs"] = 1,
         ["src/Daoris.Desktop/Daoris.Desktop.Driver/Agents/Providers/Codex/CodexUsage.cs"] = 1,
         ["src/Daoris.Desktop/Daoris.Desktop.Driver/Agents/Providers/Codex/Layer/CodexUsageLayer.cs"] = 1,
+        ["src/Daoris.Desktop/Daoris.Desktop.Driver/Install/HomeProbe.cs"] = 1,
         ["src/Daoris.Desktop/Daoris.Desktop.Driver/Instance/InstanceClient.cs"] = 1,
         ["src/Daoris.Desktop/Daoris.Desktop.Driver/Loop/SystemWiring.cs"] = 2,
         ["src/Daoris.Desktop/Daoris.Desktop.Driver/Platform/CommandLauncher.cs"] = 4,

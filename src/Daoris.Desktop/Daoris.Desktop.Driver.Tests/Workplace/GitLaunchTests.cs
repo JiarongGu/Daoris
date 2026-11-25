@@ -205,7 +205,7 @@ public sealed class GitLaunchTests
     [
         "ActSteps.cs", "AgentStarts.cs", "BuildAccounts.cs", "ChildProcess.cs", "CodexUsage.cs", "CommandLauncher.cs", "DoctrineStatusRead.cs",
         "GeneratedWriters.cs", "GitDoors.cs", "GitIdentityActs.cs", "HarnessActions.cs", "HarnessProbe.cs",
-        "HeavyStep.cs", "HookProcess.cs", "LauncherRunner.cs", "PieceLauncher.cs", "PoolGit.cs", "PluginToolRuns.cs", "PluginToolSetUp.cs", "PluginTrialProcess.cs",
+        "HeavyStep.cs", "HomeProbe.cs", "HookProcess.cs", "LauncherRunner.cs", "PieceLauncher.cs", "PoolGit.cs", "PluginToolRuns.cs", "PluginToolSetUp.cs", "PluginTrialProcess.cs",
         "GitRunPolicy.cs", "GitRuns.cs", "ProcessStarts.cs", "ServerPackages.cs", "SetupWorld.cs", "ToolQuestions.cs", "TransportRun.cs", "WorkingTree.cs",
     ];
 

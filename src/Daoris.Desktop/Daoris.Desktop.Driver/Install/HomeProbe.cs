@@ -85,8 +85,10 @@ public static class HomeProbe
     /// <summary>The staged build's driver run on the copy, as <c>daoris home proof</c>, with nothing of this process's own Daoris environment.</summary>
     private static (int Exit, string Output) StartStaged(string staged, string copy)
     {
-        var driver = Path.Combine(staged, StagedBuild.AppFolder, "daoris-driver", OperatingSystem.IsWindows() ? "daoris-driver.exe" : "daoris-driver");
-        if (!File.Exists(driver)) return (-1, "the build carries no daoris-driver to read the copy with");
+        const string program = "daoris-driver";
+        var driver = Path.Combine(staged, StagedBuild.AppFolder, program, OperatingSystem.IsWindows() ? program + ".exe" : program);
+        if (!File.Exists(driver)) return (-1, "the build carries no program to read the copy with");
+        // Not the tools' environment: the staged build's own program reads a copy and starts nothing the tools provide.
         var info = new ProcessStartInfo(driver)
         {
             UseShellExecute = false,
