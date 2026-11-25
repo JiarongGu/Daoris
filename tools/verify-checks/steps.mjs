@@ -63,6 +63,7 @@ export const CHECK_STEPS = Object.freeze([
   step('node tools/time-ratchet.mjs', '*'),
   step('node tools/live-logins.mjs', [...NODE, 'src/', 'tools/']),
   step('node tools/tool-test-census.mjs', [...NODE, ...TESTS, 'daoris.gates.json', 'package.json', 'src/Daoris.Web/']),
+  step('node tools/unit-pure.mjs', [...NODE, ...TESTS, 'daoris.gates.json', 'TASKS.md', 'tools/unit-pure.json', 'tools/unit-pure/', 'src/Daoris.Web/']),
   step('node tools/console-windows.mjs', [...NODE, 'tools/', 'src/Daoris.Cli/', 'src/Daoris.Web/', 'examples/']),
   step('node tools/test-patience.mjs', [...NODE, ...TESTS, ...DOCUMENTS, DRIVER, 'src/Daoris.Web/']),
   step('node tools/release-prep.mjs --check', [
