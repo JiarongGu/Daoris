@@ -94,6 +94,15 @@ public sealed class Driver(
 
     private LookStages? _stages;
 
+    /// <summary>Whether the look's landing has settled the deliveries a stopped run left: the watch's, shared across its looks, else this driver's own.</summary>
+    internal LandingOnce Landed
+    {
+        get => LazyInitializer.EnsureInitialized(ref _landed, () => new LandingOnce());
+        init => _landed = value;
+    }
+
+    private LandingOnce? _landed;
+
     /// <summary>The review's showing in Daoris's browser, shared across looks as the browser is; null where no shell carries one.</summary>
     public ReviewDesk? Reviews { get; init; }
 
@@ -455,7 +464,7 @@ public sealed class Driver(
         var driver = new Driver(service, config, adapters, home, processes, Sync, output, harnesses, usage, hooks, Context.Events, browser, Running)
         {
             Share = Share, Runner = Runner, Stops = Stops, HandsOver = HandsOver, SendsBack = SendsBack, GoesOnLost = GoesOnLost, Log = Log,
-            Noticed = Noticed, Stages = Stages, Reviews = Reviews, Bus = Bus, ConfigPath = ConfigPath, Passes = Passes,
+            Noticed = Noticed, Stages = Stages, Reviews = Reviews, Bus = Bus, ConfigPath = ConfigPath, Passes = Passes, Landed = Landed,
         };
         driver.Context.Supervisor = Context.Supervisor;
         driver.Context.Roles = Context.Roles;

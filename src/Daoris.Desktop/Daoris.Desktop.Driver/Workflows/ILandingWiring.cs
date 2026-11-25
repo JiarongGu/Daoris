@@ -8,4 +8,6 @@ internal interface ILandingWiring : ILookWiring
 
     /// <summary>The loop's hooks, whose log keeps what the landing did with each plugin.</summary>
     HookSet? Hooks { get; }
+
+    LandingOnce Landed { get; }
 }

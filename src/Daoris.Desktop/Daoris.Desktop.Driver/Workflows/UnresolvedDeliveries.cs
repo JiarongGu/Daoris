@@ -10,8 +10,6 @@ namespace Daoris.Driver;
 [LookPass("landing", LookPhase.After)]
 internal sealed class UnresolvedDeliveries(ILandingWiring wiring) : ILookPass
 {
-    private bool _settled;
-
     public Task RunAsync(LookRound round, CancellationToken ct) => wiring.Stages.TimeAsync("landing", () => SettleAsync(round.Events, ct));
 
     private async Task SettleAsync(List<string> events, CancellationToken ct)
@@ -30,13 +28,12 @@ internal sealed class UnresolvedDeliveries(ILandingWiring wiring) : ILookPass
     }
 
     /// <summary>
-    /// A restart settles by phase, before any new start: every delivery left unresolved, once per driver. What is held for the person, or
+    /// A restart settles by phase, before any new start: every delivery left unresolved, once per watch (<see cref="LandingOnce"/>). What is held for the person, or
     /// could not be read, is said; a delivery settled or going on says nothing, since its unit's next landing goes on from it.
     /// </summary>
     private async Task SettleDeliveriesAsync(List<string> events, CancellationToken ct)
     {
-        if (_settled) return;
-        _settled = true;
+        if (!wiring.Landed.Take()) return;
         var store = new DeliveryStore(wiring.Home);
         foreach (var settled in await new DeliveryReconciler(store, wiring.Home, DeliveryReconciler.Checkouts(wiring.Home)).StartAsync(ct).ConfigureAwait(false))
         {
