@@ -280,7 +280,7 @@ public static class HarnessProbe
         if (busy?.Invoke() == true) return LoginAnswer.Of(kept, asked: false);
 
         return await ReadingAsync(
-            toolchain.Accounts.StoredSignIn, profileHome, (clock ?? (() => DateTimeOffset.UtcNow))(), renewing, kept,
+            toolchain.Accounts.StoredSignIn, profileHome, clock?.Invoke(), renewing, kept,
             async () =>
             {
                 var answer = await AskAsync(resolved, question.Arguments, profileHome, toolchain, ct, managed, account)
@@ -295,9 +295,9 @@ public static class HarnessProbe
 
     /// <summary>One status question as a read (<see cref="ReadGuard"/>): not asked where it would refresh; a refused refresh undone.</summary>
     internal static async Task<LoginAnswer> ReadingAsync(
-        IStoredSignIn? store, string? profileHome, DateTimeOffset now, bool renewing, LoginRead kept, Func<Task<LoginAnswer>> ask)
+        IStoredSignIn? store, string? profileHome, DateTimeOffset? now, bool renewing, LoginRead kept, Func<Task<LoginAnswer>> ask)
     {
-        if (!renewing && ReadGuard.WouldRefresh(store, profileHome, now)) return LoginAnswer.Of(kept, asked: false);
+        if (!renewing && now is { } at && ReadGuard.WouldRefresh(store, profileHome, at)) return LoginAnswer.Of(kept, asked: false);
         var (answer, put) = await ReadGuard.AskAsync(store, profileHome, restore: !renewing, ask).ConfigureAwait(false);
         return put ? LoginAnswer.Of(kept, asked: false) with { Kept = true } : answer;
     }

@@ -135,7 +135,7 @@ public sealed class SignOutSharedTests : IDisposable
         Assert.False(_agent.Read("")!.Cleared);
         Assert.Equal(before, _agent.Bytes());
         Assert.Contains(_lines, line => line.Event == "credentials.kept" && Value(line, "account") is "account-1");
-        await Task.Delay(300);
+        await Poll.Until(() => _lines.Any(line => line.Event == "credentials.written" && Value(line, "file") is "store" && Value(line, "change") is "renamed"), () => "no write said");
         Assert.NotEqual(LoginState.Out, AccountReads.Of(_home, "agent").Accounts["account-1"].Login);
         Assert.DoesNotContain(_lines, line => line.Event == "credentials.written" && Value(line, "marked") is "out");
         Assert.Equal(0, SignOutNotices.Claim(_home, Start));
@@ -183,7 +183,6 @@ public sealed class SignOutSharedTests : IDisposable
         _agent.SignedIn(expires: Start + TimeSpan.FromHours(7));
         _agent.RefuseReads();
         using var signing = SignInMarks.Begin(_account);
-        foreach (var mark in SignInMarks.Files(_home, "agent", "account-1")) File.SetLastWriteTimeUtc(mark, DateTime.UtcNow);
 
         var roster = Roster();
         var answer = await roster.AskOneAsync("agent", roster.AgentOf("agent")!, "agent", "account-1", Config, CancellationToken.None);

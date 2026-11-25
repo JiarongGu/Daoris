@@ -2,7 +2,7 @@ namespace Daoris.Driver;
 
 /// <summary>
 /// What a read of an account (its status, its windows) does to its stored sign-in: it starts no refresh, and a refresh its agent makes
-/// anyway that is refused and empties the store is undone from bytes held in memory for the read alone (SIGNOUTSHARED1).
+/// anyway that is refused and empties the store is undone from bytes held in memory for the read alone.
 /// </summary>
 internal static class ReadGuard
 {
@@ -84,7 +84,7 @@ internal static class ReadGuard
     private static bool Restore(IStoredSignIn store, string profileHome, string path, byte[] before)
     {
         if (store.Read(profileHome) is not { Cleared: true }) return false;
-        if (HarnessSettings.AccountAt(profileHome) is { } at && SignInMarks.Active(at.Home, at.Agent, at.Account, DateTimeOffset.UtcNow)) return false;
+        if (HarnessSettings.AccountAt(profileHome) is { } at && SignInMarks.Files(at.Home, at.Agent, at.Account).Count > 0) return false;
 
         var temp = path + ".daoris-kept." + Guid.NewGuid().ToString("N")[..8];
         try

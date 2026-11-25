@@ -158,16 +158,17 @@ internal sealed class CredentialWrites(HarnessRoster roster, Action<AccountLine>
         }
 
         var by = SignInCause.Of(roster, agent, account, running.Count, starting);
-        var marked = file == "store" && shape is not null ? Marked(folder, agent, account, shape, by) : null;
+        var marked = file == "store" && shape is not null ? Marked(folder, agent, account, store, shape, by) : null;
         say(AccountLine.CredentialsWritten(agent, account, file, change, empty, shape?.Access, shape?.Refresh, running, starting, by, marked));
     }
 
     /// <summary>The store as a write left it, read as the account's sign-in: <c>out</c> or <c>in</c> where it marked one, else null.</summary>
-    private string? Marked(string folder, string agent, string account, StoredSignInShape shape, string by)
+    private string? Marked(string folder, string agent, string account, IStoredSignIn store, StoredSignInShape shape, string by)
     {
         lock (_mark)
         {
             if (shape.Cleared && ReadGuard.Holds(folder)) return "held";
+            if (shape.Cleared && store.Read(folder) is { Cleared: false }) return null;
             var wasCleared = _cleared.TryGetValue(folder, out var seen) && seen;
             _cleared[folder] = shape.Cleared;
             if (shape.Cleared)
