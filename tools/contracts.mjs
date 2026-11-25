@@ -93,7 +93,7 @@ export function staleness(text, hash, output) {
   return `${output} is stale: the contracts changed since it was written. Run \`${WRITE}\``;
 }
 
-function standing(root) {
+export function standing(root) {
   const hash = sourceHash(sourceFiles(root), (path) => readFileSync(join(root, path), 'utf8'));
   const why = Object.values(OUTPUTS)
     .map((output) => staleness(existsSync(join(root, output)) ? readFileSync(join(root, output), 'utf8') : null, hash, output))
