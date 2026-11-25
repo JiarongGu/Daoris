@@ -228,8 +228,8 @@ export function localReads(text: string, files: readonly string[]): string[] {
   return [...reads];
 }
 
-/** A folder a file reads is read for its C# sources when every search pattern the file enumerates names C# sources. */
+/** A folder a file reads is read for its C# sources when every search pattern the file walks (`SourceFiles.Under` too) names C# sources. */
 function probeFor(text: string): string {
-  const patterns = [...text.matchAll(/\b(?:Enumerate|Get)Files\s*\([^;]*?"([^"]*\*[^"]*)"/g)].map((match) => match[1]!);
+  const patterns = [...text.matchAll(/\b(?:(?:Enumerate|Get)Files|SourceFiles\.Under)\s*\([^;]*?"([^"]*\*[^"]*)"/g)].map((match) => match[1]!);
   return patterns.length > 0 && patterns.every((pattern) => pattern.endsWith('.cs')) ? 'probe.cs' : 'probe.txt';
 }

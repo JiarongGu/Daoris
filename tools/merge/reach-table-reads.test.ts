@@ -155,6 +155,9 @@ test('the scan reads through a local holding a repository folder, and never thro
   ].join('\n');
   assert.deepEqual(srcReads(projects, files), []);
   assert.deepEqual(localReads(projects, files), ['src/Daoris.Desktop/Daoris.Desktop.Modules/probe.cs', 'src/Daoris.Desktop/Daoris.Desktop.Launcher/probe.cs']);
+  const shared = projects.replace('Directory.EnumerateFiles(Path.Combine(root, project), "*.cs", SearchOption.AllDirectories)', 'SourceFiles.Under(Path.Combine(root, project), "*.cs")');
+  assert.notEqual(shared, projects);
+  assert.deepEqual(localReads(shared, files), ['src/Daoris.Desktop/Daoris.Desktop.Modules/probe.cs', 'src/Daoris.Desktop/Daoris.Desktop.Launcher/probe.cs']);
 
   // Files named through a local and through a narrower local on it; a check that a retired project is gone names nothing.
   const named = [
