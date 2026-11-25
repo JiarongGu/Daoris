@@ -132,7 +132,7 @@ strings name, a tsconfig's files and theirs); a step whose tool lists the tree b
 merge in place, a preflight and the queue's scoped run hand every gate their changed paths (`MERGE_BRANCH_CHANGED`,
 `tools/merge/gate-hands.ts`), and the gate then runs only the steps a changed path reaches, the devkit's universal step standing
 aside since the `universal` gate runs it in every merge with the private patterns; a docs-only merge runs twelve of its
-twenty-six steps. The layers' census's source counts (`tools/layers-census/counts.mjs`, about 12 s) are one, run where a `.cs` or
+twenty-eight steps. The layers' census's source counts (`tools/layers-census/counts.mjs`, about 12 s) are one, run where a `.cs` or
 `.csproj` file, the lanes or the census's list changes, so a merge sees the allowance or boundary its sources move (MAINRED1). Handed no paths (a developer's run, `--full`, the watch after a landing, the release workflow) it runs every
 step. `node tools/verify-checks.mjs --plan` says what it would run and why each other step would not. A new check is a step of
 that list with its reads, never a link of a chain. Quick judges no test time; the merge's gates and the full set judge it, on classes measured again alone. Last,
