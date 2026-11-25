@@ -163,12 +163,13 @@ public sealed class DriverModuleFilesKindTests : DriverModuleBridge
     }
 
     [Fact]
-    public async Task A_share_spends_a_destination_no_grant_covers_so_it_is_the_owner_s_and_not_listed()
+    public async Task A_share_whose_destination_the_policy_classes_the_owners_is_the_owner_s_and_not_listed()
     {
         if (!OperatingSystem.IsWindows()) return;
         PersonPermissions.Add(Home, null, "ask", "share(*)", null);
         var workspaces = new Dictionary<string, string> { ["engine"] = "shop", ["web"] = "shop", ["docs"] = "other" };
         using var door = await OpenAsync(new CatalogueScope(CatalogueScope.Workspace, "shop"), workspaces: workspaces);
+        door.Judge.Config = () => DriverConfig.Parse("""{ "risk": { "machine": [ { "kind": "publish.outside", "class": "owner" } ] } }""");
         Held("engine", "share(deps/)", FileAsk.Share, others: "web");
 
         Assert.Empty(await ListedAsync(door));

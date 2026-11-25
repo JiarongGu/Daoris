@@ -116,6 +116,43 @@ public sealed class DriverWatch(
         return said;
     }
 
+    private long _askHoldsRead;
+
+    /// <summary>
+    /// The look's read of the holds outside a run's step in shadow (<see cref="RiskAskHolds"/>): open go-aheads, parked questions marked as
+    /// the owner's and held permissions, each journaled at its open and its release beside today's holder. At most once a minute, since it
+    /// reads the open asks and the session records; deciding nothing, so a fault is passed over.
+    /// </summary>
+    internal async Task AskHoldsLookAsync(DriverConfig config, CancellationToken ct)
+    {
+        if (Nodes?.Risk is not { } risk || (_askHoldsRead != 0 && System.Diagnostics.Stopwatch.GetElapsedTime(_askHoldsRead) < TimeSpan.FromMinutes(1))) return;
+        _askHoldsRead = System.Diagnostics.Stopwatch.GetTimestamp();
+        try
+        {
+            var records = await service.RecordsAsync(ct).ConfigureAwait(false);
+            var asks = await service.AsksAsync(ct).ConfigureAwait(false);
+            var registry = await service.RegistryAsync(ct).ConfigureAwait(false);
+            string? WorkspaceOf(string repository) =>
+                registry.FirstOrDefault(each => string.Equals(each.Repository, repository, StringComparison.OrdinalIgnoreCase))?.Workspace;
+            var files = new QuestionFiles(home);
+            RiskAskHolds.Shadow(risk, RiskAskHolds.GoAheadDomain, config, () => RiskAskHolds.GoAheads(asks, records, config, WorkspaceOf), _ => RiskAskHolds.GoAheadReleased);
+            RiskAskHolds.Shadow(
+                risk, RiskAskHolds.QuestionDomain, config,
+                () => RiskAskHolds.Questions([.. records.Where(record => !SessionStates.IsEnded(record.State)).Select(record => files.Read(record.Session)).OfType<ParkQuestion>()], records, config, WorkspaceOf),
+                _ => RiskAskHolds.QuestionReleased);
+            if (events is not null)
+            {
+                RiskAskHolds.Shadow(
+                    risk, RiskAskHolds.PermissionDomain, config, () => RiskAskHolds.Permissions(HeldPermissions.Of(events).Now(), records, config, WorkspaceOf),
+                    _ => RiskAskHolds.PermissionReleased);
+            }
+        }
+        catch (Exception error) when (error is not OperationCanceledException)
+        {
+            // The shadow decides nothing: a read it cannot make is passed over, never a reason to fail the look.
+        }
+    }
+
     /// <summary>The loop's evaluation runtime once it runs, or null: a test holds its pass with one of its own.</summary>
     internal NodeRuntime? Nodes => _doors.Nodes;
 

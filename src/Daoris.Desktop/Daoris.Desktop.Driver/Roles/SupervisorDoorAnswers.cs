@@ -265,11 +265,11 @@ internal sealed class SupervisorDoorAnswers(SupervisorBook book, IDecisionAdmiss
     public static string AgentOf(SupervisorHolder holder) =>
         holder.Agent is { } agent ? string.Join(" · ", new[] { agent.Agent, agent.Model, agent.Effort }.Where(each => each is { Length: > 0 })) : holder.Kind;
 
-    // A go-ahead's place may be marked or raised inside the window, so its risk and the owner's marks are judged again at the release, by
-    // the kind its pin names; one whose pin does not read is no longer what the role judged.
+    // The risk policy may change inside the window, so a go-ahead is judged again at the release, by the kind and target its pin names; one
+    // whose pin does not read is no longer what the role judged.
     private string? OwnersAgain(SupervisorDoorDecision due) =>
         due.Subject.Kind != SupervisorKinds.GoAhead ? null
-        : GoAheadPin.KindOf(due.Pin) is { } kind ? GoAheadAuthority.OwnersOwn(admission.RiskAt(new RolePlace(Repository: due.Repository)), kind)
+        : GoAheadPin.Read(due.Pin) is var (kind, on) ? admission.GoAheadOwners(new RolePlace(Repository: due.Repository), kind, on, due.Role)
         : SupervisorWhy.SubjectChanged;
 
     private SupervisorState Settle(SupervisorDoorDecision due, SupervisorState to, DateTimeOffset now, string? why)

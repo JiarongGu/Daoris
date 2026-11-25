@@ -33,7 +33,7 @@ public sealed class GoAheadRoleDoorTests
         Assert.Equal([new SupervisorReason(reason, GoAheadRoleDoor.Source)], draft.Reasons);
     }
 
-    /// <summary>A caller whose role the door does not list it for (answered since, a sign-in, a high-risk or marked place, no grant) is refused with why, keeping nothing.</summary>
+    /// <summary>A caller whose role the door does not list it for (answered since, a sign-in, an act the risk policy classes the owner's, no grant) is refused with why, keeping nothing.</summary>
     [Theory]
     [InlineData("goahead", "goahead", "a7/3", "a7", 2, "has go-ahead 3 waiting for this holder, not 2")]
     [InlineData("goahead", "goahead", "a7/2", "A7", 2, "an ask is named as written, and `#a7` does")]
