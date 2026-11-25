@@ -1,6 +1,8 @@
 import assert from 'node:assert/strict';
+import { mkdirSync, rmSync, writeFileSync } from 'node:fs';
+import { join } from 'node:path';
 import test from 'node:test';
-import { breachLine, breachLines, domainOf, gateBreach, hangBreaches, hungUnderLoad, parseBreaches, ratchetBreaches, sayBreach, separations, sourceReader, testBreach } from './time-why.mjs';
+import { ACTS_FILE, breachLine, breachLines, domainOf, gateBreach, hangBreaches, hungUnderLoad, parseBreaches, ratchetBreaches, readActs, sayBreach, separations, sourceReader, testBreach } from './time-why.mjs';
 
 const PROJECT = 'src/Daoris.Desktop/Daoris.Desktop.Driver.Tests';
 const cls = (name, body, trait = '') => `namespace Daoris.Desktop.Driver.Tests;\n\n${trait}public sealed class ${name}\n{\n    [Fact]\n    public async Task Runs()\n    {\n        ${body}\n    }\n}\n`;
@@ -143,4 +145,59 @@ test('a breach said as a machine line reads back, and the summary names its caus
   assert.match(lines[0], /time breaches: 2, 1 failing the run; each with its cause in local\/x\/breaches\.json/);
   assert.match(lines[1], /WaitsTests\.Runs took 45 s, its limit 30 s: clock \(1 wall-clock read or wait\); fix: UNITPURE1; it fails the run/);
   assert.deepEqual(breachLines([]), []);
+});
+
+test('a test\'s cause is read from the ledger of what it did where one is kept, never from its class\'s text over it', () => {
+  const source = reader('Daoris.Desktop.Driver.Tests.CpuTests.Runs');
+  const of = (acts, given = {}) => planted(given.name ?? 'CpuTests', { acts, ...given });
+  assert.deepEqual([of({ process: 2, git: 1 }).cause, of({ process: 2, git: 1 }).evidence], ['process', 'its ledger: 2 process starts and 1 git start']);
+  assert.equal(of({ disk: 1 }).cause, 'disk');
+  assert.equal(of({ network: 4 }).cause, 'network');
+  assert.deepEqual([of({ wait: 3 }).cause, of({ wait: 3 }).evidence], ['clock', 'its ledger: 3 waits on a wall clock']);
+  assert.equal(of({ wait: 3 }).fix, 'UNITPURE1');
+  assert.equal(of({ git: 1, wait: 9 }).cause, 'process', 'a process or git start reads before a wait');
+  const none = of({ process: 0, git: 0, disk: 0, network: 0, wait: 0 }, { name: 'StartsGitTests' });
+  assert.equal(none.cause, 'unclassed');
+  assert.match(none.evidence, /its ledger says it started, opened and waited on nothing/);
+  assert.equal(of(null, { name: 'StartsGitTests' }).cause, 'process', 'no ledger entry: the text reads as before');
+  assert.equal(of(undefined, { name: 'WaitsTests' }).cause, 'clock');
+  assert.equal(of({ process: 0 }, { name: 'ScansTests' }).cause, 'scan');
+  const key = 'Daoris.Desktop.Driver.Tests.RealGitTests.Runs';
+  const text = cls('RealGitTests', 'var a = 1;', '[Trait(Category.Name, Category.Process)]\n');
+  assert.equal(testBreach({ key, ms: 1, limit: 0, fails: false, acts: { wait: 1 }, source: { file: `${PROJECT}/Workplace/RealGitTests.cs`, text } }).cause, 'process');
+  assert.ok(source);
+});
+
+test('the ledger is read from the records folder, a test by its own entry else its class\'s; a missing or broken file reads none', () => {
+  const dir = join('_fixtures', 'time-why-acts');
+  rmSync(dir, { recursive: true, force: true });
+  mkdirSync(dir, { recursive: true });
+  try {
+    assert.equal(readActs(dir)('A.B.c'), null, 'no file, no entry');
+    writeFileSync(join(dir, ACTS_FILE), '{ not json');
+    assert.equal(readActs(dir)('A.B.c'), null, 'a broken file reads none');
+    writeFileSync(join(dir, ACTS_FILE), JSON.stringify({ 'A.B.c': { process: 1 }, 'A.Class': { wait: 2, git: 'x' }, 'tools/a.test.mjs': { disk: 3 }, 'A.Bad': 'no' }));
+    const acts = readActs(dir);
+    assert.deepEqual(acts('A.B.c'), { process: 1 });
+    assert.deepEqual(acts('A.Class.other(x: 1)'), { wait: 2 }, 'the class\'s entry, its non-number counts dropped');
+    assert.deepEqual(acts('tools/a.test.mjs::a case'), { disk: 3 });
+    assert.equal(acts('A.Bad.case'), null);
+    assert.equal(acts('Z.Other.case'), null);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test('the ratchet\'s breaches read each test\'s ledger entry', () => {
+  const [breach] = ratchetBreaches({
+    found: { 'Daoris.Desktop.Driver.Tests.CpuTests.Runs': { ms: 40_000, limit: 30_000 } },
+    source: reader, acts: (key) => (key.includes('CpuTests') ? { wait: 5 } : null),
+  });
+  assert.deepEqual([breach.cause, breach.evidence], ['clock', 'its ledger: 5 waits on a wall clock']);
+});
+
+test('a hung test is read from its ledger entry too', () => {
+  const log = ['The specified inactivity time of 60 seconds has elapsed.', 'The test running when the crash occurred:', 'Daoris.Desktop.Driver.Tests.CpuTests.Runs', '', ''].join('\n');
+  const [hang] = hangBreaches(log, reader, null, { acts: () => ({ git: 2 }) });
+  assert.deepEqual([hang.cause, hang.evidence.startsWith('its ledger: 2 git starts')], ['process', true]);
 });

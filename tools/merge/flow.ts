@@ -6,7 +6,7 @@
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import {
-  breachLines, gateBreach, hangBreaches, hungUnderLoad, parseBreaches, separations, sourceReader, writeBreaches, type Breach, type LoadSeam, type Separation,
+  breachLines, gateBreach, hangBreaches, hungUnderLoad, parseBreaches, readActs, separations, sourceReader, writeBreaches, type Breach, type LoadSeam, type Separation,
 } from '../time-why.mjs';
 import { ALONE_HOLDS, stampLoad } from '../time-load.mjs';
 import { BuildLedger } from './build-once.ts';
@@ -162,7 +162,7 @@ export async function runOne(deps: FlowDeps, { where, gate, logs, beside, tree, 
   const outcome = said ? parseOutcome(said) : null;
   const steps = outcome?.steps ?? parseSteps(said, Date.now() - started);
   if (steps.length) result.steps = steps;
-  const breaches = [...parseBreaches(said), ...hangBreaches(said, deps.source(where), peak, { alone: first !== null })];
+  const breaches = [...parseBreaches(said), ...hangBreaches(said, deps.source(where), peak, { alone: first !== null, acts: readActs(join(where, TIMING_DIR)) })];
   if (hungUnderLoad(breaches) && expired === null && !first) {
     Object.assign(result, { verdict: 'FAIL', again: true, cause: 'load', note: `${result.note}; killed by the hang bound under load (${peak} heavy runs at its peak): run again alone once every other gate has ended and the machine is free`.replace(/^; /, '') });
   }

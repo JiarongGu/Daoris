@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
 import { existsSync, mkdirSync, readFileSync, rmSync, statSync, utimesSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { GATE_START, LIMITS, checkTimes, limitFor, readJunit, readTrx, readVitest, reasonLines, reasonProblems, runStart, scanRecords, settleLoaded, slowestClasses, tighten } from './time-ratchet.mjs';
+import { GATE_START, LIMITS, checkTimes, classLine, limitFor, readJunit, readTrx, readVitest, reasonLines, reasonProblems, runStart, scanRecords, settleLoaded, slowestClasses, tighten } from './time-ratchet.mjs';
 import { isLoaded, readMarks, stampLoad } from './time-load.mjs';
 import { judgeByOwner, splitByOwner, unitsOf } from './time-reach.mjs';
 
@@ -204,6 +204,19 @@ test('the slowest classes of a record are the top by total time, each with its r
   const top = slowestClasses(tests, 2, { 'N.Slow': entry(5000, WHY, 'TESTSLOW1') });
   assert.deepEqual(top.map((each) => [each.name, each.ms, each.count]), [['f.test.ts', 8000, 2], ['N.Slow', 9000, 2]].sort((a, b) => b[1] - a[1]));
   assert.equal(top.find((each) => each.name === 'N.Slow').row, 'TESTSLOW1');
+});
+
+test('a class of a record names its cause: read from its ledger where one is kept, else from its source, else none', () => {
+  const tests = [{ key: 'N.Waits.one', ms: 5000 }, { key: 'N.Waits.two', ms: 4000 }, { key: 'N.Git.one', ms: 3000 }, { key: 'N.Plain.one', ms: 2000 }, { key: 'N.Lost.one', ms: 1000 }];
+  const sources = { 'N.Waits': 'await Task.Delay(2000);', 'N.Git': 'var a = 1;', 'N.Plain': 'var a = 1;' };
+  const source = (key) => { const name = key.split('.').slice(0, 2).join('.'); return name in sources ? { file: `T/${name.slice(2)}.cs`, text: sources[name] } : null; };
+  const acts = (key) => (key.startsWith('N.Git.') ? { git: 4 } : null);
+  const top = slowestClasses(tests, 5, {}, { source, acts, record: 'driver.trx' });
+  assert.deepEqual(top.map((each) => [each.name, each.cause]), [['N.Waits', 'clock'], ['N.Git', 'process'], ['N.Plain', 'unclassed'], ['N.Lost', 'unclassed']]);
+  assert.equal(top[1].evidence, 'its ledger: 4 git starts');
+  assert.equal(classLine(top[0]), '  9 s  2  N.Waits  no reason: optimize it or say why  [clock: 1 wall-clock read or wait]');
+  assert.equal(classLine(top[2]), '  2 s  1  N.Plain  no reason: optimize it or say why  [unclassed: none of the causes read in its source]');
+  assert.equal(slowestClasses(tests, 1, {})[0].cause, undefined, 'asked for no readings, a class names none');
 });
 
 test('a merge judges only the records its own gates wrote: a stale record is not read, and none written means a pass', () => {

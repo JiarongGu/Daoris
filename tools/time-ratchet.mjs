@@ -3,7 +3,7 @@
  *
  *   node tools/time-ratchet.mjs           check the gates' duration records against tools/time-ratchet.json (exit 0 clean, 1 breach, 2 tool error)
  *   node tools/time-ratchet.mjs --since <ms>  judge only the records written at or after that epoch time (a merge's own gates')
- *   node tools/time-ratchet.mjs --classes  the 15 classes of each record with the most total time, each with its reason
+ *   node tools/time-ratchet.mjs --classes  the 15 classes of each record with the most total time, each with its reason and its cause
  *   node tools/time-ratchet.mjs --write  cut the list down to what the records now show (never adds a test, never raises one)
  *
  * The records are the files the gates write under `_fixtures/test-timing/`: a `.trx` for each dotnet gate (a Process half's name
@@ -21,7 +21,7 @@ import { isMain, writeAtomic } from './fsx.mjs';
 import { judgeByOwner, loadWorld, unitsOf } from './time-reach.mjs';
 import { mainFile, mainRecord, onMainOf, readMain, recordRun } from './time-main.mjs';
 import { ALONE_HOLDS, foreignTrees, heldNow, isLoaded, readMarks } from './time-load.mjs';
-import { ratchetBreaches, sayBreach, sourceReader } from './time-why.mjs';
+import { causeOf, ratchetBreaches, readActs, sayBreach, sourceReader } from './time-why.mjs';
 
 /** The owner's per-test budget, in milliseconds, by the kind of record. */
 export const LIMITS = { unit: 30_000, process: 120_000, web: 10_000, tool: 120_000, toolUnit: 10_000 };
@@ -197,19 +197,30 @@ export function reasonLines(found, list) {
 /** A test's class: its key without the case's arguments and its last name part, or the file of a `file::name` key. */
 const classOf = (key) => (key.includes('::') ? key.split('::')[0] : key.split('(')[0].replace(/\.[^.]*$/, ''));
 
-/** The `count` classes of a record's tests with the most total time, as { name, ms, count, reason, row }. */
-export function slowestClasses(tests, count, list = {}) {
+const ACT_NAMES = ['process', 'git', 'disk', 'network', 'wait'];
+
+function classActs(keys, acts) {
+  const found = keys.map((key) => acts(key)).filter(Boolean);
+  if (!found.length) return null;
+  return Object.fromEntries(ACT_NAMES.map((name) => [name, found.reduce((sum, each) => sum + (each[name] ?? 0), 0)]));
+}
+
+/** The `count` slowest classes as { name, ms, count, reason, row }; `read` ({ source, acts, record }) adds each one's cause and evidence. */
+export function slowestClasses(tests, count, list = {}, read = null) {
   const classes = new Map();
   for (const { key, ms } of tests) {
     const name = classOf(key);
-    const at = classes.get(name) ?? { name, ms: 0, count: 0 };
-    classes.set(name, { ...at, ms: at.ms + ms, count: at.count + 1 });
+    const at = classes.get(name) ?? { name, ms: 0, count: 0, keys: [] };
+    classes.set(name, { ...at, ms: at.ms + ms, count: at.count + 1, keys: [...at.keys, key] });
   }
-  return [...classes.values()].sort((a, b) => b.ms - a.ms).slice(0, count).map((each) => {
+  return [...classes.values()].sort((a, b) => b.ms - a.ms).slice(0, count).map(({ keys, ...each }) => {
     const entry = entryFor(list, each.name) ?? Object.keys(list).find((key) => key.startsWith(`${each.name}.`) || key.startsWith(`${each.name}::`));
-    return { ...each, reason: entry === undefined ? '' : list[entry].why, row: entry === undefined ? '' : (list[entry].row ?? '') };
+    const reading = read ? causeOf({ ...(read.source(keys[0]) ?? {}), record: read.record ?? '', acts: read.acts ? classActs(keys, read.acts) : null }) : null;
+    return { ...each, reason: entry === undefined ? '' : list[entry].why, row: entry === undefined ? '' : (list[entry].row ?? ''), ...(reading ? { cause: reading.cause, evidence: reading.evidence } : {}) };
   });
 }
+
+export const classLine = (c) => `  ${(c.ms / 1000).toFixed(0)} s  ${c.count}  ${c.name}  ${c.reason || 'no reason: optimize it or say why'}${c.row ? ` (${c.row})` : ''}${c.cause ? `  [${c.cause}: ${c.evidence}]` : ''}`;
 
 /** The list cut to the records: an entry lowered to its slowest test, gone once none is over; a `class: true` entry stays with its class. */
 export function tighten(found, list, seen = new Set()) {
@@ -299,7 +310,7 @@ async function main() {
     if (process.argv.includes('--classes')) {
       for (const { file, tests } of readRecords(dir, root, { since })) {
         console.log(`${file}:`);
-        for (const c of slowestClasses(tests, 15, list)) console.log(`  ${(c.ms / 1000).toFixed(0)} s  ${c.count}  ${c.name}  ${c.reason || 'no reason: optimize it or say why'}${c.row ? ` (${c.row})` : ''}`);
+        for (const c of slowestClasses(tests, 15, list, { source: sourceReader(root), acts: readActs(dir), record: file })) console.log(classLine(c));
       }
       return 0;
     }
@@ -307,7 +318,7 @@ async function main() {
     for (const line of reasonLines(found, list)) console.log(`time-ratchet: over budget: ${line}`);
     const loaded = Object.fromEntries(unmeasured.map((key) => [key, settled.loaded[key]]));
     const records = () => new Map(readRecords(dir, root, { since }).flatMap(({ file, tests }) => tests.map(({ key }) => [key, file])));
-    const breaches = ratchetBreaches({ found, inherited, loaded, listedAt: (key) => list[entryFor(list, key)]?.ms, records, source: sourceReader(root) });
+    const breaches = ratchetBreaches({ found, inherited, loaded, listedAt: (key) => list[entryFor(list, key)]?.ms, records, source: sourceReader(root), acts: readActs(dir) });
     for (const each of breaches.filter((breach) => breach.inherited)) {
       console.log(`time-ratchet: inherited from main, a known red that fails nothing: ${each.name} took ${each.ms} ms, over its ${each.limit} ms limit; cause ${each.cause}, owned by ${each.fix}`);
     }

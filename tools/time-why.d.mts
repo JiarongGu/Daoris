@@ -10,21 +10,26 @@ export type Breach = {
   unit?: string; domain?: string;
 };
 export type Separation = { domain: string; cause: Cause; classes: string[]; fix: string };
+/** What a test started, opened and waited on, in counts: the runtime ledger's entry. */
+export type Acts = { process?: number; git?: number; disk?: number; network?: number; wait?: number };
 export type Source = { file: string; text: string };
 export type StepTime = { step: string; ms: number; open?: true };
 export type LoadSeam = { sample: () => { peak: () => number; stop: () => void }; free: () => boolean; sleep: (ms: number) => Promise<void>; now: () => number };
 
-export declare function causeOf(given: { text?: string | undefined; file?: string | undefined; record?: string }): { cause: Cause; evidence: string; real?: true };
+export declare function causeOf(given: { text?: string | undefined; file?: string | undefined; record?: string; acts?: Acts | null }): { cause: Cause; evidence: string; real?: true };
+export declare const ACTS_FILE: string;
+export declare function readActs(dir: string): (key: string) => Acts | null;
 export declare function domainOf(file: string): string;
 export declare function sourceReader(root: string, seams?: { files?: string[] | null; read?: (path: string) => string }): (key: string) => Source | null;
 type Over = Record<string, { ms: number; limit: number }>;
 export declare function ratchetBreaches(given: {
-  found: Over; others?: Over; loaded?: Over; listedAt?: (key: string) => number | undefined; records?: () => Map<string, string>; source?: (key: string) => Source | null;
+  found: Over; inherited?: Over; loaded?: Over; listedAt?: (key: string) => number | undefined; records?: () => Map<string, string>; source?: (key: string) => Source | null;
+  acts?: (key: string) => Acts | null;
 }): Breach[];
-export declare function hangBreaches(log: string | null | undefined, source: (key: string) => Source | null, peak?: number | null, seam?: { alone?: boolean }): Breach[];
+export declare function hangBreaches(log: string | null | undefined, source: (key: string) => Source | null, peak?: number | null, seam?: { alone?: boolean; acts?: (key: string) => Acts | null }): Breach[];
 export declare function hungUnderLoad(breaches: readonly Breach[]): boolean;
 export declare function testBreach(given: {
-  kind?: 'test' | 'census' | 'hang'; key: string; ms: number; limit: number; fails: boolean; record?: string; source?: Source | null; loaded?: boolean; note?: string;
+  kind?: 'test' | 'census' | 'hang'; key: string; ms: number; limit: number; fails: boolean; record?: string; source?: Source | null; loaded?: boolean; note?: string; acts?: Acts | null;
 }): Breach;
 export declare function gateBreach(given: { gate: string; ms: number; budget: number; steps?: readonly StepTime[]; peak?: number | null; fails: boolean }): Breach;
 export declare function separations(breaches: readonly Breach[], least?: number): Separation[];
