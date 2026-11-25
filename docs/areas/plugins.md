@@ -294,6 +294,16 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
 - **Gates:** the driver lane's desktop suites, `rehearse-family`, `deployment`; `modules`, `censuses`, `modules-process`;
   `examples/plugins/**` adds `service`, `driver-process` and `web`; the page `web-unit`, `web-types`, `web-rules`, `web`.
 
+## Adding to it
+
+Each row names the place and the registration; the rule behind it is in *Where a change goes* above.
+
+| Kind | Place | Registered by | Fails until |
+|---|---|---|---|
+| a hook point or frame field | `HookPoints` and `HookFrames` | the kit's entry in `PluginKit.Points` | `PluginKitTests` |
+| a manifest field | `PluginCatalog` and `PluginManifest` | the update's rows in `PluginChange.Between` and the page's `catalog.ts` | `PluginCatalogTests` |
+| a shipped plugin | a folder in `examples/plugins/` | its version, `changes` line and README `## What it needs`; offered through `OFFERED_PLUGINS` in `tools/desktop-publish/lay.mjs` | `PluginKitExampleTests`; each example's `node --test` |
+
 ## Contradictions
 
 - D103, D140, D150 and D64's PLUGINRESERVE1 note make the CLI and the driver twin readers vs D194 (the driver reads alone): D194;

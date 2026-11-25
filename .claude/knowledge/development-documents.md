@@ -85,6 +85,10 @@ glossary are kept only where sessions use them; the area documents carry the lin
   one way was chosen over another is the decision's.
 - **Lines, not files.** Each names the file and line range to start reading at, the exemplar a new unit
   mirrors, the folder new behaviour goes in, and the filtered command that runs its tests.
+- **Adding to it.** One table of the kinds of addition the part takes (a gate, a route, a setting, a key): the
+  place that holds each, the registration it needs, and the check that fails until it is there. A row names and
+  points; the rule stays in the area. Where the repository generates an index, it can gather every area's rows into one
+  page, so "where does a new X go" is one read; without one, the areas are where to look.
 - **Short.** It is read whole at the start of every change in its part, so it has a ceiling and points
   at what is longer: a design, a knowledge document, a decision.
 

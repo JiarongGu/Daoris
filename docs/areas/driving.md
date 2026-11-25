@@ -781,6 +781,18 @@ Driver tests are under `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/`, servic
 `driver-process-git` (run serially), `service`, `universal`, `test-map` and `code-map` for a new file; `npm run quick` holds the
 size ratchet. A changed driven loop also meets the family rehearsal (`npm run rehearse:family`).
 
+## Adding to it
+
+Each row names the place and the registration; the rule behind it is in the table under *Where a change goes* above.
+
+| Kind | Place | Registered by | Fails until |
+|---|---|---|---|
+| a machine setting | `Settings/List/MachineSettings.cs`, declared once | the one key each of its doors spells; the page's `SETTINGS` | `MachineSettingsCensusTests`, `SettingDoorsCensusTests`, `everySetting.test.tsx` |
+| a part of the look | a pass of its own marked `[LookPass]` | reaches the driver on `ILookWiring`, shares on `LookState` | `DriverPartsTests` |
+| a part of a quest's start | a stage marked `[RunStage]` in its phase's folder of `Loop/Run/` | reaches the driver on `IRunWiring`, shares on `RunState` | `DriverRunPartsTests` |
+| a quest operation | a module in `Service/Quests/Operations/` marked `[QuestOperation(kind, Log)]` | its verbs on `QuestTx` | `QuestsPartsTests` |
+| a reason a quest sits or starts | `WorkOrders/Domain/Planner.cs` | a `StartVerdict` and its `SittingFact` | `PlannerTests` |
+
 ## Contradictions
 
 - D46 and D51 (one driven session per repository) vs `RoundConsidering`'s `Isolate` branch (side by side, one per tree, under an

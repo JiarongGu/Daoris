@@ -3,6 +3,7 @@ import { mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { test } from 'node:test';
 import { fileURLToPath } from 'node:url';
+import { planIndex } from './orient-index.mjs';
 import { indexPassages } from './question-bench.mjs';
 import {
   DEFAULT_QUESTIONS, declaredRecords, exactLookup, main, readQuestions, scoreFloor, tenseOf,
@@ -26,12 +27,13 @@ test('a path is history by its declared record or an archive folder, dated by it
   assert.equal(tenseOf('AGENTS.md', records), 'present');
 });
 
-test('the committed questions read, twelve of each, and a malformed set is refused', () => {
+test('the committed questions read, fourteen present and twelve history, and a malformed set is refused', () => {
   const read = readQuestions(readFileSync(DEFAULT_QUESTIONS, 'utf8'));
-  assert.equal(read.present.length, 12);
+  assert.equal(read.present.length, 14);
   assert.equal(read.history.length, 12);
   assert.throws(() => readQuestions('{"present":[],"history":[{"question":"x","answer":["a"]}]}'), /neither id nor words/);
   assert.throws(() => readQuestions('{"present":[{"question":"x","answer":[]}],"history":[]}'), /names no answer/);
+  assert.throws(() => readQuestions('{"present":[{"question":"x","answer":["a"],"before":"b"}],"history":[]}'), /before that is not a list/);
 });
 
 test('an identifier is looked up exactly: a decision by its file, a row in the records before the rest', () => {
@@ -98,6 +100,42 @@ test('a run over a checkout reports the corpora, the history questions and the b
     assert.ok(result.start.row.largest > result.start.row.median);
     assert.deepEqual(result.documents, { datedAtTop: 1, datedAtTopBytes: 14, filed: 1 });
     assert.equal(main(['--root', root, '--questions', join(root, 'missing.json')], { err: () => {} }), 2);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test('the two questions about adding land on the gathered page, which is read in fewer bytes than the areas they replace', () => {
+  const read = readQuestions(readFileSync(DEFAULT_QUESTIONS, 'utf8'));
+  const adding = read.present.filter((item) => item.answer.includes('docs/index/adding.md'));
+  assert.deepEqual(adding.map((item) => item.question), ['add a machine setting', 'add an agent door']);
+  for (const item of adding) assert.ok(item.before.length >= 1 && item.before.every((path) => path.startsWith('docs/areas/')), item.question);
+
+  const root = join(here, '..', '_fixtures', `read-path-bench-adding-${process.pid}`);
+  const write = (path, text) => {
+    mkdirSync(dirname(join(root, path)), { recursive: true });
+    writeFileSync(join(root, path), text);
+  };
+  try {
+    write('daoris.json', JSON.stringify({ documents: { index: 'docs/index/README.md', areas: 'docs/areas' } }));
+    write('docs/index/README.md', '# Index\n');
+    const section = '\n## Adding to it\n\n| Kind | Place | Registered by | Fails until |\n|---|---|---|---|\n| a machine setting | `Settings/List/MachineSettings.cs` | its doors | `MachineSettingsCensusTests` |\n';
+    write('docs/areas/driving.md', `# Driving\n\n${'A quest starts when the planner says so and a machine setting is one of the many things a driver keeps.\n\n'.repeat(1)}${'A quest starts when the planner says so.\n\n'.repeat(80)}` + section);
+    write('docs/index/adding.md', planIndex(root, ['daoris.json', 'docs/areas/driving.md']).get('docs/index/adding.md'));
+    write('questions.json', JSON.stringify({
+      present: [{ question: 'add a machine setting', answer: ['docs/index/adding.md'], before: ['docs/areas/driving.md'] }],
+      history: [],
+    }));
+    let printed = '';
+    assert.equal(main(['--root', root, '--questions', join(root, 'questions.json'), '--json'], { out: (text) => { printed += text; } }), 0);
+    const [row] = JSON.parse(printed).adding;
+    assert.equal(row.question, 'add a machine setting');
+    assert.equal(row.landed, 'docs/index/adding.md');
+    assert.ok(row.pageBytes > 0 && row.pageBytes < row.beforeBytes, `the page ${row.pageBytes} against the areas ${row.beforeBytes}`);
+    let report = '';
+    assert.equal(main(['--root', root, '--questions', join(root, 'questions.json')], { out: (text) => { report += text; } }), 0);
+    assert.match(report, /## Where a new kind goes/);
+    assert.match(report, /add a machine setting/);
   } finally {
     rmSync(root, { recursive: true, force: true });
   }

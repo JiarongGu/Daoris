@@ -12,6 +12,14 @@ network.
 
 ## Unreleased
 
+- **The area template gains *Adding to it*, and the index gathers it.** `templates/area.md` and `development-documents` ask each
+  area document for one table of the kinds of addition its part takes: the place that holds each, the registration it
+  needs and the check that fails until it is there, so "where does a new gate, route, setting or key go" is answered in the
+  area and nowhere else. A repository that generates an index can gather the rows into one page (this one does, in
+  `docs/index/adding.md`); the canon's index template lists that page as a shape, never a path.
+  **Adopting repositories:** run `daoris sync`; add the section to each area document for the kinds that part takes, each
+  row naming a place and pointing at the area's rule, never restating it.
+
 - **Rules 1 and 3 of `every-session` read the repository's risk policy.** Whether an act needs a yes, and whose, is one
   declared policy: where it declares no risk nothing waits, a role's yes is a role's, and the owner is asked only for acts
   it classes theirs and for a change to the policy itself. The closed list of owner calls (direction, money, sign-ins,

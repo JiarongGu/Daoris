@@ -461,6 +461,17 @@ in a file of its name; `docs/index/README.md` says where a seam, route, verb or 
   `Holder*Tests`; service `SupervisorWordTests`; web `agents/roles/`, `agents/setup/`. Gates: `driver`,
   `modules`, `censuses`, `service`, `web-unit`, `universal`.
 
+## Adding to it
+
+Each row names the place and the registration; the rule behind it is in *Where a change goes* above.
+
+| Kind | Place | Registered by | Fails until |
+|---|---|---|---|
+| a kind of work | `RoleWork`, `StartPlan.RoleOf`, the seed and `Roles/Domain/ParticipantWork.cs` | its service and page twins; its tools in the service's call table | `ParticipantWorkTests` |
+| a steward act | a row in `StewardActRows` | its name in `StewardActNames`, the web's `ACTS` and both catalogues | `StewardCommandTests` |
+| an Ask Daoris door | a view in `Modules/Platform/Views/` | `PressViews.All`, its sentence under `person.view.<kind>`, the room's doors-table row | `HelpRoomDoorsTests` |
+| a policy field | `StaffPolicy` and `StaffJudge` | `StaffCapabilities.Fields` | `StaffPolicyTests` |
+
 ## Contradictions
 
 1. D229's 2026-11-04 note (`daoris role rules`) vs `RoleVerbs` (`driver role rules`): the verb's grammar.

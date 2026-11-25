@@ -448,6 +448,16 @@ Tests are in `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Agents/`, named for
 shape are `ProviderCensusTests`, `ProviderVocabularyTests`, `ProviderConformanceTests`, `LayerCensusTests` and the old names'
 two. Gates: `driver`, `censuses`, `driver-process`, `cli` for the `*TwinTests`' other half, `web-unit` for the Agents page.
 
+## Adding to it
+
+Each row names the place and the registration; the rule behind it is in *Where a change goes* above and rules 1 to 4.
+
+| Kind | Place | Registered by | Fails until |
+|---|---|---|---|
+| an agent or a door | `Registry/Providers.cs` and a folder `Providers/<id>/` on the contract | a door is a record of its provider, never a class (`BuiltDoors.Of(id)`, in tests `TestDoors.Door`) | `ProviderCensusTests`, `ProviderVocabularyTests`, `ProviderConformanceTests` |
+| a protocol-door behaviour on a frame | a stage marked `[TurnStage(name, phase, after)]` in the `Acp*` units | `ITurnWiring`, shared state in a state type; `Acp.cs` only wires | `AcpPartsTests` |
+| a failure's kind | `AgentErrors` and the door's word tables | the entry with its recorded sentence | `AgentErrorsTests` |
+
 ## Contradictions
 
 An older word the code departs from, then what reads right.

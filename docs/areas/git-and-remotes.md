@@ -498,6 +498,15 @@ starts), the diff and patch text, and the merges, rebases and the landing's judg
 Gates: `driver`, `driver-process-git`, `driver-process`, `driver-rehearsals`, `censuses`,
 `modules`, `service`, `web-unit`, `web-types`, `deployment`; visible words need both catalogues.
 
+## Adding to it
+
+Each row names the place and the registration; the rule behind it is in *Where a change goes* above.
+
+| Kind | Place | Registered by | Fails until |
+|---|---|---|---|
+| a person's git act | a step kind on the act engine, a `Git*Command` twin and a `GitRoutes` route | its rows in `PipeTargets` and `PipeCensus` | `PipeCensusTests` |
+| a way an act is carried or judged | the doors: `GitDoors`, `GitRouting`, `GitWiring` | compiled into `Daoris.Desktop.GitDoor`; never a hook or a credential helper | `ProcessStartsCensusTests` and the doors' process classes |
+
 ## Contradictions
 
 - D47 (one home per quest, written through) vs D68 and D69 (local commits, fetch-rebase-push): D68.

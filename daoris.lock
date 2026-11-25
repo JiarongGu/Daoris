@@ -1,7 +1,7 @@
 {
   "version": 1,
   "canonVersion": "0.0.1",
-  "canonDigest": "0e8245149c0e0c18a8f781d4653746546e354f59815b052a690ec75f888ba823",
+  "canonDigest": "577cce9c1da0c1435bbddde88215bac4b143b9162efeaac4022f51244e621e09",
   "source": "daoris@0.0.1",
   "entries": [
     {
@@ -30,7 +30,7 @@
       "source": "core/knowledge/development-documents.md",
       "target": "knowledge/development-documents.md",
       "canonVersion": "0.0.1",
-      "sha256": "a65daa1387d47e0557603bc3989021a3bef4f5282580cc4978a41a2d7f749c86"
+      "sha256": "e6e3b57843bb70dbdfd7ee4c9ed5ea7d0ba65723e3ea83995fd05ce2c2ed6fa6"
     },
     {
       "pack": "core",
@@ -172,7 +172,7 @@
       "source": "core/skills/set-up-documents/SKILL.md",
       "target": "skills/set-up-documents/SKILL.md",
       "canonVersion": "0.0.1",
-      "sha256": "f119740c2d1aed23b51351638718e79e9a49ae3d2b0f330afcd6858f924006da"
+      "sha256": "aa0a398ef1c06451592d9df71ed75cfe2c3cc34f72951e3652d856d2cda61727"
     },
     {
       "pack": "core",
@@ -186,7 +186,7 @@
       "source": "core/skills/set-up-documents/templates/area.md",
       "target": "skills/set-up-documents/templates/area.md",
       "canonVersion": "0.0.1",
-      "sha256": "e6e7d492b036455f091b4237699cba8154b976c86a6fe5efd6df28ca67992532"
+      "sha256": "1e31d59aebaefcbe0c3a4f5846bd765d04f80eb50c0ce2ed2f2d18c68db774bc"
     },
     {
       "pack": "core",
@@ -221,7 +221,7 @@
       "source": "core/skills/set-up-documents/templates/index.md",
       "target": "skills/set-up-documents/templates/index.md",
       "canonVersion": "0.0.1",
-      "sha256": "294275e445c81014f18b118adabb53bc6ac6b2eceaa8fa4e0e70faf9b1fb695f"
+      "sha256": "fafe1e12851e311874cedae9d02dc0c529026d389e58e66992e78ce666778cd7"
     },
     {
       "pack": "core",

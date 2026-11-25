@@ -21,6 +21,7 @@ here restates it.
 | File | Answers |
 |---|---|
 | `<file>` | <what sessions look for that it names, each with its file and lines> |
+| `<file>` | where a new kind of thing goes: each area's *Adding to it* rows, gathered into one page, where the areas keep them |
 | `decisions.md` | each decision's title and lines, then each dated amendment's label and lines |
 | `outlines/<path>.md` | the declarations or headings of a file over <the threshold>, each with its lines |
 

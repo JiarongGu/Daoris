@@ -7,7 +7,7 @@
  * ## What it writes
  *
  * `docs/index/`, every file generated and none edited by hand: `README.md` (the indexes kept by hand first, then
- * what each generated file answers, and every large file), `routes.md`, `verbs.md`, `catalogues.md`, `fixtures.md`,
+ * what each generated file answers, and every large file), `adding.md` (each area's additions), `routes.md`, `verbs.md`, `catalogues.md`, `fixtures.md`,
  * `decisions.md`, `registered.md`, and `outlines/<path>.md` for each file over `LARGE`. The README's order is the canon's
  * `templates/index.md`: an index kept by hand is named, never restated.
  *

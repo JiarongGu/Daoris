@@ -16,6 +16,8 @@
  *   present alone, with the share of all hits that were history.
  * - **History questions**: by identifier, the first file an exact search names (a decision by its file, a row id in the
  *   records first); by words, the floor over the corpus as it is.
+ * - **Where a new kind goes**: a present question naming `before` (the areas read for it until the gathered *Adding to it*
+ *   page) is asked of the floor over the present alone: where it lands, and the landed file's bytes against those areas'.
  * - **The bytes at a change's start**: the brief, an area document (median and largest), a backlog row (median and
  *   largest) and the index's front page.
  *
@@ -41,7 +43,7 @@ const DATE = /\d{4}-\d{2}-\d{2}/;
 
 const linesOf = (text) => String(text ?? '').replace(/^﻿/, '').replace(/\r\n?/g, '\n').split('\n');
 
-/** The questions file read and checked: `{ present: [{ question, answer }], history: [{ question, by, answer }] }`. */
+/** The questions file read and checked: `{ present: [{ question, answer, before? }], history: [{ question, by, answer }] }`. */
 export function readQuestions(text) {
   const read = JSON.parse(text);
   for (const set of ['present', 'history']) {
@@ -49,6 +51,7 @@ export function readQuestions(text) {
     for (const item of read[set]) {
       if (typeof item?.question !== 'string' || !item.question.trim()) throw new Error(`questions: a ${set} item has no question`);
       if (!Array.isArray(item.answer) || !item.answer.length) throw new Error(`questions: "${item.question}" names no answer`);
+      if (item.before !== undefined && (!Array.isArray(item.before) || !item.before.length)) throw new Error(`questions: "${item.question}" has a before that is not a list of files`);
       if (set === 'history' && !['id', 'words'].includes(item.by)) throw new Error(`questions: "${item.question}" is by neither id nor words`);
     }
   }
@@ -152,6 +155,18 @@ export function bytesAtStart(root, manifest, size = (path) => statSync(join(root
   };
 }
 
+/** Where each present question naming `before` lands, and the landed file's bytes against those of the areas read before. */
+export function addingReads(items, corpus, index, size = (doc) => Buffer.byteLength(doc.lines.join('\n'))) {
+  const bytes = (path) => { const doc = corpus.find((candidate) => candidate.path === path); return doc ? size(doc) : 0; };
+  return items.filter((item) => item.before).map((item) => {
+    const landed = floorHits(item.question, index)[0]?.path ?? null;
+    return {
+      question: item.question, landed, right: item.answer.includes(landed),
+      pageBytes: landed ? bytes(landed) : 0, beforeBytes: item.before.reduce((sum, path) => sum + bytes(path), 0),
+    };
+  });
+}
+
 /** The whole bench over one checkout. */
 export function runBench(root, questions) {
   const manifest = JSON.parse(readFileSync(join(root, 'daoris.json'), 'utf8'));
@@ -168,6 +183,7 @@ export function runBench(root, questions) {
     files: docs.length, bytes: sizeOf(docs), ...scoreFloor(questions.present, indexPassages(docs), records),
   }]));
   const all = indexPassages(corpus);
+  const adding = addingReads(questions.present, by(['present']), indexPassages(by(['present'])));
   const ids = questions.history.filter((item) => item.by === 'id');
   const idRows = ids.map((item) => ({ question: item.question, first: exactLookup(item.question, corpus, records) }));
   const history = {
@@ -177,7 +193,7 @@ export function runBench(root, questions) {
   const docsTop = corpus.filter((doc) => /^docs\/[^/]+$/.test(doc.path) && DATE.test(doc.path));
   const filed = corpus.filter((doc) => /^docs\/archive\//.test(doc.path));
   return {
-    present, history, start: bytesAtStart(root, manifest),
+    present, history, adding, start: bytesAtStart(root, manifest),
     documents: { datedAtTop: docsTop.length, datedAtTopBytes: sizeOf(docsTop), filed: filed.length },
   };
 }
@@ -194,6 +210,10 @@ export function renderReport(result) {
   const { byId, byWords } = result.history;
   out.push('', '## History questions', '', `- By identifier, an exact search: ${byId.right}/${byId.count} at the first file named.`,
     `- By words, the floor as it is: ${byWords.first}/${byWords.count} top, ${byWords.withinThree}/${byWords.count} within three.`);
+  if (result.adding.length) {
+    out.push('', '## Where a new kind goes', '', '| Question | Landed on | Right | Read | The areas read before |', '|---|---|---|---|---|');
+    for (const r of result.adding) out.push(`| ${r.question} | ${r.landed ?? 'nothing'} | ${r.right ? 'yes' : 'no'} | ${kb(r.pageBytes)} | ${kb(r.beforeBytes)} |`);
+  }
   const s = result.start;
   out.push('', '## The bytes at a change\'s start', '',
     `The brief ${kb(s.brief)}, an area ${kb(s.area.median)} median and ${kb(s.area.largest)} the largest, a row ${kb(s.row.median)}`

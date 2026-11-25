@@ -330,6 +330,16 @@ Each type is in a file of its name; `docs/index/README.md` says where a seam, ve
 `deployment` (`npm run rehearse:deploy`, Windows only, run at the merge), whose phase 9 stages beside a running install,
 drains, swaps, rolls back and refuses.
 
+## Adding to it
+
+Each row names the place and the registration; the rule behind it is in *Where a change goes* above and rule 17.
+
+| Kind | Place | Registered by | Fails until |
+|---|---|---|---|
+| a home file | a `HomeEntry` row in all three twins, in one order | its category by rule 17; asked by name | `home-census.test.ts`, `DaorisHomeTests` |
+| a store table or column | a new numbered step in `DesktopStoreSteps.All` (`Store/DesktopStoreSteps.cs`) | the writer stamp raised only when older builds must stop writing | `DesktopStoreTests` |
+| a tool | `Tools.Declared` and `Drv/resources.json` | the install layout's twins when it is published (`tools/desktop-publish.mjs`) | `desktop-publish.test.ts` |
+
 ## Contradictions
 
 1. D27 (the devkit verifies its own hash) vs `VersionPin.Require` (`src/Daoris.Devkit/Daoris.Devkit.Core/VersionPin.cs`) and the devkit

@@ -288,6 +288,17 @@ skill, and `co-working` as a pack.
 - The merge tool adds by path: `canon/**` reaches `service`, `rehearse` and `rehearse-family` (both examples must be
   current); CLI sources reach `driver`, `rehearse`, `rehearse-family`, `web` and `deployment`.
 
+## Adding to it
+
+Each row names the place and the registration; the rule behind it is in *Where a change goes* above.
+
+| Kind | Place | Registered by | Fails until |
+|---|---|---|---|
+| a rule, knowledge file or skill | `canon/` (core only if nearly every task needs it, else a pack) | a `canon/CHANGELOG.md` entry, then `daoris sync` here and in both examples (`canon-authoring.md`) | `daoris check`, which fails on a copy that drifted from the lock |
+| a doctrine command | a module under `src/Daoris.Cli/src/cli/` | its row in `COMMANDS` and its lines in `test/fixtures/cli-usage/help.txt` | `cli-usage` and `cli-tree` tests |
+| a management verb | a driver library command marked `[CommandGroup]` | every place `.claude/knowledge/command-group.md` lists | `CommandTreeTests`, `DriverCommandTests` |
+| a sync cell | `planSync` in `syncplan.ts` | written into the sync rules above before it is built | the sync tests in `test/doctrine/` |
+
 ## Contradictions
 
 1. D59 (rejects naming rules instead of carrying them) and D128 point 4 (every rule in full) vs `tierrender.ts` (its header's

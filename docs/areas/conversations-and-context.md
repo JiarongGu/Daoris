@@ -402,6 +402,16 @@ of everything it handed, section by section.
 - **Gates that bite:** `driver`, `censuses`, `driver-process` (moves' crash, downgrade and older-build runs), `modules`,
   `service` (for `line_read`), `web-unit` (en and zh twins), and `universal` (structure gate, size ratchet, generated index).
 
+## Adding to it
+
+Each row names the place and the registration; the rule behind it is in *Where a change goes* above.
+
+| Kind | Place | Registered by | Fails until |
+|---|---|---|---|
+| a path after a run ends (a trigger, a hold) | `Course/Domain/LineCourse.Decide.cs` and `CourseFacts` | the pinned path table `course-cases.txt` | `LineCourseTests`, `CourseCensusTests` |
+| an executor of a conversation run | a unit of its own in `Course/Chat/` or `Course/GoOn/`, marked `[Executor(kind, phase, after)]` | built from `IExecutorWiring`; the runner gains only its door; durable state in `MoveStore` | `CourseCensusTests` (`fixtures/course-sites.json`), `MoveStoreCensusTests` |
+| a section of what a session is told | `Context/` (composing) | `HandedSections` or `HandedCuts`, and both catalogues' twin rows | `ContextBriefTests`, `StandingBlockTests` |
+
 ## Contradictions
 
 1. D189 point 2 ("the old part ends at its turn's end, never mid-turn") vs `HandOverOf` in `Course/Domain/LineCourse.Decide.cs`: the
