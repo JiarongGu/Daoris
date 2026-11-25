@@ -99,7 +99,7 @@ test('two web gates writing the page\'s types at once take turns: the one that w
   }
 });
 
-test('a lock left by a run that died is taken, and the files are built (that it is not waited on is run-lock's)', () => {
+test('a lock left by a run that died is taken, and the files are built (run-lock.test.mjs holds that it is not waited on)', () => {
   const root = mkdtempSync(join(REPO, '_fixtures', 'contracts-lock-'));
   try {
     const dead = spawnSync(process.execPath, ['-e', ''], { windowsHide: true }).pid;
