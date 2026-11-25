@@ -6,6 +6,12 @@ public static class RoomWhys
     public static RoomWhy Read(string home, MemoryReading? reading, int? reserveGb, DateTimeOffset now, int ceiling)
     {
         var state = RoomLedger.Read(home) ?? RoomState.Empty(ceiling);
+
+        // The file is written only when an admission looks, so what it says may be hours old: the row shows the limit as a look now would leave it
+        // with no pressure seen, and a pressure signal older than the calm span is shown as cleared.
+        var limit = RoomPressure.Next(state.Limit, null, ceiling, now);
+        if (now - limit.PressureAt >= RoomPressure.Calm && limit.Signal is RoomSignals.Memory or RoomSignals.Cpu or RoomSignals.Timeouts) limit = limit with { Signal = RoomSignals.Clear };
+        state = state with { Limit = limit };
         var view = RoomLedger.ViewOf(state, reading, ReserveSetting.Bytes(reserveGb), now);
         var learned = LearnedNeeds.Read(LearnedNeeds.PathOf(home))
             .Select(pair => (Need: LearnedNeeds.Need(pair.Value, LoadKind.Declared(LoadKind.Test)), pair.Key))

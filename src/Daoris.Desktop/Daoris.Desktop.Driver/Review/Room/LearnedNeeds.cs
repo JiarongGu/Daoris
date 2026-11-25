@@ -37,9 +37,10 @@ public static class LearnedNeeds
     /// <summary>The history's key: a repository's kind and gate.</summary>
     public static string KeyOf(string repository, string kind, string gate) => $"{repository}|{kind}|{gate}";
 
-    /// <summary>The need the <paramref name="samples"/> say, or the <paramref name="declared"/> cost until there are <see cref="LearnedAfter"/>.</summary>
-    public static NeedReading Need(IReadOnlyList<RunSample> samples, LoadCost declared)
+    /// <summary>The need the whole runs among <paramref name="kept"/> say (a run whose tests timed out is a signal, not a measure), or the <paramref name="declared"/> cost until there are <see cref="LearnedAfter"/>.</summary>
+    public static NeedReading Need(IReadOnlyList<RunSample> kept, LoadCost declared)
     {
+        var samples = kept.Where(sample => !sample.TimedOut).ToList();
         if (samples.Count < LearnedAfter) return new NeedReading(declared, NeedReading.DeclaredSource, samples.Count);
         var recent = samples.OrderByDescending(sample => sample.At).Take(Recent).ToList();
         var cores = recent.Select(sample => sample.Cores).OrderBy(value => value).ToList();

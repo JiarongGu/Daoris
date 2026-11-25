@@ -7,8 +7,14 @@ namespace Daoris.Driver;
 /// <summary>The machine's seams the room reads: the clock, the processors' time and Daoris's own share of the memory (by home). This machine's unless a test holds them.</summary>
 public sealed record RoomWorld(Func<DateTimeOffset> Clock, Func<CpuTicks?> Cpu, Func<string, long?> Daoris)
 {
+    /// <summary>Whether this process takes the samples of the person's share: only the desktop's own admissions do, since a CLI's tree leaves the desktop's out of Daoris's side and would read its size as the person's swing.</summary>
+    public bool Samples { get; init; } = true;
+
+    /// <summary>This process reads the room and judges by it but takes no sample (a terminal's `daoris gate run`).</summary>
+    public static RoomWorld Reading => Machine with { Samples = false };
+
     /// <summary>This machine's.</summary>
-    public static RoomWorld Machine { get; } = new(AdmissionWaiting.Default.Clock, MachineCpu.Read, DaorisShare.Read);
+    public static RoomWorld Machine { get; } = new(AdmissionWaiting.Default.Clock, MachineCpu.Read, DaorisShare.ReadResident);
 }
 
 /// <summary>What the room keeps between two looks, shared by every process on the machine: the samples, the limit, the processors' last reading and who asked lately.</summary>
@@ -31,7 +37,7 @@ internal static class RoomLedger
     public static string PathOf(string home) => DaorisHome.Entry(home, HomeEntry.Locks, "admission", "room.json");
 
     /// <summary>The view now and the state it rests on, the state written: for the admission's judgement, which holds the admission's lock.</summary>
-    public static RoomView Observe(string home, CheckRules rules, string? project, string? agent, int ceiling)
+    public static RoomView Observe(string home, CheckRules rules, string? project, string? agent, int ceiling, int running = 0)
     {
         var world = rules.World;
         var now = world.Clock();
@@ -39,7 +45,7 @@ internal static class RoomLedger
         var reading = rules.Memory();
         var samples = state.Samples;
         var cpu = state.Cpu;
-        if (samples.Count == 0 || now - samples[^1].At >= PersonMeasure.SampleEvery)
+        if (world.Samples && (samples.Count == 0 || now - samples[^1].At >= PersonMeasure.SampleEvery))
         {
             var reached = world.Cpu();
             var busy = MachineCpu.Between(cpu, reached);
@@ -51,7 +57,7 @@ internal static class RoomLedger
 
         var floor = rules.FloorOf();
         var view = ViewOf(state with { Samples = samples }, reading, floor, now);
-        var signal = SignalOf(view, LearnedNeeds.LastTimeout(home), state.Limit);
+        var signal = SignalOf(view, LearnedNeeds.LastTimeout(home), state.Limit, running);
         var limit = RoomPressure.Next(state.Limit, signal, ceiling, now);
         var asks = new Dictionary<string, DateTimeOffset>(state.Asks.Where(pair => now - pair.Value <= AskKept), StringComparer.Ordinal);
         if (project is not null) asks[project] = now;
@@ -66,10 +72,10 @@ internal static class RoomLedger
         reading?.Least, reading?.Commit ?? reading?.Physical, floor, PersonMeasure.Person(state.Samples, now, reading?.Total), state.Limit.Limit,
         state.Limit.Signal, PersonMeasure.Busy(state.Samples, now), state.Asks, now);
 
-    /// <summary>The pressure the view shows, by the signal's name, or null: memory under what is kept, the processors saturated, a run's tests timed out since the last pressure.</summary>
-    internal static string? SignalOf(RoomView view, DateTimeOffset? lastTimeout, RoomLimit limit) =>
+    /// <summary>The pressure the view shows, by the signal's name, or null: memory under what is kept, the processors saturated while more than one Daoris run holds (one run keeping the processors busy is its own work, not pressure), a run's tests timed out since the last pressure.</summary>
+    internal static string? SignalOf(RoomView view, DateTimeOffset? lastTimeout, RoomLimit limit, int running = 2) =>
         view.Basis is { } basis && view.Keep > 0 && basis < view.Keep ? RoomLimit.Memory
-        : view.Busy >= PersonMeasure.Saturated ? RoomLimit.Cpu
+        : view.Busy >= PersonMeasure.Saturated && running >= 2 ? RoomLimit.Cpu
         : lastTimeout > limit.PressureAt ? RoomLimit.Timeouts
         : null;
 

@@ -243,6 +243,50 @@ public sealed class RoomJudgeTests
     }
 
     [Fact]
+    public void An_environment_holds_memory_not_a_place_of_the_limit_so_idle_environments_never_starve_the_checks()
+    {
+        var held = new[]
+        {
+            new RoomHold("work", "a1", LoadKind.Environment, new LoadCost(4 * Gb, 1), false, "environment web"),
+            new RoomHold("work", "a2", LoadKind.Environment, new LoadCost(4 * Gb, 1), false, "environment api"),
+        };
+
+        Assert.Null(RoomJudge.Decide(Machine(40, limit: 1), held, Test("work", "a3", needGb: 6), null));
+        Assert.Null(RoomJudge.Decide(Machine(40, limit: 1), held, Test("game", needGb: 6), null));
+        var tight = RoomJudge.Decide(Machine(7, limit: 1), held, Test("game", needGb: 6), null);
+        Assert.Equal(CheckWait.Reserve, tight!.Code);
+    }
+
+    [Fact]
+    public void A_check_slot_with_no_repository_record_counts_against_the_limit_and_is_no_other_project()
+    {
+        var orphan = new RoomHold("", null, LoadKind.Test, new LoadCost(Gb, 1), false, "the verification run r-9");
+        var seen = Machine(60, limit: 4);
+
+        Assert.Equal(4, Admits(seen, Test("a", needGb: 2), [orphan]).Admitted + 1);
+    }
+
+    [Fact]
+    public void A_run_whose_tests_timed_out_is_a_signal_and_never_a_measure_of_the_need()
+    {
+        RunSample Run(int day, double peakGb, bool timedOut) => new(T0 + TimeSpan.FromDays(day), (long)(peakGb * Gb), 2, 100, timedOut);
+        var declared = LoadKind.Declared(LoadKind.Test);
+
+        Assert.Equal(NeedReading.DeclaredSource, LearnedNeeds.Need([Run(1, 1, true), Run(2, 1, true), Run(3, 1, false)], declared).Source);
+        Assert.Equal((long)((long)(2 * Gb) * 1.1), LearnedNeeds.Need([Run(1, 1, true), Run(2, 2, false), Run(3, 1, false)], declared).Cost.Memory);
+    }
+
+    [Fact]
+    public void The_processors_count_as_pressure_only_while_more_than_one_run_holds()
+    {
+        var limit = RoomLimit.Initial(4) with { PressureAt = T0 };
+        var busy = Machine(40) with { Busy = 0.97 };
+
+        Assert.Null(RoomLedger.SignalOf(busy, null, limit, running: 1));
+        Assert.Equal(RoomLimit.Cpu, RoomLedger.SignalOf(busy, null, limit, running: 2));
+    }
+
+    [Fact]
     public void A_gates_learned_need_is_its_largest_recent_peak_a_tenth_over_after_two_runs_and_declared_before()
     {
         RunSample Run(int day, double peakGb, double cores) => new(T0 + TimeSpan.FromDays(day), (long)(peakGb * Gb), cores, 100, false);

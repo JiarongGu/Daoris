@@ -96,16 +96,16 @@ public sealed class RoomAdmissionTests : IDisposable
         {
             machine.FreeGb = free;
             machine.Advance();
-            RoomLedger.Observe(_fixture.Home, machine.Rules(), "k", null, 4);
+            RoomLedger.Observe(_fixture.Home, machine.Rules(), "k", null, 4, running: 2);
         }
 
-        var view = RoomLedger.Observe(_fixture.Home, machine.Rules(), "k", null, 4);
+        var view = RoomLedger.Observe(_fixture.Home, machine.Rules(), "k", null, 4, running: 2);
         Assert.Equal(34 * Gb, view.Person.Person);
         Assert.Equal(16 * Gb, view.Person.Swing);
         Assert.Equal("headroom", view.KeepBy);
 
         machine.Advance(11 * 60);
-        Assert.Equal(0, RoomLedger.Observe(_fixture.Home, machine.Rules(), "k", null, 4).Person.Swing);
+        Assert.Equal(0, RoomLedger.Observe(_fixture.Home, machine.Rules(), "k", null, 4, running: 2).Person.Swing);
     }
 
     [Fact]
@@ -155,19 +155,19 @@ public sealed class RoomAdmissionTests : IDisposable
     {
         var machine = new FixtureMachine { FreeGb = 50, Busy = 0.97 };
         machine.Advance();
-        RoomLedger.Observe(_fixture.Home, machine.Rules(), "k", null, 4);
+        RoomLedger.Observe(_fixture.Home, machine.Rules(), "k", null, 4, running: 2);
         machine.Advance();
-        var backedOff = RoomLedger.Observe(_fixture.Home, machine.Rules(), "k", null, 4);
+        var backedOff = RoomLedger.Observe(_fixture.Home, machine.Rules(), "k", null, 4, running: 2);
         Assert.Equal((2, RoomLimit.Cpu), (backedOff.Limit, backedOff.Signal));
 
         machine.Busy = 0.2;
         for (var look = 0; look < 14; look++)
         {
             machine.Advance(10);
-            RoomLedger.Observe(_fixture.Home, machine.Rules(), "k", null, 4);
+            RoomLedger.Observe(_fixture.Home, machine.Rules(), "k", null, 4, running: 2);
         }
 
-        var grown = RoomLedger.Observe(_fixture.Home, machine.Rules(), "k", null, 4);
+        var grown = RoomLedger.Observe(_fixture.Home, machine.Rules(), "k", null, 4, running: 2);
         Assert.True(grown.Limit > backedOff.Limit, $"the limit stayed at {grown.Limit} after the processors cleared");
     }
 
@@ -176,15 +176,15 @@ public sealed class RoomAdmissionTests : IDisposable
     {
         var machine = new FixtureMachine { FreeGb = 50 };
         machine.Advance();
-        RoomLedger.Observe(_fixture.Home, machine.Rules(), "k", null, 4);
+        RoomLedger.Observe(_fixture.Home, machine.Rules(), "k", null, 4, running: 2);
         LearnedNeeds.Record(_fixture.Home, "k|test|reached", new RunSample(machine.Now + TimeSpan.FromSeconds(1), 3 * Gb, 2, 100, true));
         machine.Advance(40);
 
-        var after = RoomLedger.Observe(_fixture.Home, machine.Rules(), "k", null, 4);
+        var after = RoomLedger.Observe(_fixture.Home, machine.Rules(), "k", null, 4, running: 2);
         Assert.Equal((2, RoomLimit.Timeouts), (after.Limit, after.Signal));
 
         machine.Advance(40);
-        Assert.Equal(2, RoomLedger.Observe(_fixture.Home, machine.Rules(), "k", null, 4).Limit);
+        Assert.Equal(2, RoomLedger.Observe(_fixture.Home, machine.Rules(), "k", null, 4, running: 2).Limit);
     }
 
     [Fact]
@@ -194,91 +194,60 @@ public sealed class RoomAdmissionTests : IDisposable
         Assert.True(RunMeter.TimedOut(true, "Error: timeout of 5000ms exceeded"));
         Assert.False(RunMeter.TimedOut(false, "Test timed out in 10000ms."));
         Assert.False(RunMeter.TimedOut(true, "FAIL x\n  expected 3, got 4"));
+        Assert.False(RunMeter.TimedOut(true, "fatal: unable to access the remote: connection timed out"));
+        Assert.False(RunMeter.TimedOut(true, "it ran past its bound and was timed out by the driver"));
         Assert.False(RunMeter.TimedOut(true, null));
     }
 
     [Fact]
-    public void Agents_of_one_repository_share_one_running_environment_where_its_rule_says_reuse()
+    public void One_run_keeping_the_processors_busy_is_no_pressure_and_a_quiet_second_ask_is_admitted()
     {
-        var machine = new FixtureMachine();
-        var rule = new KindRule(2, 1, true);
-        LeaseRequest Ask(string agent, int pid) => new(HeavySlot.KeyOf(_fixture.Checkout)!, "work", agent, LoadKind.Environment, "stack", pid, rule);
+        var machine = new FixtureMachine { FreeGb = 50, Busy = 0.97 };
+        machine.Advance();
+        using var first = Take(machine, Check("r-1")).Taken;
+        machine.Advance();
+        RoomLedger.Observe(_fixture.Home, machine.Rules(), "k", null, 4, running: 1);
+        machine.Advance();
 
-        var first = LoadLeases.Ask(_fixture.Home, machine.Rules(), Ask("agent-1", 101), _ => true);
-        var second = LoadLeases.Ask(_fixture.Home, machine.Rules(), Ask("agent-2", 102), _ => true);
-        var third = LoadLeases.Ask(_fixture.Home, machine.Rules(), Ask("agent-3", 103), _ => true);
+        var view = RoomLedger.Observe(_fixture.Home, machine.Rules(), "k", null, 4, running: 1);
+        using var second = Take(machine, Check("r-2", _fixture.Other)).Taken;
 
-        Assert.False(first.Joined);
-        Assert.True(second.Joined);
-        Assert.True(third.Joined);
-        Assert.Equal(first.Lease!.Id, third.Lease!.Id);
-        Assert.Single(LoadLeases.Live(_fixture.Home, _ => true));
-        Assert.Equal(3, LoadLeases.Live(_fixture.Home, _ => true)[0].Users.Count);
-
-        Assert.False(LoadLeases.Release(_fixture.Home, first.Lease.Id, new LeaseUser("agent-1", 101), alive: _ => true));
-        Assert.False(LoadLeases.Release(_fixture.Home, first.Lease.Id, new LeaseUser("agent-2", 102), alive: _ => true));
-        Assert.True(LoadLeases.Release(_fixture.Home, first.Lease.Id, new LeaseUser("agent-3", 103), alive: _ => true));
-        Assert.Empty(LoadLeases.Live(_fixture.Home, _ => true));
+        Assert.Equal(4, view.Limit);
+        Assert.NotNull(second);
     }
 
     [Fact]
-    public void Where_the_rule_is_not_to_share_each_agent_starts_its_own_up_to_the_bound_and_no_more()
+    public void A_terminals_world_reads_the_room_but_takes_no_sample_of_the_persons_share()
     {
-        var machine = new FixtureMachine();
-        LeaseRequest Ask(string agent, int pid, string name) => new(HeavySlot.KeyOf(_fixture.Checkout)!, "work", agent, LoadKind.Environment, name, pid, new KindRule(2, 1, false));
+        var machine = new FixtureMachine { FreeGb = 40 };
+        machine.Advance();
+        var reading = machine.Rules() with { World = machine.Rules().World with { Samples = false } };
+        RoomLedger.Observe(_fixture.Home, reading, "k", null, 4);
+        Assert.Empty(RoomLedger.Read(_fixture.Home)!.Samples);
 
-        var one = LoadLeases.Ask(_fixture.Home, machine.Rules(), Ask("agent-1", 101, "stack"), _ => true);
-        var again = LoadLeases.Ask(_fixture.Home, machine.Rules(), Ask("agent-1", 101, "stack-2"), _ => true);
-        var two = LoadLeases.Ask(_fixture.Home, machine.Rules(), Ask("agent-2", 102, "stack"), _ => true);
-        var three = LoadLeases.Ask(_fixture.Home, machine.Rules(), Ask("agent-3", 103, "stack"), _ => true);
-
-        Assert.NotNull(one.Lease);
-        Assert.Null(again.Lease);
-        Assert.Contains("this agent's 1 environment", again.Wait!.Sentence);
-        Assert.NotNull(two.Lease);
-        Assert.NotEqual(one.Lease.Id, two.Lease.Id);
-        Assert.Null(three.Lease);
-        Assert.Contains("2 environments at once", three.Wait!.Sentence);
+        RoomLedger.Observe(_fixture.Home, machine.Rules(), "k", null, 4);
+        Assert.Single(RoomLedger.Read(_fixture.Home)!.Samples);
     }
 
     [Fact]
-    public void One_project_asking_for_many_environments_leaves_room_for_another_projects_checks()
+    public void The_row_shows_the_limit_a_look_now_would_leave_and_a_pressure_older_than_the_calm_span_as_cleared()
     {
-        var machine = new FixtureMachine { FreeGb = 60 };
-        LeaseRequest Ask(int agent) => new(HeavySlot.KeyOf(_fixture.Checkout)!, "work", $"agent-{agent}", LoadKind.Environment, $"stack-{agent}", 100 + agent, new KindRule(null, 1, false));
+        var machine = new FixtureMachine { FreeGb = 40, Busy = 0.97 };
+        machine.Advance();
+        RoomLedger.Observe(_fixture.Home, machine.Rules(), "k", null, 4, running: 2);
+        machine.Advance();
+        RoomLedger.Observe(_fixture.Home, machine.Rules(), "k", null, 4, running: 2);
+        Assert.Equal((2, RoomSignals.Cpu), RoomWhysAt(machine.Now));
 
-        // The other project has asked lately; ten agents of the first ask an environment each.
-        RoomLedger.Observe(_fixture.Home, machine.Rules(), HeavySlot.KeyOf(_fixture.Other)!, null, 4);
-        var taken = Enumerable.Range(0, 10).Select(agent => LoadLeases.Ask(_fixture.Home, machine.Rules(), Ask(agent), _ => true)).Count(each => each.Lease is not null);
-
-        Assert.InRange(taken, 1, 3);
-        using var check = Take(machine, Check("r-1", _fixture.Other)).Taken;
-        Assert.NotNull(check);
+        machine.Advance(30 * 60);
+        var (limit, signal) = RoomWhysAt(machine.Now);
+        Assert.Equal((3, RoomSignals.Clear), (limit, signal));
     }
 
-    [Fact]
-    public void A_lease_whose_every_user_has_ended_frees_its_place()
+    private (int Limit, string Signal) RoomWhysAt(DateTimeOffset now)
     {
-        var machine = new FixtureMachine();
-        var request = new LeaseRequest(HeavySlot.KeyOf(_fixture.Checkout)!, "work", "agent-1", LoadKind.Gpu, "gpu", 4242);
-        Assert.NotNull(LoadLeases.Ask(_fixture.Home, machine.Rules(), request, _ => true).Lease);
-
-        Assert.Single(LoadLeases.Live(_fixture.Home, _ => true));
-        Assert.Empty(LoadLeases.Live(_fixture.Home, pid => pid != 4242));
-        Assert.NotNull(LoadLeases.Ask(_fixture.Home, machine.Rules(), request with { Agent = "agent-2", Pid = 4343 }, pid => pid != 4242).Lease);
-    }
-
-    [Fact]
-    public void A_released_environment_s_peak_is_kept_so_the_next_ask_is_judged_by_it()
-    {
-        var machine = new FixtureMachine();
-        var request = new LeaseRequest(HeavySlot.KeyOf(_fixture.Checkout)!, "work", "agent-1", LoadKind.Environment, "stack", 101);
-        var lease = LoadLeases.Ask(_fixture.Home, machine.Rules(), request, _ => true).Lease!;
-
-        LoadLeases.Release(_fixture.Home, lease.Id, new LeaseUser("agent-1", 101), new RunSample(Fixed, 9 * Gb, 2, 600, false), _ => true);
-
-        var kept = LearnedNeeds.Samples(_fixture.Home, LearnedNeeds.KeyOf(lease.Project, LoadKind.Environment, "stack"));
-        Assert.Equal(9 * Gb, Assert.Single(kept).PeakMemory);
+        var why = RoomWhys.Read(_fixture.Home, new MemoryReading(40 * Gb, 40 * Gb, 64 * Gb), null, now, 4);
+        return (why.Limit, why.Signal);
     }
 
     [Fact]
@@ -286,7 +255,7 @@ public sealed class RoomAdmissionTests : IDisposable
     {
         var machine = new FixtureMachine { FreeGb = 40 };
         machine.Advance();
-        RoomLedger.Observe(_fixture.Home, machine.Rules(), "k", null, 4);
+        RoomLedger.Observe(_fixture.Home, machine.Rules(), "k", null, 4, running: 2);
         Learn(_fixture.Checkout, 5, 6);
 
         var why = RoomWhys.Read(_fixture.Home, machine.Rules().Memory(), 8, machine.Now, 4);

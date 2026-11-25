@@ -370,7 +370,8 @@ public sealed class HeavyExecutor(string home, VerifyWorld? world = null) : IAsy
             finally
             {
                 // What the run took is read from its job while the job still holds it, then it is emptied before either slot goes.
-                new RunMeter(home, key, LoadKind.Test, "reached", _world.Clock.GetUtcNow).Note(candidate.Job, ran.Elapsed, result is { Verdict: VerifyVerdicts.Failed }, result?.Why);
+                var whole = !stop.IsCancellationRequested && !_ends.IsCancellationRequested && !busy && result is { Verdict: VerifyVerdicts.Reached } done && done.Gates.All(gate => gate.Verdict != VerifyGate.Kept);
+                new RunMeter(home, key, LoadKind.Test, "reached", _world.Clock.GetUtcNow).Note(candidate.Job, ran.Elapsed, whole, result is { Verdict: VerifyVerdicts.Failed }, result?.Why);
                 await candidate.DisposeAsync().ConfigureAwait(false);
             }
 

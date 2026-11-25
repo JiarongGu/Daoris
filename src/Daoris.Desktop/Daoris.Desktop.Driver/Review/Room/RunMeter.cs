@@ -10,7 +10,7 @@ namespace Daoris.Driver;
 internal sealed partial record RunMeter(string Home, string Key, string Kind, string Gate, Func<DateTimeOffset> Clock)
 {
     /// <summary>Said by a failed gate's own output when a test hit its time bound: the runners' words for it.</summary>
-    [GeneratedRegex(@"\btimed out\b|\btimeout of \d+\s?ms exceeded\b|\bexceeded (?:the )?(?:\d+\s?ms )?timeout\b", RegexOptions.IgnoreCase)]
+    [GeneratedRegex(@"\bTest timed out in \d+\s?ms\b|\btimeout of \d+\s?ms exceeded\b|\bExceeded timeout of \d+\s?ms\b", RegexOptions.IgnoreCase)]
     private static partial Regex TimeoutWords();
 
     /// <summary>Whether a failed gate's output says a test timed out: only a gate that failed counts, so a passing run's words never back the machine off.</summary>
@@ -33,14 +33,19 @@ internal sealed partial record RunMeter(string Home, string Key, string Kind, st
         }
     }
 
-    /// <summary>Keep the run: its peak memory and cores from <paramref name="job"/> (before it is ended), its wall time <paramref name="took"/>.</summary>
-    public void Note(ProcessJob? job, TimeSpan took, bool failed, string? output)
+    /// <summary>
+    /// Keep the run: its peak memory and cores from <paramref name="job"/> (before it is ended), its wall time <paramref name="took"/>. Only a
+    /// <paramref name="whole"/> run (every gate ran to its end) teaches a need, since a cut-off, busy or partly kept run peaked short of one;
+    /// a failed run is kept only for the timeouts its words show, which the limit backs off on.
+    /// </summary>
+    public void Note(ProcessJob? job, TimeSpan took, bool whole, bool failed, string? output)
     {
-        if (job?.PeakMemory is not { } peak || peak <= 0 || took <= TimeSpan.Zero) return;
+        var timedOut = TimedOut(failed, output);
+        if ((!whole && !timedOut) || job?.PeakMemory is not { } peak || peak <= 0 || took <= TimeSpan.Zero) return;
         var cores = job.Cpu is { } cpu ? cpu.TotalSeconds / took.TotalSeconds : 0;
         try
         {
-            LearnedNeeds.Record(Home, LearnedNeeds.KeyOf(Key, Kind, Gate), new RunSample(Clock(), peak, Math.Round(cores, 1), Math.Round(took.TotalSeconds, 1), TimedOut(failed, output)));
+            LearnedNeeds.Record(Home, LearnedNeeds.KeyOf(Key, Kind, Gate), new RunSample(Clock(), peak, Math.Round(cores, 1), Math.Round(took.TotalSeconds, 1), timedOut));
         }
         catch (Exception error) when (error is IOException or UnauthorizedAccessException or TimeoutException)
         {

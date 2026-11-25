@@ -184,6 +184,7 @@ public sealed class OwnerReserveTests : IDisposable
         var share = DaorisShare.Read(_fixture.Home);
 
         Assert.True(share > 0, "this process holds some commit, and it is its own root");
+        Assert.True(DaorisShare.ReadResident(_fixture.Home) > 0, "and some resident memory, the unit the person's share is measured against");
     }
 
     [Fact]

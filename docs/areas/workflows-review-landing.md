@@ -849,7 +849,7 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     own runs on this machine (`LearnedNeeds`, `admission/learned.json`: the job's peak memory and mean cores, a tenth over the larger
     of the newest five peaks, kept by `RunMeter` as a run ends); until a gate has run twice its kind's declared cost stands
     (`LoadKind.Declared`, the merge tool's 8 GB for a test run). The person's share is the machine's use outside Daoris's processes,
-    sampled at most every five seconds into `admission/room.json` (`PersonMeasure`): their headroom is how far it stood above its
+    sampled at most every five seconds by the desktop's own admissions (a terminal's `daoris gate run` reads the samples and takes none) into `admission/room.json` (`PersonMeasure`), the machine's use less the resident memory of Daoris's processes (`DaorisShare.ReadResident`), both physical: their headroom is how far it stood above its
     present in the last ten minutes, plus 2 % of the memory (1 GB at least). What is kept free is the larger of that and the person's
     floor, the setting `reserve` (`reserveGb` in `driver.json`, `daoris settings reserve <gb>|auto`, the window's `SET_RESERVE`,
     `ReserveSetting`; `auto`, the default, no floor, 0 the same). A run is admitted while the free commit, less what the runs still
@@ -859,15 +859,14 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     never starves, and a pinned `checks` keeps only the floor. A wait says the number that held it (`CheckWait.Reserve`, `Memory`,
     `slot-reserve` on a check's step); memory that cannot be read runs one. The concurrency limit starts at the ceiling (a quarter of
     the processors within the machine's heavy-run admission) and backs off and grows back (`RoomPressure`): free memory under what is kept,
-    the processors nine in ten busy over ten seconds, or a run whose tests timed out (`RunMeter.TimedOut`: a failed run's log with a
-    runner's timeout words) halves it, one at least and once in thirty seconds; a minute with none adds one; `checks` pinned overrides
+    the processors nine in ten busy over ten seconds while more than one run holds, or a run whose tests timed out (`RunMeter.TimedOut`: a failed run's log with a
+    test runner's own timeout words) halves it, one at least and once in thirty seconds; a minute with none adds one; `checks` pinned overrides
     it. The limit is shared by project and agent: a project asking beside another that asked in the last two minutes holds the limit
     less one seat for each (one at least), an agent its project's seats less one for each other agent of it that asked as recently; where
     none else has asked, one may hold the whole limit (`RoomJudge`). A kind has a bound a repository declares (`KindRule`: `max` at
-    once, `perAgent`, `share`): an environment's default is two a repository and one an agent, the GPU's one. Environments and the GPU
-    are leases agents ask before they start one (`LoadLeases`, `admission/leases.json`): where the rule is `reuse` an agent asking a
-    name already running joins it and starts nothing; otherwise a new lease is admitted by the same judgement and counts against the
-    limit beside the checks; a lease whose users' processes have all ended is gone. The merge tool's memory wait keeps the same
+    once, `perAgent`, `share`): an environment's default is two a repository and one an agent, the GPU's one. An environment or the GPU
+    holds memory, not a place of the limit: it is judged by its kind's bounds and by memory alone, and takes no seat of the checks'. What an
+    environment shares and versions is SHAREDENV1's (D361); a first environment host asks this judgement before it starts one. The merge tool's memory wait keeps the same
     (`reserveGb` of `tools/merge-branch/memory.mjs` reads the floor and the samples). The setting's row and `daoris settings reserve`
     show the machine's memory, its free commit, what Daoris's own processes hold (`DaorisShare`: this process and each slot holder, with
     their children) and why the room is what it is (`RoomWhy`: the person's share and swing, what keeps the room, the limit and its

@@ -208,23 +208,18 @@ public static class CheckAdmission
         holder.Run is { } run ? $"the verification run {run}" : holder.Session is { } session ? $"session {session}'s heavy run" : "a heavy run from a terminal";
 
     /// <summary>Why a run waits beside the runs holding a slot, or null where it may take one: the room's judgement over each run's learned need (declared by its kind until it has run).</summary>
-    public static CheckWait? Judge(string home, IReadOnlyList<HeavyHeld> held, CheckRules rules, HeavyAsk ask, KindRule? rule = null, IReadOnlyList<LoadLease>? leases = null)
+    public static CheckWait? Judge(string home, IReadOnlyList<HeavyHeld> held, CheckRules rules, HeavyAsk ask, KindRule? rule = null)
     {
-        var view = RoomLedger.Observe(home, rules, ask.Key, ask.Agent, rules.Ceiling);
+        var view = RoomLedger.Observe(home, rules, ask.Key, ask.Agent, rules.Ceiling, held.Count);
         var learned = LearnedNeeds.Read(LearnedNeeds.PathOf(home));
         NeedReading Need(string project, string kind, string gate) =>
             LearnedNeeds.Need(learned.GetValueOrDefault(LearnedNeeds.KeyOf(project, kind, gate)) ?? [], LoadKind.Declared(kind));
-        var holds = held.Select(one => new RoomHold(one.Key ?? one.Who, one.Agent, LoadKind.Test, Need(one.Key ?? one.Who, LoadKind.Test, one.Gate).Cost, one.Starting, one.Who)).ToList();
-        foreach (var lease in leases ?? LoadLeases.Live(home))
-        {
-            holds.Add(new RoomHold(lease.Project, lease.Owner, lease.Kind, Need(lease.Project, lease.Kind, lease.Name).Cost, view.Now - lease.Since < LeaseStarting, $"{lease.Kind} {lease.Name}"));
-        }
 
+        // A check slot whose repository slot is not written yet has no project of its own: it counts against the limit, never as another project.
+        var holds = held.Select(one => new RoomHold(one.Key ?? "", one.Agent, LoadKind.Test, Need(one.Key ?? one.Who, LoadKind.Test, one.Gate).Cost, one.Starting, one.Who)).ToList();
         var need = Need(ask.Key, ask.Kind, ask.Gate);
         return RoomJudge.Decide(view, holds, new RoomAsk(ask.Key, ask.Agent, ask.Kind, need.Cost, need.Source, rule ?? KindRule.Default(ask.Kind)) { Name = ask.Repository }, rules.Setting is null ? null : rules.Slots);
     }
-
-    public static readonly TimeSpan LeaseStarting = TimeSpan.FromMinutes(2);
 
     /// <summary>The slots a repository has: the machine's, or fewer where its accepted declaration says so.</summary>
     public static int SlotsOf(CheckRules rules, int? declared) => Math.Min(rules.Slots, declared ?? int.MaxValue);
@@ -282,7 +277,7 @@ public static class CheckAdmission
     }
 
     /// <summary>The admission's lock, tried <see cref="AdmittingTries"/> times, spinning between; null where another still holds it.</summary>
-    internal static FileStream? Admitting(string home)
+    private static FileStream? Admitting(string home)
     {
         var path = AdmittingPath(home);
         Directory.CreateDirectory(Path.GetDirectoryName(path)!);

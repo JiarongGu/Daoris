@@ -520,7 +520,7 @@ public static class HeavyRun
             throw;
         }
 
-        meter?.Note(job, ran.Elapsed, failed, RunMeter.LogTail(steps?.Log));
+        meter?.Note(job, ran.Elapsed, !failed, failed, RunMeter.LogTail(steps?.Log));
         await EndAsync(job, output, sayLeft: true).ConfigureAwait(false);
         if (failed) return 1;
 

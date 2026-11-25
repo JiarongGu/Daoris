@@ -57,16 +57,23 @@ public static class RoomJudge
         if (ask.Rule.PerAgent is { } each && ask.Agent is not null && ofKind.Count(hold => hold.Agent == ask.Agent) >= each)
             return Share(ask, $"this agent's {each} {ask.Kind}{(each == 1 ? "" : "s")}, which it already holds: {Names(ofKind.Where(hold => hold.Agent == ask.Agent))}");
 
-        var limit = pinned ?? view.Limit;
-        if (holds.Count >= limit && holds.Count > 0) return CheckWait.OfSlots(holds.Count, limit);
+        // An environment or GPU holds memory, not a place of the limit, so it is judged by its kind's bounds and by memory alone, and the
+        // checks' limit and fair shares count only the runs.
+        if (!LoadKind.Leased(ask.Kind))
+        {
+            var running = holds.Where(hold => !LoadKind.Leased(hold.Kind)).ToList();
+            var mine = running.Where(hold => hold.Project == ask.Project).ToList();
+            var limit = pinned ?? view.Limit;
+            if (running.Count >= limit && running.Count > 0) return CheckWait.OfSlots(running.Count, limit);
 
-        var others = Others(view, holds, ask);
-        var projectCap = Math.Max(1, limit - others.Projects);
-        var agentCap = Math.Max(1, projectCap - others.Peers);
-        if (others.Projects > 0 && ofProject.Count >= projectCap)
-            return Share(ask, $"a fair share: {ofProject.Count} of {limit} places, with {others.Projects} other {(others.Projects == 1 ? "project" : "projects")} asking");
-        if (others.Peers > 0 && ask.Agent is not null && ofProject.Count(hold => hold.Agent == ask.Agent) >= agentCap)
-            return Share(ask, $"a fair share of the project's {projectCap}: this agent holds {agentCap}, with {others.Peers} other {(others.Peers == 1 ? "agent" : "agents")} asking");
+            var others = Others(view, running, ask);
+            var projectCap = Math.Max(1, limit - others.Projects);
+            var agentCap = Math.Max(1, projectCap - others.Peers);
+            if (others.Projects > 0 && mine.Count >= projectCap)
+                return Share(ask, $"a fair share: {mine.Count} of {limit} places, with {others.Projects} other {(others.Projects == 1 ? "project" : "projects")} asking");
+            if (others.Peers > 0 && ask.Agent is not null && mine.Count(hold => hold.Agent == ask.Agent) >= agentCap)
+                return Share(ask, $"a fair share of the project's {projectCap}: this agent holds {agentCap}, with {others.Peers} other {(others.Peers == 1 ? "agent" : "agents")} asking");
+        }
 
         return Memory(view, holds, ask, pinned is not null);
     }
@@ -98,6 +105,7 @@ public static class RoomJudge
         var agents = new HashSet<string>(StringComparer.Ordinal);
         foreach (var hold in holds)
         {
+            if (hold.Project.Length == 0) continue;
             if (hold.Project != ask.Project) projects.Add(hold.Project);
             else if (hold.Agent is not null && hold.Agent != ask.Agent) agents.Add(hold.Agent);
         }
