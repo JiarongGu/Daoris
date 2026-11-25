@@ -194,12 +194,12 @@ internal static class StandInServer
             $"the agent lists none of `{server}`'s tools; it was sent: {string.Join(", ", tools)}");
     }
 
-    /// <summary>The server as a plan hands it: its script and tools file written under <paramref name="root"/>, named <paramref name="name"/>.</summary>
-    public static ServerEntry Entry(string root, string name, bool site = false)
+    /// <summary>The server as a plan hands it: its script and tools file written under <paramref name="folder"/>, named <paramref name="name"/>.</summary>
+    public static ServerEntry Entry(string folder, string name, bool site = false)
     {
-        var toolsFile = Path.Combine(root, "tools.json");
+        var toolsFile = Path.Combine(folder, "tools.json");
         File.WriteAllText(toolsFile, Tools(site));
-        var script = Path.Combine(root, "server.mjs");
+        var script = Path.Combine(folder, "server.mjs");
         File.WriteAllText(script, Script);
         var node = PackageStarts.Node(null, null) ?? throw new InvalidOperationException("node is not on PATH");
         return new ServerEntry(name, node, [script, toolsFile], new Dictionary<string, string>());
