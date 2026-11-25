@@ -626,8 +626,12 @@ public static class AccountLines
                 ("door", adapter), ("account", Profile(account)), ("file", file), ("change", change), ("empty", empty),
                 ("access", access), ("refresh", refresh), ("running", running.Count),
                 ("sessions", running.Count > 0 ? string.Join(",", running.Take(8)) : null), ("starting", starting),
-                ("by", SignInCause.Known(by) ? by : null), ("marked", marked is "out" or "in" ? marked : null),
+                ("by", SignInCause.Known(by) ? by : null), ("marked", marked is "out" or "in" or "held" ? marked : null),
             ]);
+
+        /// <summary>A refused refresh in a read emptied an account's store and Daoris put it back; never a value.</summary>
+        public static AccountLine CredentialsKept(string adapter, string account, string? by = null) =>
+            new("credentials.kept", [("door", adapter), ("account", Profile(account)), ("by", SignInCause.Known(by) ? by : null)]);
 
         /// <summary>The first account homes watched by this process: the writes after it are read beside it.</summary>
         public static AccountLine CredentialsWatching(int accounts) => new("credentials.watching", [("accounts", accounts)]);

@@ -51,6 +51,9 @@ public sealed record ProfileReport(
 
     /// <summary>The person switched it off (<see cref="AccountSwitch"/>): it stays signed in and is read as before, and nothing starts or moves to it.</summary>
     public bool Off { get; init; }
+
+    /// <summary>The other accounts whose store holds the same refresh token (<see cref="SharedSignIns"/>); null where none does.</summary>
+    public IReadOnlyList<string>? SharedWith { get; init; }
 }
 
 /// <summary>

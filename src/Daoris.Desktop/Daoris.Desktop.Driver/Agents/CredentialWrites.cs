@@ -167,6 +167,7 @@ internal sealed class CredentialWrites(HarnessRoster roster, Action<AccountLine>
     {
         lock (_mark)
         {
+            if (shape.Cleared && ReadGuard.Holds(folder)) return "held";
             var wasCleared = _cleared.TryGetValue(folder, out var seen) && seen;
             _cleared[folder] = shape.Cleared;
             if (shape.Cleared)
@@ -180,6 +181,8 @@ internal sealed class CredentialWrites(HarnessRoster roster, Action<AccountLine>
             return wasCleared && shape is { Access: true, Refresh: true } && StoredSignIns.MarkIn(roster, agent, account) ? "in" : null;
         }
     }
+
+    public void Kept(string agent, string account, string by) => say(AccountLine.CredentialsKept(agent, account, by));
 
     public void Dispose()
     {

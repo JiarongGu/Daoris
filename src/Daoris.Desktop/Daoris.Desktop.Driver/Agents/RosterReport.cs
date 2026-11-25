@@ -120,6 +120,7 @@ internal sealed class RosterReport(HarnessRoster roster)
         var reads =AccountReads.Of(roster.Home, owner);
         var names = AccountNames.Of(roster.Home, owner);
         var off = AccountSwitch.OffOf(roster.Home, owner);
+        var shared = SharedSignIns.Of(roster.Home, owner, toolchain.Accounts.StoredSignIn);
         var profiles = HarnessSettings.Profiles(roster.Home, owner).Select(account =>
         {
             var read = reads.Accounts.GetValueOrDefault(account);
@@ -130,7 +131,7 @@ internal sealed class RosterReport(HarnessRoster roster)
                 who?.Account, held is null ? null : HarnessKeys.Handle(held), read?.At,
                 names.GetValueOrDefault(account), who?.Org, who?.Plan ?? KeptPlan(owner, account, read?.Login))
             {
-                SignIn = SignInStates.Of(read), Off = off.Contains(account),
+                SignIn = SignInStates.Of(read), Off = off.Contains(account), SharedWith = shared.GetValueOrDefault(account),
             };
         }).ToList();
 
@@ -256,13 +257,18 @@ internal sealed class RosterReport(HarnessRoster roster)
             ? new Dictionary<string, string> { [variable] = held }
             : null;
         var before = AccountReads.Of(roster.Home, owner).Accounts.GetValueOrDefault(account);
+        var priorWord = new LoginRead(before?.Login ?? LoginState.Unknown, null);
+        var home = HarnessSettings.ProfileHome(roster.Home, owner, account);
         var answer = roster.Asking is { } standIn
-            ? new HarnessProbe.LoginAnswer(await standIn(owner, account, ct).ConfigureAwait(false), null, true)
+            ? await HarnessProbe.ReadingAsync(
+                toolchain.Accounts.StoredSignIn, home, roster.Clock(), renewing: false, priorWord,
+                async () => new HarnessProbe.LoginAnswer(await standIn(owner, account, ct).ConfigureAwait(false), null, true)).ConfigureAwait(false)
             : await HarnessProbe.AskAccountAsync(
                 adapter, toolchain, config.Commands.GetValueOrDefault(adapter), roster.Settings, roster.Home,
-                HarnessSettings.ProfileHome(roster.Home, owner, account), ct, ProbeLock.PathOf(roster.Home, owner, account), key,
-                busy: () => Busy(owner, account), kept: new LoginRead(before?.Login ?? LoginState.Unknown, null),
-                patience: roster.LockPatience).ConfigureAwait(false);
+                home, ct, ProbeLock.PathOf(roster.Home, owner, account), key,
+                busy: () => Busy(owner, account), kept: priorWord,
+                patience: roster.LockPatience, clock: roster.Clock).ConfigureAwait(false);
+        if (answer.Kept) roster.Writes?.Kept(owner, account, SignInCause.Probe);
         // A mark this question answered is spent, whatever the file's clock says against the roster's.
         var asked = roster.Clock();
         if (ProbeLock.SignedIn(roster.Home, owner, account) is { } marked && marked > asked) asked = marked;

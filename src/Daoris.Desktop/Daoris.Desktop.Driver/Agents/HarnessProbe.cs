@@ -112,7 +112,7 @@ public static class HarnessProbe
                 : asks is not null && !asks(name) ? LoginAnswer.Of(kept, asked: false)
                 : await LoginAsync(
                     resolved, toolchain, profileHome, isManaged, ct, key, ProbeLock.PathOf(home, owner, name),
-                    busy is null ? null : () => busy(name), kept).ConfigureAwait(false);
+                    busy is null ? null : () => busy(name), kept, clock: now).ConfigureAwait(false);
             profiles.Add(new ProfileReport(
                 name, profileHome, answer.Login, answer.Account, held is null ? null : HarnessKeys.Handle(held),
                 Moment(answer, kept, said?.Read, name), AccountNames.NameOf(home, owner, name), answer.Org, answer.Plan)
@@ -171,6 +171,9 @@ public static class HarnessProbe
         /// </summary>
         public bool Locked { get; init; }
 
+        /// <summary>A refused refresh emptied the account's store and Daoris put it back (<see cref="ReadGuard"/>).</summary>
+        public bool Kept { get; init; }
+
         /// <summary>An answer saying what <paramref name="said"/> says.</summary>
         public static LoginAnswer Of(LoginRead said, bool asked) => new(said.Login, said.Account, asked, said.Org, said.Plan);
     }
@@ -197,16 +200,19 @@ public static class HarnessProbe
     /// (<paramref name="busy"/>, whose answer is then <paramref name="kept"/>) is no reading.
     /// </summary>
     /// <param name="patience">How long the lock is waited for (<see cref="ProbeLock.Patience"/> where null).</param>
+    /// <param name="renewing">A counted start's renewal (<see cref="SignInRefresh"/>), the one ask that may refresh the token.</param>
     internal static async Task<LoginAnswer> AskAccountAsync(
         string adapter, AccountAgent toolchain, IReadOnlyList<string>? command,
         HarnessSettings settings, string home, string? profileHome, CancellationToken ct, string? lockPath,
-        IReadOnlyDictionary<string, string>? key, Func<bool>? busy = null, LoginRead kept = default, TimeSpan? patience = null)
+        IReadOnlyDictionary<string, string>? key, Func<bool>? busy = null, LoginRead kept = default, TimeSpan? patience = null,
+        bool renewing = false, Func<DateTimeOffset>? clock = null)
     {
         // The pin, as the probe resolves it; nothing installed at it is nobody to ask.
         var run = CommandOf(adapter, toolchain, command, settings, home);
         return run.Missing
             ? new LoginAnswer(LoginState.Unknown, null, false)
-            : await LoginAsync(run.Run, toolchain, profileHome, managed: run.Managed is not null, ct, key, lockPath, busy, kept, patience)
+            : await LoginAsync(
+                    run.Run, toolchain, profileHome, managed: run.Managed is not null, ct, key, lockPath, busy, kept, patience, renewing, clock)
                 .ConfigureAwait(false);
     }
 
@@ -253,7 +259,8 @@ public static class HarnessProbe
     private static async Task<LoginAnswer> LoginAsync(
         IReadOnlyList<string> resolved, AccountAgent toolchain, string? profileHome, bool managed,
         CancellationToken ct, IReadOnlyDictionary<string, string>? account = null, string? lockPath = null,
-        Func<bool>? busy = null, LoginRead kept = default, TimeSpan? patience = null)
+        Func<bool>? busy = null, LoginRead kept = default, TimeSpan? patience = null, bool renewing = false,
+        Func<DateTimeOffset>? clock = null)
     {
         if (toolchain.Accounts.KeyOnly)
         {
@@ -272,13 +279,27 @@ public static class HarnessProbe
         if (lockPath is not null && held is null) return new LoginAnswer(LoginState.Unknown, null, false) { Locked = true };
         if (busy?.Invoke() == true) return LoginAnswer.Of(kept, asked: false);
 
-        var answer = await AskAsync(resolved, question.Arguments, profileHome, toolchain, ct, managed, account)
-            .ConfigureAwait(false);
-        if (!answer.Ran) return new LoginAnswer(LoginState.Unknown, null, true);
+        return await ReadingAsync(
+            toolchain.Accounts.StoredSignIn, profileHome, (clock ?? (() => DateTimeOffset.UtcNow))(), renewing, kept,
+            async () =>
+            {
+                var answer = await AskAsync(resolved, question.Arguments, profileHome, toolchain, ct, managed, account)
+                    .ConfigureAwait(false);
+                if (!answer.Ran) return new LoginAnswer(LoginState.Unknown, null, true);
 
-        // Read with the "logged in" pattern first, because it is the specific one; and neither matching leaves it unknown
-        // rather than out, which is what keeps a reworded status line from refusing a spawn that would have worked.
-        return LoginAnswer.Of(question.Read(answer.Output), asked: true);
+                // Read with the "logged in" pattern first, because it is the specific one; and neither matching leaves it unknown
+                // rather than out, which is what keeps a reworded status line from refusing a spawn that would have worked.
+                return LoginAnswer.Of(question.Read(answer.Output), asked: true);
+            }).ConfigureAwait(false);
+    }
+
+    /// <summary>One status question as a read (<see cref="ReadGuard"/>): not asked where it would refresh; a refused refresh undone.</summary>
+    internal static async Task<LoginAnswer> ReadingAsync(
+        IStoredSignIn? store, string? profileHome, DateTimeOffset now, bool renewing, LoginRead kept, Func<Task<LoginAnswer>> ask)
+    {
+        if (!renewing && ReadGuard.WouldRefresh(store, profileHome, now)) return LoginAnswer.Of(kept, asked: false);
+        var (answer, put) = await ReadGuard.AskAsync(store, profileHome, restore: !renewing, ask).ConfigureAwait(false);
+        return put ? LoginAnswer.Of(kept, asked: false) with { Kept = true } : answer;
     }
 
     /// <summary>The runtime's error code for a binary that is not there — ERROR_FILE_NOT_FOUND and ENOENT alike.</summary>

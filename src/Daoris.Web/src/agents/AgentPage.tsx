@@ -476,6 +476,9 @@ export function AgentPage({
         id={account.name}
         home={account.home}
         state={state}
+        shared={account.shared?.length
+          ? account.shared.map((other) => accountName(tool.accounts.find((each) => each.name === other) ?? { name: other })).join(', ')
+          : null}
         current={typeof facts?.running === 'number' && facts.running > 0 ? t('agents.now.sessions', { count: facts.running }) : null}
         usage={usage}
         act={actOf(offered, account.name, label)}

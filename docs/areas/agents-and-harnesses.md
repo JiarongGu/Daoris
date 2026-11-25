@@ -266,6 +266,16 @@ where a seam, route, verb or fixture is. Which folder owns which job:
     marks one the watch missed, with no cause. A store that is deleted, and not emptied, marks nothing: the install's writes of the
     store each show a `deleted` line then a `renamed` one a millisecond later, so a deletion alone says nothing. A watch-made signed-in
     reading is kept in `reads.json` alone, with no who or plan until the next status read. (SIGNOUTSEEN1)
+    A read of an account (its status question, its windows) never starts a refresh of its sign-in (`ReadGuard`): where the stored access
+    token is expired or expires within the renewal margin, a read is not asked and the account keeps its last reading; only a counted
+    start's renewal asks it, because a session is about to use it. A refresh its agent makes in a read that is refused, which empties the
+    store, is undone from the store's bytes held in memory for the read alone (a `credentials.kept` line; the watch says the write `held`
+    and marks no sign-out; Daoris's own sign-in at the account is left alone). A start's or a turn's read passes an account whose reading
+    puts a window at 100% before its reset (`RosterUsage.AtLimit`), a press still asking. Accounts whose stores hold one refresh token, which
+    whichever refreshes first spends for all, are said once on each in the roster, the CLI list and the agent's page, with the way out, to
+    sign each in on its own: a one-way fingerprint of the token (`IStoredSignIn.Fingerprint`, a digest made inside the provider's reader,
+    compared in memory, never logged, shown or written) compared among one agent's accounts; the person's own sign-in is not compared.
+    (SIGNOUTSHARED1)
 
 **Usage, limits and errors**
 

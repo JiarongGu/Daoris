@@ -38,7 +38,7 @@ internal static class SignInRefresh
             ? new HarnessProbe.LoginAnswer(await standIn(owner, account, ct).ConfigureAwait(false), null, true)
             : await HarnessProbe.AskAccountAsync(
                 asker.Name, asker, config.Commands.GetValueOrDefault(asker.Name), roster.Settings, roster.Home, home, ct,
-                lockPath: null, key: null).ConfigureAwait(false);
+                lockPath: null, key: null, renewing: true, clock: roster.Clock).ConfigureAwait(false);
         if (answer.Asked) roster.Keep(owner, account, answer.Said, roster.Clock());
         return true;
     }

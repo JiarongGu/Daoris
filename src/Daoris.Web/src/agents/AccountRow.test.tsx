@@ -165,6 +165,22 @@ describe('an account’s row without a pointer (ACCTUX2)', () => {
     expect(ACCOUNT_COLUMNS).not.toMatch(/minmax\(0,1fr\)_minmax\(0,0\.6fr\)/);
   });
 
+  it('says once under the row that its sign-in is shared, and how to separate it', async () => {
+    render(<ul><AccountRow name="spare" shared="reserve, backup" state={accountState({ login: 'in', read: READ }, null, true)} menu={[]} /></ul>);
+    const says = screen.getByText(/Shares its sign-in with reserve, backup/);
+    expect(says).toHaveTextContent('Sign this account in to Daoris on its own');
+    expect(screen.getAllByText(/Shares its sign-in with/)).toHaveLength(1);
+    cleanup();
+
+    await i18n.changeLanguage('zh');
+    render(<ul><AccountRow name="spare" shared="reserve" state={accountState({ login: 'in', read: READ }, null, true)} menu={[]} /></ul>);
+    expect(screen.getByText(/与 reserve 共用同一个登录/)).toBeInTheDocument();
+    cleanup();
+
+    render(<ul><AccountRow name="alone" state={accountState({ login: 'in', read: READ }, null, true)} menu={[]} /></ul>);
+    expect(document.querySelector('[data-shared]')).toBeNull();
+  });
+
   /** Your own sign-in's row shows its name and ⓘ, and no state. */
   it('draws no state where none is handed: your own sign-in, which Daoris never asks', () => {
     render(<ul><AccountRow name="Your own sign-in" why="Your own sign-in: the account this tool uses at your own terminal." menu={[]} /></ul>);
