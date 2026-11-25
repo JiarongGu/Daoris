@@ -18,8 +18,6 @@ repository.
 - **Fix:** each of the four cases declares 60 s (`COLD_APP_IMPORT_MS`). The `pageMeasure` story timeout passed alone and is not touched.
 - **Verify:** the file alone, 4 of 4.
 
-## 2026-11-24 - A gate log held for a moment hid a start's own error, and a check given up ended its run (GATELOGLOCK1)
-
 ## 2026-11-25 - The flow's hang case failed beside other runs by the cost of the git it started (FLOWLOADLEAK1b)
 
 - **Sighting:** `tools/merge/flow.test.ts` "a gate whose hang bound killed a test under load fails nothing yet and runs again alone; a hang killed alone fails" failed beside other runs (RISKGATE1j's check 5, OWNERRESERVE1's steward merge, GATELOGLOCK1's check 11) and passed alone; its failure words were never kept.
