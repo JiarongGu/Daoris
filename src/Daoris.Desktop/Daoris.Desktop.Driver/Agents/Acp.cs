@@ -181,6 +181,11 @@ public sealed class AcpSession(
     /// <summary>Whether no turn runs and the session waits on its own background work.</summary>
     public bool WaitsOnOwnWork => Ends.WaitsOnOwnWork;
 
+    /// <summary>Whether it waits on its own work and no turn runs: not a turn its harness woke while other work runs, nor one with a prompt open.</summary>
+    public bool BetweenTurns =>
+        Ends.WaitsOnOwnWork
+        && _wake.NoTurnRuns(() => _open.Prompted);
+
     private readonly AcpWake _wake = new();
 
     private readonly TimeSpan _wakeQuiet = wakeQuiet ?? AcpWake.Quiet;

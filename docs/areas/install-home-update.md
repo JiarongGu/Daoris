@@ -189,10 +189,12 @@ Each type is in a file of its name; `docs/index/README.md` says where a seam, ve
     performs that is recorded, sent or unknown on a run that goes on, which the runtime governs at a node its graph declares while
     its plugin's process is up, and whose step waits on no role's act (`PluginStepsInFlight`), so a release or a deploy is never
     cut off and left not known. The loop hands that count in its work beside the sessions and the turns; the updater reads no run
-    record. A driven session whose turn has ended and which waits on its own background work, a check it started (its door's
-    `WaitsOnOwnWork`, counted out by `DriverWatch.RunsInTurn`), runs no turn and is idle too: a busy Daoris, with sessions always at some
-    stage of a next turn, would otherwise never install. The close that follows is *Update now*'s: such a session is recorded stopped
-    for the update and carried on at the next start (rule 41). A conversation between turns, a parked session, the terminal, a held or settled attempt, a step whose progress names
+    record. A driven session of this loop that waits on its own background work, with no turn its harness woke running and no prompt
+    open (`AcpSession.BetweenTurns`, counted out by `DriverWatch.RunsInTurn`), runs no turn and is idle too: a busy Daoris, with
+    sessions always at some stage of a next turn, would otherwise never install. The close that follows is *Update now*'s: such a
+    session is recorded stopped for the update and carried on at the next start (rule 41), and the background work it waited on, a
+    check or a landing it ran itself, stops with its process; the carry-on words say so (`ShellClose.Words`). A turn its harness
+    wakes between the last look and the close is cut too. A conversation between turns, a parked session, the terminal, a held or settled attempt, a step whose progress names
     the role it waits on (an approver, a deployer, whoever holds it), a watch whose plugin declares it acts on nothing
     (`perform.acts: false`), Daoris's own steps, an ended run's, and an attempt the runtime does not ask after (a run it does not
     govern, a node no graph declares, a plugin down) are idle, and an attempt not known is idle 15 minutes after the loop first

@@ -23,9 +23,12 @@ public sealed class UpdateBetweenTurnsTests : IDisposable
 
     public void Dispose()
     {
+        foreach (var held in _held) held.Dispose();
         _ledger.Dispose();
         try { Directory.Delete(_home, recursive: true); } catch (IOException) { } catch (UnauthorizedAccessException) { }
     }
+
+    private readonly List<IDisposable> _held = [];
 
     private DriverWatch Watch()
     {
@@ -37,16 +40,18 @@ public sealed class UpdateBetweenTurnsTests : IDisposable
             events: _events);
     }
 
-    /// <summary>Begin a run that goes on until <paramref name="end"/>, and watch it as the protocol door does, its wait on its own work read from <paramref name="waits"/>.</summary>
-    private async Task<SessionWatch.WatchHandle> RunAsync(DriverWatch watch, string session, Func<bool> waits, TaskCompletionSource end)
+    /// <summary>Begin a run that goes on until <paramref name="end"/>, held and watched as the protocol door does, between turns where <paramref name="between"/> says so.</summary>
+    private async Task<SessionWatch.WatchHandle> RunAsync(DriverWatch watch, string session, Func<bool> between, TaskCompletionSource end)
     {
         await watch.Running.StartAsync(open =>
         {
             open();
             return end.Task.ContinueWith(_ => new StartRun("ended", Opened: true), TaskScheduler.Default);
         });
-        return SessionWatch.Of(_events).Watch(
-            session, new WatchedRun(SessionWatch.Quest, "q-" + session, "stub") { WaitsOnOwnWork = waits });
+        _held.Add(watch.Running.GoesLive("q-" + session, session));
+        var handle = SessionWatch.Of(_events).Watch(session, new WatchedRun(SessionWatch.Quest, "q-" + session, "stub"));
+        SessionWatch.Of(_events).Between(session, between);
+        return handle;
     }
 
     [Fact]
@@ -93,15 +98,19 @@ public sealed class UpdateBetweenTurnsTests : IDisposable
         end.TrySetResult();
     }
 
-    /// <summary>A watched session no run of the loop's counts never takes the count below nothing.</summary>
+    /// <summary>A watched session this loop does not hold never lowers the count of a session that is in a turn.</summary>
     [Fact]
-    public void A_watched_session_the_loop_does_not_count_never_takes_the_count_below_nothing()
+    public async Task A_watched_session_this_loop_does_not_hold_never_lowers_the_count_of_one_in_a_turn()
     {
         var watch = Watch();
-        using var watched = SessionWatch.Of(_events).Watch(
-            "s9", new WatchedRun(SessionWatch.Intake, null, "stub") { WaitsOnOwnWork = () => true });
+        var end = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        using var mine = await RunAsync(watch, "s1", () => false, end);
+        using var other = SessionWatch.Of(_events).Watch("s9", new WatchedRun(SessionWatch.Intake, null, "stub"));
+        SessionWatch.Of(_events).Between("s9", () => true);
 
-        Assert.Equal(0, watch.Running.Running);
-        Assert.Equal(0, watch.RunsInTurn);
+        Assert.Equal(1, watch.Running.Running);
+        Assert.Equal(1, watch.RunsInTurn);
+
+        end.TrySetResult();
     }
 }

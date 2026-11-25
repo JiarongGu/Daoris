@@ -198,7 +198,7 @@ public sealed class DriverWatch(
     public RunningSessions Running { get; } = new();
 
     /// <summary>The runs <see cref="Running"/> counts less those between turns (<see cref="SessionWatch.BetweenTurns"/>): what an update's drain waits on.</summary>
-    public int RunsInTurn => Math.Max(0, Running.Running - (events is null ? 0 : SessionWatch.Of(events).BetweenTurns()));
+    public int RunsInTurn => Math.Max(0, Running.Running - (events is null ? 0 : SessionWatch.Of(events).BetweenTurns(Running.Holds)));
 
     /// <summary>
     /// Whether this loop runs beside the lease holder, as <c>drive --share</c> does: handed to every look's driver

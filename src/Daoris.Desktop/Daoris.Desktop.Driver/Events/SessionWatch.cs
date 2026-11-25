@@ -214,10 +214,16 @@ public sealed class SessionWatch
         watched.Works = works;
     }
 
-    /// <summary>How many watched runs run no turn and wait on their own work (<see cref="WatchedRun.WaitsOnOwnWork"/>): an update's drain does not wait on them.</summary>
-    public int BetweenTurns() =>
+    /// <summary>Where a session's door says it runs no turn and waits on its own work (<see cref="AcpSession.BetweenTurns"/>).</summary>
+    public void Between(string session, Func<bool> between)
+    {
+        if (_watched.TryGetValue(session, out var watched)) watched.Between = between;
+    }
+
+    /// <summary>How many of the sessions <paramref name="mine"/> names run no turn: an update's drain does not wait on them.</summary>
+    public int BetweenTurns(Func<string, bool> mine) =>
         _watched.Values.Count(
-            watched => !watched.Gone && watched.OwnWork?.Invoke() == true);
+            watched => !watched.Gone && mine(watched.Session) && watched.Between?.Invoke() == true);
 
     /// <summary>
     /// Where a session's door says it waits between a transient episode's tries: on Daoris's own
@@ -585,6 +591,7 @@ public sealed class SessionWatch
         public readonly WatchedRun Run = run;
         public Func<bool>? OwnWork = run.WaitsOnOwnWork;
         public Func<IReadOnlyList<string>>? Works;
+        public Func<bool>? Between;
         public Func<bool>? Transient;
         public LongCallLook? Long;
         public long HeardTicks = heard;
