@@ -657,7 +657,9 @@ public sealed class LineAccountTests : IDisposable
 
             // The own account cooling under a line that switches: the switch's walk, counted only by the driver's carry-on.
             // An account that cannot carry the words, or a ready one the model is not offered on, walks only a line that walks.
-            LineAsk? wanted = hold == NextHold.Cooling && !trigger.NewSession && !trigger.Limited
+            LineAsk? wanted = hold == NextHold.Off && line.Switches
+                ? new LineAsk(LineWalkPlace.Switch, line.Sort == LineSort.DrivenOpen)
+                : hold == NextHold.Cooling && !trigger.NewSession && !trigger.Limited
                 ? line.Switches ? new LineAsk(LineWalkPlace.Switch, line.Sort == LineSort.DrivenOpen) : null
                 : (hold is not (NextHold.Ready or NextHold.Near) || notOffered) && line.Walks
                     ? new LineAsk(LineWalkPlace.Elsewhere, Counts: true, NotOffered: hold is NextHold.Ready or NextHold.Near)

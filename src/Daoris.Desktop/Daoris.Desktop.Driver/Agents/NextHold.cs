@@ -26,4 +26,6 @@ public enum NextHold
 
     /// <summary>The scope does not use it: never carries its starts.</summary>
     Outside,
+
+    Off,
 }

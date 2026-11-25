@@ -443,6 +443,17 @@ public sealed class AgentsRoutes(DriverContext context)
             return new { Door = harness, Action = action, ExitCode = 0, Profile = renamed, Name = name };
         }
 
+        // The person's switch on an account: signed in and read as before, but nothing starts or moves to it. The terminal's twin is
+        // `profile on|off`. Pressed by the person alone, as a sign-in is.
+        if (action is "profile-on" or "profile-off")
+        {
+            var switched = Named(press.Profile);
+            var changed = AccountSwitch.Set(
+                _loop.Harnesses.Home, owner, HarnessSettings.Profiles(_loop.Harnesses.Home, owner), switched, off: action == "profile-off");
+            await ChangedAsync(_loop, harness, action, config, cancellationToken);
+            return new { Door = harness, Action = action, ExitCode = 0, Profile = switched, Changed = changed };
+        }
+
         // One set of Daoris's accounts serves every workspace: there is no list to join
         // and no default beside the order, so the page's `profile-join` and `profile-default` are refused.
         if (action is "profile-join" or "profile-default") throw AccountsRoutes.OneSet(owner, action == "profile-join" ? "a list to join" : "a default");

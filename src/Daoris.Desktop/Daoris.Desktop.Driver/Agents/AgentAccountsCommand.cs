@@ -19,7 +19,7 @@ internal static class AgentAccountsCommand
     private const string Prefix = AccountVerbContext.Prefix;
 
     /// <summary>The profile verbs this program has.</summary>
-    public static IReadOnlyList<string> ProfileVerbs { get; } = ["list", "add", "remove", "order", "ready", "use", "rename"];
+    public static IReadOnlyList<string> ProfileVerbs { get; } = ["list", "add", "remove", "order", "ready", "use", "rename", "on", "off"];
 
     /// <summary>
     /// Whether the words after <c>agent</c> are a profile verb that changes a home, held from the top: all but <c>list</c>, and of
@@ -120,6 +120,8 @@ internal static class AgentAccountsCommand
                 return AgentAccountUse.Use(context, out exit);
             case "rename":
                 return Rename(context);
+            case "on" or "off":
+                return Switch(context, off: action == "off");
             default:
                 throw new AgentWords($"unknown agent profile verb '{action}' — one of: {string.Join(", ", ProfileVerbs)}");
         }
@@ -391,6 +393,44 @@ internal static class AgentAccountsCommand
                     ? $"{Prefix}: `{owner}`'s account `{account}` is called `{now}` now."
                     : $"{Prefix}: `{owner}`'s account `{account}` has no name of yours now: it reads as its id.");
                 at.Say("  Its id stays, so every list, default, reading and record that names it still does.");
+                at.Say($"  Written to {AccountNames.PathOf(at.Home)} — machine-local, tracked by nothing.");
+                return 0;
+            });
+    }
+
+    /// <summary>
+    /// <c>profile on|off &lt;agent&gt; &lt;account&gt;</c>: the person's switch (<see cref="AccountSwitch"/>), kept in
+    /// <c>accounts.json</c>. An account switched off stays signed in and is read as before; Daoris starts no session on it and moves none
+    /// to it, and a session on it goes on to its turn's end and is moved at the next.
+    /// </summary>
+    private static AgentPress Switch(AccountVerbContext at, bool off)
+    {
+        var owner = at.Owner();
+        var account = at.Account(owner, at.Bare(3, "<agent> <account>"));
+        var accounts = HarnessSettings.Profiles(at.Home, owner);
+        var names = AccountNames.Of(at.Home, owner);
+        if (AccountNames.Problem(accounts, names, account, null) is { } problem)
+        {
+            throw new AgentWords(AccountNames.Sentence(owner, problem, account, null, accounts, names));
+        }
+
+        return new AgentPress(at.Verb, AgentRoutes.Harness, at.Isolated,
+            new JsonObject { ["action"] = off ? "profile-off" : "profile-on", ["door"] = owner, ["profile"] = account },
+            _ => Done(AccountSwitch.Set(at.Home, owner, HarnessSettings.Profiles(at.Home, owner), account, off)),
+            answer => answer.ValueKind == JsonValueKind.Object && answer.TryGetProperty("changed", out var changed) && changed.ValueKind == JsonValueKind.True,
+            done =>
+            {
+                var who = $"the `{owner}` account `{AccountNames.Shown(at.Home, owner, account)}`";
+                if (done is not true)
+                {
+                    at.Say($"{Prefix}: {who} is already {(off ? "off" : "on")} — nothing changed.");
+                    return 0;
+                }
+
+                at.Say(off
+                    ? $"{Prefix}: {who} is switched off. It stays signed in and is read as before, but Daoris starts no session on it and moves none to it."
+                    : $"{Prefix}: {who} is switched on: Daoris starts sessions on it and moves them to it again.");
+                if (off) at.Say($"  A session already on it goes on to its turn's end and is moved at the next; `daoris agent account on {owner} {ShellWord.Of(account, ShellWord.Account)}` switches it on.");
                 at.Say($"  Written to {AccountNames.PathOf(at.Home)} — machine-local, tracked by nothing.");
                 return 0;
             });

@@ -13,6 +13,11 @@ with the version and date at release.
 - An agent process Daoris started that outlives its session is now named in the machine log (`agent.stray`: its id, agent, pin and age) and ended
   with its tree five minutes later (`agent.stray.stopped`), or at once where its pin has moved on. Only a process Daoris recorded as it started it is
   ever read; a process of another program at the same path is never touched, and a process started before the record was kept is not named.
+- Each agent account has the person's on/off switch: `daoris agent account off <agent> <account>` (and `on`), or *Switch off* in Agents → the
+  agent's page → Accounts. A switched-off account stays signed in and is read as before, shows as off in the window and in `daoris agent list`,
+  and gets no session started on it and none moved to it; a session already on it goes on to its turn's end and is moved at the next. It is
+  the same record for Claude Code, Codex and every other agent, kept in `accounts.json` beside the account's name, and only your own press
+  writes it (a session's terminal is refused), as a sign-in is yours.
 - `daoris bus stats` now reads each consumer's handling time by kind (`handled`) and each day's share of the 128 MiB a day the bus log may
   put on disk, and the log says once when a day passes it. A check's start and a second opinion's asking carry deadlines measured on the
   install; the answers an author keeps to a second opinion's findings reach the bus's log as they are given, not only at the turn's end.

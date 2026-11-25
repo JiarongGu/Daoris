@@ -149,7 +149,10 @@ internal static class AgentListCommand
         {
             Profiles = [.. HarnessSettings.Profiles(home, owner).Select(account => new ProfileReport(
                 account, HarnessSettings.ProfileHome(home, owner, account), LoginState.Unknown,
-                Key: HarnessKeys.Of(home, owner, account) is { } key ? HarnessKeys.Handle(key) : null))],
+                Key: HarnessKeys.Of(home, owner, account) is { } key ? HarnessKeys.Handle(key) : null)
+            {
+                Off = AccountSwitch.IsOff(home, owner, account),
+            })],
         };
     }
 
@@ -193,7 +196,15 @@ internal static class AgentListCommand
             // 🔴 A key account is never "in": the tool says so for any key, a wrong one included. A named account's id is never said.
             lines.Add($"{Under}{Shown(profile.Name).PadRight(col)} {(profile.Key is not null ? "unchecked" : Word(profile.Login)),-9}"
                 + WhoWords(profile, Shown(profile.Name), report.Profiles)
-                + (profile.Key is { } handle ? $" API key {handle}" : ""));
+                + (profile.Key is { } handle ? $" API key {handle}" : "")
+                + (profile.Off ? "  OFF" : ""));
+
+            // The person's switch: signed in and read as before, but nothing starts or moves to it.
+            if (profile.Off)
+            {
+                lines.Add($"{Under}{gap} switched off by you: Daoris starts no session on it and moves none to it; "
+                    + $"`daoris agent account on {owner} {ShellWord.Of(profile.Name, ShellWord.Account)}` switches it on");
+            }
 
             foreach (var cooled in AgentAccountLines.CoolingLinesOf(cooling, owner, profile.Name, now, zone))
             {

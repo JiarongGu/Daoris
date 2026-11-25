@@ -103,6 +103,7 @@ export const NOTE_CODES: Readonly<Record<string, NoteCode>> = {
   'account.refused-model': { values: ['agent', 'model'] },
   // Why the account a resume asked for could not carry the words, after a line whose reason is `account`.
   'account.resume-signed-out': { values: [] },
+  'account.resume-off': { values: [] },
   'account.resume-refused': { values: [] },
   'account.resume-gone': { values: [] },
   'account.resume-outside': { values: [] },
@@ -527,6 +528,7 @@ export const NOTE_CODES: Readonly<Record<string, NoteCode>> = {
   // The same wait where some accounts need the person's sign-in, named apart from those cooling.
   'held.limit-waits-sign-in': { values: ['owner', 'account', 'until', 'accounts'], why: 'cooling' },
   'held.signed-out': { values: ['owner', 'account', 'profile'] },
+  'held.account-off': { values: ['owner', 'account', 'profile'] },
   'held.key-missing': { values: ['owner', 'account', 'profile'] },
   // No Daoris account of the agent's is signed in, and its own home is never a start's.
   'held.no-account': { values: ['owner'] },
@@ -540,6 +542,7 @@ export const NOTE_CODES: Readonly<Record<string, NoteCode>> = {
   'held.clause-cooling': { values: ['account', 'until'] },
   'held.clause-refused': { values: ['account'] },
   'held.clause-signed-out': { values: ['account'] },
+  'held.clause-off': { values: ['account'] },
   'held.clause-ready': { values: ['account'] },
   'held.wait-first': { values: ['account', 'until', 'why'], why: 'cooling' },
   'held.sign-in-sooner': { values: ['logins'] },

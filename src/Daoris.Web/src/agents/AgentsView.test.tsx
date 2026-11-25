@@ -1177,7 +1177,7 @@ describe('the Agents place', () => {
 
   /**
    * With workspaces on this machine, no row says where it runs and no ⋯ offers a
-   * default in any of them, nor a list to join or leave: every account serves every workspace. The bridge refuses each.
+   * default in any of them, nor a list to join or leave: every account serves every workspace.
    */
   it('offers no default and no list in any workspace, from any account’s ⋯', async () => {
     vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => {
@@ -1195,7 +1195,7 @@ describe('the Agents place', () => {
     const work = await screen.findByRole('listitem', { name: 'work' });
     expect(within(work).queryByText('orbit')).toBeNull();
     const menu = await more('personal');
-    expect(within(menu).getAllByRole('menuitem').map((item) => item.textContent)).toEqual(['Rename…', 'Sign in again', 'Read again', 'Remove…']);
+    expect(within(menu).getAllByRole('menuitem').map((i) => i.textContent)).toEqual(['Rename…', 'Switch off', 'Sign in again', 'Read again', 'Remove…']);
     expect(within(menu).queryByRole('menuitem', { name: /default|list|workspace/i })).toBeNull();
   });
 

@@ -115,7 +115,10 @@ public static class HarnessProbe
                     busy is null ? null : () => busy(name), kept).ConfigureAwait(false);
             profiles.Add(new ProfileReport(
                 name, profileHome, answer.Login, answer.Account, held is null ? null : HarnessKeys.Handle(held),
-                Moment(answer, kept, said?.Read, name), AccountNames.NameOf(home, owner, name), answer.Org, answer.Plan));
+                Moment(answer, kept, said?.Read, name), AccountNames.NameOf(home, owner, name), answer.Org, answer.Plan)
+            {
+                Off = AccountSwitch.IsOff(home, owner, name),
+            });
         }
 
         // 🔴 The tool's own home is never asked: its kept word stands. Asked with the seam unset, the

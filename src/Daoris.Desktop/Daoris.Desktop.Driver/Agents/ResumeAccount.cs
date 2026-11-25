@@ -37,6 +37,8 @@ public static class ResumeAccount
 
         return state.Readiness switch
         {
+            // First: the person's switch overrides what an account's cool-off or refusal would say of it.
+            AccountReadiness.Off => NextHold.Off,
             AccountReadiness.Refused => NextHold.Refused,
             AccountReadiness.Cooling => NextHold.Cooling,
             AccountReadiness.SignedOut => NextHold.SignedOut,
@@ -323,6 +325,7 @@ public static class ResumeWords
         (NextHold.Cooling, true) => Noted.Of(AccountNoteCodes.AccountResumeNewSession, "You chose a new session over waiting for that account."),
         (NextHold.SignedOut, _) => Noted.Of(AccountNoteCodes.AccountResumeSignedOut, "That account is not signed in any more."),
         (NextHold.Refused, _) => Noted.Of(AccountNoteCodes.AccountResumeRefused, "Its provider refused that account."),
+        (NextHold.Off, _) => Noted.Of(AccountNoteCodes.AccountResumeOff, "That account is switched off."),
         (NextHold.Missing, _) => Noted.Of(AccountNoteCodes.AccountResumeGone, "That account is not on this machine any more."),
         (NextHold.Outside, _) => Noted.Of(AccountNoteCodes.AccountResumeOutside, "This work no longer uses that account."),
         (NextHold.Kept, _) => Noted.Of(AccountNoteCodes.AccountResumeKept, "That account is kept for conversations, which driven work never runs on."),

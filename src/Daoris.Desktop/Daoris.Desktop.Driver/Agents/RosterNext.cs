@@ -210,6 +210,13 @@ internal sealed class RosterNext(HarnessRoster roster)
         string owner, string? account, DateTimeOffset now, IReadOnlyDictionary<string, string>? names = null, AccountFacts? fact = null,
         string? model = null)
     {
+        // The person's switch is read first: an account switched off is held whatever else it would be, and no probe is spent on it.
+        if (account is not null && AccountSwitch.IsOff(roster.Home, owner, account))
+        {
+            var off = RotationWords.OffHold(owner, account, names);
+            return new AccountState(account, AccountReadiness.Off, Refusal: off.Note) { RefusalNote = off };
+        }
+
         if ((AccountCooling.Of(roster.Home, owner, account, now, model) ?? AccountRotation.Spent(owner, account, fact, now)) is { } cooling)
         {
             var hold = CoolingWords.HoldOf(cooling, roster.Zone, names);

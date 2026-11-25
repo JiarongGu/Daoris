@@ -169,6 +169,8 @@ export interface Account {
   plan?: string | null;
   /** An account that is an API key: its handle, never the key. */
   key?: string | null;
+  /** The person switched it off: signed in and read as before, but no session starts or moves to it. */
+  off?: boolean;
   /** Its own model and effort, where the tool's settings are known; absent or null otherwise. */
   settings?: AccountSettings | null;
   /** When its state is last read; null where it never is, and left out where it has none. */

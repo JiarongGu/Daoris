@@ -313,7 +313,7 @@ in a file of its name; `docs/index/README.md` says where a seam, route, verb or 
     never takes, and an agent hands on only a step it holds. Every write of a tenure names the epoch it read, compared under the tenures'
     lock; tenures that do not read take only the person's word and no hold act. The owner role is handed to nobody but the person. A marked destination's approver is the owner role's from its attempt's start: its tenure reads `marked`, offers no Take, Hand or
     Give back, and refuses every other holder's word and every hand-over (`marked`). (D312)
-    A second opinion nobody is free to give (every declared reviewer cooling, signed out or refused) is a `vacancy`, journalled by
+    A second opinion nobody is free to give (every declared reviewer cooling, signed out or refused; a reviewer whose accounts the person switched off reads as refused, its sentence saying so) is a `vacancy`, journalled by
     the look beside the gate (`OpinionCasts`, `<chain>.casts.jsonl`, each act naming its level) and listed to the hold that answers
     it now: the repository's or the workspace's supervisor at the repository, the machine's supervisor once that level left it or
     where it holds none of the vacancy's acts, nobody once the machine's supervisor left it (gave up). Its acts, kept at once with
