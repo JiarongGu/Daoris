@@ -54,7 +54,8 @@ internal sealed record DeclarationJudged(
 /// The tip commit is read from git's own files (<see cref="TreeTips.Named"/>, no process), and git is asked only when it moved since the last
 /// read: one <c>ls-tree</c> for the blob, and one <c>cat-file</c> only for a blob not seen before. Where the files cannot name the tip (a
 /// reftable repository) git is asked for the blob at every look. What is owed is judged from the reads against the choices each time it is
-/// asked (<see cref="Under"/>), so an acceptance ends its row at once with no git at all.
+/// asked (<see cref="Under"/>), so an acceptance ends its row at once with no git at all. A line that git's files name no ref for stands as
+/// a miss while those files stand, and a pair of blobs git gave no text for stands by time alone, each for <see cref="MissStands"/> at most.
 /// </remarks>
 public sealed class IntegrationOwed
 {
@@ -258,7 +259,8 @@ public sealed class IntegrationOwed
         GitReads++;
         if (await IntegrationAcceptance.TipAsync(root, line, ct).ConfigureAwait(false) is not { } blob)
         {
-            if (stamp is not null) _misses[repository] = new Miss(root, line, stamp, now);
+            // Only where git's own files name no such ref: a git that failed or timed out is no answer, and is asked again at the next look.
+            if (stamp is not null && tip is null) _misses[repository] = new Miss(root, line, stamp, now);
             return held;
         }
 

@@ -238,8 +238,9 @@ built, but nothing outside tests makes, takes or ends one; `LinePlaces` answers 
     files, its trees' folders and its branch records stands, read again after thirty minutes whatever moved (`TidyIdleness`); a reader of the session or
     quest list reads it by its change since its mark (`SessionListKept`, `QuestListKept`), judged once while it is the same
     (`JudgedOnce`); the `owed` stage (`IntegrationOwed`) asks git for a repository only where its line's tip moved, and
-    starts none for a standing one: a line git named no blob for, and a pair of blobs git gave no text for (an accepted blob this
-    checkout does not hold), stand while the ref files that name them stand and for ten minutes at most (`MissStands`, LOOKOWED1);
+    starts none for a standing one: a line git's files name no ref for stands while those files stand, a pair of blobs git gave no text
+    for (an accepted blob this checkout does not hold) stands by time alone, each ten minutes at most (`MissStands`), and a git that
+    failed or timed out is no answer and is asked again at the next look;
     no look judges an owed opinion: its gate is the bus's consumer, judging it at its facts (rule 30a,
     `workflows-review-landing` rule 26), and the plan reads the gate's view (`LookFacts`), each look taking the view's wake before its
     passes read it, so only a judgment landing after wakes the next; a judgment reads its tree's work kept
