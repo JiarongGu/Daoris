@@ -118,6 +118,34 @@ public sealed class HeavyExecutorRegenerateProcessTests : IAsyncLifetime
     }
 
     [Fact]
+    public async Task A_regenerate_the_work_does_not_build_in_fails_the_check_with_its_compiler_s_errors_and_runs_no_gate()
+    {
+        // A build's warnings first, its errors among them, each path the verification tree's.
+        await File.WriteAllTextAsync(Path.Combine(_folder, "unbuilt.cjs"), """
+            const path = require('path');
+            const at = (file) => path.join(process.cwd(), 'src', file);
+            for (let n = 0; n < 40; n++) console.log(`${at('Wiring.cs')}(7,6): warning CA2255: The 'ModuleInitializer' attribute is only intended [${at('Driver.csproj')}]`);
+            console.log(`${at('LoadFailures.cs')}(14,91): error CS0117: 'CheckAdmission' does not contain a definition for 'Need' [${at('Driver.csproj')}]`);
+            console.log('    2 Error(s)');
+            console.log('contracts: the generator failed; its own words are above');
+            process.exit(2);
+            """);
+        var commit = await CommitAsync("contracts one", $"node \"{Path.Combine(_folder, "unbuilt.cjs")}\"");
+
+        var result = await CheckAsync(commit, 1);
+
+        Assert.Equal((VerifyVerdicts.Failed, "regenerate"), (result.Verdict, result.Failed));
+        Assert.Null(result.Code);
+        Assert.Contains("exited 2", result.Why);
+        Assert.Contains($"src{Path.DirectorySeparatorChar}LoadFailures.cs(14,91): error CS0117: 'CheckAdmission' does not contain a definition for 'Need'\n", result.Why);
+        Assert.DoesNotContain("CA2255", result.Why);
+        Assert.DoesNotContain(_folder, result.Why);
+        Assert.True(File.Exists(result.Gates.Single(gate => gate.Name == "regenerate").Log));
+        Assert.False(File.Exists(Called));
+        Assert.Equal((WorkStates.Failed, HeavyExecutor.GateFailed), (CheckExecution.AnswerOf(result).Outcome!.State, CheckExecution.AnswerOf(result).Outcome!.Code));
+    }
+
+    [Fact]
     public async Task A_failed_gate_hands_the_work_its_logs_red_block_and_the_logs_path()
     {
         var commit = await CommitAsync("contracts one", "node -e \"\"");

@@ -468,8 +468,36 @@ internal sealed class VerifyExecution(string home, VerifySend send, CandidateJob
     private async Task<VerifyResult?> UnpreparedAsync(string tree, IReadOnlyList<VerifyGate> pending, CancellationToken ct) =>
         await UnfinishedAsync(() => VerifyTreeReady.EnsureAsync(home, send, tree, world.Preparation, ct), pending, ct).ConfigureAwait(false);
 
-    private async Task<VerifyResult?> UnregeneratedAsync(string tree, CheckPlace place, IReadOnlyList<VerifyGate> pending, CancellationToken ct) =>
-        await UnfinishedAsync(() => RegeneratedAsync(tree, place.Hold?.Id, ct), pending, ct).ConfigureAwait(false);
+    private async Task<VerifyResult?> UnregeneratedAsync(string tree, CheckPlace place, IReadOnlyList<VerifyGate> pending, CancellationToken ct)
+    {
+        VerifyResult? unbuilt = null;
+        var unfinished = await UnfinishedAsync(async () =>
+        {
+            if (await TreePreparation.RegenerateAsync(home, send.Repository, _regenerate, tree, ct, place.Hold?.Id).ConfigureAwait(false) is not { } failed) return null;
+            var log = KeptRegenerate(failed.Ran.Output);
+            if (UnbuiltTrees.Errors(failed.Ran.Output, tree) is not { Count: > 0 } errors)
+            {
+                return $"`{failed.Command}` exited {failed.Ran.Code}" + (GateLogExcerpt.Told(failed.Ran.Output, log, home) is { } told ? $"\n{told}" : "");
+            }
+
+            unbuilt = Unbuilt(failed, errors, log, pending);
+            return null;
+        }, pending, ct).ConfigureAwait(false);
+        return unbuilt ?? unfinished;
+    }
+
+    private VerifyResult Unbuilt(RegenerateFailed failed, IReadOnlyList<string> errors, string? log, IReadOnlyList<VerifyGate> pending)
+    {
+        var head = $"the work does not build{(send.AsMerged ? " with the line" : "")}: `{failed.Command}` exited {failed.Ran.Code} preparing the verification tree";
+        world.Said.WriteLine($"verify: {head}");
+        var why = $"{head}, its compiler saying:\n{string.Join('\n', errors)}"
+            + (log is null ? "" : $"\nits log, {Path.GetRelativePath(home, log).Replace('\\', '/')}, keeps the rest");
+        return new VerifyResult(send.Invocation, send.Commit, VerifyVerdicts.Failed, why,
+            [new VerifyGate(UnbuiltTrees.Gate, RunnerVerdicts.Fail, failed.Ran.Code) { Log = log, Command = failed.Command }, .. pending])
+        {
+            Failed = UnbuiltTrees.Gate, Declaration = _ran,
+        };
+    }
 
     private async Task<VerifyResult?> UnfinishedAsync(Func<Task<string?>> step, IReadOnlyList<VerifyGate> pending, CancellationToken ct)
     {
@@ -493,21 +521,18 @@ internal sealed class VerifyExecution(string home, VerifySend send, CandidateJob
         return Unknown(why) with { Code = VerifyResult.Unprepared };
     }
 
-    private async Task<string?> RegeneratedAsync(string tree, string? place, CancellationToken ct)
+    private string? KeptRegenerate(string output)
     {
-        if (await TreePreparation.RegenerateAsync(home, send.Repository, _regenerate, tree, ct, place).ConfigureAwait(false) is not { } failed) return null;
         var log = Path.Combine(_folder, "regenerate.log");
-        string? kept = log;
         try
         {
-            AtomicFile.WriteText(log, failed.Ran.Output);
+            AtomicFile.WriteText(log, output);
+            return log;
         }
         catch (Exception error) when (error is IOException or UnauthorizedAccessException)
         {
-            kept = null;
+            return null;
         }
-
-        return $"`{failed.Command}` exited {failed.Ran.Code}" + (GateLogExcerpt.Told(failed.Ran.Output, kept, home) is { } told ? $"\n{told}" : "");
     }
 
     private async Task<CheckPlace?> PlaceAsync(string folder, CancellationToken ct)

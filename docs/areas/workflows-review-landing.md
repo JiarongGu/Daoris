@@ -443,7 +443,8 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     reason, never put to the person (rule 1 of the doctrine: work that cannot be finished is reported as gave up). A failure with no timeout in
     its log, or on a quiet machine, is the work's as before.
     The same holds for every check whose answer does not bind to the work it was sent on, which only a new attempt on the work as it stands
-    answers (CHECKUNBOUND1): its tree's preparation or a `regenerate` did not finish (`unprepared`), the runner's own run held its lock through
+    answers (CHECKUNBOUND1): its tree's preparation or a `regenerate` did not finish for a cause of the machine's (`unprepared`; a
+    `regenerate` whose compiler named errors is the work's failure instead, see below), the runner's own run held its lock through
     every offer (`busy`), its process was lost again on its rerun (`lost`, its log's tail kept on the settled attempt), it said it was done and
     named no verdict (`no-outcome`), or the one table refused its verdict (that refusal's code, its line saying the verdict did not bind): each
     is asked again by `UnrunChecks`, three on one binding, then held `unsaid` as above. A check an older build held for one of these causes, with no
@@ -900,7 +901,11 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     (`TreePreparation.RegenerateAsync`; `--if-stale` is cheap where nothing moved), never the `treeBaseline`: a later commit whose
     generated inputs' sources moved reads them current though the stamp stands (VERIFYREGEN1). A preparation or a `regenerate` that
     does not finish ends the attempt `unknown` with code `unprepared` and its sentence (a `regenerate`'s command and its output's
-    lines, kept as the attempt's `regenerate.log`), never failed, no gate run.
+    lines, kept as the attempt's `regenerate.log`), never failed, no gate run, and is asked again (`UnrunChecks`). A `regenerate` whose
+    output names compiler errors (`error CS…`, `TS…`, `FS…`, `BC…`) is instead the work not building with the line, which no new attempt on
+    the same work answers: the check fails at the gate `regenerate` (`UnbuiltTrees`), its why the command, its exit and those error lines
+    (each once, relative to the tree, the build's warnings left out) with the log's path, and goes back to the work's session as any red;
+    a failure naming none (a network, a locked file, a missing tool) stays `unprepared`.
 41. `SET_ACCESS` refuses the `landing` pause, and `full` access opens no landing pause on a saved-graph place. (D184, D227)
 
 **Set up, conversion and Current**
