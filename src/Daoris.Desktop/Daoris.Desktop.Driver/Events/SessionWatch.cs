@@ -214,6 +214,11 @@ public sealed class SessionWatch
         watched.Works = works;
     }
 
+    /// <summary>How many watched runs run no turn and wait on their own work (<see cref="WatchedRun.WaitsOnOwnWork"/>): an update's drain does not wait on them.</summary>
+    public int BetweenTurns() =>
+        _watched.Values.Count(
+            watched => !watched.Gone && watched.OwnWork?.Invoke() == true);
+
     /// <summary>
     /// Where a session's door says it waits between a transient episode's tries: on Daoris's own
     /// timer, never its agent, so the watch reads it as a call held for the person's permission is read, a wait that is not the agent's,

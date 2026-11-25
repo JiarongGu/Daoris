@@ -403,12 +403,12 @@ public sealed class DriverLoop(
     public Func<string, CancellationToken, Task>? SayUpdate { get; set; }
 
     /// <summary>
-    /// What an update waits on: the driven sessions this loop runs — a quest's, a resume, a carry-on, an intake —
+    /// What an update waits on: the driven sessions this loop runs a turn of — a quest's, a resume, a carry-on, an intake —
     /// the conversations whose turn is in flight, and the runs' plugin steps in flight its evaluation runtime governs. A conversation
-    /// between turns, a parked session and a terminal are idle.
+    /// or driven session between turns (<see cref="DriverWatch.RunsInTurn"/>), a parked session and a terminal are idle.
     /// </summary>
     public UpdateWork Work() => new(
-        _state.Watch?.Running.Running ?? 0,
+        _state.Watch?.RunsInTurn ?? 0,
         Chat?.InFlight ?? 0)
     {
         Steps = _state.Watch?.PluginStepsInFlight ?? 0,

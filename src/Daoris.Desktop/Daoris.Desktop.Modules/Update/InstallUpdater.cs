@@ -3,7 +3,7 @@ using Shenora.Core.Events;
 
 namespace Daoris.Desktop;
 
-/// <summary>What the drain waits on: driven sessions this loop runs, conversations with a turn in flight, and runs' plugin steps.</summary>
+/// <summary>What the drain waits on: driven sessions running a turn, conversations with a turn in flight, and runs' plugin steps.</summary>
 public sealed record UpdateWork(int Driven, int Turns)
 {
     /// <summary>The runs' plugin steps in flight the loop's evaluation runtime governs, their plugin up (<see cref="PluginStepsInFlight"/>).</summary>
@@ -70,7 +70,7 @@ public static class UpdateStates
 /// <summary>
 /// The application's half of an install's update: it watches what is staged and what the person
 /// said of it, holds the loop's starts while it drains, for the machine's bound at most (<see cref="Bound"/>, then deferred), and once
-/// no driven session runs and no turn or plugin step is in flight — or at once on *Update now* — checks the build, starts the launcher
+/// no driven session runs a turn and no conversation's turn or plugin step is in flight — or at once on *Update now* — checks the build, starts the launcher
 /// with <c>--update --after &lt;pid&gt;</c> and closes the application the way the person's close does. At the next start it says once
 /// how the swap ended.
 /// </summary>

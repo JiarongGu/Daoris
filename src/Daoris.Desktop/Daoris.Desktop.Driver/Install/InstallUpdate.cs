@@ -72,7 +72,7 @@ public static class InstallUpdate
     // (`IsHeldForUpdate`) are the work orders' members of this type (`UpdateHolds`): they read the planner's verdicts, which
     // this subdomain does not name. Each caller keeps the spelling `InstallUpdate.HeldFor`.
 
-    /// <summary>Whether the work allows the update: no driven session running, no turn and no run's plugin step in flight.</summary>
+    /// <summary>Whether the work allows the update: no driven turn running (<c>DriverWatch.RunsInTurn</c>), no conversation's turn and no run's plugin step in flight.</summary>
     public static bool Idle(int driven, int turns, int steps) => driven <= 0 && turns <= 0 && steps <= 0;
 
     /// <summary>The request, or null when there is none or it does not read: the default then holds. The launcher's reader.</summary>
