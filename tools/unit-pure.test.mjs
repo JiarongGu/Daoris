@@ -57,7 +57,7 @@ test('a process start is read by name and line: a call by its bare name, not a m
   const acts = readActs(STARTS);
   assert.deepEqual(acts.process.map((site) => [site.line, site.name]), [[2, 'spawnSync'], [4, 'execFileSync']]);
   assert.deepEqual(acts.git.map((site) => [site.line, site.name]), [], 'a method call is no start of the file\'s');
-  assert.equal(readActs(`const made = ${call('spawnSync', "'x'")};`).process.length, 0, 'a file that never imports child_process starts nothing by that name');
+  assert.equal(readActs(`function ${call('spawnSync', 'x')} {}\n${call('spawnSync', "'x'")};`).process.length, 0, 'a name the file declares is not a start of the runtime\'s');
 });
 
 test('git is read in the helpers that start it, a local helper of that name counting only where the file itself starts processes', () => {
@@ -149,4 +149,21 @@ test('the merge tool\'s unit project is held as it was: a git helper it imports 
   const { problems } = checkUnitPure(dir);
   assert.equal(problems.length, 1);
   assert.match(problems[0], /^tools\/merge\/a\.test\.ts:2: reads git through a helper that starts it 2 times \(lines 2, 3\)/);
+});
+
+test('fake timers exempt a file only where they fake setTimeout and let no real time pass: a mention, a toFake list without it, shouldAdvanceTime and a test after useRealTimers are waits', () => {
+  const wait = `await new Promise((r) => ${'setTimeout'}(r, 20));`;
+  const waits = (head) => readActs(`${head}\n${wait}`).clock.length;
+  assert.equal(waits(`vi.${call('useFakeTimers')};`), 0, 'a whole fake clock moves only when the test moves it');
+  assert.equal(waits(`vi.${call('useFakeTimers', "{ toFake: ['setTimeout', 'Date'] }")};`), 0, 'a list that holds setTimeout fakes it');
+  assert.equal(waits('// vi.useFakeTimers() is not used here'), 1, 'a comment naming it fakes nothing');
+  assert.equal(waits(`const note = 'useFakeTimers';`), 1, 'a string naming it fakes nothing');
+  assert.equal(waits(`vi.${call('useFakeTimers', "{ toFake: ['setInterval', 'Date'] }")};`), 1, 'a list that leaves setTimeout real');
+  assert.equal(waits(`vi.${call('useFakeTimers', '{ shouldAdvanceTime: true }')};`), 1, 'a clock that advances with real time');
+  assert.equal(waits(`vi.${call('useFakeTimers')};\nvi.${call('useFakeTimers', "{ toFake: ['Date'] }")};`), 1, 'one call of a file that leaves it real is enough');
+});
+
+test('a process start is read in a file that imports no child_process too, unless the file declares the name itself', () => {
+  assert.deepEqual(readActs(`import { spawn } from './kit.mjs';\n${call('spawn', "'node', []")};`).process.map((site) => site.name), ['spawn'], 'a start through a helper that re-exports it');
+  assert.deepEqual(readActs(`function ${call('spawn', 'x')} { return x; }\n${call('spawn', "'node'")};`).process, [], 'a local function of that name starts nothing');
 });

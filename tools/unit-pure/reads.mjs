@@ -19,6 +19,18 @@ function argumentsAt(code, text, at) {
 /** `text` with each comment and string blanked, its lines kept. */
 export const blanked = (text) => text.replace(LITERALS, (each) => each.replace(/[^\n]/g, ' '));
 
+/** The arguments of each `useFakeTimers` call in `text`, comments and strings aside: one text per call, empty for none. */
+function fakeTimerCalls(text) {
+  const code = blanked(text);
+  return [...code.matchAll(/\buseFakeTimers\s*\(/g)].map((match) => argumentsAt(code, text, match.index + match[0].length - 1));
+}
+
+/** Whether every `useFakeTimers` call of `text` fakes `setTimeout` and lets no real time move it (`shouldAdvanceTime`); false with no call. */
+const fakesWaits = (text) => {
+  const calls = fakeTimerCalls(text);
+  return calls.length > 0 && calls.every((args) => !/\bshouldAdvanceTime\s*:\s*true/.test(args) && (!/\btoFake\b/.test(args) || /['"]setTimeout['"]/.test(args)));
+};
+
 /** Each call of `name` in `text` by that bare name (a method, a declaration, a string or a comment is none): its line and its arguments. */
 export function callsOf(text, name) {
   const code = blanked(text);
@@ -31,7 +43,7 @@ export function callsOf(text, name) {
   return found;
 }
 
-/** The runtime's own starts, a call of which in a file that imports `child_process` starts one. */
+/** The runtime's own starts, counted where a file imports `child_process` or names no function of its own by that name (a helper may re-export one). */
 const STARTS = ['spawn', 'spawnSync', 'execFile', 'execFileSync', 'exec', 'execSync', 'fork'];
 
 /** The helpers that start git for a caller, which a file defining one of its own starts through only where it starts processes itself. */
@@ -51,9 +63,9 @@ export function readActs(text) {
   const spawns = /\bchild_process\b/.test(text);
   const sites = (names, keep = () => true) => names.flatMap((name) => callsOf(text, name).filter((call) => keep(call, name)).map((call) => ({ line: call.line, name }))).sort((x, y) => x.line - y.line);
   return {
-    process: spawns ? sites(STARTS) : [],
+    process: sites(STARTS.filter((name) => spawns || !declared(code, name))),
     git: sites(GIT.filter((name) => spawns || !declared(code, name))),
-    clock: /\buseFakeTimers\b/.test(text) ? [] : sites(CLOCK, (call, name) => name === 'sleep' || !yields(call.args)),
+    clock: fakesWaits(text) ? [] : sites(CLOCK, (call, name) => name === 'sleep' || !yields(call.args)),
   };
 }
 

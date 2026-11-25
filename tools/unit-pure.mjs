@@ -3,7 +3,7 @@
  * because each of those costs what the machine's load makes it cost, not what the code does, and a loaded run fails on it.
  *
  *   node tools/unit-pure.mjs             check the tree against tools/unit-pure.json (exit 0 clean, 1 a breach, 2 tool error)
- *   node tools/unit-pure.mjs --shrink    lower the list to what the tree reads now, never raising a count (the commit hook's writer)
+ *   node tools/unit-pure.mjs --shrink    lower the list to what the tree reads now, never raising a count (run by hand: a count that fell is a red until it is)
  *   node tools/unit-pure.mjs --write     write the list from the tree, each file with the row that owns cutting it (`--row <ROW>`)
  *   node tools/unit-pure.mjs --measure   the tree's unit tests that do one, grouped by folder and act, the largest first
  *

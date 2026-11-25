@@ -127,6 +127,10 @@
       "clock": 1,
       "row": "UNITPURE1"
     },
+    "src/Daoris.Web/src/bridge/system.test.tsx": {
+      "clock": 1,
+      "row": "UNITPURE1"
+    },
     "src/Daoris.Web/src/help/AskDaoris.test.tsx": {
       "clock": 2,
       "row": "UNITPURE1"
@@ -164,6 +168,10 @@
       "row": "UNITPURE1"
     },
     "src/Daoris.Web/src/work/rail/SessionRail.test.tsx": {
+      "clock": 1,
+      "row": "UNITPURE1"
+    },
+    "src/Daoris.Web/src/work/review/DiffPane.loading.test.tsx": {
       "clock": 1,
       "row": "UNITPURE1"
     },
