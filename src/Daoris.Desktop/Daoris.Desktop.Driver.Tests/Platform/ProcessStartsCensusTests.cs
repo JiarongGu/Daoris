@@ -502,7 +502,7 @@ public sealed class ProcessStartsCensusTests
         foreach (var project in Projects)
         {
             var folder = Path.Combine(root, project);
-            foreach (var file in Directory.EnumerateFiles(folder, "*.cs", SearchOption.AllDirectories))
+            foreach (var file in SourceFiles.Under(folder, "*.cs"))
             {
                 if (file.Contains($"{Path.DirectorySeparatorChar}obj{Path.DirectorySeparatorChar}")
                     || file.Contains($"{Path.DirectorySeparatorChar}bin{Path.DirectorySeparatorChar}"))

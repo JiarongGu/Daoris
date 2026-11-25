@@ -49,7 +49,7 @@ public sealed class NoConsoleWindowTests
             var folder = Path.Combine(root, project);
             if (!Directory.Exists(folder)) continue;
 
-            foreach (var file in Directory.EnumerateFiles(folder, "*.cs", SearchOption.AllDirectories))
+            foreach (var file in SourceFiles.Under(folder, "*.cs"))
             {
                 if (file.Contains($"{Path.DirectorySeparatorChar}obj{Path.DirectorySeparatorChar}")
                     || file.Contains($"{Path.DirectorySeparatorChar}bin{Path.DirectorySeparatorChar}"))
@@ -143,7 +143,7 @@ public sealed class NoConsoleWindowTests
             var folder = Path.Combine(root, project);
             if (!Directory.Exists(folder)) continue;
 
-            foreach (var file in CensusScope.Judged(typeof(NoConsoleWindowTests), Directory.EnumerateFiles(folder, "*.cs", SearchOption.AllDirectories)))
+            foreach (var file in CensusScope.Judged(typeof(NoConsoleWindowTests), SourceFiles.Under(folder, "*.cs")))
             {
                 if (file.Contains($"{Path.DirectorySeparatorChar}obj{Path.DirectorySeparatorChar}")
                     || file.Contains($"{Path.DirectorySeparatorChar}bin{Path.DirectorySeparatorChar}"))

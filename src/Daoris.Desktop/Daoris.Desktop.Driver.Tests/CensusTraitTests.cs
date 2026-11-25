@@ -11,7 +11,7 @@ namespace Daoris.Desktop.Driver.Tests;
 public sealed class CensusTraitTests
 {
     private static readonly Regex Reads = new(
-        @"SourceFiles\.All\(|SourceFiles\.Project\(|(Enumerate|Get)Files\([^;]*""\*\.(cs|ts|tsx|mjs)""", RegexOptions.CultureInvariant);
+        @"SourceFiles\.All\(|SourceFiles\.Project\(|(?:(?:Enumerate|Get)Files|SourceFiles\.Under)\([^;]*""\*\.(cs|ts|tsx|mjs)""", RegexOptions.CultureInvariant);
 
     internal static readonly string[] Behaviour = ["ReviewGraphCensusTests", "ProviderConformanceTests"];
 
@@ -54,6 +54,7 @@ public sealed class CensusTraitTests
         const string Walks = "{\n    [Fact]\n    public void T() => SourceFiles.All(\"P\", \"*.cs\");\n}\n";
 
         Assert.Equal(["A.cs: ATests"], Missing([("A.cs", "public sealed class ATests\n" + Walks)]));
+        Assert.Equal(["G.cs: GTests"], Missing([("G.cs", "public sealed class GTests\n" + Walks.Replace("SourceFiles.All", "SourceFiles.Under"))]));
         Assert.Empty(Missing([("B.cs", "[Trait(Category.Name, Category.Census)]\npublic sealed class BTests\n" + Walks)]));
         Assert.Empty(Missing([("C.cs", "[Trait(Category.Name, Category.Process)]\npublic sealed class CTests\n" + Walks)]));
         Assert.Empty(Missing([("D.cs", "public static class DHelper\n{\n    public static object Go() => SourceFiles.All(\"P\", \"*.cs\");\n}\n")]));

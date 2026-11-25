@@ -382,8 +382,10 @@ one not yet reading through `CensusScope`) judges the tree; each project's censu
 census whose rule judges a file on its own text is diff-able: it walks through `CensusScope.Judged` (or `SourceCensus.Driver(type)`),
 a list it holds both ways judges the listed members of the scope's files (`Listed`, `Judged` with the member's path), and a count of the
 walk's reach is held by a run with no scope. A class whose facts mix is marked by its per-file ones; a fact across files in it
-(a uniqueness, a count, a structure of holders) reads the whole tree. The text censuses read each source once, and each one's
-comment-stripped text once, through `SourceTexts`. What the driver's censuses share (the say door's scan, the stripped texts, the
+(a uniqueness, a count, a structure of holders) reads the whole tree. The driver's tests walk each folder of the sources once a run,
+through `SourceFiles.Under` (a desktop project's through `SourceFiles.All`; a project's `bin/` and `obj/` beside its `.csproj` are
+no source), and read each source once, and each one's comment-stripped text once, through `SourceTexts`; `SourceTextsTests` names a
+test that walks the sources or reads a found source itself. What the driver's censuses share (the say door's scan, the stripped texts, the
 driver's compile, the reference map, and under a scope the compiles it reaches) is made once before the first class runs, by the
 assembly's runner (`CensusWarm`; xUnit 2 has no assembly fixture), waiting at most 30 s so the run's 60 s hang bound still sees a case
 start; so a case's recorded time is its own work, never another's wait for the warm-up. The binding stays the semantic classes'

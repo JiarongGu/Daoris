@@ -134,9 +134,11 @@ export function srcReads(text: string, files: readonly string[]): string[] {
       continue;
     }
     // A folder searched for one name at any depth (`Directory.EnumerateFiles(Path.Combine(…, "src"), "documents.ts",
-    // SearchOption.AllDirectories)`) reads the file of that name wherever it lies under it, and nothing else of the folder.
+    // SearchOption.AllDirectories)`, or `SourceFiles.Under`) reads the file of that name wherever it lies under it, and nothing else of the folder.
     const folder = segments.join('/');
-    const named = /^\s*\)\s*,\s*"([^"*?\\/]+)"\s*,\s*SearchOption\.AllDirectories\b/.exec(text.slice(match.index + match[0].length));
+    const after = text.slice(match.index + match[0].length);
+    const named = /^\s*\)\s*,\s*"([^"*?\\/]+)"\s*,\s*SearchOption\.AllDirectories\b/.exec(after)
+      ?? (/\bSourceFiles\.Under\(\s*Path\.Combine\([^"]*$/.test(text.slice(0, match.index)) ? /^\s*\)\s*,\s*"([^"*?\\/]+)"\s*\)/.exec(after) : null);
     const found = named ? files.filter((file) => file.startsWith(`${folder}/`) && file.split('/').at(-1) === named[1]) : [];
     reads.push(...(named ? (found.length ? found : [`${folder}/${named[1]}`]) : [`${folder}/probe.txt`]));
   }

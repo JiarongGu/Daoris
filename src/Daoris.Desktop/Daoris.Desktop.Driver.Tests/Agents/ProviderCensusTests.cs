@@ -406,7 +406,7 @@ public sealed class ProviderCensusTests
         var root = EveryChildIsHandedTheToolsTests.SourceRoot();
         foreach (var project in Projects)
         {
-            foreach (var file in Directory.EnumerateFiles(Path.Combine(root, project), "*.cs", SearchOption.AllDirectories))
+            foreach (var file in SourceFiles.Under(Path.Combine(root, project), "*.cs"))
             {
                 if (file.Contains($"{Path.DirectorySeparatorChar}obj{Path.DirectorySeparatorChar}")
                     || file.Contains($"{Path.DirectorySeparatorChar}bin{Path.DirectorySeparatorChar}"))

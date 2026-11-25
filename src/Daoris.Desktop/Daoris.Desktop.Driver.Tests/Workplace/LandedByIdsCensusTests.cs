@@ -31,7 +31,7 @@ public sealed class LandedByIdsCensusTests
         var root = Path.Combine(WorkspaceRoot.Folder, "src", "Daoris.Desktop", "Daoris.Desktop.Driver");
         var pattern = new Regex(@"\b(UnlandedInTreeAsync|UnlandedHereAsync|UnlandedAsync)\s*\(");
         var found = new List<string>();
-        foreach (var path in CensusScope.Judged(typeof(LandedByIdsCensusTests), Directory.EnumerateFiles(root, "*.cs", SearchOption.AllDirectories)))
+        foreach (var path in CensusScope.Judged(typeof(LandedByIdsCensusTests), SourceFiles.Under(root, "*.cs")))
         {
             var relative = Path.GetRelativePath(root, path).Replace('\\', '/');
             if (relative.StartsWith("obj/", StringComparison.Ordinal) || relative.StartsWith("bin/", StringComparison.Ordinal)) continue;

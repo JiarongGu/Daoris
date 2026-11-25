@@ -38,7 +38,7 @@ public sealed class GitRemotesTests
         {
             var folder = Path.Combine(root, project);
             if (!Directory.Exists(folder)) continue;
-            foreach (var file in Directory.EnumerateFiles(folder, "*.cs", SearchOption.AllDirectories))
+            foreach (var file in SourceFiles.Under(folder, "*.cs"))
             {
                 if (file.Contains($"{Path.DirectorySeparatorChar}obj{Path.DirectorySeparatorChar}", StringComparison.Ordinal)
                     || file.Contains($"{Path.DirectorySeparatorChar}bin{Path.DirectorySeparatorChar}", StringComparison.Ordinal)
@@ -47,7 +47,7 @@ public sealed class GitRemotesTests
                     continue;
                 }
 
-                var source = Regex.Replace(File.ReadAllText(file), @"//[^\n]*", "");
+                var source = Regex.Replace(SourceTexts.Of(file), @"//[^\n]*", "");
                 if (Regex.IsMatch(source, @"""get-url""|""remote""\s*,\s*""-v""|remote -v|remote get-url")) readers.Add(Path.GetRelativePath(root, file));
             }
         }
@@ -58,7 +58,7 @@ public sealed class GitRemotesTests
     [Fact]
     public void Daoriss_fetch_of_the_line_reads_origin_through_the_reader()
     {
-        var source = File.ReadAllText(SourceFiles.Driver("TreeRefs.cs"));
+        var source = SourceTexts.Of(SourceFiles.Driver("TreeRefs.cs"));
 
         Assert.Contains("GitRemotes.AddressOf(root, \"origin\"", source, StringComparison.Ordinal);
     }

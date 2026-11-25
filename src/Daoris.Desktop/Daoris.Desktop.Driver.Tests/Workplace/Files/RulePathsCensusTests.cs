@@ -32,11 +32,11 @@ public sealed class RulePathsCensusTests
         var site = new Regex(@"\b(?:rule|Rule|entry|hit\.Rule|each\.Rule|later\.Rule|winner\.Rule)\.Paths\b");
         var unread = new List<string>();
         var found = 0;
-        foreach (var path in Directory.EnumerateFiles(root, "*.cs", SearchOption.AllDirectories))
+        foreach (var path in SourceFiles.Under(root, "*.cs"))
         {
             var relative = Path.GetRelativePath(root, path).Replace('\\', '/');
             if (relative.Contains("/obj/") || relative.Contains("/bin/")) continue;
-            foreach (var line in File.ReadLines(path).Where(line => site.IsMatch(line) && !line.TrimStart().StartsWith("///", StringComparison.Ordinal)))
+            foreach (var line in SourceTexts.Of(path).ReplaceLineEndings("\n").Split('\n').Where(line => site.IsMatch(line) && !line.TrimStart().StartsWith("///", StringComparison.Ordinal)))
             {
                 found++;
                 if (line.Contains("GitPattern.", StringComparison.Ordinal) || line.Contains(".Matches(", StringComparison.Ordinal)) continue;

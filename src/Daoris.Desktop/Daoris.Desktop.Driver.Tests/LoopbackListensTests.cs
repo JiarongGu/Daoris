@@ -43,7 +43,7 @@ public sealed class LoopbackListensTests
             .SelectMany(folder => Directory.EnumerateDirectories(folder, "*Tests"))
             .ToList();
         var all = projects
-            .SelectMany(project => Directory.EnumerateFiles(project, "*.cs", SearchOption.AllDirectories)
+            .SelectMany(project => SourceFiles.Under(project, "*.cs")
                 .Where(path => Path.GetRelativePath(project, path).Split(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar)[0] is not ("bin" or "obj")))
             // This file names the patterns it refuses, in its cases and its sentences.
             .Where(path => !path.EndsWith("LoopbackListensTests.cs", StringComparison.Ordinal))

@@ -219,6 +219,8 @@ test('a folder searched for one name at any depth reads that file wherever it li
   // A name found nowhere is still that name's read, and a pattern is no name: the folder is read whole, as before.
   assert.deepEqual(srcReads(byName.replace('"documents.ts"', '"gone.ts"'), files), ['src/Daoris.Cli/src/gone.ts']);
   assert.deepEqual(srcReads(byName.replace('"documents.ts"', '"*.ts"'), files), ['src/Daoris.Cli/src/probe.txt']);
+  const shared = 'var source = SourceTexts.Of(SourceFiles.Under(Path.Combine(WorkspaceRoot(), "src", "Daoris.Cli", "src"), "documents.ts").Single());';
+  assert.deepEqual(srcReads(shared, files), ['src/Daoris.Cli/src/layout/documents.ts']);
   // What the scan then asks of the lane table: a change to the roles' file runs the service's suite (ORIENT2e2).
   assert.ok(runs(['src/Daoris.Cli/src/layout/documents.ts']).includes(service));
 });

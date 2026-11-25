@@ -15,10 +15,10 @@ public sealed partial class HolderWordCensusTests
         var branching = new List<string>();
         foreach (var folder in new[] { "Workflows/Kinds", "Workflows/Nodes", "Workflows/Cast", "Workflows/Domain", "Roles" })
         {
-            foreach (var file in Directory.EnumerateFiles(Path.Combine(driver, folder), "*.cs", SearchOption.AllDirectories))
+            foreach (var file in SourceFiles.Under(Path.Combine(driver, folder), "*.cs"))
             {
                 if (Path.GetFileName(file) == "HolderWords.cs") continue;
-                if (Compared().IsMatch(File.ReadAllText(file))) branching.Add(Path.GetRelativePath(driver, file));
+                if (Compared().IsMatch(SourceTexts.Of(file))) branching.Add(Path.GetRelativePath(driver, file));
             }
         }
 

@@ -32,7 +32,7 @@ public sealed class PickerCensusTests
     [Fact]
     public void Every_picker_is_the_kits_dialog_through_the_two_doors_the_page_has()
     {
-        var main = File.ReadAllText(SourceFiles.Find("Daoris.Desktop.App", "Program.cs"));
+        var main = SourceTexts.Of(SourceFiles.Find("Daoris.Desktop.App", "Program.cs"));
 
         Assert.Equal(1, Regex.Matches(main, @"\.OpenFileAsync\(").Count);
         Assert.Equal(1, Regex.Matches(main, @"\.OpenFolderAsync\(").Count);
@@ -41,7 +41,7 @@ public sealed class PickerCensusTests
     [Fact]
     public void Every_window_thread_is_a_single_threaded_apartment_and_its_exceptions_reach_the_log_through_the_kits_sink()
     {
-        var main = File.ReadAllText(SourceFiles.Find("Daoris.Desktop.App", "Program.cs"));
+        var main = SourceTexts.Of(SourceFiles.Find("Daoris.Desktop.App", "Program.cs"));
         Assert.Matches(@"\[STAThread\]\s+private static void Main", main);
         Assert.Contains("OnUnhandledException = report =>", main);
         Assert.Contains("ShowCrashDialog = false", main);

@@ -65,7 +65,7 @@ public sealed partial class HelpRoomSettingsPlacesTests
 
         foreach (var file in Texts())
         {
-            var text = File.ReadAllText(file);
+            var text = SourceTexts.Of(file);
             for (var at = text.IndexOf("Settings → ", StringComparison.Ordinal); at >= 0;
                 at = text.IndexOf("Settings → ", at + 1, StringComparison.Ordinal))
             {
@@ -88,7 +88,7 @@ public sealed partial class HelpRoomSettingsPlacesTests
             .. SourceFiles.All("Daoris.Desktop.OwnerStandIn", "*.cs"), .. SourceFiles.All("Daoris.Desktop.PieceStart", "*.cs"),
         ];
         foreach (var file in desktop) yield return file;
-        foreach (var file in Directory.EnumerateFiles(Path.Combine(Root, "src", "Daoris.Service"), "*.cs", SearchOption.AllDirectories))
+        foreach (var file in SourceFiles.Under(Path.Combine(Root, "src", "Daoris.Service"), "*.cs"))
         {
             var relative = Path.GetRelativePath(Root, file).Replace('\\', '/');
             if (relative.Contains("/obj/") || relative.Contains("/bin/") || relative.Contains(".Tests/")) continue;

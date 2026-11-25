@@ -26,7 +26,7 @@ public sealed class CourseCensusTests
 
     /// <summary>Every production source of <see cref="Projects"/>, never a build's output.</summary>
     internal static IEnumerable<string> ProductionFiles() => Projects
-        .SelectMany(project => Directory.EnumerateFiles(Path.Combine(Root, project), "*.cs", SearchOption.AllDirectories))
+        .SelectMany(project => SourceFiles.Under(Path.Combine(Root, project), "*.cs"))
         .Where(path => !path.Contains(Path.DirectorySeparatorChar + "obj" + Path.DirectorySeparatorChar)
             && !path.Contains(Path.DirectorySeparatorChar + "bin" + Path.DirectorySeparatorChar));
 

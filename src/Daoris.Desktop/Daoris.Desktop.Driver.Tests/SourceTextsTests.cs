@@ -1,8 +1,10 @@
+using System.Text.RegularExpressions;
+
 namespace Daoris.Desktop.Driver.Tests;
 
-/// <summary>The run's one scan of the sources: two censuses that read the same files read each from disk once.</summary>
+/// <summary>The run's one scan of the sources: each file is walked and read once, and no test walks or reads past it.</summary>
 [Trait(Category.Name, Category.Census)]
-public sealed class SourceTextsTests
+public sealed partial class SourceTextsTests
 {
     [Fact]
     public void Two_censuses_in_one_run_read_each_driver_file_once()
@@ -26,4 +28,70 @@ public sealed class SourceTextsTests
         var source = SourceTexts.Of(SourceFiles.All(SourceFiles.DriverProject, "*.cs").First());
         Assert.Same(SourceTexts.Code(source), SourceTexts.Code(source));
     }
+
+    [Fact]
+    public void A_walk_of_the_sources_or_a_read_of_a_found_source_outside_the_shared_scan_is_named()
+    {
+        const string Planted = """
+            var all = Directory.EnumerateFiles(root, "*.cs", SearchOption.AllDirectories);
+            var one = Directory.EnumerateFiles(Tests, suite + ".cs", SearchOption.AllDirectories)
+                .Single();
+            var text = File.ReadAllText(SourceFiles.Driver("Landing.cs"));
+            var listed = Directory.GetFiles(_home, "*.json");
+            var home = Directory.EnumerateFiles(home, "*", SearchOption.AllDirectories);
+            var shared = SourceFiles.Under(root, "*.cs").Select(SourceTexts.Of);
+            var found = SourceTexts.Of(SourceFiles.Driver("Landing.cs"));
+            var aside = Directory.EnumerateFiles(site, "mine.md", SearchOption.AllDirectories).Single();
+            """;
+
+        Assert.Equal(["A.cs:1", "A.cs:2", "A.cs:4"], OwnWalks([("A.cs", Planted)]));
+        Assert.Empty(OwnWalks([("SourceFiles.cs", Planted)]));
+    }
+
+    [Fact]
+    public void No_test_of_this_project_walks_the_sources_or_reads_a_found_source_itself()
+    {
+        var files = SourceFiles.All(SourceFiles.DriverTestsProject, "*.cs").Select(path => (Path.GetFileName(path), SourceTexts.Of(path)));
+
+        Assert.Empty(OwnWalks(files));
+    }
+
+    /// <summary>A test's own walk of the sources (a wildcard or built name, at any depth) or read of a found source, as <c>file:line</c>.</summary>
+    internal static IReadOnlyList<string> OwnWalks(IEnumerable<(string File, string Text)> files)
+    {
+        var found = new List<string>();
+        foreach (var (file, text) in files)
+        {
+            if (file is "SourceFiles.cs" or "SourceTextsTests.cs") continue;
+            var code = SourceTexts.Code(text);
+            foreach (Match walk in Walk().Matches(code))
+            {
+                var arguments = Arguments(code, walk.Index + walk.Length);
+                if (arguments.Contains("SearchOption.AllDirectories", StringComparison.Ordinal) && SourcePattern().IsMatch(arguments)) found.Add(At(file, code, walk.Index));
+            }
+
+            foreach (Match read in FoundRead().Matches(code)) found.Add(At(file, code, read.Index));
+        }
+
+        return found;
+    }
+
+    private static string Arguments(string code, int open)
+    {
+        var depth = 1;
+        var at = open;
+        for (; at < code.Length && depth > 0; at++) depth += code[at] switch { '(' => 1, ')' => -1, _ => 0 };
+        return code[open..at];
+    }
+
+    private static string At(string file, string code, int index) => $"{file}:{code.AsSpan(0, index).Count('\n') + 1}";
+
+    [GeneratedRegex(@"\bDirectory\.(?:Enumerate|Get)Files\(")]
+    private static partial Regex Walk();
+
+    [GeneratedRegex(@"""[^""]*\*[^""]*\.(?:cs|ts\*?|tsx|mjs|md|json|\*)""|\+\s*""\.(?:cs|ts|tsx|mjs|md|json)""")]
+    private static partial Regex SourcePattern();
+
+    [GeneratedRegex(@"\bFile\.Read(?:AllText|AllLines|Lines)\(\s*SourceFiles\.")]
+    private static partial Regex FoundRead();
 }

@@ -256,8 +256,7 @@ public sealed class AskWorkTests
     [Fact]
     public void An_ask_is_named_as_the_sender_the_service_spells()
     {
-        var service = File.ReadAllText(Directory.EnumerateFiles(
-            Path.Combine(Daoris.Desktop.Driver.Tests.WorkspaceRoot.Folder, "src", "Daoris.Service", "Daoris.Service.Core"), "AskDesk.cs", SearchOption.AllDirectories).Single());
+        var service = SourceTexts.Of(SourceFiles.Under(Path.Combine(Daoris.Desktop.Driver.Tests.WorkspaceRoot.Folder, "src", "Daoris.Service", "Daoris.Service.Core"), "AskDesk.cs").Single());
 
         Assert.Contains("SenderOf(string askId) => $\"ask #{askId}\";", service, StringComparison.Ordinal);
         Assert.Equal("ask #a1b2c3", AskWork.SenderOf("a1b2c3"));
