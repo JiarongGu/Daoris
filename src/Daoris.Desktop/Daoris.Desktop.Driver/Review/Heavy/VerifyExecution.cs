@@ -329,15 +329,15 @@ internal sealed class VerifyExecution(string home, VerifySend send, CandidateJob
 
     private string? Carried(IReadOnlyList<string> carried) => GateProgress.Words([.. carried.Where(name => name != _loadGate)]);
 
-    /// <summary>A reached failure on timeouts under load runs its red classes again alone at a quiet slot (<see cref="LoadFailures"/>); null where it is no load failure and stands.</summary>
+    /// <summary>A reached failure under load runs its red classes again alone at a quiet slot (<see cref="LoadFailures"/>); null where it is no load failure and stands.</summary>
     private async Task<VerifyResult?> LoadAsync(VerifyResult ran, FailedRun failed, string mode, CancellationToken ct)
     {
         if (_loadChecked || _seen is not { Loaded: true } seen || ReadText(failed.Log) is not { } text) return null;
         _loadChecked = true;
-        if (LoadFailures.Timeouts(text, failed.Marker) is not { } names) return null;
+        if (LoadFailures.Red(text, failed.Marker) is not { } names) return null;
         if (_reached is null || _baseRef is null || _reached.RerunFor(names, _baseRef) is not { } command) return null;
 
-        world.Said.WriteLine($"verify: {string.Join(", ", names)} timed out while the machine was loaded ({seen.Words}); they run again alone at a quiet slot before the result counts.");
+        world.Said.WriteLine($"verify: {string.Join(", ", names)} failed while the machine was loaded ({seen.Words}); they run again alone at a quiet slot before the result counts.");
         var tree = send.Tree ?? Path.Combine(VerifyFiles.LinesFolder(home), "trees", slot);
         AdmissionHold hold;
         try
@@ -357,7 +357,7 @@ internal sealed class VerifyExecution(string home, VerifySend send, CandidateJob
 
         using (hold)
         {
-            var (quiet, stop) = await QuietAsync(hold, names, seen, ran, ct).ConfigureAwait(false);
+            var (quiet, stop) = await QuietAsync(hold, names, seen, ran, LoadFailures.Timeouts(text, failed.Marker) is not null, ct).ConfigureAwait(false);
             if (quiet is null) return stop;
 
             var log = Path.Combine(_folder, "load.log");
@@ -371,7 +371,7 @@ internal sealed class VerifyExecution(string home, VerifySend send, CandidateJob
             }
             catch (DriverException error)
             {
-                return Unknown($"the classes that timed out under load would not run again alone: {error.Message}") with { Code = VerifyResult.Unrun };
+                return Unknown($"the classes that failed under load would not run again alone: {error.Message}") with { Code = VerifyResult.Unrun };
             }
             finally
             {
@@ -383,7 +383,7 @@ internal sealed class VerifyExecution(string home, VerifySend send, CandidateJob
             if (exit != 0)
             {
                 var red = ReachedVerdict.Judge(send.Invocation, send.Commit, exit.Value, again, log, failed.Marker, home);
-                if (red.Verdict == VerifyVerdicts.Unknown) return Unknown($"the classes that timed out under load could not be run again alone: {red.Why}") with { Code = VerifyResult.Unrun };
+                if (red.Verdict == VerifyVerdicts.Unknown) return Unknown($"the classes that failed under load could not be run again alone: {red.Why}") with { Code = VerifyResult.Unrun };
                 if (LoadFailures.Timeouts(again, failed.Marker) is not null && LoadFailures.Read(home, world, hold.Id) is { Loaded: true } now)
                 {
                     return Unknown(LoadFailures.Again(names, seen, now)) with { Code = VerifyResult.Load };
@@ -410,7 +410,7 @@ internal sealed class VerifyExecution(string home, VerifySend send, CandidateJob
     }
 
     /// <summary>Waits, holding <paramref name="hold"/>, for a quiet slot: the load then, or the result to answer with.</summary>
-    private async Task<(LoadReading? Quiet, VerifyResult? Stop)> QuietAsync(AdmissionHold hold, IReadOnlyList<string> names, LoadReading seen, VerifyResult ran, CancellationToken ct)
+    private async Task<(LoadReading? Quiet, VerifyResult? Stop)> QuietAsync(AdmissionHold hold, IReadOnlyList<string> names, LoadReading seen, VerifyResult ran, bool timedOut, CancellationToken ct)
     {
         var left = send.Bound - world.Clock.GetElapsedTime(_began);
         var allowed = left <= TimeSpan.Zero ? TimeSpan.Zero : TimeSpan.FromTicks(Math.Min(world.QuietWait.Ticks, left.Ticks / 2));
@@ -427,6 +427,13 @@ internal sealed class VerifyExecution(string home, VerifySend send, CandidateJob
             var waited = world.Clock.GetElapsedTime(started);
             if (waited >= allowed)
             {
+                if (!timedOut)
+                {
+                    var work = LoadFailures.Unrerun(names, seen, waited);
+                    world.Said.WriteLine($"verify: {work}");
+                    return (null, Told(ran, work));
+                }
+
                 var words = LoadFailures.Waited(names, seen, waited);
                 world.Said.WriteLine($"verify: {words}");
                 return (null, Unknown(words) with { Code = VerifyResult.Load });

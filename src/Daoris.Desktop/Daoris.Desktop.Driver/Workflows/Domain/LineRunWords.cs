@@ -35,7 +35,7 @@ public static class LineRunWords
         VerifyResult.Bound => "it ran past its bound",
         VerifyResult.Stopped => "it was stopped",
         VerifyResult.Busy => "the runner stayed busy",
-        VerifyResult.Load => "its tests timed out while the machine was loaded, and no quiet slot came to run them again alone",
+        VerifyResult.Load => "its tests failed while the machine was loaded, and no quiet slot came to run them again alone",
         LostChecks.Code => "its run was cut off, and cut off again when it was run once more",
         _ => "nothing says what became of it",
     };

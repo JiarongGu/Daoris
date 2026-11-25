@@ -58,6 +58,19 @@ public sealed class LoadFailuresTests
     }
 
     [Fact]
+    public void Any_red_class_is_run_again_alone_under_load_whatever_its_failure_said()
+    {
+        var assertion = Log("FAIL X.Y > adds\nAssertionError: expected 1 to be 2", "dotnet|X.Y");
+        Assert.Equal(["X.Y"], LoadFailures.Red(assertion, Marker));
+
+        var mixed = Log("FAIL X.Y > waits\nError: Test timed out in 10000ms.\n\nFAIL Q.R > adds\nAssertionError: expected 1 to be 2", "dotnet|X.Y", "dotnet|Q.R");
+        Assert.Equal(["X.Y", "Q.R"], LoadFailures.Red(mixed, Marker));
+
+        Assert.Null(LoadFailures.Red(Log("nothing red"), Marker));
+        Assert.Null(LoadFailures.Red("no outcome line, but AssertionError", Marker));
+    }
+
+    [Fact]
     public void A_reached_runner_runs_classes_again_only_by_a_command_its_declaration_names()
     {
         var declared = ReachedRunner.Of("""{ "reached": { "run": "x --base {base}", "rerun": "x --classes {classes} --base {base}" } }""")!;
