@@ -446,13 +446,8 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     answers (CHECKUNBOUND1): its tree's preparation or a `regenerate` did not finish for a cause of the machine's (`unprepared`; a
     `regenerate` whose compiler named errors is the work's failure instead, see below), the runner's own run held its lock through
     every offer (`busy`), its process was lost again on its rerun (`lost`, its log's tail kept on the settled attempt), it said it was done and
-<<<<<<< HEAD
-    named no verdict (`no-outcome`), or the one table refused its verdict (that refusal's code, its line saying the verdict did not bind): each
-    is asked again by `UnrunChecks`, three on one binding, then held `unsaid` as above. A check an older build held for one of these causes, with no
-=======
     named no verdict (`no-outcome`), or the one table refused its verdict as bound to no work (`not-bound`, `no-binding`, `stale-attempt`, `no-acceptance` where the node holds no binding, its line saying the verdict did not bind; a contract's refusal stays a held attempt): each
-    is asked again by `UnrunChecks`, three on one binding, then given up as said. A check an older build held for one of these causes, with no
->>>>>>> dc57f51979 (fix(driver): an unbuilt tree is read from errors at a source place, five-digit codes too; only a verdict bound to no work is asked again (CHECKUNBOUND1 review))
+    is asked again by `UnrunChecks`, three on one binding, then held `unsaid` as above. A check an older build held for one of these causes, with no
     word on it and its node still on that attempt, is asked again the same way at the next look (`UnrunChecks.Released`), the reader of
     records already written, ending when no install holds one. Only an unknown whose cause is the person's stays a held attempt from the first: a change to
     the gates' commands they have not accepted (`changed`), their own stop (`stopped`), and a check that ran past its bound (`bound`), which a

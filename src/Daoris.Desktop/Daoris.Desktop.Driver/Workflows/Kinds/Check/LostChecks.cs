@@ -3,8 +3,8 @@ namespace Daoris.Driver;
 /// <summary>
 /// A check whose verification's process is gone when Daoris asks after it: no result and no job of it left (a restart, an update, a crash
 /// cut it off; an update or a stop of driving that closed its executor says so in its folder and is no loss to count). It is run once more under its key, as the same attempt; lost again with nothing to explain it, it settles with the tail of its newest
-/// log and is asked again as a new attempt (<see cref="UnrunChecks"/>), never sent a third time under its key, held for the person or taken
-/// as a red of the work. It holds no slot: the machine's verification and heavy-run slots are its process's, gone with it.
+/// log and is asked again as a new attempt (<see cref="UnrunChecks"/>, held only once its asks are spent), never sent a third time under its
+/// key or taken as a red of the work. It holds no slot: the machine's verification and heavy-run slots are its process's, gone with it.
 /// </summary>
 public static class LostChecks
 {
