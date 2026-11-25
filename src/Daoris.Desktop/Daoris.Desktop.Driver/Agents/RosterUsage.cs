@@ -213,7 +213,6 @@ internal sealed class RosterUsage(HarnessRoster roster)
         }
     }
 
-    /// <summary>The account's reading puts a window at 100% before its reset, so a read can say nothing new: a press still asks.</summary>
     private bool AtLimit(string owner, string account, DateTimeOffset now) =>
         AccountRotation.Spent(owner, account, new AccountFacts(Said: SaidOf(owner, account, now)), now) is not null;
 
@@ -255,7 +254,6 @@ internal sealed class RosterUsage(HarnessRoster roster)
             await using var held = await ProbeLock.TakeAsync(ProbeLock.PathOf(roster.Home, owner, account), ct: ct).ConfigureAwait(false);
             if (held is null || roster.Busy(owner, account)) return null;
 
-            // A read starts no refresh and undoes a refused one (ReadGuard).
             var store = (roster.AccountAgentOf(adapter) ?? roster.AgentOf(adapter))?.Accounts.StoredSignIn;
             var home = HarnessSettings.ProfileHome(roster.Home, owner, account);
             if (ReadGuard.WouldRefresh(store, home, roster.Clock())) return null;
