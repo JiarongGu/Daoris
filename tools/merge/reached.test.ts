@@ -8,10 +8,11 @@ import type { ReachedUnit } from './reached.ts';
 import { withReport } from './reached-reports.ts';
 import { tiersOf } from './tiers.ts';
 import { declared, repoRoot } from './repo-gates.ts';
+import { repoBudgetSource } from './repo-home.ts';
 
 // test-map: strings name paths as data — the units' files are the census's answers, given here as data
 
-const processSuites = processSuitesOf(readDeclared(repoRoot));
+const processSuites = processSuitesOf(readDeclared(repoRoot, repoBudgetSource()));
 const tiers = tiersOf(readFileSync(join(repoRoot, 'daoris.gates.json'), 'utf8'));
 const [driverProcess, driverRehearsals] = declared('driver-process', 'driver-rehearsals');
 

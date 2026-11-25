@@ -11,7 +11,10 @@ test('the repository is named by the folder of its main checkout, from a linked 
   try {
     const main = join(base, 'Named');
     mkdirSync(main);
-    const git = (cwd: string, ...args: string[]) => spawnSync('git', args, { cwd, encoding: 'utf8', windowsHide: true });
+    const git = (cwd: string, ...args: string[]) => {
+      const run = spawnSync('git', args, { cwd, encoding: 'utf8', windowsHide: true });
+      assert.equal(run.status, 0, `git ${args.join(' ')}: ${run.stderr}`);
+    };
     git(main, 'init', '-q');
     git(main, '-c', 'user.name=t', '-c', 'user.email=t@t', 'commit', '--no-verify', '--allow-empty', '-q', '-m', 'x');
     const linked = join(base, 'tree-one');
