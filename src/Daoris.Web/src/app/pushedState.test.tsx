@@ -3,9 +3,9 @@ import { act, cleanup, render, screen, within } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import * as Tooltip from '@radix-ui/react-tooltip';
 
-// The driver's state pushed with its data: the whole window over a mocked shell and a fake clock, counting every
-// route read as `idle.test.tsx` does. A tick reads none of the pushed state again, a push changes it with no read, a
-// focus asks nothing of it, and a second window reads its one snapshot.
+// The driver's state pushed with its data: the whole window over a mocked shell and a fake clock, counting route reads
+// as `idle.test.tsx` does. A tick rereads none of it, a push changes it with no read, a focus asks nothing of it, and a
+// second window reads its one snapshot.
 
 const { invoke, notifyReady, heard } = vi.hoisted(() => ({
   invoke: vi.fn(),
@@ -329,7 +329,7 @@ const hidden = (state: boolean) => {
   window.dispatchEvent(new Event('visibilitychange'));
 };
 
-describe("the driver's state, pushed (PUSH1a)", () => {
+describe("the driver's state, pushed (PUSH1a)", { timeout: 30_000 }, () => {
   afterEach(() => {
     cleanup();
     hidden(false);

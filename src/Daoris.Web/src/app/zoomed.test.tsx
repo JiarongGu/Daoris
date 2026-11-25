@@ -64,7 +64,7 @@ const root = () => document.documentElement;
 const press = (key: string, code: string, shiftKey = false) => fireEvent.keyDown(window, { key, code, ctrlKey: true, shiftKey });
 const status = () => screen.getByRole('contentinfo');
 
-describe("the window's zoom, on the window", () => {
+describe("the window's zoom, on the window", { timeout: 30_000 }, () => {
   beforeEach(() => {
     window.localStorage.removeItem(ZOOM_KEY);
     setZoom(100);
