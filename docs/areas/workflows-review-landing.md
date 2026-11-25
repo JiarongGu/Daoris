@@ -442,7 +442,16 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     work's session and never a red round, and one that cannot be told from the work's after three asks is given up by Daoris's stop with its
     reason, never put to the person (rule 1 of the doctrine: work that cannot be finished is reported as gave up). A failure with no timeout in
     its log, or on a quiet machine, is the work's as before.
-    An unknown with a cause of its own (`changed`, `bound`, `stopped`, `busy`, `unprepared`) is a held attempt as ever. A step's start is
+    The same holds for every check whose answer does not bind to the work it was sent on, which only a new attempt on the work as it stands
+    answers (CHECKUNBOUND1): its tree's preparation or a `regenerate` did not finish for a cause of the machine's (`unprepared`; a
+    `regenerate` whose compiler named errors is the work's failure instead, see below), the runner's own run held its lock through
+    every offer (`busy`), its process was lost again on its rerun (`lost`, its log's tail kept on the settled attempt), it said it was done and
+    named no verdict (`no-outcome`), or the one table refused its verdict as bound to no work (`not-bound`, `no-binding`, `stale-attempt`, `no-acceptance` where the node holds no binding, its line saying the verdict did not bind; a contract's refusal stays a held attempt): each
+    is asked again by `UnrunChecks`, three on one binding, then held `unsaid` as above. A check an older build held for one of these causes, with no
+    word on it and its node still on that attempt, is asked again the same way at the next look (`UnrunChecks.Released`), the reader of
+    records already written, ending when no install holds one. Only an unknown whose cause is the person's stays a held attempt from the first: a change to
+    the gates' commands they have not accepted (`changed`), their own stop (`stopped`), and a check that ran past its bound (`bound`), which a
+    new attempt would run as long again. A step's start is
     tried again for a moment's sharing violation on its log (`HeavyStep.RetriedAsync`, the wait doubling over six tries, about three seconds), the cause of the
     check's "could not be kept" unknown on 2026-11-22 and 23; so is Daoris's own line in a gate's log for a start that failed (`HeavyStep.WriteLogAsync`,
     written shared), which a process just ended may still hold a copy of the log's handle against, and a hold that stays never replaces the start's own error.
@@ -462,10 +471,11 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     that ends the job because it is closing itself (an update, a stop of driving) writes `closed-<send>`: a send that never began, or one
     that closed, is sent again each time and counts for nothing, and goes on at the gate it reached: each gate that passes is kept in the
     attempt's folder as it ends with its command (`progress.json`, `GateProgress`), and the same attempt sent again for the same work, base and declaration
-    runs only the gates after them, its why naming those carried (RECHECKKEEP1); the second send lost with a start mark and no close mark is held for the
-    person (`lost`, `LostChecks`) with the last 20 lines of its newest log on the attempt's own `tail` (whole lines, never a broken character;
-    the person's note stays theirs), shown on its held row and under its line in `daoris workflow run`, never run a third time by itself and
-    never a red round. The held check's *Run again*, applied, also tells the executor to stop the old invocation. A held check holds no slot: the machine's verification and heavy-run
+    runs only the gates after them, its why naming those carried (RECHECKKEEP1); the second send lost with a start mark and no close mark settles
+    (`lost`, `LostChecks`) with the last 20 lines of its newest log on the attempt's own `tail` (whole lines, never a broken character;
+    the person's note stays theirs) and is asked again as a new attempt (`UnrunChecks`, its bound counting), never sent a third time under its
+    key and never a red round; an older build's held `lost` check shows its tail on its held row and under its line in `daoris workflow run`
+    until the next look asks it again. A held check's *Run again*, applied, also tells the executor to stop the old invocation. A lost check holds no slot: the machine's verification and heavy-run
     slots are its process's and went with it. A plugin's outcome sent again for a settled attempt under another plugin id (a rename since) is a replay, not a
     counted refusal. A word names its author; a second on a node is
     refused `worded`, but the person's replaces a supervisor's pending one, and a supervisor's on a lapsed attempt or a dead
@@ -906,7 +916,12 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     (`TreePreparation.RegenerateAsync`; `--if-stale` is cheap where nothing moved), never the `treeBaseline`: a later commit whose
     generated inputs' sources moved reads them current though the stamp stands (VERIFYREGEN1). A preparation or a `regenerate` that
     does not finish ends the attempt `unknown` with code `unprepared` and its sentence (a `regenerate`'s command and its output's
-    lines, kept as the attempt's `regenerate.log`), never failed, no gate run.
+    lines, kept as the attempt's `regenerate.log`), never failed, no gate run, and is asked again (`UnrunChecks`). A `regenerate` whose
+    output names compiler errors at a place in the source (`file(line,col): error CS…`, `TS…`, `FS…`, `BC…`; the compiler's own I/O
+    errors, such as `CS2012` for a locked output, name none) is instead the work not building with the line, which no new attempt on
+    the same work answers: the check fails at the gate `regenerate` (`UnbuiltTrees`), its why the command, its exit and those error lines
+    (each once, relative to the tree, the build's warnings left out) with the log's path, and goes back to the work's session as any red;
+    a failure naming none (a network, a locked file, a missing tool) stays `unprepared`.
 41. `SET_ACCESS` refuses the `landing` pause, and `full` access opens no landing pause on a saved-graph place. (D184, D227)
 
 **Set up, conversion and Current**
