@@ -21,14 +21,19 @@ public sealed record EnvironmentInstance(string Id, string Environment, string? 
 /// <summary>A session's hold on an instance: the right to use it and to be moved with it, never a copy of it.</summary>
 public sealed record EnvironmentLease(string Session, string Environment, string InstanceId);
 
-/// <summary>What a session asks of an environment: its inputs' version at its own branch, against the version at the line.</summary>
+/// <summary>What a session asks of an environment: the version of its inputs at its own branch, against the line's and the one its branch forked from.</summary>
 /// <param name="Branch">The session's branch: the key of the instance a changing session leases.</param>
 /// <param name="LineVersion">The environment's version at the line's tip.</param>
 /// <param name="BranchVersion">The environment's version at the session's branch.</param>
-public sealed record EnvironmentUse(string Session, EnvironmentSpec Spec, string Branch, string LineVersion, string BranchVersion)
+/// <param name="ForkVersion">The environment's version at the commit the branch forked from the line.</param>
+public sealed record EnvironmentUse(string Session, EnvironmentSpec Spec, string Branch, string LineVersion, string BranchVersion, string ForkVersion)
 {
-    /// <summary>Whether the session's own work changes the environment: its inputs are not the line's.</summary>
-    public bool Changes => !string.Equals(BranchVersion, LineVersion, StringComparison.Ordinal);
+    /// <summary>
+    /// Whether the session's own work changes the environment: its branch's inputs differ from the ones it forked with, and are not
+    /// the line's. A branch that only lags a landing that moved the inputs did not change them, and one whose change the line already
+    /// holds has nothing of its own to run.
+    /// </summary>
+    public bool Changes => !string.Equals(BranchVersion, ForkVersion, StringComparison.Ordinal) && !string.Equals(BranchVersion, LineVersion, StringComparison.Ordinal);
 }
 
 /// <summary>Why no instance could be leased.</summary>
@@ -43,7 +48,11 @@ public enum EnvironmentRefusal
 
 /// <summary>A lease asked: the ledger after it, the instance leased, whether it must be started, or the refusal (the ledger then stays as it stands).</summary>
 /// <param name="Starts">The instance is new or moved to a new version, so the caller runs it before any session uses it.</param>
-public sealed record EnvironmentLeaseAnswer(EnvironmentLedger Ledger, EnvironmentInstance? Instance, bool Starts, EnvironmentRefusal? Refusal);
+public sealed record EnvironmentLeaseAnswer(EnvironmentLedger Ledger, EnvironmentInstance? Instance, bool Starts, EnvironmentRefusal? Refusal)
+{
+    /// <summary>The unheld instances taken out to make room under the admission; the caller stops them.</summary>
+    public IReadOnlyList<EnvironmentInstance> Evicted { get; init; } = [];
+}
 
 /// <summary>An instance sweep: the ledger after, and the instances whose grace ended, which the caller stops.</summary>
 public sealed record EnvironmentSweep(EnvironmentLedger Ledger, IReadOnlyList<EnvironmentInstance> Stopped);
@@ -69,7 +78,8 @@ public sealed record EnvironmentLedger(IReadOnlyList<EnvironmentInstance> Instan
     /// <summary>
     /// Leases the instance <paramref name="use"/> is owed: the shared one at the line's version where its inputs are the line's, else the
     /// one of its branch, started at the branch's version. A session holds one lease for an environment, the last it asked. The shared
-    /// instance is leased as it stands; moving it to a new line version is the landing's.
+    /// instance is leased as it stands, at the version it runs; moving it to a new line version is the landing's. Where the admission is
+    /// full, the instance idle longest is taken out to make room (its grace is a courtesy, not a claim on a place).
     /// </summary>
     /// <param name="capacity">How many instances the admission holds; a new one past it is refused, a lease of a running one never is.</param>
     public EnvironmentLeaseAnswer Lease(EnvironmentUse use, DateTimeOffset now, int capacity)
@@ -83,18 +93,31 @@ public sealed record EnvironmentLedger(IReadOnlyList<EnvironmentInstance> Instan
         if (found is not null)
         {
             var moved = scope is not null && found.Version != version;
-            var kept = moved || found.IdleSince is not null ? found with { Version = version, IdleSince = null } : found;
+            var kept = moved ? found with { Version = version, IdleSince = null } : found with { IdleSince = null };
             return released.Taken(use, kept, moved);
         }
 
-        if (released.Count >= capacity) return new(this, null, false, EnvironmentRefusal.Instances);
-        if (released.Ports(spec.Ports) is not { } ports) return new(this, null, false, EnvironmentRefusal.Ports);
+        var evicted = new List<EnvironmentInstance>();
+        var room = released;
+        if (room.Count >= capacity)
+        {
+            var idle = room.Instances.Where(each => each.IdleSince is not null && !room.Leases.Any(lease => lease.InstanceId == each.Id)).OrderBy(each => each.IdleSince).FirstOrDefault();
+            if (idle is null) return new(this, null, false, EnvironmentRefusal.Instances);
+            evicted.Add(idle);
+            room = room with { Instances = room.Instances.Where(each => each.Id != idle.Id).ToList() };
+        }
+
+        if (room.Ports(spec.Ports) is not { } ports) return new(this, null, false, EnvironmentRefusal.Ports);
         var fresh = new EnvironmentInstance(scope is null ? spec.Id : $"{spec.Id}@{scope}", spec.Id, scope, version, ports, spec.Grace, null);
-        return released.Taken(use, fresh, true);
+        return room.Taken(use, fresh, true) with { Evicted = evicted };
     }
 
     /// <summary>Lets go every lease <paramref name="session"/> holds; an instance it is last to hold begins its grace at <paramref name="now"/>.</summary>
     public EnvironmentLedger Release(string session, DateTimeOffset now) => Without(each => each.Session == session, now);
+
+    /// <summary>Takes out <paramref name="instanceId"/> and every lease on it, as when a start of it failed and what runs is not known.</summary>
+    public EnvironmentLedger Drop(string instanceId) =>
+        this with { Instances = Instances.Where(each => each.Id != instanceId).ToList(), Leases = Leases.Where(each => each.InstanceId != instanceId).ToList() };
 
     /// <summary>Takes out each instance no lease holds whose grace ended by <paramref name="now"/>, and gives its ports back.</summary>
     public EnvironmentSweep Sweep(DateTimeOffset now)

@@ -14,8 +14,8 @@ public sealed class EnvironmentLedgerTests
 
     private static EnvironmentLedger Empty() => EnvironmentLedger.Empty(new PortPool(9000, 8));
 
-    private static EnvironmentUse Uses(string session, string branch = "main", string line = "v1", string? own = null) =>
-        new(session, Server, branch, line, own ?? line);
+    private static EnvironmentUse Uses(string session, string branch = "main", string line = "v1", string? own = null, string fork = "v1") =>
+        new(session, Server, branch, line, own ?? fork, fork);
 
     [Fact]
     public void Two_sessions_whose_inputs_are_the_lines_lease_one_shared_instance_and_it_starts_once()
@@ -142,5 +142,54 @@ public sealed class EnvironmentLedgerTests
 
         Assert.Null(again.Refusal);
         Assert.Equal(new Dictionary<string, int> { ["http"] = 9000, ["admin"] = 9001 }, again.Instance!.Ports);
+    }
+
+    [Fact]
+    public void An_idle_shared_instance_leased_at_a_newer_line_version_keeps_the_version_it_runs_and_is_not_restarted()
+    {
+        var idle = Empty().Lease(Uses("a"), T0, 4).Ledger.Release("a", T0);
+
+        var again = idle.Lease(new EnvironmentUse("b", Server, "main", "v2", "v1", "v1"), T0.AddMinutes(1), 4);
+
+        Assert.False(again.Starts);
+        Assert.Equal("v1", again.Instance!.Version);
+        Assert.Null(again.Instance.IdleSince);
+        Assert.Equal(["b"], again.Ledger.Holders(again.Instance.Id));
+    }
+
+    [Fact]
+    public void A_branch_that_only_lags_a_landing_that_moved_the_inputs_leases_the_shared_instance_while_one_that_changed_them_itself_does_not()
+    {
+        var lagging = new EnvironmentUse("a", Server, "daoris/client", LineVersion: "v2", BranchVersion: "v1", ForkVersion: "v1");
+        var changed = new EnvironmentUse("b", Server, "daoris/server", LineVersion: "v2", BranchVersion: "v3", ForkVersion: "v1");
+        var caughtUp = new EnvironmentUse("c", Server, "daoris/same", LineVersion: "v2", BranchVersion: "v2", ForkVersion: "v1");
+
+        Assert.False(lagging.Changes);
+        Assert.True(changed.Changes);
+        Assert.False(caughtUp.Changes);
+        Assert.True(Empty().Lease(lagging, T0, 4).Instance!.Shared);
+    }
+
+    [Fact]
+    public void A_version_that_adds_or_renames_a_port_is_another_version()
+    {
+        var ids = new Dictionary<string, string> { ["server/**"] = "t" };
+
+        Assert.NotEqual(EnvironmentVersion.Of(Server, ids), EnvironmentVersion.Of(Server with { Ports = ["http", "metrics"] }, ids));
+    }
+
+    [Fact]
+    public void A_full_admission_takes_out_the_instance_idle_longest_to_make_room_and_never_one_a_lease_holds()
+    {
+        var full = Empty().Lease(Uses("a"), T0, 2).Ledger.Lease(Uses("b", "x", own: "v2"), T0, 2).Ledger.Release("a", T0.AddMinutes(1)).Release("b", T0.AddMinutes(2));
+
+        var made = full.Lease(Uses("c", "y", own: "v3"), T0.AddMinutes(3), 2);
+
+        Assert.Null(made.Refusal);
+        Assert.Equal(["game-server"], made.Evicted.Select(each => each.Id));
+        Assert.Equal(2, made.Ledger.Count);
+
+        var held = Empty().Lease(Uses("a"), T0, 1).Ledger;
+        Assert.Equal(EnvironmentRefusal.Instances, held.Lease(Uses("c", "y", own: "v3"), T0, 1).Refusal);
     }
 }

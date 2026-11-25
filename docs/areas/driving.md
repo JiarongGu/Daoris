@@ -731,15 +731,16 @@ built, but nothing outside tests makes, takes or ends one; `LinePlaces` answers 
     starts. A repository declares it in its own `daoris.json` under `environments`, beside `deployables`: `id`, `inputs` (the
     repository-relative paths whose content makes it what it is), `start` (its own command; Daoris supplies no way to run one),
     `ports` (names) and `graceSeconds` (`EnvironmentDeclaration`; an entry that does not read is left out and said). Its version is a
-    digest of its id, its start command and each input's content id at a tree (`EnvironmentVersion`): content, never a commit or a
+    digest of its id, its start command, its port names and each input pathspec's content id at a tree (`EnvironmentVersion`): content, never a commit or a
     counter, so a revert is a move back to a known version. Daoris judges whether a session changes an environment: its branch's
-    version differs from the line's (`EnvironmentUse.Changes`); the agent never says. A session that only uses it leases the one
+    version differs from the one it forked with and from the line's (`EnvironmentUse.Changes`), so a branch that only lags a landing
+    leases the shared instance; the agent never says. A session that only uses it leases the one
     shared instance of the line; a session whose branch changes it leases the instance of that branch (`EnvironmentInstance.Scope`),
     on ports taken from the machine's pool, which sessions of that branch join and no other branch is moved onto, and which follows
     its branch's version. A lease is a machine-local `(session, environment, instance)` record, one per session and environment
     (the last asked), held while the session is; an instance no lease holds is stopped once its grace has passed
-    (`EnvironmentLedger.Sweep`); a start that fails leaves neither instance nor lease. The admission counts instances
-    (`EnvironmentLedger.Count`), never leases: a new instance past its capacity is refused, a lease of a running one never is.
+    (`EnvironmentLedger.Sweep`); a start runs outside the gate under a deadline, and one that fails drops the instance and its leases (`SharedEnvironments`); a sweep stops each instance on its own and says the failures. The admission counts instances
+    (`EnvironmentLedger.Count`), never leases: a new instance past its capacity takes out the instance idle longest, and is refused only where every one is held; a lease of a running one never is.
     Processes, ports and the ledger stay on this machine. Built: the declaration, the version, the ledger and `SharedEnvironments`
     over a seam to the processes, proved on a stand-in server (`SharedEnvironmentsTests`); the real process host, the ledger kept in
     the home, a session's lease taken at its start, the shared instance moving to the new version when a landing changes it, the
