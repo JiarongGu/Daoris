@@ -127,14 +127,16 @@ test('a test of a unit project that starts a process of its own is named by line
     `const made = fixture.${call('spawnGit', "['init']")};`,
     `const child = ${call('spawn', "'node', []")};`,
     `function ${call('spawnGit')} {}`,
+    `const files = ${call('git', "root, ['ls-files']")}.out;`,
+    `const sight = ${call('gitSight', 'root')};`,
   ].join('\n');
-  assert.deepEqual(startedProcesses(source).map((start) => [start.line, start.name]), [[2, 'spawnSync'], [4, 'execFileSync'], [6, 'spawn']], 'a call by name, not a method, an import, a string or a comment');
+  assert.deepEqual(startedProcesses(source).map((start) => [start.line, start.name]), [[2, 'spawnSync'], [4, 'execFileSync'], [6, 'spawn'], [8, 'git'], [9, 'gitSight']], 'a call by name, not a method, an import, a string or a comment');
   const UNIT = { name: 'merge-unit', gate: 'cli-tests', suite: 'cli', runner: 'vitest', config: 'tools/vitest.config.ts', project: 'unit', files: ['tools/merge/**/*.test.ts'] };
   const E2E = { name: 'merge-e2e', gate: 'cli-tests', suite: 'cli', runner: 'vitest', config: 'tools/vitest.config.ts', project: 'e2e', files: ['tools/merge/**/*.e2e.ts'] };
   const dir = tree({ files: ['tools/merge/a.test.ts', 'tools/merge/b.test.ts', 'tools/merge/c.e2e.ts'], sets: [UNIT, E2E] });
   writeFileSync(join(dir, 'tools', 'merge', 'a.test.ts'), source);
   writeFileSync(join(dir, 'tools', 'merge', 'c.e2e.ts'), source);
   const { problems } = checkToolTests(dir);
-  assert.deepEqual(problems.map((each) => each.split(' ')[0]), ['tools/merge/a.test.ts:2:', 'tools/merge/a.test.ts:4:', 'tools/merge/a.test.ts:6:'], 'only a unit project\'s test is read');
+  assert.deepEqual(problems.map((each) => each.split(' ')[0]), ['tools/merge/a.test.ts:2:', 'tools/merge/a.test.ts:4:', 'tools/merge/a.test.ts:6:', 'tools/merge/a.test.ts:8:', 'tools/merge/a.test.ts:9:'], 'only a unit project\'s test is read');
   assert.match(problems[0], /spawnSync\( starts a process.*the machine's load/);
 });

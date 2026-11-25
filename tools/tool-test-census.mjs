@@ -78,7 +78,7 @@ export function liveLoadReads(text) {
     .sort((x, y) => x.line - y.line);
 }
 
-const STARTS = ['spawn', 'spawnSync', 'execFile', 'execFileSync', 'exec', 'execSync', 'fork', 'spawnGit', 'execGit'];
+const STARTS = ['spawn', 'spawnSync', 'execFile', 'execFileSync', 'exec', 'execSync', 'fork', 'spawnGit', 'execGit', 'git', 'gitSight'];
 
 export const startedProcesses = (text) => STARTS.flatMap((name) => callsOf(text, name).map((call) => ({ line: call.line, name }))).sort((x, y) => x.line - y.line);
 
