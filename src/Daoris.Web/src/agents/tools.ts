@@ -176,6 +176,8 @@ export interface Account {
   /** When its state is last read; null where it never is, and left out where it has none. */
   read?: string | null;
   signIn?: { state: 'in' | 'out' | 'unanswered' | 'unread'; since: string | null; notByPerson: boolean; by?: SignOutCause | null } | null;
+  /** The other accounts of its agent whose store holds the same refresh token (ids): whichever refreshes first signs the rest out. */
+  shared?: string[] | null;
 }
 
 /** Who held an account when a write emptied its store: the driver's `SignInCause`. */

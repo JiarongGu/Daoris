@@ -191,6 +191,7 @@ internal static class AgentListCommand
 
         // Every account is one of the set, so none is marked a default or said to run nowhere.
         var scope = settings.Set(owner);
+        var shared = SharedSignIns.Of(home, owner, toolchain.Accounts.StoredSignIn);
         foreach (var profile in report.Profiles)
         {
             // 🔴 A key account is never "in": the tool says so for any key, a wrong one included. A named account's id is never said.
@@ -204,6 +205,11 @@ internal static class AgentListCommand
             {
                 lines.Add($"{Under}{gap} switched off by you: Daoris starts no session on it and moves none to it; "
                     + $"`daoris agent account on {owner} {ShellWord.Of(profile.Name, ShellWord.Account)}` switches it on");
+            }
+
+            if (shared.GetValueOrDefault(profile.Name) is { Count: > 0 } sharing)
+            {
+                lines.Add($"{Under}{gap} {AgentAccountLines.SharedWith(sharing.Select(Shown), owner, ShellWord.Of(profile.Name, ShellWord.Account), toolchain.Accounts.DeviceLoginArguments is { Count: > 0 })}");
             }
 
             foreach (var cooled in AgentAccountLines.CoolingLinesOf(cooling, owner, profile.Name, now, zone))

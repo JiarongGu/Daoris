@@ -236,8 +236,8 @@ public sealed class HarnessRoster(ProviderRegistry adapters, string? settingsPat
 
     internal bool AskAgain(string owner, string account, DateTimeOffset? read) => Reporting.AskAgain(owner, account, read);
 
-    internal Task<HarnessProbe.LoginAnswer> AskOneAsync(string adapter, AccountAgent toolchain, string owner, string account, DriverConfig config, CancellationToken ct)
-        => Reporting.AskOneAsync(adapter, toolchain, owner, account, config, ct);
+    internal Task<HarnessProbe.LoginAnswer> AskOneAsync(string adapter, AccountAgent toolchain, string owner, string account, DriverConfig config, CancellationToken ct, bool pressed = false)
+        => Reporting.AskOneAsync(adapter, toolchain, owner, account, config, ct, pressed);
 
     /// <inheritdoc cref="RosterReport.Busy"/>
     internal bool Busy(string owner, string? account) => Reporting.Busy(owner, account);
@@ -412,8 +412,8 @@ public sealed class HarnessRoster(ProviderRegistry adapters, string? settingsPat
     public IReadOnlyList<SwitchCandidate> SwitchCandidates(string owner, IReadOnlyList<string> list, (string Agent, string? Version, string Model)? offer = null)
         => Usage.SwitchCandidates(owner, list, offer);
 
-    internal Task<IReadOnlyList<WindowReading>?> AskUsageAsync(string adapter, string owner, string account, DriverConfig config, CancellationToken ct)
-        => Usage.AskUsageAsync(adapter, owner, account, config, ct);
+    internal Task<IReadOnlyList<WindowReading>?> AskUsageAsync(string adapter, string owner, string account, DriverConfig config, CancellationToken ct, bool pressed = false)
+        => Usage.AskUsageAsync(adapter, owner, account, config, ct, pressed);
 
     internal Task PressUsageAsync(string adapter, string owner, DriverConfig config, CancellationToken ct)
         => Usage.PressUsageAsync(adapter, owner, config, ct);

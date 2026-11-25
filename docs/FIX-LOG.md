@@ -14851,3 +14851,42 @@ install's next sign-out.
 and a notice; the four causes; the cause kept in `reads.json`; a filled store reads signed in; a refresh's write undoes no refusal;
 an empty file marks nothing; the look's read names no cause. `SignOutRaceTests` and the sign-in, reads, probe and look tests (145)
 pass; `signInState.test.ts` (9) passes.
+
+## A read of a full account made its agent refresh, be refused at the limit and empty the store (2026-11-25, SIGNOUTSHARED1)
+
+**Symptom.** On 2026-11-25 account-1 (a work account, also the sign-in of the person's own Claude Code) was signed out with no session of
+Daoris's on it: its store was written with fresh tokens at 07:05:58Z and with both tokens empty at 07:12:45Z, each `by: probe`,
+`running` 0, `starting` 0.
+
+**Root cause (the leading reading, not an established one).** The lines and the usage history show this and no more: two writes of the store,
+each whole (temp file, then rename) under the account's probe lock, `by: probe`, `running` 0, `starting` 0, six and a half minutes apart; the
+07:05:58Z one a read's, since the account's windows were kept 0.8 s later at 100% of the session window; the 07:12:45Z one both tokens empty
+with `expiresAt` 0 and no reading kept, the shape `ClaudeStoredSignIn` names for a refused refresh. So one token was never spent twice together,
+and nothing else of Daoris's was at the account. The step that the read's agent refreshed, was refused at the limit and wrote the store empty is
+not in any line: it is the reading that fits, with the account full yet read again (`RosterUsage.FreshenAsync` asks every present, ready
+account older than the question's floor, a minute for Claude, at a turn's end and at a start alike, and `Before` is asked there with no facts,
+so `AccountRotation.Spent` never applied). Still open: that the account's other sign-in, the person's own Claude Code on the same account,
+reached the limit at that moment (about 07:10Z by the person's word) and its limit or a revocation refused or revoked this store's token
+(the person's reading of 2026-11-25, which the lines do not rule out), and why the agent refreshed a token still fresh. Either way the account
+is at its limit, which the fix keys on; the next `credentials.kept` line says a refusal at a limit was undone, and a store emptied away from
+one, or twice in a window, reads signed out as before and says the other reading. The fingerprints of every store on the machine, compared
+by hand once after the person signed in again, shared no refresh token with another or with the person's own sign-in; the earlier store is gone,
+so that says nothing of 07:12:45Z.
+
+**Fix.** `ReadGuard`: a look's, a start's or a turn's read is not asked where the stored access token is expired or expires within the renewal
+margin; the person's press and a counted start's renewal ask it, where nothing of Daoris's runs on the account. A refresh a read's agent makes
+that is refused at the limit and empties the store is undone, once in a limit window and only where the account's own reading puts a window at
+100% before its reset, from the bytes held in memory for the read alone, written with the old file's mode; a `credentials.kept` line says it
+and the watch marks no sign-out meanwhile, while a store left cleared is marked at once by the read (`StoredSignIns.MarkIfCleared`).
+`RosterUsage.AtLimit`: a start's or a turn's read passes an account at 100% before its reset; a press still asks. As a net,
+`IStoredSignIn.Fingerprint` (a SHA-256 of the refresh token's bytes in the file, no string of it made, compared in memory and never logged
+or shown) says an account sharing its refresh token with another once in the roster, the CLI list and the agent's page, as a store that looks
+copied, with the way out (a device code where the agent declares one). Left: see the install's next `credentials.kept` line.
+
+**Verification.** `SignOutSharedTests` (written first, red before the code): a status read and a usage read of an expiring account ask
+nothing and refresh nothing; a start still renews once; a limit refusal in a status read and in a usage read leaves the store byte for byte
+as it was, the account signed in and no sign-out marked or noticed; a refresh that succeeds, a store already empty and one emptied beside
+Daoris's own sign-in are left as they are; a full account is not read again before its reset and one with room is; a store emptied away from the limit and a second emptying in one
+limit window are left and read signed out; a press renews an expiring account; two stores sharing a refresh token are each said with the other
+named, by the roster's report, the list and the route. `AccountRow.test.tsx` says the shared line once, in both languages, with the device
+code where offered.

@@ -37,6 +37,9 @@ public interface IStoredSignIn
     /// <summary>The agent's file-name pattern (<c>*</c> for the rest) for a write's temp files, or null where its writes leave none.</summary>
     string? LeftoverPattern => null;
 
+    /// <summary>A one-way fingerprint of the store's refresh token, made without a text of it; null where there is none.</summary>
+    StoredFingerprint? Fingerprint(string profileHome) => null;
+
     /// <summary>How long a write takes: a temp file younger than this may be in flight, an older one is a leftover.</summary>
     TimeSpan WriteLife => TimeSpan.FromMinutes(5);
 }

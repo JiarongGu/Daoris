@@ -62,6 +62,7 @@ internal sealed class RosterUsage(HarnessRoster roster)
             .Where(account => present.Contains(account, StringComparer.OrdinalIgnoreCase))
             .Where(account => roster.Before(owner, account, now).IsReady && !HarnessRoster.SaidOut(reads, account))
             .Where(account => !Recent(owner, account, now, question.Fresh))
+            .Where(account => !AtLimit(owner, account, now))
             .Where(account => use is null || Owed(owner, account, use, now, offered) is not null)
             .Select(account => AskUsageAsync(adapter, owner, account, config, ct))
             .ToList();
@@ -212,6 +213,9 @@ internal sealed class RosterUsage(HarnessRoster roster)
         }
     }
 
+    private bool AtLimit(string owner, string account, DateTimeOffset now) =>
+        AccountRotation.Spent(owner, account, new AccountFacts(Said: SaidOf(owner, account, now)), now) is not null;
+
     /// <summary>
     /// Whether an account is asked, or said, within <paramref name="fresh"/> (the question's: <see cref="CodexUsage.Fresh"/>,
     /// or Claude's <see cref="ClaudeUsage.Floor"/>): kept from a restart too.
@@ -237,7 +241,7 @@ internal sealed class RosterUsage(HarnessRoster roster)
     /// The account of Daoris's whose home its server runs in: never none, so the tool's own sign-in is never read.
     /// </param>
     internal async Task<IReadOnlyList<WindowReading>?> AskUsageAsync(
-        string adapter, string owner, string account, DriverConfig config, CancellationToken ct)
+        string adapter, string owner, string account, DriverConfig config, CancellationToken ct, bool pressed = false)
     {
         if (UsageOf(adapter) is not { } question) return null;
         try
@@ -250,22 +254,23 @@ internal sealed class RosterUsage(HarnessRoster roster)
             await using var held = await ProbeLock.TakeAsync(ProbeLock.PathOf(roster.Home, owner, account), ct: ct).ConfigureAwait(false);
             if (held is null || roster.Busy(owner, account)) return null;
 
-            IReadOnlyList<WindowReading>? readings;
-            if (roster.AskingUsage is { } standIn)
+            var store = (roster.AccountAgentOf(adapter) ?? roster.AgentOf(adapter))?.Accounts.StoredSignIn;
+            var home = HarnessSettings.ProfileHome(roster.Home, owner, account);
+            if (!pressed && ReadGuard.WouldRefresh(store, home, roster.Clock())) return null;
+
+            var (readings, kept) = await ReadGuard.AskAsync<IReadOnlyList<WindowReading>?>(store, home, restore: true, roster.Clock(), async () =>
             {
-                readings = await standIn(owner, account, ct).ConfigureAwait(false);
-            }
-            else
-            {
+                if (roster.AskingUsage is { } standIn) return await standIn(owner, account, ct).ConfigureAwait(false);
                 if (UsageCommand(question, config) is not { } command) return null;
                 var toolchain = roster.AccountAgentOf(adapter) ?? roster.AgentOf(adapter)!;
                 // 🔴 Its server is started in the account's home, never with none, where the agent would answer for the
                 // person's own sign-in and might refresh their token.
-                var profileHome = HarnessSettings.ProfileHome(roster.Home, owner, account);
-                readings = await question.AskAsync(
-                        new UsageAsk(command.Run, toolchain, profileHome, command.Managed, roster.Clock()) { Profile = account }, ct)
+                return await question.AskAsync(
+                        new UsageAsk(command.Run, toolchain, home, command.Managed, roster.Clock()) { Profile = account }, ct)
                     .ConfigureAwait(false);
-            }
+            }).ConfigureAwait(false);
+            if (kept) roster.Writes?.Kept(owner, account, SignInCause.Probe);
+            else StoredSignIns.MarkIfCleared(roster, owner, account, store);
 
             // Every window it said kept in the usage history first: the reader's own parse where it answered one,
             // else the walk's readings as they are (a stand-in's, reader 0).
@@ -327,6 +332,6 @@ internal sealed class RosterUsage(HarnessRoster roster)
             accounts = [];
         }
 
-        await Task.WhenAll(accounts.Select(account => AskUsageAsync(adapter, owner, account, config, ct))).ConfigureAwait(false);
+        await Task.WhenAll(accounts.Select(account => AskUsageAsync(adapter, owner, account, config, ct, pressed: true))).ConfigureAwait(false);
     }
 }

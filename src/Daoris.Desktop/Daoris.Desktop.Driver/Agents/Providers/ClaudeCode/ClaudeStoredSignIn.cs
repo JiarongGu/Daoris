@@ -58,6 +58,32 @@ internal sealed class ClaudeStoredSignIn : IStoredSignIn
         }
     }
 
+    public StoredFingerprint? Fingerprint(string profileHome)
+    {
+        byte[]? bytes = null;
+        try
+        {
+            var path = Path.Combine(profileHome, FileName);
+            if (!File.Exists(path)) return null;
+            bytes = ReadShared(path);
+            using var document = JsonDocument.Parse(bytes.AsMemory());
+            if (document.RootElement.ValueKind != JsonValueKind.Object
+                || !document.RootElement.TryGetProperty("claudeAiOauth", out var oauth) || oauth.ValueKind != JsonValueKind.Object
+                || !There(oauth, "refreshToken")) return null;
+
+            // The token's own bytes in the file, quotes included: hashed where they lie, so no string of it is ever made.
+            return StoredFingerprint.Of(System.Runtime.InteropServices.JsonMarshal.GetRawUtf8Value(oauth.GetProperty("refreshToken")));
+        }
+        catch (Exception error) when (error is IOException or UnauthorizedAccessException or JsonException or ArgumentOutOfRangeException)
+        {
+            return null;
+        }
+        finally
+        {
+            if (bytes is not null) System.Security.Cryptography.CryptographicOperations.ZeroMemory(bytes);
+        }
+    }
+
     /// <summary>The bytes, opened sharing delete too, so a read never fails the agent's rename over the store.</summary>
     private static byte[] ReadShared(string path)
     {

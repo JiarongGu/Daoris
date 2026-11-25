@@ -211,6 +211,7 @@ public sealed class AgentsRoutes(DriverContext context)
         // When its state is last read, or null where it never is: absent is never a reading.
         profile.Read,
         SignIn = profile.SignIn is { } signIn ? new { State = signIn.Word, signIn.Since, signIn.NotByPerson, signIn.By } : null,
+        Shared = profile.SharedWith,
     };
 
     /// <summary>
