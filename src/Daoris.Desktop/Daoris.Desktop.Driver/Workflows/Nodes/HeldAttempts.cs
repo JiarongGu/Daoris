@@ -39,6 +39,9 @@ public sealed record HeldAttempt(string Unit, string Node, int Attempt, string P
     /// <summary>Whether it is a failure kept for the person, which takes their new attempt alone, rather than an attempt held.</summary>
     public bool Failed => Why is WorkPerformer.FailureKept or WorkPerformer.TriesSpent;
 
+    /// <summary>The executor's last reason for a check given up (<see cref="UnrunChecks.GaveUp"/>); null on every other.</summary>
+    public string? Reason { get; init; }
+
     /// <summary>What a check on a verification run verifies, which the person reads it by; null for every other attempt.</summary>
     public HeldVerification? Verification { get; init; }
 }
@@ -95,6 +98,7 @@ public static class HeldAttempts
                 {
                     Outcome = attempt.Outcome, Revision = attempt.Call.SubjectRevision, RecordedAt = attempt.RecordedAt,
                     Resolution = attempt.Resolution, ResolvedAt = attempt.ResolvedAt, Words = moved ? [HeldResolutions.Resend] : HeldResolutions.Of(attempt),
+                    Reason = attempt.Code == UnrunChecks.GaveUp ? attempt.Tail : null,
                 };
             })))
             .OrderBy(held => held.RecordedAt)]);
@@ -130,6 +134,7 @@ public static class HeldAttempts
         WorkPerformer.NotCurrent => "its node moved off it while its effect may still run, and its step can be sent again but not asked",
         WorkPerformer.FailureKept => $"its plugin said it failed ({held.Code}), and Daoris does not try it again by itself",
         WorkPerformer.TriesSpent => $"its plugin said it failed ({held.Code}) and its tries are spent, so Daoris does not try it again by itself",
+        UnrunChecks.GaveUp => $"Daoris asked it {UnrunChecks.Bound} times and none could say whether the work passes{(held.Reason is { Length: > 0 } reason ? $" ({reason})" : "")}, so the run waits: its `workflow again` runs it as a new attempt",
         NodeRefusal.NotOnWord => "your word that it happened could not be taken: its results are its plugin's to give",
         var code => $"its plugin's {held.Outcome ?? "answer"} did not bind to the work it was sent on ({code})",
     };

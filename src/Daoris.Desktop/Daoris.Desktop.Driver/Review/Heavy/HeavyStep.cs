@@ -154,7 +154,7 @@ internal sealed class HeavyStep : IDisposable
 
     internal static bool Held(IOException error) => OperatingSystem.IsWindows() && (error.HResult & 0xFFFF) is 32 or 33;
 
-    /// <summary><paramref name="start"/> taken again where it met a file held for an instant, up to <see cref="Tries"/>.</summary>
+    /// <summary><paramref name="start"/> taken again where it met a file held for an instant, up to <see cref="Tries"/>, the wait doubling.</summary>
     internal static async Task<T> RetriedAsync<T>(Func<T> start, TimeSpan wait, TimeProvider clock, CancellationToken ct)
     {
         for (var tried = 1; ; tried++)
@@ -165,8 +165,28 @@ internal sealed class HeavyStep : IDisposable
             }
             catch (IOException held) when (tried < Tries && Held(held))
             {
-                await Task.Delay(wait, clock, ct).ConfigureAwait(false);
+                await Task.Delay(wait * (1 << (tried - 1)), clock, ct).ConfigureAwait(false);
             }
+        }
+    }
+
+    /// <summary>Daoris's words in a gate's log, written shared and tried again while another handle holds it; false, never thrown, where it stays held.</summary>
+    internal static async Task<bool> WriteLogAsync(string log, string text, TimeProvider clock, CancellationToken ct = default)
+    {
+        try
+        {
+            await RetriedAsync(() =>
+            {
+                using var stream = new FileStream(log, FileMode.Create, FileAccess.Write, FileShare.ReadWrite | FileShare.Delete);
+                var bytes = new UTF8Encoding(false).GetBytes(text);
+                stream.Write(bytes, 0, bytes.Length);
+                return true;
+            }, TimeSpan.FromMilliseconds(100), clock, ct).ConfigureAwait(false);
+            return true;
+        }
+        catch (Exception error) when (error is IOException or UnauthorizedAccessException)
+        {
+            return false;
         }
     }
 

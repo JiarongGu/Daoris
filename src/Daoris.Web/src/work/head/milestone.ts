@@ -202,7 +202,7 @@ export function endSentences(t: TFunction, end: GraphEnd): string[] {
 }
 
 /** The why codes the page has words for; any other is the one table's refusal of an outcome, said with its code. */
-const HELD_WHY = ['unknown', 'no-reconcile', 'no-outcome', 'not-current', 'not-on-word', 'failure-kept', 'tries-spent'] as const;
+const HELD_WHY = ['unknown', 'no-reconcile', 'no-outcome', 'not-current', 'not-on-word', 'failure-kept', 'tries-spent', 'unsaid'] as const;
 
 /**
  * Whether it is a failure kept for the person: its plugin said it failed and Daoris tries it

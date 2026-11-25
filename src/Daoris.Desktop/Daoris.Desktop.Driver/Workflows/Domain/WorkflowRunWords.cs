@@ -448,7 +448,7 @@ public static class WorkflowRunWords
         // A check held for its lost process: the last of its log, as the terminal's own lines.
         if (step.Node == NodeKinds.Check && step.Held?.Tail is { Length: > 0 } tail)
         {
-            yield return "Its log ends:";
+            yield return step.Code == UnrunChecks.GaveUp ? "Daoris gave it up; the last reason it had:" : "Its log ends:";
             foreach (var line in tail.ReplaceLineEndings("\n").Split('\n').TakeLast(LostChecks.TailLines)) yield return $"  {line}";
         }
 

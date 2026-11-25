@@ -285,7 +285,7 @@ internal sealed class VerifyExecution(string home, VerifySend send, CandidateJob
                 int? exit;
                 try
                 {
-                    exit = Directory.Exists(folder) ? await StepAsync(place.Hold, gate.Run, folder, [gate.Name], new Dictionary<string, string>(), log, gate.Clock, ct).ConfigureAwait(false) : Missing(log, gate);
+                    exit = Directory.Exists(folder) ? await StepAsync(place.Hold, gate.Run, folder, [gate.Name], new Dictionary<string, string>(), log, gate.Clock, ct).ConfigureAwait(false) : await MissingAsync(log, gate).ConfigureAwait(false);
                 }
                 catch (DriverException error)
                 {
@@ -555,7 +555,7 @@ internal sealed class VerifyExecution(string home, VerifySend send, CandidateJob
         }
         catch (DriverException error)
         {
-            await File.WriteAllTextAsync(log, $"error: it would not start: {error.Message}\n", new UTF8Encoding(false), CancellationToken.None).ConfigureAwait(false);
+            await KeepLogAsync(log, $"error: it would not start: {error.Message}\n").ConfigureAwait(false);
             throw new DriverException(error.Message);
         }
 
@@ -584,11 +584,17 @@ internal sealed class VerifyExecution(string home, VerifySend send, CandidateJob
     private VerifyResult Ended(IReadOnlyList<VerifyGate> gates) =>
         new(send.Invocation, send.Commit, VerifyVerdicts.Unknown, "it was ended before its verdict", gates) { Declaration = _ran };
 
-    private static int? Missing(string log, DeclaredGate gate)
+    private async Task<int?> MissingAsync(string log, DeclaredGate gate)
     {
         var why = $"`{gate.Name}`'s cwd, {gate.Cwd}, is no folder of the verification tree";
-        File.WriteAllText(log, $"error: {why}\n", new UTF8Encoding(false));
+        await KeepLogAsync(log, $"error: {why}\n").ConfigureAwait(false);
         throw new DriverException(why);
+    }
+
+    private async Task KeepLogAsync(string log, string text)
+    {
+        if (await HeavyStep.WriteLogAsync(log, text, world.Clock).ConfigureAwait(false)) return;
+        world.Said.WriteLine($"verify: the log {log} was held by another process, so Daoris's words in it ({text.Trim()}) could not be written; the check's answer carries them.");
     }
 
     private static string? ReadText(string path)
