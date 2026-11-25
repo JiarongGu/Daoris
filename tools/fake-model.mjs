@@ -22,6 +22,13 @@ function textOf(content) {
     .join('\n');
 }
 
+export function toolNames(tools) {
+  return tools.flatMap((tool) => {
+    const name = tool.name ?? tool.function?.name ?? tool.type;
+    return [name, ...(Array.isArray(tool.tools) ? tool.tools.map((inner) => `${name}/${inner.name ?? inner.function?.name ?? inner.type}`) : [])];
+  });
+}
+
 /** What a call asks for, read from the user messages it ends on (a harness's own `system` ones set aside), never from a tool's result. */
 export function askedFor(all) {
   const items = all.filter((item) => item.role !== 'system');
@@ -137,7 +144,7 @@ export async function startFakeModel() {
         const wire = path.endsWith('/messages') ? 'messages' : 'responses';
         const items = wire === 'messages' ? body.messages ?? [] : Array.isArray(body.input) ? body.input : [];
         const kind = askedFor(items);
-        calls.push({ at: Date.now(), wire, kind, roles: items.map((item) => item.role ?? item.type), tools: (body.tools ?? []).map((tool) => tool.name ?? tool.function?.name ?? tool.type), input: items.map((item) => textOf(item.content ?? item.output)).filter(Boolean) });
+        calls.push({ at: Date.now(), wire, kind, roles: items.map((item) => item.role ?? item.type), tools: toolNames(body.tools ?? []), input: items.map((item) => textOf(item.content ?? item.output)).filter(Boolean) });
         if (body.stream === false) {
           res.writeHead(200, { 'content-type': 'application/json' });
           res.end(JSON.stringify(wire === 'messages'

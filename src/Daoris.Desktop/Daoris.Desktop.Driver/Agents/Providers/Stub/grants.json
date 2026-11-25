@@ -1,0 +1,29 @@
+{
+  "doors": [
+    {
+      "id": "stub",
+      "servers": { "route": "none", "flag": null, "names": [] },
+      "approval": "none",
+      "note": "after-turn",
+      "access": {
+        "asking": { "arguments": [], "variables": {}, "wire": null },
+        "full": { "arguments": [], "variables": {}, "wire": null },
+        "driven": { "arguments": [], "variables": {}, "wire": null }
+      },
+      "proof": { "none": "A stand-in runs no model, so it lists no tools to read." }
+    }
+    ,
+    {
+      "id": "acp-stub",
+      "servers": { "route": "session-new", "flag": null, "names": ["daoris-knowledge"] },
+      "approval": "permission-request",
+      "note": "next-step",
+      "access": {
+        "asking": { "arguments": [], "variables": {}, "wire": null },
+        "full": { "arguments": [], "variables": {}, "wire": null },
+        "driven": { "arguments": [], "variables": {}, "wire": null }
+      },
+      "proof": { "none": "A stand-in runs no model, so it lists no tools to read." }
+    }
+  ]
+}

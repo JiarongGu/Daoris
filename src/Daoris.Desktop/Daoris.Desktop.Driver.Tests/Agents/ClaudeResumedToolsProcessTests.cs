@@ -1,5 +1,4 @@
 using System.Diagnostics;
-using System.Net;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
@@ -22,27 +21,6 @@ public sealed class ClaudeResumedToolsProcessTests : IAsyncDisposable
 
     private static readonly TimeSpan Bound = TimeSpan.FromMinutes(2);
 
-    /// <summary>A server with one tool, read from the file its second argument names at every listing.</summary>
-    private const string Server = """
-        import { createInterface } from 'node:readline';
-        import { readFileSync } from 'node:fs';
-        const say = (message) => process.stdout.write(JSON.stringify(message) + '\n');
-        for await (const line of createInterface({ input: process.stdin })) {
-          let message;
-          try { message = JSON.parse(line); } catch { continue; }
-          if (message.id === undefined) continue;
-          if (message.method === 'initialize') {
-            say({ jsonrpc: '2.0', id: message.id, result: { protocolVersion: message.params?.protocolVersion ?? '2025-06-18', capabilities: { tools: {} }, serverInfo: { name: 'stand-in', version: '1.0.0' } } });
-          } else if (message.method === 'tools/list') {
-            say({ jsonrpc: '2.0', id: message.id, result: { tools: JSON.parse(readFileSync(process.argv[2], 'utf8')) } });
-          } else if (message.method === 'ping') {
-            say({ jsonrpc: '2.0', id: message.id, result: {} });
-          } else {
-            say({ jsonrpc: '2.0', id: message.id, error: { code: -32601, message: 'method not found' } });
-          }
-        }
-        """;
-
     private readonly string _root = Path.Combine(TestHomes.Root, "resumed-tools-" + Guid.NewGuid().ToString("N")[..8]);
 
     private readonly StandInModel _model = StandInModel.Start();
@@ -55,21 +33,6 @@ public sealed class ClaudeResumedToolsProcessTests : IAsyncDisposable
         try { Directory.Delete(_root, recursive: true); } catch (IOException) { } catch (UnauthorizedAccessException) { }
     }
 
-    /// <summary>The tool as the stand-in serves it: <c>question</c>, and <c>site</c> once the build that adds it is in place.</summary>
-    private static string Tools(bool site) => new JsonArray(new JsonObject
-    {
-        ["name"] = "ask",
-        ["description"] = "Ask the person a question.",
-        ["inputSchema"] = new JsonObject
-        {
-            ["type"] = "object",
-            ["properties"] = site
-                ? new JsonObject { ["question"] = new JsonObject { ["type"] = "string" }, ["site"] = new JsonObject { ["type"] = "string" } }
-                : new JsonObject { ["question"] = new JsonObject { ["type"] = "string" } },
-            ["required"] = new JsonArray("question"),
-        },
-    }).ToJsonString();
-
     [HarnessOnPathFact("claude")]
     public async Task A_resumed_session_is_sent_the_parameter_its_server_gained_after_the_start()
     {
@@ -78,9 +41,9 @@ public sealed class ClaudeResumedToolsProcessTests : IAsyncDisposable
         Directory.CreateDirectory(tree);
         Directory.CreateDirectory(home);
         var toolsFile = Path.Combine(_root, "tools.json");
-        File.WriteAllText(toolsFile, Tools(site: false));
+        File.WriteAllText(toolsFile, StandInServer.Tools(site: false));
         var script = Path.Combine(_root, "server.mjs");
-        File.WriteAllText(script, Server);
+        File.WriteAllText(script, StandInServer.Script);
         var node = PackageStarts.Node(null, null) ?? throw new InvalidOperationException("node is not on PATH");
         var servers = Path.Combine(_root, "servers.mcp.json");
         File.WriteAllText(servers, new JsonObject
@@ -98,7 +61,7 @@ public sealed class ClaudeResumedToolsProcessTests : IAsyncDisposable
         Assert.All(_model.ToolsSent(Tool), properties => Assert.DoesNotContain("site", properties));
         var before = _model.Requests;
 
-        File.WriteAllText(toolsFile, Tools(site: true));
+        File.WriteAllText(toolsFile, StandInServer.Tools(site: true));
         var resumed = await RunAsync(spawn, spawn.Resume(request with { Resume = conversation })!, servers, tree, home, "Say hello again.");
 
         var sent = _model.ToolsSent(Tool, after: before);
@@ -106,10 +69,31 @@ public sealed class ClaudeResumedToolsProcessTests : IAsyncDisposable
         Assert.All(sent, properties => Assert.Contains("site", properties));
     }
 
+    /// <summary>The proof in <c>grants.json</c> of the native door: its own hand-over reaches the agent, the model is sent the server's tool.</summary>
+    [HarnessOnPathFact("claude")]
+    public async Task The_native_door_s_agent_lists_the_tools_of_the_knowledge_server_it_is_handed()
+    {
+        var tree = Path.Combine(_root, "tree");
+        var home = Path.Combine(_root, "home");
+        Directory.CreateDirectory(tree);
+        Directory.CreateDirectory(home);
+        var plan = new ConnectorPlan("grants-native", [StandInServer.Entry(_root, KnowledgeConnector.ServerName)]);
+        var spawn = new ClaudeCodeSpawn();
+        var request = new SpawnRequest("test", tree, "http://127.0.0.1:1")
+        {
+            Command = [HarnessOnPathFactAttribute.Located("claude")!], Mode = "acceptEdits",
+        };
+
+        var ran = await RunAsync(spawn, spawn.Start(request), servers: null, tree, home, "Say hello.", plan);
+
+        StandInServer.AssertListed(_model.ToolNames(), KnowledgeConnector.ServerName, ran.Output);
+    }
+
     private sealed record Ran(string? Conversation, string Output);
 
     /// <summary>One run of a recipe under a scratch home, the stand-in model and the servers file, the prompt on its input; bounded.</summary>
-    private async Task<Ran> RunAsync(ClaudeCodeSpawn spawn, ProcessRecipe recipe, string servers, string tree, string home, string prompt)
+    private async Task<Ran> RunAsync(
+        ClaudeCodeSpawn spawn, ProcessRecipe recipe, string? servers, string tree, string home, string prompt, ConnectorPlan? plan = null)
     {
         var info = new ProcessStartInfo(recipe.Program)
         {
@@ -117,7 +101,8 @@ public sealed class ClaudeResumedToolsProcessTests : IAsyncDisposable
             StandardOutputEncoding = Encoding.UTF8, StandardErrorEncoding = Encoding.UTF8, UseShellExecute = false, CreateNoWindow = true,
         };
         foreach (var argument in recipe.Arguments) info.ArgumentList.Add(argument);
-        spawn.HandServers(info, servers);
+        if (plan is not null) spawn.Hand(info, Path.Combine(_root, "daoris"), plan);
+        else spawn.HandServers(info, servers!);
         foreach (var name in new[] { "ANTHROPIC_AUTH_TOKEN", "CLAUDE_CODE_OAUTH_TOKEN", "CLAUDE_CODE_USE_BEDROCK", "CLAUDE_CODE_USE_VERTEX" })
         {
             info.Environment.Remove(name);
@@ -162,133 +147,6 @@ public sealed class ClaudeResumedToolsProcessTests : IAsyncDisposable
 
         Assert.True(process.ExitCode == 0, $"claude exited {process.ExitCode}: {said}\n{await error}");
         return new Ran(conversation, said);
-    }
-
-    /// <summary>
-    /// A model on loopback with no account behind it: every Messages request kept as the tools it carried, each answered with a short
-    /// streamed reply; a token count answered with a number.
-    /// </summary>
-    private sealed class StandInModel : IAsyncDisposable
-    {
-        private readonly HttpListener _listener;
-        private readonly Task _serving;
-        private readonly List<JsonArray?> _requests = [];
-
-        private StandInModel(HttpListener listener, string url)
-        {
-            _listener = listener;
-            Url = url.TrimEnd('/');
-            _serving = ServeAsync();
-        }
-
-        public string Url { get; }
-
-        public int Requests
-        {
-            get
-            {
-                lock (_requests) return _requests.Count;
-            }
-        }
-
-        public static StandInModel Start()
-        {
-            var probe = new System.Net.Sockets.TcpListener(IPAddress.Loopback, 0);
-            probe.Start();
-            var port = ((IPEndPoint)probe.LocalEndpoint).Port;
-            probe.Stop();
-            var url = $"http://127.0.0.1:{port}/";
-            var listener = new HttpListener();
-            listener.Prefixes.Add(url);
-            listener.Start();
-            return new StandInModel(listener, url);
-        }
-
-        /// <summary>The parameters of <paramref name="tool"/> in each request from the <paramref name="after"/>th on that carried it.</summary>
-        public IReadOnlyList<IReadOnlyList<string>> ToolsSent(string tool, int after = 0)
-        {
-            lock (_requests)
-            {
-                return [.. _requests.Skip(after)
-                    .Select(tools => tools?.OfType<JsonObject>().FirstOrDefault(each => (string?)each["name"] == tool))
-                    .OfType<JsonObject>()
-                    .Select(each => (IReadOnlyList<string>)[.. (each["input_schema"]?["properties"] as JsonObject ?? []).Select(property => property.Key)])];
-            }
-        }
-
-        private async Task ServeAsync()
-        {
-            while (_listener.IsListening)
-            {
-                HttpListenerContext context;
-                try { context = await _listener.GetContextAsync(); }
-                catch (Exception error) when (error is HttpListenerException or ObjectDisposedException or InvalidOperationException) { return; }
-
-                try
-                {
-                    await AnswerAsync(context);
-                }
-                catch (Exception error) when (error is HttpListenerException or IOException or ObjectDisposedException)
-                {
-                }
-            }
-        }
-
-        private async Task AnswerAsync(HttpListenerContext context)
-        {
-            using var reader = new StreamReader(context.Request.InputStream, Encoding.UTF8);
-            var text = await reader.ReadToEndAsync();
-            var path = context.Request.Url!.AbsolutePath;
-            if (path.EndsWith("/count_tokens", StringComparison.Ordinal))
-            {
-                await WriteAsync(context, "application/json", """{"input_tokens":10}""");
-                return;
-            }
-
-            if (!path.EndsWith("/messages", StringComparison.Ordinal))
-            {
-                await WriteAsync(context, "application/json", "{}");
-                return;
-            }
-
-            JsonObject? body = null;
-            try { body = JsonNode.Parse(text) as JsonObject; } catch (JsonException) { }
-            lock (_requests) _requests.Add(body?["tools"] as JsonArray);
-            if (body?["stream"]?.GetValue<bool>() != true)
-            {
-                await WriteAsync(context, "application/json", """
-                    {"id":"msg_stand_in","type":"message","role":"assistant","model":"stand-in","content":[{"type":"text","text":"ok"}],"stop_reason":"end_turn","stop_sequence":null,"usage":{"input_tokens":1,"output_tokens":1}}
-                    """);
-                return;
-            }
-
-            var events = new StringBuilder();
-            void Event(string name, string data) => events.Append("event: ").Append(name).Append("\ndata: ").Append(data).Append("\n\n");
-            Event("message_start", """{"type":"message_start","message":{"id":"msg_stand_in","type":"message","role":"assistant","model":"stand-in","content":[],"stop_reason":null,"stop_sequence":null,"usage":{"input_tokens":10,"output_tokens":1}}}""");
-            Event("content_block_start", """{"type":"content_block_start","index":0,"content_block":{"type":"text","text":""}}""");
-            Event("content_block_delta", """{"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":"hello"}}""");
-            Event("content_block_stop", """{"type":"content_block_stop","index":0}""");
-            Event("message_delta", """{"type":"message_delta","delta":{"stop_reason":"end_turn","stop_sequence":null},"usage":{"output_tokens":1}}""");
-            Event("message_stop", """{"type":"message_stop"}""");
-            await WriteAsync(context, "text/event-stream", events.ToString());
-        }
-
-        private static async Task WriteAsync(HttpListenerContext context, string type, string text)
-        {
-            var bytes = Encoding.UTF8.GetBytes(text);
-            context.Response.StatusCode = 200;
-            context.Response.ContentType = type;
-            context.Response.ContentLength64 = bytes.Length;
-            await context.Response.OutputStream.WriteAsync(bytes);
-            context.Response.Close();
-        }
-
-        public async ValueTask DisposeAsync()
-        {
-            _listener.Stop();
-            _listener.Close();
-            await _serving;
-        }
     }
 }
 

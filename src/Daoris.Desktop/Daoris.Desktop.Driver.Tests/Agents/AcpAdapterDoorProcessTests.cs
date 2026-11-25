@@ -123,6 +123,29 @@ public sealed class AcpAdapterDoorProcessTests : IAsyncDisposable
         resumed.Release();
     }
 
+    [PinnedAdapterFact("claude-code-acp")]
+    public async Task Claude_Code_s_adapter_lists_the_tools_of_the_knowledge_server_its_session_is_handed() =>
+        await ListsTheKnowledgeServerAsync("claude-code-acp");
+
+    [PinnedAdapterFact("codex-acp")]
+    public async Task Codex_s_adapter_lists_the_tools_of_the_knowledge_server_its_session_is_handed() =>
+        await ListsTheKnowledgeServerAsync("codex-acp");
+
+    /// <summary>The proof in <c>grants.json</c> of a protocol door: the model is sent the knowledge server's tool.</summary>
+    private async Task ListsTheKnowledgeServerAsync(string door)
+    {
+        var run = await StartAsync(door);
+        var plan = new ConnectorPlan("grants-" + door, [StandInServer.Entry(run.Folder, KnowledgeConnector.ServerName)]);
+        var session = await run.OpenAsync(plan);
+
+        Assert.Equal("end_turn", await session.PromptAsync("Say hello.", CancellationToken.None).WaitAsync(Bound));
+        var calls = await run.Model.CallsAsync();
+        var tools = calls.SelectMany(call => call!["tools"]!.AsArray().Select(tool => (string?)tool ?? "")).Distinct(StringComparer.Ordinal).ToList();
+
+        StandInServer.AssertListed(tools, KnowledgeConnector.ServerName, $"{calls.Count} model calls");
+        session.Release();
+    }
+
     private async Task<Drive> StartAsync(string door, Drive? again = null)
     {
         var model = again?.Model ?? await ModelServer.StartAsync(_root, _started);
@@ -157,10 +180,10 @@ public sealed class AcpAdapterDoorProcessTests : IAsyncDisposable
         public string? Conversation { get; private set; }
 
 
-        public async Task<AcpSession> OpenAsync()
+        public async Task<AcpSession> OpenAsync(ConnectorPlan? plan = null)
         {
             var session = Connect();
-            await session.OpenAsync(Path.Combine(_folder, "work"), CancellationToken.None).WaitAsync(Bound);
+            await session.OpenAsync(Path.Combine(_folder, "work"), CancellationToken.None, plan).WaitAsync(Bound);
             return session;
         }
 
@@ -280,6 +303,7 @@ public sealed class AcpAdapterDoorProcessTests : IAsyncDisposable
             info.Environment["CLAUDE_CONFIG_DIR"] = Path.Combine(_folder, "home");
             info.Environment["CODEX_HOME"] = Path.Combine(_folder, "home");
             info.Environment["DISABLE_UPDATES"] = "1";
+            foreach (var (name, value) in BuiltDoors.Of(_door).Spawned().ToolsUpFront) info.Environment[name] = value;
             info.Environment["CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC"] = "1";
             info.Environment["STUB_KEY"] = "placeholder-not-a-key";
             info.Environment["CODEX_CONFIG"] = new JsonObject
