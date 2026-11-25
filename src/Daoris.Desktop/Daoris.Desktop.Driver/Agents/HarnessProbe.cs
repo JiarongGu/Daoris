@@ -112,7 +112,7 @@ public static class HarnessProbe
                 : asks is not null && !asks(name) ? LoginAnswer.Of(kept, asked: false)
                 : await LoginAsync(
                     resolved, toolchain, profileHome, isManaged, ct, key, ProbeLock.PathOf(home, owner, name),
-                    busy is null ? null : () => busy(name), kept, clock: now).ConfigureAwait(false);
+                    busy is null ? null : () => busy(name), kept, kind: again ? ReadKind.Press : ReadKind.Read, clock: now).ConfigureAwait(false);
             profiles.Add(new ProfileReport(
                 name, profileHome, answer.Login, answer.Account, held is null ? null : HarnessKeys.Handle(held),
                 Moment(answer, kept, said?.Read, name), AccountNames.NameOf(home, owner, name), answer.Org, answer.Plan)
@@ -200,19 +200,19 @@ public static class HarnessProbe
     /// (<paramref name="busy"/>, whose answer is then <paramref name="kept"/>) is no reading.
     /// </summary>
     /// <param name="patience">How long the lock is waited for (<see cref="ProbeLock.Patience"/> where null).</param>
-    /// <param name="renewing">A counted start's renewal (<see cref="SignInRefresh"/>), the one ask that may refresh the token.</param>
+    /// <param name="kind">Why it is asked: only a press and a start's renewal may have the agent refresh the token (<see cref="ReadKind"/>).</param>
     internal static async Task<LoginAnswer> AskAccountAsync(
         string adapter, AccountAgent toolchain, IReadOnlyList<string>? command,
         HarnessSettings settings, string home, string? profileHome, CancellationToken ct, string? lockPath,
         IReadOnlyDictionary<string, string>? key, Func<bool>? busy = null, LoginRead kept = default, TimeSpan? patience = null,
-        bool renewing = false, Func<DateTimeOffset>? clock = null)
+        ReadKind kind = ReadKind.Read, Func<DateTimeOffset>? clock = null)
     {
         // The pin, as the probe resolves it; nothing installed at it is nobody to ask.
         var run = CommandOf(adapter, toolchain, command, settings, home);
         return run.Missing
             ? new LoginAnswer(LoginState.Unknown, null, false)
             : await LoginAsync(
-                    run.Run, toolchain, profileHome, managed: run.Managed is not null, ct, key, lockPath, busy, kept, patience, renewing, clock)
+                    run.Run, toolchain, profileHome, managed: run.Managed is not null, ct, key, lockPath, busy, kept, patience, kind, clock)
                 .ConfigureAwait(false);
     }
 
@@ -259,7 +259,7 @@ public static class HarnessProbe
     private static async Task<LoginAnswer> LoginAsync(
         IReadOnlyList<string> resolved, AccountAgent toolchain, string? profileHome, bool managed,
         CancellationToken ct, IReadOnlyDictionary<string, string>? account = null, string? lockPath = null,
-        Func<bool>? busy = null, LoginRead kept = default, TimeSpan? patience = null, bool renewing = false,
+        Func<bool>? busy = null, LoginRead kept = default, TimeSpan? patience = null, ReadKind kind = ReadKind.Read,
         Func<DateTimeOffset>? clock = null)
     {
         if (toolchain.Accounts.KeyOnly)
@@ -280,7 +280,7 @@ public static class HarnessProbe
         if (busy?.Invoke() == true) return LoginAnswer.Of(kept, asked: false);
 
         return await ReadingAsync(
-            toolchain.Accounts.StoredSignIn, profileHome, clock?.Invoke(), renewing, kept,
+            toolchain.Accounts.StoredSignIn, profileHome, clock?.Invoke(), kind, kept,
             async () =>
             {
                 var answer = await AskAsync(resolved, question.Arguments, profileHome, toolchain, ct, managed, account)
@@ -295,10 +295,10 @@ public static class HarnessProbe
 
     /// <summary>One status question as a read (<see cref="ReadGuard"/>): not asked where it would refresh; a refused refresh undone.</summary>
     internal static async Task<LoginAnswer> ReadingAsync(
-        IStoredSignIn? store, string? profileHome, DateTimeOffset? now, bool renewing, LoginRead kept, Func<Task<LoginAnswer>> ask)
+        IStoredSignIn? store, string? profileHome, DateTimeOffset? now, ReadKind kind, LoginRead kept, Func<Task<LoginAnswer>> ask)
     {
-        if (!renewing && now is { } at && ReadGuard.WouldRefresh(store, profileHome, at)) return LoginAnswer.Of(kept, asked: false);
-        var (answer, put) = await ReadGuard.AskAsync(store, profileHome, restore: !renewing, ask).ConfigureAwait(false);
+        if (kind == ReadKind.Read && now is { } at && ReadGuard.WouldRefresh(store, profileHome, at)) return LoginAnswer.Of(kept, asked: false);
+        var (answer, put) = await ReadGuard.AskAsync(store, profileHome, restore: kind != ReadKind.Renewal, now, ask).ConfigureAwait(false);
         return put ? LoginAnswer.Of(kept, asked: false) with { Kept = true } : answer;
     }
 

@@ -146,9 +146,11 @@ internal static class AgentAccountLines
         };
     }
 
-    public static string SharedWith(IEnumerable<string> others, string owner, string account) =>
-        $"shares its sign-in with {string.Join(", ", others.Select(other => $"`{other}`"))}: one single-use refresh token in several stores is spent for all by "
-        + $"whichever refreshes first, which signs the rest out; `daoris agent login {owner} --account {account}` signs this one in on its own";
+    public static string SharedWith(IEnumerable<string> others, string owner, string account, bool deviceCode) =>
+        $"shares its sign-in with {string.Join(", ", others.Select(other => $"`{other}`"))}: its store looks copied from another sign-in, and one single-use "
+        + $"refresh token in several stores is spent for all by whichever refreshes first, which signs the rest out; "
+        + $"`daoris agent login {owner} --account {account}{(deviceCode ? " --device-code" : "")}` signs this one in on its own"
+        + (deviceCode ? ", with a code finished on another device" : "");
 
     /// <summary>The accounts of <paramref name="owner"/> cooling now, each named once however many entries it holds.</summary>
     public static IReadOnlyList<string> CoolingNow(IEnumerable<CoolingEntry> cooling, string owner) =>

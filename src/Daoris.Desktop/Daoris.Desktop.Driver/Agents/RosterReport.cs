@@ -42,9 +42,9 @@ internal sealed class RosterReport(HarnessRoster roster)
             roster._refused.TryRemove(HarnessRoster.AccountKey(owner, named), out _);
             // Asked the way its owner asks when this build carries the owner: a door declares no login question.
             var asker = AnswersFor(name, toolchain);
-            await AskOneAsync(asker.Name, asker, owner, named, config, ct).ConfigureAwait(false);
+            await AskOneAsync(asker.Name, asker, owner, named, config, ct, pressed: true).ConfigureAwait(false);
             // And its windows, where its agent's server is asked them.
-            await roster.AskUsageAsync(name, owner, named, config, ct).ConfigureAwait(false);
+            await roster.AskUsageAsync(name, owner, named, config, ct, pressed: true).ConfigureAwait(false);
         }
         else if (refresh)
         {
@@ -251,8 +251,9 @@ internal sealed class RosterReport(HarnessRoster roster)
     /// (<see cref="HarnessProbe.LoginAnswer.Locked"/>), so a walk leaves the account unknown for itself.
     /// </summary>
     internal async Task<HarnessProbe.LoginAnswer> AskOneAsync(
-        string adapter, AccountAgent toolchain, string owner, string account, DriverConfig config, CancellationToken ct)
+        string adapter, AccountAgent toolchain, string owner, string account, DriverConfig config, CancellationToken ct, bool pressed = false)
     {
+        var kind = pressed ? ReadKind.Press : ReadKind.Read;
         var key = toolchain.Accounts.KeyVariable is { Length: > 0 } variable && HarnessKeys.Of(roster.Home, owner, account) is { } held
             ? new Dictionary<string, string> { [variable] = held }
             : null;
@@ -261,14 +262,15 @@ internal sealed class RosterReport(HarnessRoster roster)
         var home = HarnessSettings.ProfileHome(roster.Home, owner, account);
         var answer = roster.Asking is { } standIn
             ? await HarnessProbe.ReadingAsync(
-                toolchain.Accounts.StoredSignIn, home, roster.Clock(), renewing: false, priorWord,
+                toolchain.Accounts.StoredSignIn, home, roster.Clock(), kind, priorWord,
                 async () => new HarnessProbe.LoginAnswer(await standIn(owner, account, ct).ConfigureAwait(false), null, true)).ConfigureAwait(false)
             : await HarnessProbe.AskAccountAsync(
                 adapter, toolchain, config.Commands.GetValueOrDefault(adapter), roster.Settings, roster.Home,
                 home, ct, ProbeLock.PathOf(roster.Home, owner, account), key,
                 busy: () => Busy(owner, account), kept: priorWord,
-                patience: roster.LockPatience, clock: roster.Clock).ConfigureAwait(false);
+                patience: roster.LockPatience, kind: kind, clock: roster.Clock).ConfigureAwait(false);
         if (answer.Kept) roster.Writes?.Kept(owner, account, SignInCause.Probe);
+        else StoredSignIns.MarkIfCleared(roster, owner, account, toolchain.Accounts.StoredSignIn);
         // A mark this question answered is spent, whatever the file's clock says against the roster's.
         var asked = roster.Clock();
         if (ProbeLock.SignedIn(roster.Home, owner, account) is { } marked && marked > asked) asked = marked;

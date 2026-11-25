@@ -66,6 +66,13 @@ public sealed class SignOutSharedTests : IDisposable
         lock (_usageAsked) return [.. _usageAsked];
     }
 
+    /// <summary>The account's own reading puts its session window at 100% until after now: at its limit.</summary>
+    private void AtItsLimit() =>
+        AccountWindows.Said(
+            _home, "agent", "account-1",
+            [new WindowReading("session", 1.0, Start.AddHours(1)), new WindowReading("weekly", 0.6, Start.AddDays(3))],
+            Start - TimeSpan.FromMinutes(30), session: null, source: AccountWindows.SourceRead);
+
     private static object? Value(AccountLine line, string key) => line.Data.First(each => each.Key == key).Value;
 
     /// <summary>The read of an account whose access token has expired starts no refresh: the account keeps its last reading and nothing is asked of its agent.</summary>
@@ -121,6 +128,7 @@ public sealed class SignOutSharedTests : IDisposable
         _agent.SignedIn(expires: Start + TimeSpan.FromHours(7));
         AccountReads.Keep(_home, "agent", "account-1", LoginState.In, Start - TimeSpan.FromHours(1));
         _agent.RefuseReads();
+        AtItsLimit();
         var before = _agent.Bytes();
         var roster = Roster();
         roster.Writes = new CredentialWrites(roster, _lines.Enqueue);
@@ -147,6 +155,7 @@ public sealed class SignOutSharedTests : IDisposable
     {
         _agent.SignedIn(expires: Start + TimeSpan.FromHours(7));
         _agent.RefuseReads();
+        AtItsLimit();
         var before = _agent.Bytes();
 
         var read = await Roster().AskUsageAsync("agent", "agent", "account-1", Config, CancellationToken.None);
@@ -182,6 +191,7 @@ public sealed class SignOutSharedTests : IDisposable
     {
         _agent.SignedIn(expires: Start + TimeSpan.FromHours(7));
         _agent.RefuseReads();
+        AtItsLimit();
         using var signing = SignInMarks.Begin(_account);
 
         var roster = Roster();
@@ -252,10 +262,81 @@ public sealed class SignOutSharedTests : IDisposable
         Assert.Null(store.Fingerprint(HarnessSettings.ProfileHome(_home, "claude-code", "empty-1")));
 
         // The list says it with the way out.
-        var line = AgentAccountLines.SharedWith(["copy"], "claude-code", "account-1");
-        Assert.Contains("shares its sign-in with `copy`", line);
+        var line = AgentAccountLines.SharedWith(["copy"], "claude-code", "account-1", deviceCode: false);
+        Assert.Contains("shares its sign-in with `copy`: its store looks copied from another sign-in", line);
         Assert.Contains("`daoris agent login claude-code --account account-1` signs this one in on its own", line);
+        Assert.DoesNotContain("--device-code", line);
+        Assert.Contains("`daoris agent login codex --account a --device-code` signs this one in on its own, with a code finished on another device",
+            AgentAccountLines.SharedWith(["copy"], "codex", "a", deviceCode: true));
         Assert.DoesNotContain("one-token", line);
+    }
+
+    /// <summary>A store emptied by a read where the account is not at its limit is no refusal at a limit: it is left, and the account is signed out.</summary>
+    [Fact]
+    public async Task A_store_emptied_by_a_read_away_from_its_limit_is_left_and_read_signed_out()
+    {
+        _agent.SignedIn(expires: Start + TimeSpan.FromHours(7));
+        AccountReads.Keep(_home, "agent", "account-1", LoginState.In, Start - TimeSpan.FromHours(1));
+        _agent.RefuseReads();
+        var roster = Roster();
+
+        var answer = await roster.AskOneAsync("agent", roster.AgentOf("agent")!, "agent", "account-1", Config, CancellationToken.None);
+
+        Assert.False(answer.Kept);
+        Assert.True(_agent.Read("")!.Cleared);
+        Assert.Equal(LoginState.Out, AccountReads.Of(_home, "agent").Accounts["account-1"].Login);
+    }
+
+    /// <summary>Only the first emptying in a limit window is put back: a second one in the same window is a real one and reads signed out.</summary>
+    [Fact]
+    public async Task A_second_emptying_in_one_limit_window_is_left_and_read_signed_out()
+    {
+        _agent.SignedIn(expires: Start + TimeSpan.FromHours(7));
+        AtItsLimit();
+        _agent.RefuseReads();
+        var roster = Roster();
+
+        var first = await roster.AskOneAsync("agent", roster.AgentOf("agent")!, "agent", "account-1", Config, CancellationToken.None, pressed: true);
+        Assert.True(first.Kept);
+        var second = await roster.AskOneAsync("agent", roster.AgentOf("agent")!, "agent", "account-1", Config, CancellationToken.None, pressed: true);
+
+        Assert.False(second.Kept);
+        Assert.True(_agent.Read("")!.Cleared);
+        Assert.Equal(LoginState.Out, AccountReads.Of(_home, "agent").Accounts["account-1"].Login);
+    }
+
+    /// <summary>The person's press renews an expiring account as a start does, so a re-read of one idle past its token's life is not silently refused.</summary>
+    [Fact]
+    public async Task A_press_on_an_expiring_account_renews_it_and_reads_it()
+    {
+        _agent.SignedIn(expires: Start - TimeSpan.FromMinutes(1));
+        var roster = Roster();
+
+        var answer = await roster.AskOneAsync("agent", roster.AgentOf("agent")!, "agent", "account-1", Config, CancellationToken.None, pressed: true);
+        var windows = await roster.AskUsageAsync("agent", "agent", "account-1", Config, CancellationToken.None, pressed: true);
+
+        Assert.True(answer.Asked);
+        Assert.Equal(1, _agent.Refreshes);
+        Assert.NotNull(windows);
+    }
+
+    /// <summary>The roster's report carries the accounts a store shares its refresh token with, and the list says it.</summary>
+    [Fact]
+    public async Task The_roster_and_the_list_say_a_shared_sign_in()
+    {
+        ClaudeStore("account-1", "one-token");
+        ClaudeStore("copy", "one-token");
+        ClaudeStore("own", "another-token");
+        var roster = new HarnessRoster(ProviderRegistry.Built(), Settings) { Clock = () => Start };
+
+        var report = (await roster.ReportAsync("claude-code", DriverConfig.Empty))!;
+
+        Assert.Equal(["copy"], report.Profiles.Single(profile => profile.Name == "account-1").SharedWith);
+        Assert.Null(report.Profiles.Single(profile => profile.Name == "own").SharedWith);
+        var lines = AgentListCommand.AccountLines(
+            "claude-code", roster.Adapters.AgentNamed("claude-code")!, report, roster.Settings, _home, roster.Adapters, Start, TimeZoneInfo.Utc);
+        Assert.Contains(lines, line => line.Contains("shares its sign-in with `copy`", StringComparison.Ordinal));
+        Assert.Equal(1, lines.Count(line => line.Contains("shares its sign-in with `account-1`", StringComparison.Ordinal)));
     }
 
     /// <summary>
@@ -277,6 +358,14 @@ public sealed class SignOutSharedTests : IDisposable
 
         string? IStoredSignIn.FileName => "store.json";
 
+        /// <summary>The store read as the real reader reads it, sharing writing and deletion, so a rename over it is never held off.</summary>
+        private string Shared()
+        {
+            using var stream = new FileStream(Store, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete);
+            using var reader = new StreamReader(stream);
+            return reader.ReadToEnd();
+        }
+
         public byte[] Bytes() => File.ReadAllBytes(Store);
 
         public void SignedIn(DateTimeOffset expires) => Write("access-0", "refresh-0", expires.ToUnixTimeMilliseconds());
@@ -293,7 +382,7 @@ public sealed class SignOutSharedTests : IDisposable
             lock (_gate)
             {
                 Asks++;
-                var node = JsonNode.Parse(File.ReadAllText(Store))!;
+                var node = JsonNode.Parse(Shared())!;
                 var expires = DateTimeOffset.FromUnixTimeMilliseconds((long)node["expiresAt"]!);
                 if (_refusing)
                 {
@@ -318,7 +407,7 @@ public sealed class SignOutSharedTests : IDisposable
         public StoredSignInShape? Read(string profileHome)
         {
             if (!File.Exists(Store)) return null;
-            var node = JsonNode.Parse(File.ReadAllText(Store))!;
+            var node = JsonNode.Parse(Shared())!;
             var expires = (long)node["expiresAt"]!;
             return new StoredSignInShape(
                 ((string?)node["access"])?.Length > 0, ((string?)node["refresh"])?.Length > 0,

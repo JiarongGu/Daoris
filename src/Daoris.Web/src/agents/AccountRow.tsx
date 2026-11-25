@@ -138,7 +138,7 @@ function stateWhy(t: (key: string, values?: Record<string, string>) => string, s
  * why a state reads as it does (a cool-off's whose-time, a key's check or refusal) opens under the row from a press a
  * keyboard reaches, not from a tip on hover alone.
  */
-export function AccountRow({ name, label = name, who, plan, id, home, why, state, shared, current, usage, act, menu, now, children }: {
+export function AccountRow({ name, label = name, who, plan, id, home, why, state, shared, sharedDeviceCode, current, usage, act, menu, now, children }: {
   /** What leads: the person's name for it, a key's handle, who signed in for a fresh id, its id, or *Your own sign-in*. */
   name: string;
   /**
@@ -161,6 +161,8 @@ export function AccountRow({ name, label = name, who, plan, id, home, why, state
   state?: AccountState;
   /** The accounts whose store holds this one's refresh token, named; said once under the row with how to separate them. Absent says nothing. */
   shared?: string | null;
+  /** Whether its agent signs in with a device code, which the shared line then offers. */
+  sharedDeviceCode?: boolean;
   /** *Now*: *1 session* while something runs on it; null leaves the cell blank. */
   current?: string | null;
   /** What its agent last said, under the row's line: a cell a window and the account's notes (`usageCells`); null says nothing. */
@@ -270,7 +272,7 @@ export function AccountRow({ name, label = name, who, plan, id, home, why, state
       )}
       {shared && (
         <p data-shared className="col-span-full col-start-1 m-0 text-small text-ink-soft [overflow-wrap:anywhere]">
-          {t('harness.account.shared', { accounts: shared })}
+          {t(sharedDeviceCode ? 'harness.account.sharedDevice' : 'harness.account.shared', { accounts: shared })}
         </p>
       )}
       {/* What its agent last said: a cell a window, the session's and the week's in two columns at every width, so

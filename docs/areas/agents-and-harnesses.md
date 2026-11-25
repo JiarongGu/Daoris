@@ -266,16 +266,22 @@ where a seam, route, verb or fixture is. Which folder owns which job:
     marks one the watch missed, with no cause. A store that is deleted, and not emptied, marks nothing: the install's writes of the
     store each show a `deleted` line then a `renamed` one a millisecond later, so a deletion alone says nothing. A watch-made signed-in
     reading is kept in `reads.json` alone, with no who or plan until the next status read. (SIGNOUTSEEN1)
-    A read of an account (its status question, its windows) never starts a refresh of its sign-in (`ReadGuard`): where the stored access
-    token is expired or expires within the renewal margin, a read is not asked and the account keeps its last reading; only a counted
-    start's renewal asks it, because a session is about to use it. A refresh its agent makes in a read that is refused, which empties the
-    store, is undone from the store's bytes held in memory for the read alone (a `credentials.kept` line; the watch says the write `held`
-    and marks no sign-out; Daoris's own sign-in at the account is left alone). A start's or a turn's read passes an account whose reading
-    puts a window at 100% before its reset (`RosterUsage.AtLimit`), a press still asking. Accounts whose stores hold one refresh token, which
-    whichever refreshes first spends for all, are said once on each in the roster, the CLI list and the agent's page, with the way out, to
-    sign each in on its own: a one-way fingerprint of the token (`IStoredSignIn.Fingerprint`, a digest made inside the provider's reader,
-    compared in memory, never logged, shown or written) compared among one agent's accounts; the person's own sign-in is not compared.
-    (SIGNOUTSHARED1)
+    A read of an account (its status question, its windows) starts no refresh of its sign-in (`ReadGuard`, `ReadKind`): where the stored
+    access token is expired or expires within the renewal margin, a look's, a start's or a turn's read is not asked and the account keeps its
+    last reading; the person's press (*Read now*, *Read again*, `daoris agent list --again`) and a counted start's renewal may refresh it,
+    where nothing of Daoris's runs on the account. The account may also be signed in at another place (the person's own Claude Code on the
+    same account), whose use and limit are the account's: where the account's own reading puts a window at 100% before its reset
+    (`RosterUsage.AtLimit`, `ReadGuard.Limit`), a start's or a turn's read passes it, a press still asks, and a refresh its agent makes in
+    a read that is refused at the limit, which empties the store, is undone from the store's bytes held in memory for the read alone (written
+    with the old file's mode; a `credentials.kept` line; the watch says the write `held` and marks no sign-out meanwhile). It is undone once
+    in a limit window: a second emptying in the same window, an emptying where the account's reading says no limit, a revocation among them,
+    and one Daoris's own sign-in is at, leave the store as the agent wrote it and read the account signed out (`StoredSignIns.MarkIfCleared`,
+    and the next look or write). Accounts whose stores hold one refresh token, which whichever refreshes first spends for all, are said once
+    on each in the roster, the CLI list and the agent's page, as a store that looks copied, with the way out: to sign each in on its own,
+    by a device code where its agent declares one (`IStoredSignIn.Fingerprint`, a digest made inside the provider's reader, compared in
+    memory among one agent's accounts, never logged, shown or written; the person's own sign-in is not compared). A read made by the
+    CLI's own process is guarded the same way, but its watch is not the desktop's, so a store it empties and puts back may show the
+    desktop a passing sign-out. (SIGNOUTSHARED1)
 
 **Usage, limits and errors**
 

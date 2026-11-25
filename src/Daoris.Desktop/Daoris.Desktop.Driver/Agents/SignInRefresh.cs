@@ -38,7 +38,7 @@ internal static class SignInRefresh
             ? new HarnessProbe.LoginAnswer(await standIn(owner, account, ct).ConfigureAwait(false), null, true)
             : await HarnessProbe.AskAccountAsync(
                 asker.Name, asker, config.Commands.GetValueOrDefault(asker.Name), roster.Settings, roster.Home, home, ct,
-                lockPath: null, key: null, renewing: true, clock: roster.Clock).ConfigureAwait(false);
+                lockPath: null, key: null, kind: ReadKind.Renewal, clock: roster.Clock).ConfigureAwait(false);
         if (answer.Asked) roster.Keep(owner, account, answer.Said, roster.Clock());
         return true;
     }
@@ -149,6 +149,16 @@ internal static class StoredSignIns
         var at = read is null || shape.Written > read.At ? shape.Written : roster.Clock();
         roster.Keep(owner, account, new LoginRead(LoginState.Out, null), at, by);
         return true;
+    }
+
+    /// <summary>
+    /// A store a read left cleared: marked signed out here, since the watch held its mark while the read ran, and the notice claimed as the watch does.
+    /// </summary>
+    internal static void MarkIfCleared(HarnessRoster roster, string owner, string account, IStoredSignIn? store)
+    {
+        if (store?.Read(HarnessSettings.ProfileHome(roster.Home, owner, account)) is not { Cleared: true } shape) return;
+        if (!MarkOut(roster, owner, account, shape, SignInCause.Probe)) return;
+        if (!SignInMarks.Active(roster.Home, owner, account, roster.Clock())) SignOutNotices.Claim(roster.Home, roster.Clock());
     }
 
     /// <summary>A store filled after the watch saw it cleared is a sign-in: the account read signed out reads signed in; whether it marked.</summary>

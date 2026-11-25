@@ -209,7 +209,7 @@ internal static class AgentListCommand
 
             if (shared.GetValueOrDefault(profile.Name) is { Count: > 0 } sharing)
             {
-                lines.Add($"{Under}{gap} {AgentAccountLines.SharedWith(sharing.Select(Shown), owner, ShellWord.Of(profile.Name, ShellWord.Account))}");
+                lines.Add($"{Under}{gap} {AgentAccountLines.SharedWith(sharing.Select(Shown), owner, ShellWord.Of(profile.Name, ShellWord.Account), toolchain.Accounts.DeviceLoginArguments is { Count: > 0 })}");
             }
 
             foreach (var cooled in AgentAccountLines.CoolingLinesOf(cooling, owner, profile.Name, now, zone))

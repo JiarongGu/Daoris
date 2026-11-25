@@ -259,4 +259,17 @@ public sealed class DriverModuleAccountNamesTests : DriverModuleBridge
         Assert.Equal(("Org B", "max"), (said.GetProperty("Org").GetString(), said.GetProperty("Plan").GetString()));
         Assert.Equal((JsonValueKind.Null, JsonValueKind.Null), (none.GetProperty("Org").ValueKind, none.GetProperty("Plan").ValueKind));
     }
+
+    /// <summary>An account whose store shares its refresh token with another says which, by id, for the page; one that shares none says null.</summary>
+    [Fact]
+    public void An_account_on_the_roster_says_the_accounts_it_shares_its_sign_in_with()
+    {
+        var shared = JsonSerializer.SerializeToElement(AgentsRoutes.ProfileShown(
+            new ProfileReport("account-1", Path.Combine(Home, "a"), LoginState.In) { SharedWith = ["copy"] }, settingsFile: null));
+        var alone = JsonSerializer.SerializeToElement(AgentsRoutes.ProfileShown(
+            new ProfileReport("copy", Path.Combine(Home, "b"), LoginState.In), settingsFile: null));
+
+        Assert.Equal(["copy"], shared.GetProperty("Shared").EnumerateArray().Select(each => each.GetString()).ToArray());
+        Assert.Equal(JsonValueKind.Null, alone.GetProperty("Shared").ValueKind);
+    }
 }

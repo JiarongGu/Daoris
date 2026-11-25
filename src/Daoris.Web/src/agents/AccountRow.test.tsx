@@ -172,6 +172,10 @@ describe('an account’s row without a pointer (ACCTUX2)', () => {
     expect(screen.getAllByText(/Shares its sign-in with/)).toHaveLength(1);
     cleanup();
 
+    render(<ul><AccountRow name="spare" shared="reserve" sharedDeviceCode state={accountState({ login: 'in', read: READ }, null, true)} menu={[]} /></ul>);
+    expect(screen.getByText(/looks copied from another sign-in/)).toHaveTextContent('with a device code');
+    cleanup();
+
     await i18n.changeLanguage('zh');
     render(<ul><AccountRow name="spare" shared="reserve" state={accountState({ login: 'in', read: READ }, null, true)} menu={[]} /></ul>);
     expect(screen.getByText(/与 reserve 共用同一个登录/)).toBeInTheDocument();
