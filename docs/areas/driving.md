@@ -27,6 +27,7 @@ the run's stages and the quest log's operations in their order.
 | `Loop/Watch/`, `Loop/` | When a look runs (`WatchRun`); intakes, continuations (`Loop/Continue/`), helpers, partners, brainstorms, `DriverCommand`, how this Daoris is wired (`SystemWiring`, `Loop/Setup/`) |
 | `Course/`, `Events/` | How a line goes on (`LineCourse.Decide`, `LimitCourse`), the driven inbox, `MoveStore`; a run's end (`Observation`, `PartEnds`), `SessionWatch` |
 | `Bus/` | The bus's log (D356 steps 1 and 2, rule 30a): `BusLog` writes envelopes behind into the desktop store through one port (`IBusLogStore`, today `DesktopBusLogStore`), the opinion and check facts teed in from their own subdomain (`Review/OpinionBusFacts`, `OpinionBusTee`, `Review/Heavy/CheckBusFacts`), its measures read by `daoris bus stats` (`BusStatsCommand`); the timers each write arms and clears (`BusTimers`), the shadow watchdog (`BusWatchdog`) with the look's reading beside each stall (`BusLook`'s port, today `Review/OpinionRecordLook`), read by `daoris bus stalls` (`BusStallsCommand`) |
+| `Workflows/Environments/` | A repository's running environments as shared, versioned resources (D361, rule 54): the declaration (`EnvironmentDeclaration`), the version (`EnvironmentVersion`), the pure ledger of instances and leases (`EnvironmentLedger`) and the one gate over it and the machine's processes (`SharedEnvironments`, `IEnvironmentProcesses`) |
 | `Settings/` | `driver.json` (`DriverConfig` and its one writer), every machine setting declared once (`MachineSettings`), `QuietSetting`, `ManifestSetting`, the standing choices |
 | `Workplace/` | Trees (`SessionTrees` over `TreeContext`), dependencies (`Deps/`), the kept slots (`Pool/`), rooms (`LaneRooms`, `RoomCheck`), the files rules (`Files/`), the tidy (`AutoTidies`, `TreeSetAside`, `EndJudgement`, `Orphans`) |
 | `Setup/Create/`, `Setup/Room/`, `Setup/Growth/` | A department made by one press (rule 51: `RepositoryCreates`, `RepositoryCreatePlans`, `CreateJudge`, `CreateReceipts`, `RepositoryCreateWork`, `RepositoryCreateCommand`); a room asked of an adopted repository (rule 53: `PlaceRooms`, `PlaceRoomApplies`, `RoomBrief` in `Setup/Domain/`); the growth switch's one resolver (`GrowthRules`) |
@@ -726,6 +727,24 @@ built, but nothing outside tests makes, takes or ends one; `LinePlaces` answers 
     convention and the repository's own declaration as its line holds it, and asks only for `daoris --version`, `sync` and `check`
     (`SetupPressRules.RoomRules`). The growth switch for the repository (its own value, else its workspace's) is read by the same plan:
     `off` refuses the room (`growth-off`).
+54. A running environment (a game server, a docker stack, a database) is one shared, versioned resource, never something each agent
+    starts. A repository declares it in its own `daoris.json` under `environments`, beside `deployables`: `id`, `inputs` (the
+    repository-relative paths whose content makes it what it is), `start` (its own command; Daoris supplies no way to run one),
+    `ports` (names) and `graceSeconds` (`EnvironmentDeclaration`; an entry that does not read is left out and said). Its version is a
+    digest of its id, its start command, its port names and each input pathspec's content id at a tree (`EnvironmentVersion`): content, never a commit or a
+    counter, so a revert is a move back to a known version. Daoris judges whether a session changes an environment: its branch's
+    version differs from the one it forked with and from the line's (`EnvironmentUse.Changes`), so a branch that only lags a landing
+    leases the shared instance; the agent never says. A session that only uses it leases the one
+    shared instance of the line; a session whose branch changes it leases the instance of that branch (`EnvironmentInstance.Scope`),
+    on ports taken from the machine's pool, which sessions of that branch join and no other branch is moved onto, and which follows
+    its branch's version. A lease is a machine-local `(session, environment, instance)` record, one per session and environment
+    (the last asked), held while the session is; an instance no lease holds is stopped once its grace has passed
+    (`EnvironmentLedger.Sweep`); a start runs outside the gate under a deadline, and one that fails drops the instance and its leases (`SharedEnvironments`); a sweep stops each instance on its own and says the failures. The admission counts instances
+    (`EnvironmentLedger.Count`), never leases: a new instance past its capacity takes out the instance idle longest, and is refused only where every one is held; a lease of a running one never is.
+    Processes, ports and the ledger stay on this machine. Built: the declaration, the version, the ledger and `SharedEnvironments`
+    over a seam to the processes, proved on a stand-in server (`SharedEnvironmentsTests`); the real process host, the ledger kept in
+    the home, a session's lease taken at its start, the shared instance moving to the new version when a landing changes it, the
+    window's view, and data are SHAREDENV1's later slices. (D361, D290, D349)
 
 ## Where a change goes
 
@@ -744,6 +763,7 @@ are roots that wire and grow by a one-line door at most.
 | when a look runs | `Loop/Watch/WatchRun.cs` | `LookStagesTests`, `DriverWatchLookTests`, `LookAccountTests` (120 graph runs whose records stand older than `NodeRecordFiles.Settled`, as a running home's do: a look's stages add up to it, a warm look under half the cold one), `NodeWakesTests` |
 | what a read costs at a home's size | the read's own unit | `HomeSizeBenchProcessTests` over `BenchHome` (3,000 records, two dozen trees: the look 0 git starts and 2 record requests, the tidy 8 starts, a tree's walk 17), `LookWorkBenchProcessTests` (ten open trees: no git where nothing moved), `TidyHomeBenchProcessTests` (thirty repositories, forty-two
 trees: a warm tidy pass 0 starts, one repository moved only its own), `TidyIdlenessTests`, `SessionReadsBenchProcessTests` |
+| a running environment, its version, its leases | `Workflows/Environments/` (the declaration, `EnvironmentVersion`, the pure `EnvironmentLedger`, the gate `SharedEnvironments` over `IEnvironmentProcesses`) | `EnvironmentDeclarationTests`, `EnvironmentVersionTests`, `EnvironmentLedgerTests`, `SharedEnvironmentsTests` |
 | quiet sessions | `Events/SessionWatch.cs`, `Loop/Run/Conclude/QuietWord.cs`, `Settings/QuietSetting.cs` | `SessionWatchTests`, `QuietWordTests` |
 | a machine setting or a door onto one | an entry in `Settings/List/MachineSettings.cs`, each door spelled by its key | `MachineSettingsCensusTests`, `everySetting.test.tsx` |
 | opening, following or removing a tree | a class over `TreeContext` in `Workplace/`, wired in `SessionTrees` | `SessionTreesTests`, `DependencyStoreTests`, `InstallScriptsTests`, `OpeningShapeProcessTests` (a second opening of a repository of this one's shape, its tree and files stages timed and held to 30 s), `NpmToolchainMemoTests`, `TreeCheckoutSpreadTests` |
@@ -785,5 +805,7 @@ size ratchet. A changed driven loop also meets the family rehearsal (`npm run re
 - **BUS2b3, BUS2d to BUS2g** (D356): the Daoris bus, one driver-owned log every fact, request and answer goes through; its first two
   steps stand (rule 30a: the log, and the watchdog in shadow), and its rows move the looks of rule 30 to reducers over it one job at
   a time, the opinion gate first.
+- **SHAREDENV1** (D361): shared, versioned environments; its first slice stands (rule 54), its rest is the real process host, the
+  ledger kept in the home, a lease taken at a session's start, the move on a landing, the window's view and data.
 - **LINESTOGETHER1e**: the steward's forms for several lines in one repository.
 - D178's last clause, handing a lost take's work to the winner: no row until a way to reach it is asked for.
