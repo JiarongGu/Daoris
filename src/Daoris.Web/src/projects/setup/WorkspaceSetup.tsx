@@ -9,6 +9,7 @@ import {
 } from '../../settings/repository/HandOver';
 import { GROWTH_DEFAULT, GrowthSetting, type GrowthValue, growthSummary } from '../../settings/repository/Growth';
 import { type PlaceRiskChange, type PlaceRiskRow, PlaceRiskSetting } from '../../settings/place/PlaceRisk';
+import { PlaceRiskActsSection, type RiskActsBridge } from '../../settings/place/PlaceRiskActs';
 import type { PlaceCastBridge } from '../../settings/place/PlaceCast';
 import { PlaceCastSection } from './PlaceCastSection';
 import { LanguageChoice, type LanguageOption } from '../../settings/repository/Languages';
@@ -54,6 +55,7 @@ export type WorkspaceDefaults = {
   risk?: {
     row?: PlaceRiskRow; onChange: (change: Omit<PlaceRiskChange, 'workspace' | 'repository'>) => void;
     cast?: PlaceCastBridge;
+    acts?: RiskActsBridge;
   } | null;
 };
 
@@ -329,6 +331,7 @@ export function WorkspaceSetup({
               onChange={risk.onChange}
             />
           )}
+          {risk?.acts && <PlaceRiskActsSection bridge={risk.acts} workspace={workspace} repository={null} />}
           {risk?.cast && <PlaceCastSection bridge={risk.cast} workspace={workspace} />}
           {read && (
             <Inheritable

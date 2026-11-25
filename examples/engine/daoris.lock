@@ -1,7 +1,7 @@
 {
   "version": 1,
   "canonVersion": "0.0.1",
-  "canonDigest": "0f444a3ea97de1707f49ba9c3eb347818a9bd95838c28215d399f533b81c7da5",
+  "canonDigest": "ec8fb51181bbab919a6812fe1272ef89e87698b3363237396620f9d9d6905dcc",
   "source": "daoris@0.0.1",
   "entries": [
     {
@@ -9,7 +9,7 @@
       "source": "core/knowledge/autonomous-development.md",
       "target": "knowledge/autonomous-development.md",
       "canonVersion": "0.0.1",
-      "sha256": "364b06fd7ece723d584030b0218cbd722026b413a085381bdfdbbfa87cf70b04"
+      "sha256": "43b9b8ca558aba8b4f96f3f21f21939a6c86526bd78ecea5734d6cac8be79b1b"
     },
     {
       "pack": "core",
@@ -30,7 +30,7 @@
       "source": "core/knowledge/development-documents.md",
       "target": "knowledge/development-documents.md",
       "canonVersion": "0.0.1",
-      "sha256": "fc2509dee304209224a58c76953f940a941caf4d56788041e46dba20dc2b71ce"
+      "sha256": "a65daa1387d47e0557603bc3989021a3bef4f5282580cc4978a41a2d7f749c86"
     },
     {
       "pack": "core",
@@ -128,7 +128,7 @@
       "source": "core/rules/every-session.md",
       "target": "rules/every-session.md",
       "canonVersion": "0.0.1",
-      "sha256": "e7842d4cc9ccd002b1ae3c39cdc6382a3cd4e256323794a8f2922d450f48c421",
+      "sha256": "1bf75fd21ab73db2f3799278038a9654e811d0e5206fce300b720c69909b5280",
       "in": "AGENTS.md"
     },
     {

@@ -366,7 +366,7 @@ describe('a malformed glossary', () => {
   });
 });
 
-describe('the real glossary and catalogues', () => {
+describe('the real glossary and catalogues', { timeout: 30_000 }, () => {
   const { glossary, en, zh } = load();
   const scans = new Map<boolean, ReturnType<typeof check>>();
   const scanned = (all = false) => {

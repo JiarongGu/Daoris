@@ -998,28 +998,28 @@
       "out": [
         "daoris: this machine: low (default).",
         "  No record is written yet: Daoris writes it at its next start.",
-        "  Each act here under restricted access, by the risk policy (revision seed):",
-        "    work.done        none",
-        "    work.accept      none",
-        "    task.approve     none",
-        "    work.recover     none",
-        "    line.land        none",
-        "    remote.push      none",
-        "    release.start    none",
-        "    publish.outside  none",
-        "    spend.money      none",
-        "    direction.set    none",
-        "    check.narrow     none, said in one line",
-        "    reach.widen      role, by `approver`",
-        "    command.change   owner",
-        "    agent.version    none",
-        "    history.rewrite  owner",
-        "    data.delete      owner",
-        "    policy.change    owner, fixed"
+        "  Each act at machine under restricted access, by the risk policy (revision seed); counts are of the last seven days:",
+        "    work.done        none, the seed  (0 passed, 0 asked)",
+        "    work.accept      none, the seed  (0 passed, 0 asked)",
+        "    task.approve     none, the seed  (0 passed, 0 asked)",
+        "    work.recover     none, the seed  (0 passed, 0 asked)",
+        "    line.land        none, the seed  (0 passed, 0 asked)",
+        "    remote.push      none, the seed  (0 passed, 0 asked)",
+        "    release.start    none, the seed  (0 passed, 0 asked)",
+        "    publish.outside  none, the seed  (0 passed, 0 asked)",
+        "    spend.money      none, the seed  (0 passed, 0 asked)",
+        "    direction.set    none, the seed  (0 passed, 0 asked)",
+        "    check.narrow     none, said in one line  (0 passed, 0 asked)",
+        "    reach.widen      role, by `approver` → agent, the seed  (0 passed, 0 asked)",
+        "    command.change   owner, the seed  (0 passed, 0 asked)",
+        "    agent.version    none, the seed  (0 passed, 0 asked)",
+        "    history.rewrite  owner, the seed  (0 passed, 0 asked)",
+        "    data.delete      owner, the seed  (0 passed, 0 asked)",
+        "    policy.change    owner, locked  (0 passed, 0 asked)"
       ],
       "err": [],
       "after": null,
-      "changed": "RISKGATE1a: with nothing to set it says what stands, and each act's class there by the risk policy (D354), read only; setting a row is RISKGATE1j."
+      "changed": "RISKGATE1j: with nothing to set it prints the act table (class, where its rule comes from, who answers by the cast, the last seven days), the one the window's row reads (D354 point 8)."
     },
     {
       "name": "risk why, a run's verdicts",
@@ -1035,11 +1035,11 @@
       "exit": 0,
       "out": [
         "daoris: the risk verdicts journaled for the run `q7`:",
-        "  2026-11-20 09:00Z open review work.accept: pass (none; seed, revision seed) — today: Waiting on `acceptor`: you. — differs from today"
+        "  2026-11-20 09:00Z open review work.accept: pass (none) — rule seed at seed: no risk declared: it passes, recorded (the seed) — today: Waiting on `acceptor`: you. — differs from today"
       ],
       "err": [],
       "after": null,
-      "changed": "RISKGATE1a: why a run's holds stood, each verdict the judge journaled in shadow beside today's gate (D354 point 8), new with this verb."
+      "changed": "RISKGATE1j: each verdict says the rule that decided and why (D354 point 8)."
     },
     {
       "name": "risk why, a run with none",

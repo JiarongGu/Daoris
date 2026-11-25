@@ -23,6 +23,7 @@ import { type GitIdentityShown } from '../../settings/git/Git';
 import { type GitRemoteActs, type GitRemoteShown } from '../../settings/git/GitRemotes';
 import { type GitAccessEdit, type ResolvedGitClass } from '../../settings/repository/GitAccess';
 import { type InheritedRisk, type PlaceRiskChange, type PlaceRiskRow, PlaceRiskSetting } from '../../settings/place/PlaceRisk';
+import { PlaceRiskActsSection, type RiskActsBridge } from '../../settings/place/PlaceRiskActs';
 import type { PlaceCastBridge } from '../../settings/place/PlaceCast';
 import { PlaceCastSection } from './PlaceCastSection';
 import { shellWord } from '../../lib/shellWord';
@@ -242,6 +243,8 @@ export type RepositoryRiskSetup = {
   onChange: (change: Omit<PlaceRiskChange, 'workspace' | 'repository'>) => void;
   /** The bridge's calls for the place's cast beside it, held by the organism that builds this; absent, the cast is not drawn. */
   cast?: PlaceCastBridge;
+  /** The bridge's calls for the act table beside it; absent, it is not drawn. */
+  acts?: RiskActsBridge;
 };
 
 /** The sections the place's page draws under its Sessions: the access, the sessions' own rows and the reach; the heavy gates went to *More*. */
@@ -302,6 +305,7 @@ export function RepositorySetup({ repository, lands = null, driving, work, acces
           onChange={risk.onChange}
         />
       )}
+      {risk?.workspace && risk.acts && (!only || only.includes('access')) && <PlaceRiskActsSection bridge={risk.acts} workspace={risk.workspace} repository={repository} />}
       {risk?.workspace && risk.cast && (!only || only.includes('access')) && <PlaceCastSection bridge={risk.cast} workspace={risk.workspace} repository={repository} />}
       {sections.filter((section) => (only ? only.includes(section.id) : !FOLD_SECTIONS.includes(section.id))).map((section) => (
         <SetupSection

@@ -1,21 +1,22 @@
 ---
 name: every-session
 applies_when: every session, from its first step to its hand-back
-enforces: owner calls are a closed list; change only this repository; delivery follows its declaration; one way per job; no private names; act on what you read now; stop only what you start; use the file tools
+enforces: the owner is asked only what the risk policy puts to them; change only this repository; delivery follows the policy; one way per job; no private names; act on what you read now; stop only what you start; use the file tools
 ---
 
 ## Rules for every session
 
-1. **Ask the owner only owner things,** a closed list: direction and targets, money and budgets, sign-ins and
-   credentials, releases they marked as theirs, history rewrites, deleting their data, and publishing to people
-   outside beyond what the repository declares. The owner owns the outcome, not the steps: decide the rest, alone or
-   with another agent; record why and go on. A question to the owner says what it is, what yes does, what no does
+1. **Ask the owner only what the risk policy puts to them.** Whether an act needs a yes, and whose, is one declared
+   policy: where it declares none nothing waits, and only acts it classes theirs, and changes to the policy itself, go
+   to the owner. With none: direction and targets, money and budgets, sign-ins and credentials, marked releases,
+   history rewrites, deleting their data, publishing outside. The owner owns the outcome, not the steps: decide the rest, alone or with another agent; record
+   why and go on. A question to the owner says what it is, what yes does, what no does
    and where to look. Work you cannot finish is reported as "gave up" with what you tried, never asked about.
 2. **Ownership is local.** Change only this repository. What another needs is a request to whoever works there, with
    the evidence: a quest where a request system exists, a message to its owner where none does. Already touched one?
    Stop and say so (`reaching-in`).
-3. **Delivery follows risk, as the repository declares it:** what may run, land and publish unasked is a declaration
-   its brief names; add no human step it does not name. Before landing come two agent reviews, wide (design, effects
+3. **Delivery follows the risk policy:** what may run, land and publish unasked is declared (a policy,
+   else a declaration beside the gates) and its brief names where; add no human step it does not name. Before landing come two agent reviews, wide (design, effects
    beyond the change) and close (details, edge cases, tests), from different agent families where two are ready.
 4. **One way per job.** A better way deletes the old one in the same change: code, commands, options, words, defaults.
    An older reader kept for records already written names the condition that ends it.

@@ -18,6 +18,7 @@ with the version and date at release.
   and gets no session started on it and none moved to it; a session already on it goes on to its turn's end and is moved at the next. It is
   the same record for Claude Code, Codex and every other agent, kept in `accounts.json` beside the account's name, and only your own press
   writes it (a session's terminal is refused), as a sign-in is yours.
+- A place's Settings shows its risk as an act table (*Acts and who answers*, in English and 中文): per kind of act its class, where the rule comes from, who answers by the cast and the last seven days' passes and asks, `policy.change` locked, and the waits a change would open or release before you save it. `daoris settings risk` prints the same table and `daoris settings risk set <place> <act> none|role|owner` sets a row from your own terminal at the revision it read (an agent's `set` is a proposal; `propose` is gone); `why` names the rule each verdict stood on. The canon's rules 1 and 3 now read the risk policy.
 - `daoris bus stats` now reads each consumer's handling time by kind (`handled`) and each day's share of the 128 MiB a day the bus log may
   put on disk, and the log says once when a day passes it. A check's start and a second opinion's asking carry deadlines measured on the
   install; the answers an author keeps to a second opinion's findings reach the bus's log as they are given, not only at the turn's end.
