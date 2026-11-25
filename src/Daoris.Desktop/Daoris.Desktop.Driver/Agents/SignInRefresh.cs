@@ -151,9 +151,7 @@ internal static class StoredSignIns
         return true;
     }
 
-    /// <summary>
-    /// A store a read left cleared: marked signed out here, since the watch held its mark while the read ran, and the notice claimed as the watch does.
-    /// </summary>
+    /// <summary>A store a read left cleared, whose mark the watch held meanwhile: signed out, its notice claimed.</summary>
     internal static void MarkIfCleared(HarnessRoster roster, string owner, string account, IStoredSignIn? store)
     {
         if (store?.Read(HarnessSettings.ProfileHome(roster.Home, owner, account)) is not { Cleared: true } shape) return;

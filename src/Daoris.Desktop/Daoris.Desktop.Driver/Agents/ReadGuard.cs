@@ -19,7 +19,7 @@ internal enum ReadKind
 /// </summary>
 internal static class ReadGuard
 {
-    // The window a restore was made in, by account home: a second emptying in it is a real one and is left.
+    // The limit window of the last restore, by account home.
     private static readonly Dictionary<string, DateTimeOffset> Restored = new(StringComparer.OrdinalIgnoreCase);
 
     // Account homes with a read in flight: the credentials watch marks no sign-out in them meanwhile.
@@ -50,8 +50,7 @@ internal static class ReadGuard
     }
 
     /// <summary>
-    /// Run <paramref name="ask"/> and, where the account is at its limit by its own reading and none was put back in this window, put the
-    /// store back where it left it with no tokens that it had before.
+    /// Run <paramref name="ask"/> and, at the account's limit and once in its window, put back the tokens it emptied.
     /// </summary>
     /// <param name="restore">False for a renewal, whose refresh is its own.</param>
     public static async Task<(T Answer, bool Kept)> AskAsync<T>(
