@@ -18,7 +18,7 @@ public sealed class HeldStartsPlanTests
     [Fact]
     public void An_open_quest_starts_in_the_look_where_a_carry_on_ahead_of_it_is_held()
     {
-        var cut = new PriorSession("s1", "D:/trees/s1", "failed", "timed out.");
+        var cut = new PriorSession("s1", "D:/fam/Game", "failed", "timed out.");
         var quests = new[] { Quest("q1", "Taken"), Quest("q2") };
         var ran = Snap(quests, "q1") with
         {
