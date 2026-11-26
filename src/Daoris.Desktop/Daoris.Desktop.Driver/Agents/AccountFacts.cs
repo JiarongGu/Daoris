@@ -15,7 +15,7 @@ namespace Daoris.Driver;
 /// <param name="Size">The plan's size in its agent's base plans (<see cref="PoolFacts.PlanSizes"/>); null where none is declared.</param>
 public sealed record AccountFacts(
     int Running = 0, DateTimeOffset? LastStarted = null, long? Chosen = null, AccountSaid? Said = null, AccountProjection? Projected = null,
-    SignInState? SignIn = null, string? Plan = null, double? Size = null)
+    SignInState? SignIn = null, string? Plan = null, double? Size = null, double? Rate = null)
 {
     /// <summary>What the walk multiplies a window's room by, to weigh it in the plan's units: the size, else one (the base plan).</summary>
     public double Units => Size is { } size and > 0 ? size : 1;

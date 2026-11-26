@@ -117,6 +117,12 @@ export type NextStart = {
   window?: string | null;
   unused?: number | null;
   seen?: string | null;
+  /**
+   * Where it is `lapsing` by measure: the points of its week an hour Daoris's sessions reached on it, and the whole hours its room
+   * needs at that rate, more than are left to its reset. Absent where no rate is measured.
+   */
+  rate?: number | null;
+  needs?: number | null;
   /** Every other account, in the order the walk tried them, then kept, missing and unused ones. */
   others: AccountHeld[];
   /**
@@ -411,6 +417,13 @@ export function nextWhy(next: NextStart, scope: AccountScope, labelOf: (name: st
     case 'lapsing':
       // What would lapse, as the start's line says it; where the window is not named, its reset alone.
       if (next.when && next.window && next.seen && typeof next.unused === 'number') {
+        // Where its rate is measured, the hours its room needs at that rate, against the hours left to its reset.
+        if (typeof next.rate === 'number' && typeof next.needs === 'number') {
+          return i18n.t('harness.next.why.lapsesAtRate', {
+            window: windowName(next.window), when: moment(next.when), unused: `${next.unused}%`, seen: moment(next.seen),
+            rate: next.rate, needs: next.needs,
+          });
+        }
         return i18n.t('harness.next.why.lapses', {
           window: windowName(next.window), when: moment(next.when), unused: `${next.unused}%`, seen: moment(next.seen),
         });

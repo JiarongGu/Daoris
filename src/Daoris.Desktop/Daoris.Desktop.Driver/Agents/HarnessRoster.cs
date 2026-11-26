@@ -408,6 +408,8 @@ public sealed class HarnessRoster(ProviderRegistry adapters, string? settingsPat
     public Task ReadUsageAsync(string adapter, string owner, IReadOnlyList<string> accounts, DriverConfig config, CancellationToken ct = default)
         => Usage.ReadUsageAsync(adapter, owner, accounts, config, ct);
 
+    internal double? SpendRateOf(string owner, string account, DateTimeOffset now) => Usage.SpendRateOf(owner, account, now);
+
     /// <inheritdoc cref="RosterUsage.SwitchCandidates"/>
     public IReadOnlyList<SwitchCandidate> SwitchCandidates(string owner, IReadOnlyList<string> list, (string Agent, string? Version, string Model)? offer = null)
         => Usage.SwitchCandidates(owner, list, offer);

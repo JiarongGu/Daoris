@@ -113,6 +113,15 @@ public static class UsageProjection
     /// <summary>How far back a ratio reads: a week, the longest window either maker resets.</summary>
     public static readonly TimeSpan Horizon = TimeSpan.FromDays(7);
 
+    /// <summary>
+    /// The least span a rate is read over: two hours, so a whole-percent rounding of one reading (half a point) is a quarter point
+    /// an hour at the most.
+    /// </summary>
+    public static readonly TimeSpan RateSpan = TimeSpan.FromHours(2);
+
+    /// <summary>The least rise, as a fraction, a span's rate is read on: two points, so whole-percent rounding at both ends cannot carry it.</summary>
+    public const double LeastRateRise = 0.02;
+
     /// <summary>The least rise, as a fraction, a ratio is read on: five points, so whole-percent rounding cannot carry it.</summary>
     public const double LeastRise = 0.05;
 
@@ -175,6 +184,51 @@ public static class UsageProjection
         }
 
         return rose >= LeastRise && work > 0 ? rose / work : null;
+    }
+
+    /// <summary>
+    /// The fastest a window rose, in points an hour, over a span of at least <see cref="RateSpan"/> inside one reset and one
+    /// epoch with a turn of Daoris's ended in it, within <see cref="Horizon"/> of <paramref name="now"/>: the rate its own
+    /// sessions reached on the account, which a week's room is spent at (<see cref="UsageCurves.Lapsing"/>). Null where no such span
+    /// exists: absent is never zero, a span rising less than <see cref="LeastRateRise"/> is no measure, and a rise with no turn of Daoris's in it is someone else's use.
+    /// </summary>
+    /// <param name="readings">The account's readings, any window, any order.</param>
+    /// <param name="turns">The account's turns, whatever their report's meaning: a turn that ran is Daoris's work, weighed or not.</param>
+    public static double? Rate(IEnumerable<ReadPoint> readings, IEnumerable<SpentTurn> turns, string window, DateTimeOffset now)
+    {
+        var since = now - Horizon;
+        var points = readings
+            .Where(point => string.Equals(point.Window, window, StringComparison.OrdinalIgnoreCase) && point.Seen >= since && point.Seen <= now)
+            .OrderBy(point => point.Seen)
+            .ToList();
+        var spent = turns.Where(turn => turn.Ended >= since && turn.Ended <= now).ToList();
+
+        double? fastest = null;
+        var start = 0;
+        for (var at = 1; at <= points.Count; at++)
+        {
+            if (at < points.Count && SameRun(points[at - 1], points[at])) continue;
+
+            // Each reading to the first of its run at least the span on: the rate over that span alone.
+            for (var from = start; from < at; from++)
+            {
+                var to = Enumerable.Range(from + 1, at - from - 1).FirstOrDefault(index => points[index].Seen - points[from].Seen >= RateSpan, -1);
+                if (to < 0) continue;
+
+                var (first, last) = (points[from], points[to]);
+                if (!spent.Any(turn => turn.Ended > first.Seen && turn.Ended <= last.Seen && SameEpoch(turn.Epoch, first.Epoch))) continue;
+
+                var rise = last.Used - first.Used;
+                if (rise < LeastRateRise - 1e-9) continue;
+
+                var rate = rise * 100 / (last.Seen - first.Seen).TotalHours;
+                if (fastest is null || rate > fastest) fastest = rate;
+            }
+
+            start = at;
+        }
+
+        return fastest;
     }
 
     /// <summary>

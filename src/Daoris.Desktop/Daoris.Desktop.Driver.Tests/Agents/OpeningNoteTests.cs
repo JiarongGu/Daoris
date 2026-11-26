@@ -128,6 +128,20 @@ public sealed class OpeningNoteTests : IDisposable
         Assert.Contains(NoteCodes.Opening.All, reason => reason.Code == OpeningWhy.Lapsing);
     }
 
+    /// <summary>A week that lapses by measure says the rate reached and the hours its room needs at it.</summary>
+    [Fact]
+    public void A_week_that_lapses_by_measure_is_said_by_the_rate_reached_and_the_hours_its_room_needs()
+    {
+        var said = Assert.Single(RotationWords.Steps(new WalkChoice(WalkStep.Lapsing), "claude-code", "account-2", Scope(), "work", null,
+            AccountLapseMeasureTests.Rated("account-2:W50@+35h", "account-2=1"), StartKind.Driven, Now, TimeZoneInfo.Utc));
+
+        Assert.Equal(
+            ("its weekly window resets in 35 h with 50% of it unused, read 10 min ago, and at 1% an hour, the rate Daoris's sessions reached on it, its room takes 46 h to spend", OpeningWhy.LapsesAtRate),
+            (said.Text, said.Why));
+        Assert.Equal("window=weekly unused=50 at=2026-10-03T23:00:00Z seen=2026-10-02T11:50:00Z rate=1 needs=46", Values(said));
+        Assert.Contains(NoteCodes.Opening.All, reason => reason.Code == OpeningWhy.LapsesAtRate);
+    }
+
     [Fact]
     public void A_default_a_conversation_s_kept_account_and_a_passed_account_are_reasons_of_their_own()
     {
