@@ -410,6 +410,18 @@ where a seam, route, verb or fixture is. Which folder owns which job:
     never the machine's own look. A held-pending case of the conformance suite names an open backlog row (`TASKS.md`), and each real
     door's recorded frames, with their program and adapter versions, are `fixtures/providers/<id>/corpus.jsonl`. `AcpAdapterDoorProcessTests` drives each protocol door's pinned adapter through `AcpSession` against the stub model
     (`tools/fake-model.mjs`): a steer mid-tool answered `injected`, a `codex-acp` resume that carries the first sitting's words, and each update read as that pin's corpus frames read (`docs/2026-10-03-steer-evidence.md` §10).
+    What each door hands its agent is declared once, in its provider's `grants.json` beside `provider.json`: a row per door of the
+    servers' route (`config-file` with its flag, or `session-new`) and the names handed, the approval route (`pre-tool-use-hook`, or
+    `permission-request` on the wire), the note's route to a running turn, and the arguments, variables and wire mode of the asking,
+    the full and the driven start. `DoorGrantsCensusTests` fails a door with no row, a row of no door, and a door whose spawn, servers
+    file, `session/new` offer, rules hook or abilities read differently from its row, naming the place; a planted door whose
+    spawn drops the knowledge server fails it. Each row's `proof` names the test that opens a session on a keyless stand-in model
+    and reads the tools the agent lists, the knowledge server's among them (`StandInServer.AssertListed`: an empty list and a list
+    without the server's tool both fail, since a handshake can succeed while a server passed only in `session/new` never reaches the
+    agent): `ClaudeResumedToolsProcessTests` for the native door, `AcpAdapterDoorProcessTests` for `claude-code-acp` and `codex-acp`
+    against the pinned adapters. A stand-in door says it runs no model; dsh states the open row that writes its case, since its
+    model wire is neither of `tools/fake-model.mjs`'s (GRANTSEEN1). The census reads the doors the registry builds: Lyntai's layer
+    runs the same doors on `LayerRun` and has no row of its own. (GRANTSEEN1)
 
 50. Daoris knows each agent process it starts, and ends one its session left. As a process is tracked (`SessionProcesses.Track`)
     a record is kept beside the session's marker (`run/sessions/<session>.<pid>.agent`, `StartRecords`: its id and start time, the
@@ -429,8 +441,8 @@ Agents sits after Knowledge and before Workplace, Roles, Participants, Context, 
 It uses what is below it; what sits above reaches it through ports installed when the driver loads (`IAgentContext`,
 `IAgentWorkplace`, `IAgentWorkWords`, `IAgentPlugins`).
 
-- A new agent or door: a line in `Registry/Providers.cs` and a folder `Providers/<id>/` on the contract; a door is a record of its
-  provider, never a class (in tests `TestDoors.Door`, a shipped one `BuiltDoors.Of(id)`).
+- A new agent or door: a line in `Registry/Providers.cs` and a folder `Providers/<id>/` on the contract, with its `grants.json` row
+  (rule 49); a door is a record of its provider, never a class (in tests `TestDoors.Door`, a shipped one `BuiltDoors.Of(id)`).
 - Code naming Lyntai's layer: `Agents/Layer/` or a provider folder's `Layer/` (rule 47).
 - A new fact about a real agent (a flag, a posture, a word): its provider's or door's part, measured first, a word table's entry
   with its recorded sentence.
@@ -449,8 +461,8 @@ It uses what is below it; what sits above reaches it through ports installed whe
   (`BuildDoor.Drives`) and carried as a bool.
 
 Tests are in `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Agents/`, named for their unit; the censuses holding the area's
-shape are `ProviderCensusTests`, `ProviderVocabularyTests`, `ProviderConformanceTests`, `LayerCensusTests` and the old names'
-two. Gates: `driver`, `censuses`, `driver-process`, `cli` for the `*TwinTests`' other half, `web-unit` for the Agents page.
+shape are `ProviderCensusTests`, `ProviderVocabularyTests`, `ProviderConformanceTests`, `DoorGrantsCensusTests`, `LayerCensusTests`
+and the old names' two. Gates: `driver`, `censuses`, `driver-process`, `cli` for the `*TwinTests`' other half, `web-unit` for the Agents page.
 
 ## Adding to it
 

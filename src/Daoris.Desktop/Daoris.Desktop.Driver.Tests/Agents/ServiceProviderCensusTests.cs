@@ -203,7 +203,7 @@ public sealed class ServiceProviderCensusTests
         var workspace = WorkspaceRoot.Folder;
         foreach (var root in Section.Value.Roots)
         {
-            foreach (var file in Directory.EnumerateFiles(Path.Combine(workspace, root), "*.cs", SearchOption.AllDirectories))
+            foreach (var file in SourceFiles.Under(Path.Combine(workspace, root), "*.cs"))
             {
                 if (file.Contains($"{Path.DirectorySeparatorChar}obj{Path.DirectorySeparatorChar}")
                     || file.Contains($"{Path.DirectorySeparatorChar}bin{Path.DirectorySeparatorChar}"))

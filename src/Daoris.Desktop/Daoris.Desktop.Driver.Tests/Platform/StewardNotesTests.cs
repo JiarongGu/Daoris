@@ -76,7 +76,7 @@ public sealed class StewardNotesTests
         foreach (var project in new[] { "Daoris.Desktop.Driver", "Daoris.Desktop.Modules" })
         {
             var folder = Path.Combine(EveryChildIsHandedTheToolsTests.SourceRoot(), project);
-            foreach (var file in CensusScope.Judged(typeof(StewardNotesTests), Directory.EnumerateFiles(folder, "*.cs", SearchOption.AllDirectories)))
+            foreach (var file in CensusScope.Judged(typeof(StewardNotesTests), SourceFiles.Under(folder, "*.cs")))
             {
                 if (file.Contains($"{Path.DirectorySeparatorChar}obj{Path.DirectorySeparatorChar}", StringComparison.Ordinal)
                     || file.Contains($"{Path.DirectorySeparatorChar}bin{Path.DirectorySeparatorChar}", StringComparison.Ordinal)

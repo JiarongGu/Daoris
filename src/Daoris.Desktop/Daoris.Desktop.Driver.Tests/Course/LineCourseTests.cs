@@ -806,11 +806,10 @@ public sealed class LineCourseTests
         lock (Known)
         {
             if (Known.TryGetValue(suite, out var known)) return known;
-            var file = Directory.EnumerateFiles(Tests, suite + ".cs", SearchOption.AllDirectories)
-                .FirstOrDefault(path => !path.Contains(Path.DirectorySeparatorChar + "obj" + Path.DirectorySeparatorChar));
+            var file = SourceFiles.Under(Tests, "*.cs").FirstOrDefault(path => Path.GetFileName(path) == suite + ".cs");
             IReadOnlyList<string> methods = file is null
                 ? []
-                : [.. Regex.Matches(File.ReadAllText(file), @"\[(?:Fact|Theory)\b[^\]]*\](?:\s*\[[^\]]*\])*\s*public\s+(?:async\s+Task|void)\s+(\w+)\(")
+                : [.. Regex.Matches(SourceTexts.Of(file), @"\[(?:Fact|Theory)\b[^\]]*\](?:\s*\[[^\]]*\])*\s*public\s+(?:async\s+Task|void)\s+(\w+)\(")
                     .Select(match => match.Groups[1].Value)];
             Known[suite] = methods;
             return methods;

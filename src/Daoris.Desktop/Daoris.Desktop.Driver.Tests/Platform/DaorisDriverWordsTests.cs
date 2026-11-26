@@ -35,7 +35,7 @@ public sealed class DaorisDriverWordsTests
         var found = new SortedDictionary<string, int>(StringComparer.Ordinal);
         foreach (var file in Scanned(root))
         {
-            var count = File.ReadAllText(file).Split(Word).Length - 1;
+            var count = SourceTexts.Of(file).Split(Word).Length - 1;
             if (count > 0) found[Path.GetRelativePath(root, file).Replace('\\', '/')] = count;
         }
 
@@ -49,7 +49,7 @@ public sealed class DaorisDriverWordsTests
         var desktop = Path.Combine(root, "src", "Daoris.Desktop");
         foreach (var project in new[] { "Daoris.Desktop.Driver", "Daoris.Desktop.Driver.Host", "Daoris.Desktop.Modules" })
         {
-            foreach (var file in Directory.EnumerateFiles(Path.Combine(desktop, project), "*.cs", SearchOption.AllDirectories))
+            foreach (var file in SourceFiles.Under(Path.Combine(desktop, project), "*.cs"))
             {
                 var inBuild = file.Contains($"{Path.DirectorySeparatorChar}obj{Path.DirectorySeparatorChar}", StringComparison.Ordinal)
                     || file.Contains($"{Path.DirectorySeparatorChar}bin{Path.DirectorySeparatorChar}", StringComparison.Ordinal);
@@ -57,15 +57,15 @@ public sealed class DaorisDriverWordsTests
             }
         }
 
-        foreach (var guide in Directory.EnumerateFiles(Path.Combine(root, "docs", "guide"), "*.md", SearchOption.AllDirectories)) yield return guide;
-        foreach (var catalogue in Directory.EnumerateFiles(Path.Combine(root, "src", "Daoris.Web", "src", "locales"), "*.json", SearchOption.AllDirectories)) yield return catalogue;
-        foreach (var page in Directory.EnumerateFiles(Path.Combine(root, "src", "Daoris.Web", "src"), "*.ts*", SearchOption.AllDirectories))
+        foreach (var guide in SourceFiles.Under(Path.Combine(root, "docs", "guide"), "*.md")) yield return guide;
+        foreach (var catalogue in SourceFiles.Under(Path.Combine(root, "src", "Daoris.Web", "src", "locales"), "*.json")) yield return catalogue;
+        foreach (var page in SourceFiles.Under(Path.Combine(root, "src", "Daoris.Web", "src"), "*.ts*"))
         {
             var test = page.Contains(".test.", StringComparison.Ordinal) || page.Contains(".stories.", StringComparison.Ordinal);
             if (!test && !page.Contains($"{Path.DirectorySeparatorChar}locales{Path.DirectorySeparatorChar}", StringComparison.Ordinal)) yield return page;
         }
 
-        foreach (var skill in Directory.EnumerateFiles(Path.Combine(root, "canon"), "SKILL.md", SearchOption.AllDirectories)) yield return skill;
-        foreach (var example in Directory.EnumerateFiles(Path.Combine(root, "examples"), "README.md", SearchOption.AllDirectories)) yield return example;
+        foreach (var skill in SourceFiles.Under(Path.Combine(root, "canon"), "SKILL.md")) yield return skill;
+        foreach (var example in SourceFiles.Under(Path.Combine(root, "examples"), "README.md")) yield return example;
     }
 }

@@ -363,10 +363,10 @@ public sealed class HelpRoomTests : IDisposable
 
         // Parts beside their sections: the doors' (`HelpDoor*`) and *What you may do*'s checkouts; every other file is one section's own.
         string[] parts = ["HelpRoomFullReads.cs"];
-        var files = Directory.GetFiles(folder, "*.cs", SearchOption.AllDirectories);
+        var files = SourceFiles.Under(folder, "*.cs").ToArray();
         Assert.Equal(
             HelpRoomSections.All.Select(section => $"{section.GetType().Name}.cs").Order(StringComparer.Ordinal),
-            files.Where(file => File.ReadAllText(file).Contains(" : IHelpRoomSection", StringComparison.Ordinal)).Select(Path.GetFileName).Order(StringComparer.Ordinal));
+            files.Where(file => SourceTexts.Of(file).Contains(" : IHelpRoomSection", StringComparison.Ordinal)).Select(Path.GetFileName).Order(StringComparer.Ordinal));
         Assert.All(
             files.Select(Path.GetFileName).Where(name => !HelpRoomSections.All.Any(section => $"{section.GetType().Name}.cs" == name) && !parts.Contains(name)),
             name => Assert.StartsWith("HelpDoor", name, StringComparison.Ordinal));

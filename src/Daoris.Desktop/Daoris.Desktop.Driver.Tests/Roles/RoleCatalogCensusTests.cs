@@ -43,12 +43,12 @@ public sealed partial class RoleCatalogCensusTests : IDisposable
         var root = Path.Combine(WorkspaceRoot.Folder, "src", "Daoris.Desktop");
         var driver = Path.Combine(WorkspaceRoot.Folder, "src", "Daoris.Desktop", "Daoris.Desktop.Driver");
         var modules = Path.Combine(WorkspaceRoot.Folder, "src", "Daoris.Desktop", "Daoris.Desktop.Modules");
-        foreach (var file in Directory.EnumerateFiles(driver, "*.cs", SearchOption.AllDirectories)
-                     .Concat(Directory.EnumerateFiles(modules, "*.cs", SearchOption.AllDirectories)))
+        foreach (var file in SourceFiles.Under(driver, "*.cs")
+                     .Concat(SourceFiles.Under(modules, "*.cs")))
         {
             var relative = Path.GetRelativePath(root, file).Replace('\\', '/');
             if (relative.Contains(".Tests/") || relative.Contains("/bin/") || relative.Contains("/obj/")) continue;
-            if (File.ReadLines(file).Any(line => !line.TrimStart().StartsWith("//", StringComparison.Ordinal) && Reaches().IsMatch(line))) yield return relative;
+            if (SourceTexts.Of(file).Split('\n').Any(line => !line.TrimStart().StartsWith("//", StringComparison.Ordinal) && Reaches().IsMatch(line))) yield return relative;
         }
     }
 

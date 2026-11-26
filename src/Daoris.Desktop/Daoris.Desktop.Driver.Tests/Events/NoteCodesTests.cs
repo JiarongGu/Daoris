@@ -172,7 +172,7 @@ public sealed class NoteCodesTests
     [Fact]
     public void Every_code_is_declared_in_the_form_the_page_s_test_parses()
     {
-        var source = string.Concat(NoteCodes.Domains.Select(domain => File.ReadAllText(SourceFiles.Driver($"{domain.Name}.cs"))));
+        var source = string.Concat(NoteCodes.Domains.Select(domain => SourceTexts.Of(SourceFiles.Driver($"{domain.Name}.cs"))));
         var parsed = Regex.Matches(source, @"new\(""(?<code>[a-z][a-z.-]*)"", \[(?<values>[^\]]*)\](?:, Key: ""(?<key>[^""]+)"")?\)")
             .Select(match => match.Groups["code"].Value)
             .ToList();

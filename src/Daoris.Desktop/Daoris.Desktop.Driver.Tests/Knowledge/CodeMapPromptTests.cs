@@ -131,7 +131,7 @@ public sealed class CodeMapPromptTests : IDisposable
     [Fact]
     public void Its_candidates_are_the_readers()
     {
-        var reader = File.ReadAllText(Directory.EnumerateFiles(Path.Combine(RepositoryRoot(), "src", "Daoris.Service", "Daoris.Service.Core"), "CodeMap.cs", SearchOption.AllDirectories).Single());
+        var reader = SourceTexts.Of(SourceFiles.Under(Path.Combine(RepositoryRoot(), "src", "Daoris.Service", "Daoris.Service.Core"), "CodeMap.cs").Single());
 
         Assert.Contains($"Candidates = [{string.Join(", ", CodeMapFile.Candidates.Select(c => $"\"{c}\""))}]", reader);
     }

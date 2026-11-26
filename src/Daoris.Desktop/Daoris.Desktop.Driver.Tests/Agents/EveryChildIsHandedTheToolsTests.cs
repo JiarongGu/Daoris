@@ -51,14 +51,14 @@ public sealed class EveryChildIsHandedTheToolsTests
     [Fact]
     public void The_terminals_environment_block_is_built_through_the_tools()
     {
-        var source = File.ReadAllText(SourceFiles.Driver("PseudoConsole.cs"));
+        var source = SourceTexts.Of(SourceFiles.Driver("PseudoConsole.cs"));
 
         Assert.Contains("EnvironmentBlock(launch.Environment)", source);
         var block = source[source.IndexOf("static string EnvironmentBlock(", StringComparison.Ordinal)..];
         block = block[..block.IndexOf("return block", StringComparison.Ordinal)];
         // The block asks its port for the tools' share (Platform names none of the tools); the factory wires the port to Tools.
         Assert.Contains("tools(home, variables)", block);
-        var factory = File.ReadAllText(SourceFiles.Driver("Terminals.cs"));
+        var factory = SourceTexts.Of(SourceFiles.Driver("Terminals.cs"));
         Assert.Contains("PseudoConsole.ToolsEnvironment = ChildTools", factory);
         Assert.Contains("Tools.ChildEnvironment(", factory);
     }
@@ -73,10 +73,10 @@ public sealed class EveryChildIsHandedTheToolsTests
             var folder = Path.Combine(root, project);
             if (!Directory.Exists(folder)) continue;
 
-            foreach (var file in Directory.EnumerateFiles(folder, "*.cs", SearchOption.AllDirectories))
+            foreach (var file in SourceFiles.Under(folder, "*.cs"))
             {
                 if (Built(file)) continue;
-                var source = File.ReadAllText(file).Replace("\r\n", "\n");
+                var source = SourceTexts.Of(file).Replace("\r\n", "\n");
                 foreach (Match spawn in Regex.Matches(source, @"new ProcessStartInfo\b"))
                 {
                     spawns++;
@@ -116,10 +116,10 @@ public sealed class EveryChildIsHandedTheToolsTests
             var folder = Path.Combine(root, project);
             if (!Directory.Exists(folder)) continue;
 
-            foreach (var file in Directory.EnumerateFiles(folder, "*.cs", SearchOption.AllDirectories))
+            foreach (var file in SourceFiles.Under(folder, "*.cs"))
             {
                 if (Built(file)) continue;
-                var source = File.ReadAllText(file);
+                var source = SourceTexts.Of(file);
                 foreach (Match spawn in Regex.Matches(source, @"new ProcessStartInfo\b"))
                 {
                     var end = Regex.Match(source[spawn.Index..], @"\}\s*[;)]");

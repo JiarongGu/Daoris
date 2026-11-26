@@ -34,7 +34,7 @@ public sealed partial class OrderReadersCensusTests
         var root = Path.Combine(WorkspaceRoot.Folder, "src", "Daoris.Desktop");
         foreach (var project in new[] { "Daoris.Desktop.Driver", "Daoris.Desktop.Modules" })
         {
-            foreach (var file in CensusScope.Judged(typeof(OrderReadersCensusTests), Directory.EnumerateFiles(Path.Combine(root, project), "*.cs", SearchOption.AllDirectories)))
+            foreach (var file in CensusScope.Judged(typeof(OrderReadersCensusTests), SourceFiles.Under(Path.Combine(root, project), "*.cs")))
             {
                 var relative = Path.GetRelativePath(root, file).Replace('\\', '/');
                 if (relative.Contains("/bin/") || relative.Contains("/obj/")) continue;

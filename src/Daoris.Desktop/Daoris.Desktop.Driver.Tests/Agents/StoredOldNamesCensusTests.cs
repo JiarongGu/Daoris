@@ -86,9 +86,9 @@ public sealed class StoredOldNamesCensusTests : IDisposable
     {
         var root = Path.Combine(WorkspaceRoot.Folder, "src");
         var sep = Path.DirectorySeparatorChar;
-        var spelling = Directory.EnumerateFiles(root, "*.cs", SearchOption.AllDirectories)
+        var spelling = SourceFiles.Under(root, "*.cs")
             .Where(path => !path.Contains($"{sep}obj{sep}") && !path.Contains($"{sep}bin{sep}") && !path.Contains($".Tests{sep}"))
-            .Where(path => File.ReadLines(path).Any(line => !line.TrimStart().StartsWith("//", StringComparison.Ordinal) && OldWord.IsMatch(line)))
+            .Where(path => SourceTexts.Of(path).Split('\n').Any(line => !line.TrimStart().StartsWith("//", StringComparison.Ordinal) && OldWord.IsMatch(line)))
             .Select(path => Path.GetRelativePath(root, path).Replace('\\', '/'))
             .Order(StringComparer.Ordinal)
             .ToList();

@@ -42,7 +42,7 @@ public sealed class LineAccountCallersCensusTests
         var unread = new List<string>();
         var found = 0;
         foreach (var project in Projects)
-        foreach (var path in CensusScope.Judged(typeof(LineAccountCallersCensusTests), Directory.EnumerateFiles(Path.Combine(root, project), "*.cs", SearchOption.AllDirectories)))
+        foreach (var path in CensusScope.Judged(typeof(LineAccountCallersCensusTests), SourceFiles.Under(Path.Combine(root, project), "*.cs")))
         {
             var relative = Path.GetRelativePath(root, path).Replace('\\', '/');
             if (relative.Contains("/obj/") || relative.Contains("/bin/") || relative.EndsWith("Harnesses/HarnessRoster.cs", StringComparison.Ordinal))

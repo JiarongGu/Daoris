@@ -51,6 +51,22 @@ public sealed class SourceFilesTests
     }
 
     [Fact]
+    public void A_folder_outside_the_desktop_is_walked_once_and_only_a_project_s_build_output_is_left_aside()
+    {
+        var service = Path.Combine(WorkspaceRoot.Folder, "src", "Daoris.Service");
+        var cli = Path.Combine(WorkspaceRoot.Folder, "src", "Daoris.Cli");
+
+        var sources = SourceFiles.Under(service, "*.cs");
+        Assert.Same(sources, SourceFiles.Under(service + Path.DirectorySeparatorChar, "*.cs"));
+        Assert.NotEmpty(sources);
+        Assert.DoesNotContain(sources, path => path.Split(Path.DirectorySeparatorChar).Contains("obj"));
+        Assert.Equal(sources.Order(StringComparer.Ordinal), sources);
+        // The CLI's bin/ is its commands, beside no .csproj: a folder of that name is output only beside a project.
+        Assert.Contains(Path.Combine(cli, "bin", "daoris.mjs"), SourceFiles.Under(cli, "*.mjs"));
+        Assert.Same(SourceFiles.All(SourceFiles.DriverProject, "*.cs"), SourceFiles.Under(SourceFiles.Project(SourceFiles.DriverProject), "*.cs"));
+    }
+
+    [Fact]
     public void The_CLI_s_sources_are_found_in_their_module_folders_and_a_command_row_is_not_its_handler()
     {
         var cli = Path.Combine(WorkspaceRoot.Folder, "src", "Daoris.Cli", "src");
