@@ -21,6 +21,9 @@ daoris <command> [options]
                        convert daoris.gates.json to the daoris/ folder and the home's
                        values in scratch, and prove they resolve to the old file;
                        names each difference and each set held twice
+  family check         the family beside this repository: each member's uses
+                       against the layers, and each pin one full commit on its
+                       producer's line (offline; reads ../daoris.family.json)
 
   These are the doctrine commands, and every one is offline. Every other command
   (`daoris help` names them) is the desktop's program's: this daoris hands it the
@@ -34,4 +37,5 @@ Options:
   --force              overwrite locally-drifted files (sync only)
   --all                every drifted file (upstream only)
   --out <folder>       where a dry run writes its scratch (declaration only; default _fixtures/declaration-split)
+  --family <file>      the family file to check (family only)
   --help, --version

@@ -190,7 +190,7 @@ const mapFile = join(cliRoot, 'test', 'fixtures', 'structure.json');
 // program's typed operations.
 test("the map names the CLI's modules", () => {
   assert.deepEqual(readMap(readFileSync(mapFile, 'utf8')).modules,
-    ['cli', 'platform', 'doctrine', 'layout', 'tools', 'declaration']);
+    ['cli', 'platform', 'doctrine', 'layout', 'tools', 'declaration', 'family']);
 });
 
 test("the CLI's own tree keeps its structure", () => {

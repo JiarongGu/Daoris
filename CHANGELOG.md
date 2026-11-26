@@ -5,6 +5,12 @@ with the version and date at release.
 
 ## Unreleased
 
+- A product of several repositories can be declared as a family: `daoris.family.json` in the folder the members' checkouts share names
+  the members in layers (lowest first) and any pairs it denies, and each consumer pins one full commit of each producer it `uses` in its own
+  `daoris.family.lock`. `daoris family check`, run from a member, needs no service and starts no process: it refuses a cycle (with its
+  path), a repository outside the family, an edge to an equal or higher layer, a denied pair, a pin with no `uses`, a second pin, a pin that
+  is a branch, a tag or an abbreviated id, and a commit the producer's line does not hold; a `uses` with no pin is only warned. With no
+  family file it says there is no family and passes.
 - What a supervisor's act spends is read by the risk policy at its place. With nothing configured the policy passes money, a release
   and publishing outside, so a supervisor already granted `landing.approve`, `files.allow-share` or a re-cast naming the prepaid harness
   now takes it on that grant, where before an approval and a share were always the owner's and the re-cast also needed

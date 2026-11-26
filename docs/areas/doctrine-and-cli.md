@@ -3,8 +3,8 @@
 ## What it does
 
 The canon is a set of rules, knowledge and skills that every repository takes up. `daoris` is the one command a person
-types. The npm package `daoris` (the CLI) owns ten offline doctrine commands: `analyze`, `init`, `sync`, `check`,
-`upstream`, `index`, `status`, `reconcile`, `doctor` and `declaration`. `sync` writes the canon into a repository and records each file's
+types. The npm package `daoris` (the CLI) owns eleven offline doctrine commands: `analyze`, `init`, `sync`, `check`,
+`upstream`, `index`, `status`, `reconcile`, `doctor`, `declaration` and `family`. `sync` writes the canon into a repository and records each file's
 hash in `daoris.lock`. `check` fails a build when a copy drifted from the lock. `status` and `reconcile` say what a newer
 canon would change, and the repository's own session adopts, keeps or proposes each item. Every other `daoris` word is
 handed to the desktop's program. Set-up of a repository is a quest that the driver's set-up press publishes to that
@@ -34,6 +34,7 @@ skill, and `co-working` as a pack.
 | Layouts | `src/Daoris.Cli/src/layout/harness.ts`, `layout.ts`, `mirror.ts`, `rooms.ts`, `pointers.ts`, `links.ts` | The `claude-code` and `agents` descriptors, the lock's layout, the skills mirror, rooms, the retired pointers, links |
 | Adoption reads | `src/Daoris.Cli/src/doctrine/analyze.ts`, `budget.ts`, `twins.ts`, `lineendings.ts` | `analyze` (what adopting would do, its budget projection in `budget.ts`), `doctor` (look-alike documents), the LF pin |
 | Declaration split | `src/Daoris.Cli/src/declaration/` (`members.ts`, `split.ts`, `folder.ts`, `reading.ts`, `proof.ts`, `dryrun.ts`), `cli/declaration.ts` | `declaration split --dry-run`: the member table as data, the gates file split into a folder and the home's values in scratch, read back and proved equal to the old file |
+| Family check | `src/Daoris.Cli/src/family/` (`family.ts`, `pins.ts`, `gitread.ts`, `check.ts`), `cli/family.ts` | `family check`: the family file and each member's `uses` and lock read, the graph judged (`family.ts`), each pin read against its producer's checkout (`pins.ts`) through git's own files (`gitread.ts`) |
 | The canon | `canon/core/`, `canon/packs/*/`, `canon/canon.json`, `canon/CHANGELOG.md` | The doctrine itself, its version and why each version changed |
 | Command tree | `Daoris.Desktop.Driver/Platform/CommandGroupAttribute.cs`, `CommandWords.cs`, `Loop/CommandTree.cs` | Each group's mark on its command, the groups collected at start, the router, and the carried CLI's path |
 | Doctrine hand-back | `Daoris.Desktop.Driver.Host/DoctrineConsole.cs` | Runs a word no group owns through the CLI an install carries, marked `DAORIS_HANDED=driver`; the CLI's usage at the end of `daoris help` |
@@ -177,7 +178,7 @@ skill, and `co-working` as a pack.
     until the child ends (`InterruptHold`). The CLI's own entry (`bin/node-floor.mjs`, before the dispatcher loads) refuses a
     Node below 22, exit 2, as `engines` and the set-up's `NodeRefusal` hold it. (from D124, D194)
 38. No CLI module touches the network. The one spawn is the seam's `startChild`, and nothing a doctrine command reaches can
-    spawn. The package has no runtime dependencies. (from D8, D33)
+    spawn: `family check` reads git's files, never git. The package has no runtime dependencies. (from D8, D33)
 39. Exit codes are 0 clean, 1 policy failure, 2 tool error. A failure nobody anticipated is 2, said in one line.
     (from D8)
 40. Each half of the tree is declared by the code that owns it: a program group by `[CommandGroup]` on its library command,
@@ -248,6 +249,27 @@ skill, and `co-working` as a pack.
     with no text (`absentCore`) counting as reopened as `reconcile` lists it. The press is the person's (`RECONCILE_PLAN`,
     `RECONCILE_APPLY`). (from D230)
 
+**A family of repositories**
+
+54. A family is declared by `daoris.family.json` in the folder the members' checkouts share, the parent `repository create` puts a
+    workspace's new repositories under, or by the file `--family` names. It is workspace data: no member tracks it and it holds no path.
+    It names the members by the registry's names, in `layers` lowest first, and optional `denied` pairs (`consumer`, `producer`, `why`);
+    a name in two layers is a tool error. A member is a name, never a kind: no format, check or message says what a repository is. Each member's checkout is the folder of its name beside the file. With no family file there is
+    no family: the check says so, exit 0. (from D364, D48)
+55. A member's edges are its own `daoris.json` `uses`, read by the registry's rule; a consumer's pins are its own
+    `daoris.family.lock`, `{ "pins": [{ "producer", "commit" }] }`, so a pin move is a change to that path alone. No producer lists
+    its consumers. (from D364)
+56. `family check` needs no service and starts no process. It refuses a member with no checkout, a `uses` of a non-member, an edge to
+    an equal or higher layer, a denied pair, a cycle (once, with its path), a pin with no `uses`, a second pin of one producer, and a
+    pin that is not one full commit on the producer's line: a branch, a tag, another name or an abbreviated id by what it names, a
+    commit the checkout does not hold, one its line does not reach. A `uses` with no pin is warned. The line is the checkout's guess
+    the driver makes (origin's `HEAD`, else `main`, else `master`); its tips are the local branch and origin's. `gitread.ts` reads
+    loose and packed refs, loose objects, version-2 packs with their deltas and alternates; a reftable store is refused by name. Exit 0
+    green, 1 refused, 2 a file of the wrong shape. (from D364)
+57. `npm run rehearse:family`'s first section runs it on a copy of the examples (`tools/family-pins.mjs`, run whole by
+    `tool-test/family-pins.e2e.ts`): `examples/daoris.family.json` puts engine below game, and the check is green on game pinned to a landed
+    engine commit and red on a planted cycle and a planted branch pin. (from D364)
+
 ## Where a change goes
 
 **Which subdomain a new behaviour belongs in**
@@ -271,7 +293,9 @@ skill, and `co-working` as a pack.
 - CLI: `test/doctrine/` (`sync`, `check`, `switchoff`, `keep`, `reconcile`, `update-check`, `newer-lock`, `upstream`,
   `upstream-request`, `region`, `tierrender`, `indexgen`, `packapi`); `test/layout/` (`layout-move`, `layout-mirror`,
   `layout-rooms`, `layout-links`, `documents-*`); `test/cli/` (`cli`, `cli-usage`, `cli-tree`, `containment`); `test/declaration/` (`split`, `proof`, `dryrun`: this
-  repository's own file converts with no difference);
+  repository's own file converts with no difference); `test/family/family.test.ts` (the graph); the family's real-git cases are
+  end-to-end, in `tool-test/` (`family-gitread`, `family-check`, `family-pins`: git lays each repository out and the reader is held
+  to it);
   `test/platform/driverprogram.test.ts`.
 - `test/dogfood.test.ts`: canon frontmatter, no private names in the canon, this repository checks clean, no CLI module on
   the network, one spawn, `check` with no canon. `test/structure.test.ts` holds the CLI's module structure.
