@@ -252,6 +252,46 @@ public sealed class AccountSwitchTests : IDisposable
         Assert.Equal((NextHold.Off, true, "account-2"), (after.Own, after.Switched, after.Selection.Profile));
     }
 
+    public static TheoryData<string> Lines => ["driven-open", "driven-closed", "driven-closed-carrying", "conversation-carrying"];
+
+    private static LineKind LineOf(string line) => line switch
+    {
+        "driven-open" => LineKind.DrivenOpen,
+        "driven-closed" => LineKind.DrivenClosed(carries: false),
+        "driven-closed-carrying" => LineKind.DrivenClosed(carries: true),
+        _ => LineKind.Conversation(carries: true),
+    };
+
+    [Theory]
+    [MemberData(nameof(Lines))]
+    public async Task A_line_that_walks_or_carries_moves_to_the_ready_account_at_its_first_resume_and_is_never_left_held(string line)
+    {
+        Accounts("fake");
+        var roster = Roster();
+        Switch("fake", "account-1", off: true);
+
+        var after = await roster.ResumeAsync("fake", Config("fake"), null, "account-1", StartKind.Driven, line: LineOf(line));
+
+        Assert.Equal(NextHold.Off, after.Own);
+        Assert.True(after.Selection.Allowed, $"{line}: the walk found no account for a session on a switched-off one");
+        Assert.Equal("account-2", after.Selection.Profile);
+        Assert.True(after.Switched, $"{line}: the move is not said as a switch");
+    }
+
+    [Fact]
+    public async Task An_ended_conversation_whose_words_no_new_part_carries_is_held_for_the_switch_and_never_waits_for_a_reset()
+    {
+        Accounts("fake");
+        var roster = Roster();
+        Switch("fake", "account-1", off: true);
+
+        var held = await roster.ResumeAsync("fake", Config("fake"), null, "account-1", StartKind.Conversation, line: LineKind.Conversation(carries: false));
+
+        Assert.Equal(NextHold.Off, held.Own);
+        Assert.False(held.Waits);
+        Assert.IsType<LineAnswer.Hold>(held.Answer);
+    }
+
     [Theory]
     [MemberData(nameof(Agents))]
     public async Task A_session_on_it_with_no_other_account_ready_is_held_not_waited_for_a_reset(string agent)
