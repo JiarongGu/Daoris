@@ -153,7 +153,12 @@ public static class SessionGroups
         // A fresh plan reads the pauses as the loop's look does, so the list and a tick say one verdict.
         var snapshot = await PausedWork.LookAsync(service, config, await service.SnapshotAsync(ct).ConfigureAwait(false), ct).ConfigureAwait(false);
         // And the typed holds a role's policy leaves, read from the home's store, so a plan with no look says the hold the look says.
-        if (home is not null) snapshot = StaffSnapshotCourse.Held(new StaffLedger(home), snapshot, config, DateTimeOffset.UtcNow);
+        if (home is not null)
+        {
+            var now = DateTimeOffset.UtcNow;
+            snapshot = StaffSnapshotCourse.Held(new StaffLedger(home), snapshot, config, now) with { Priority = PriorityLook.Read(home, now) };
+        }
+
         return Planner.Plan(snapshot, config, unadopted);
     }
 

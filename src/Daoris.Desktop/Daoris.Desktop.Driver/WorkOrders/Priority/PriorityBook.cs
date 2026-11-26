@@ -29,12 +29,34 @@ public sealed record PriorityReading(string Class, string Source, PriorityEvent?
 
 /// <summary>
 /// What a workspace may set of the framework: how many asks and quests hold urgent at once, and how long an urgent class
-/// lasts where its setter names no end.
+/// lasts where its setter names no end, and how long an item waits in a queue before it is ordered one class up.
 /// </summary>
 public sealed record PriorityRules(int UrgentCap, TimeSpan UrgentLife)
 {
-    /// <summary>Two at once, for a day: the defaults until a workspace sets its own.</summary>
+    /// <summary>Two at once, for a day, aging a normal item after 2 hours and a low one after 8: the defaults until a workspace sets its own.</summary>
     public static PriorityRules Default { get; } = new(2, TimeSpan.FromHours(24));
+
+    public TimeSpan AgeNormal { get; init; } = TimeSpan.FromHours(2);
+
+    public TimeSpan AgeLow { get; init; } = TimeSpan.FromHours(8);
+
+    /// <summary>How long an item of <paramref name="class"/> waits before it is ordered one class up; null for high and urgent, which never age.</summary>
+    public TimeSpan? BoundOf(string @class) => @class switch
+    {
+        PriorityClasses.Normal => AgeNormal,
+        PriorityClasses.Low => AgeLow,
+        _ => null,
+    };
+}
+
+/// <summary>The classes set on this machine, the workspace's rules and the moment they are read at: what a look's plan orders its starts by.</summary>
+public sealed record PriorityLook(IReadOnlyList<PriorityEvent> Events, PriorityRules Rules, DateTimeOffset Now)
+{
+    /// <summary>No class set, read at no moment: every quest is normal and none ages.</summary>
+    public static PriorityLook None { get; } = new([], PriorityRules.Default, DateTimeOffset.MinValue);
+
+    /// <summary>The classes this home keeps, read at <paramref name="now"/>: what every plan over a snapshot carries, the loop's and a fresh one alike.</summary>
+    public static PriorityLook Read(string home, DateTimeOffset now) => new(PriorityBook.Read(home), PriorityRules.Default, now);
 }
 
 /// <summary>

@@ -2192,7 +2192,7 @@ public sealed class PlannerTests
         var held = await service.SnapshotAsync();
         var sitting = Planner.Plan(held with { Repositories = repositories }, config).Where(each => each.Quest.Id != "q1").ToList();
 
-        Assert.Equal([("q2", StartVerdict.SourceReopened), ("q3", StartVerdict.SourceReopened)], sitting.Select(each => (each.Quest.Id, each.Verdict)));
+        Assert.Equal([("q3", StartVerdict.SourceReopened), ("q2", StartVerdict.SourceReopened)], sitting.Select(each => (each.Quest.Id, each.Verdict)));
         Assert.Equal(new QuestSubmissionRef("desk", 41), held.Quests.Single(quest => quest.Id == "q2").SourceReopened);
         Assert.Equal(0, ledger.ClaimsAsked("q3"));
 
@@ -2204,7 +2204,7 @@ public sealed class PlannerTests
         var goneOn = await service.SnapshotAsync();
         var moved = Planner.Plan(goneOn with { Repositories = repositories }, config).Where(each => each.Quest.Id != "q1").ToList();
 
-        Assert.Equal([("q2", StartVerdict.Start), ("q3", StartVerdict.Start)], moved.Select(each => (each.Quest.Id, each.Verdict)));
+        Assert.Equal([("q3", StartVerdict.Start), ("q2", StartVerdict.Start)], moved.Select(each => (each.Quest.Id, each.Verdict)));
         Assert.Equal(cut, moved.Single(each => each.Quest.Id == "q3").Resumes?.Session);
         Assert.Equal(1, ledger.ClaimsAsked("q3"));
     }
