@@ -1,7 +1,7 @@
 import type { CliCommand, CommandArgs } from '../platform/types.ts';
 import { DaorisError, type ExitCode } from '../platform/errors.ts';
 import { commandFamilyCheck } from '../family/check.ts';
-import { commandFamilyMaterialize } from '../family/materialize.ts';
+import { commandFamilyMaterialize } from '../family/writepins.ts';
 
 const VERBS: Record<string, (args: CommandArgs) => ExitCode> = { check: commandFamilyCheck, materialize: commandFamilyMaterialize };
 

@@ -34,7 +34,7 @@ skill, and `co-working` as a pack.
 | Layouts | `src/Daoris.Cli/src/layout/harness.ts`, `layout.ts`, `mirror.ts`, `rooms.ts`, `pointers.ts`, `links.ts` | The `claude-code` and `agents` descriptors, the lock's layout, the skills mirror, rooms, the retired pointers, links |
 | Adoption reads | `src/Daoris.Cli/src/doctrine/analyze.ts`, `budget.ts`, `twins.ts`, `lineendings.ts` | `analyze` (what adopting would do, its budget projection in `budget.ts`), `doctor` (look-alike documents), the LF pin |
 | Declaration split | `src/Daoris.Cli/src/declaration/` (`members.ts`, `split.ts`, `folder.ts`, `reading.ts`, `proof.ts`, `dryrun.ts`), `cli/declaration.ts` | `declaration split --dry-run`: the member table as data, the gates file split into a folder and the home's values in scratch, read back and proved equal to the old file |
-| Family | `src/Daoris.Cli/src/family/` (`family.ts`, `pins.ts`, `gitread.ts`, `member.ts`, `check.ts`, `materialize.ts`), `cli/family.ts` | `family check`: the family file and each member's `uses` and lock read, the graph judged (`family.ts`), each pin read against its producer's checkout (`pins.ts`) through git's own files (`gitread.ts`); `family materialize`: each pin written as its producer's tree at the pin; `member.ts` reads a tree back to its checkout |
+| Family | `src/Daoris.Cli/src/family/` (`family.ts`, `pins.ts`, `gitread.ts`, `member.ts`, `check.ts`, `writepins.ts`), `cli/family.ts` | `family check`: the family file and each member's `uses` and lock read, the graph judged (`family.ts`), each pin read against its producer's checkout (`pins.ts`) through git's own files (`gitread.ts`); `family materialize`: each pin written as its producer's tree at the pin; `member.ts` reads a tree back to its checkout |
 | The canon | `canon/core/`, `canon/packs/*/`, `canon/canon.json`, `canon/CHANGELOG.md` | The doctrine itself, its version and why each version changed |
 | Command tree | `Daoris.Desktop.Driver/Platform/CommandGroupAttribute.cs`, `CommandWords.cs`, `Loop/CommandTree.cs` | Each group's mark on its command, the groups collected at start, the router, and the carried CLI's path |
 | Doctrine hand-back | `Daoris.Desktop.Driver.Host/DoctrineConsole.cs` | Runs a word no group owns through the CLI an install carries, marked `DAORIS_HANDED=driver`; the CLI's usage at the end of `daoris help` |
@@ -307,7 +307,7 @@ skill, and `co-working` as a pack.
 - CLI: `test/doctrine/` (`sync`, `check`, `switchoff`, `keep`, `reconcile`, `update-check`, `newer-lock`, `upstream`,
   `upstream-request`, `region`, `tierrender`, `indexgen`, `packapi`); `test/layout/` (`layout-move`, `layout-mirror`,
   `layout-rooms`, `layout-links`, `documents-*`); `test/cli/` (`cli`, `cli-usage`, `cli-tree`, `containment`); `test/declaration/` (`split`, `proof`, `dryrun`: this
-  repository's own file converts with no difference); `test/family/family.test.ts` (the graph), `test/family/materialize.test.ts` (a tree's entries, the paths refused);
+  repository's own file converts with no difference); `test/family/family.test.ts` (the graph), `test/family/writepins.test.ts` (a tree's entries, the paths refused);
   the family's real-git cases are end-to-end, in `tool-test/` (`family-gitread`, `family-check`, `family-materialize`, `family-pins`,
   `family-gates`: git lays each repository out and the reader is held to it);
   `test/platform/driverprogram.test.ts`.

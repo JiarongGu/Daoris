@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { parseTree } from '../../src/family/gitread.ts';
-import { unsafePath } from '../../src/family/materialize.ts';
+import { unsafePath } from '../../src/family/writepins.ts';
 
 /** What `family materialize` reads of a tree and which of its paths it refuses to write, with no git and no disk. */
 
