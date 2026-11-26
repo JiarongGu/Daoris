@@ -105,6 +105,37 @@ public sealed class QuestExchange
     /// </summary>
     internal QuestStore Store => quests;
 
+    /// <summary>
+    /// The title and body of a quest a request key published, moved while it is open or taken: its key, id, weight and paths stay, and the
+    /// same words again move nothing. Closed quests and quests no request published keep their words.
+    /// </summary>
+    public async Task<QuestRespondOutcome> ReviseWordsAsync(string id, string title, string body, DateTimeOffset now, CancellationToken ct = default)
+    {
+        var quest = id.TrimStart('#');
+        if (string.IsNullOrWhiteSpace(title) || string.IsNullOrWhiteSpace(body))
+        {
+            return new(QuestRespondRefusal.BadAnswer, "A quest's title and body are both required.", null);
+        }
+
+        if (await quests.FindAsync(quest, ct).ConfigureAwait(false) is not { } found)
+        {
+            return new(QuestRespondRefusal.NotFound, $"No quest `#{quest}`. Ids come from `quest_list`.", null);
+        }
+
+        if (found.Request is null)
+        {
+            return new(QuestRespondRefusal.NotRequested, $"Quest `#{quest}` was not published under a request's key, so its words are not moved here.", null);
+        }
+
+        if (found.Status is not (QuestStatus.Open or QuestStatus.Taken))
+        {
+            return new(QuestRespondRefusal.Closed, $"Quest `#{quest}` is {found.Status}, and its words stay as they were.", null);
+        }
+
+        var move = await quests.ReviseAsync(quest, new QuestRevision(title.Trim(), body, found.Weight, found.Paths), now, ct).ConfigureAwait(false);
+        return new(QuestRespondRefusal.None, $"Quest `#{quest}`'s words are now \"{title.Trim()}\".", move.Quest);
+    }
+
     /// <summary>Post a set-up on a set-up step; the doors are <see cref="QuestReviews.PostSetUpAsync"/>'s.</summary>
     public Task<QuestRespondOutcome> PostSetUpAsync(string id, QuestSetUpPost post, DateTimeOffset now, CancellationToken ct = default) =>
         reviews.PostSetUpAsync(id, post, now, ct);

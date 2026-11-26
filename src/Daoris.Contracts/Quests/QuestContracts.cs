@@ -85,6 +85,13 @@ public sealed record ContinueQuest(string Id) : IRoute<QuestActionResponse>
     public static string Path => "/api/quests/{id}/continue";
 }
 
+/// <summary>The words of a quest a request key published, moved while it is open or taken: how a later landing retargets a family edge's one pin-move quest.</summary>
+public sealed record ReviseQuestWords(string Id, string Title, string Body) : IRoute<QuestActionResponse>
+{
+    public static string Method => "POST";
+    public static string Path => "/api/quests/{id}/revise";
+}
+
 /// <summary>The person's bring-forward of their machine's lost take, by the conflict's machine and sequence.</summary>
 public sealed record ForwardConflict(string Id, string? Machine, long? Sequence) : IRoute<QuestActionResponse>
 {
@@ -118,6 +125,7 @@ public sealed record PostQuestEvidence(
 [JsonSerializable(typeof(MarkQuestDone))]
 [JsonSerializable(typeof(ReopenQuest))]
 [JsonSerializable(typeof(ContinueQuest))]
+[JsonSerializable(typeof(ReviseQuestWords))]
 [JsonSerializable(typeof(ForwardConflict))]
 [JsonSerializable(typeof(PostQuestEvidence))]
 [JsonSerializable(typeof(QuestActionResponse))]

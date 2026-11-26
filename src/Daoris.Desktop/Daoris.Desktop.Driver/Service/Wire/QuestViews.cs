@@ -70,6 +70,9 @@ public static class QuestViews
     public static Task<(bool Ok, string Message)> ContinueQuestAsync(this ServiceClient service, string id, CancellationToken ct = default) =>
         service.MovedAsync(new ContinueQuest(id.TrimStart('#')), "continue", ct);
 
+    public static Task<(bool Ok, string Message)> ReviseWordsAsync(this ServiceClient service, string id, string title, string body, CancellationToken ct = default) =>
+        service.MovedAsync(new ReviseQuestWords(id.TrimStart('#'), title, body), "revise", ct);
+
     /// <summary>
     /// The person's bring-forward of one side of two machines' work on a quest. A refusal or a loss again (409) and a quest not found
     /// (404) come back as the service's sentence, not as a tool error.

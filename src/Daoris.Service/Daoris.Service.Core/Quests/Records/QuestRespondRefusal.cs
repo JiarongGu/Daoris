@@ -113,6 +113,8 @@ public enum QuestRespondRefusal
     /// </summary>
     NoLostTake,
 
+    NotRequested,
+
     /// <summary>
     /// The person's bring-forward while a session here still runs on the quest: it waits until that process
     /// has ended, so the old session's late moves cannot stand on the fresh take. The answer names the session.
