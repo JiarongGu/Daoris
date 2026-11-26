@@ -1,0 +1,6 @@
+<Project>
+
+  <!-- The reader is its own island: it takes no setting and no package from the product's tree, so a build of it reads nothing
+       above this folder and a change there cannot move it. -->
+
+</Project>

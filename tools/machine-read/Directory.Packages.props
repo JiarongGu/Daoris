@@ -1,0 +1,8 @@
+<Project>
+
+  <!-- The reader takes no package; this file ends the search for the product's central versions at this folder. -->
+  <PropertyGroup>
+    <ManagePackageVersionsCentrally>false</ManagePackageVersionsCentrally>
+  </PropertyGroup>
+
+</Project>

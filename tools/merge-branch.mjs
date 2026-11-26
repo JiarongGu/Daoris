@@ -356,6 +356,7 @@ import { indexLockNote,mentionsIndexLock, readIndexLock } from './index-lock.mjs
 import { admissionLines, createAdmission, holdersSentence, lookAt } from './machine-admission.mjs';
 import { censusOf, classesReached, halfOf, reachSettings, repository, withSettings } from './process-reach.mjs';
 import { endOrphans, endStrandedUnder, processList } from './processes.mjs';
+import { readProcesses as readTable } from './machine-read.mjs';
 import { gateSignature, readTrx, signatureKey, signatureOf } from './test-failures.mjs';
 import {
   IN_THE_LINE, MERGE_QUEUE, MERGE_QUEUE_LOG, RUNNER_ACK_MS, SCOPE_TREE, appendScopeRun, appendSighting, candidateOutcome, censusLine, censusTrees, confirmReadings, confirmStep, dropQueued, enqueue,
@@ -399,7 +400,7 @@ import { fastPlan, scopedKind } from './merge/fast-plan.ts';
 import {
   flakeDecision, nodeTestDecision, nodeTestDirs, nodeTestRerunCommand, ownOutput, rerunCommand, short, testClass, testSummary, timedDecision, timedRerunCommand,
 } from './merge-branch/test-output.mjs';
-import { gbOf, keptFree, memoryDeath, memoryLacking, memoryShown, needOf, parseMeminfo, parseWindowsMemory, readMemory, reserveGb } from './merge-branch/memory.mjs';
+import { gbOf, keptFree, memoryDeath, memoryLacking, memoryShown, needOf, parseMeminfo, readMemory, reserveGb } from './merge-branch/memory.mjs';
 import { MAIN_WATCH_LOCK, MAIN_WATCH_TREE, WATCH_PREFIX, appendWatch, lastRed, readWatch, sightingsOf, startWatch, watchGates, watchHold } from './merge/main-watch.ts';
 import { inFolders, readFolders, regenerate, regenerations, writeFolders } from './merge/generated.ts';
 import { MERGE_RECORD, appendRecord, readRecords } from './merge/merge-record.ts';
@@ -1221,7 +1222,7 @@ export function memoryNeed(gate) {
   return 0;
 }
 
-export { memoryDeath, parseMeminfo, parseWindowsMemory, readMemory, reserveGb };
+export { memoryDeath, parseMeminfo, readMemory, reserveGb };
 
 const span = (ms) => (ms >= 60_000 && ms % 60_000 === 0 ? `${ms / 60_000} m` : duration(ms));
 const finite = (value) => (typeof value === 'number' && Number.isFinite(value) ? value : null);
@@ -1313,21 +1314,12 @@ export function pruneCandidates({ merged, worktrees, current, hold = [] }) {
 }
 
 /**
- * The running processes, read from the CIM query's JSON on Windows or `ps -A -o pid= -o args=` elsewhere: each one's
- * pid, its executable's path ('' when not given) and its command line, or its path when the command line is not given.
- * One with neither names no folder and is left out.
+ * The machine reader's rows (`tools/machine-read.mjs`) as the processes a prune looks at: each one's pid, its executable's path
+ * ('' when not given) and its command line, or its path when the command line is not given. One with neither names no folder and
+ * is left out.
  */
-export function parseProcesses(text, platform = process.platform) {
-  if (platform === 'win32') {
-    // Set to UTF-8, a console may write its preamble first, which JSON.parse refuses.
-    const json = text.replace(/^﻿/, '').trim();
-    const parsed = json ? JSON.parse(json) : [];
-    return (Array.isArray(parsed) ? parsed : [parsed])
-      .map((one) => ({ pid: Number(one.ProcessId), exe: one.ExecutablePath ?? '', command: one.CommandLine ?? one.ExecutablePath ?? '' }))
-      .filter((one) => one.command);
-  }
-  return lines(text).map((line) => /^\s*(\d+)\s+(.*)$/.exec(line)).filter(Boolean)
-    .map(([, pid, command]) => ({ pid: Number(pid), exe: '', command: command.trim() }));
+export function namedProcesses(rows) {
+  return rows.map((one) => ({ pid: one.pid, exe: one.path ?? '', command: one.command || one.path || '' })).filter((one) => one.command);
 }
 
 /**
@@ -1410,24 +1402,12 @@ function inspectWorktree(tree, root) {
   return facts;
 }
 
-// One CIM query lists every process with its path and command line (about 2.4 s);
-// `Get-Process` gives no command line. The encoding is set so a path that is not ASCII arrives whole.
-const PROCESS_QUERY = '[Console]::OutputEncoding = [Text.Encoding]::UTF8; '
-  + 'ConvertTo-Json -Compress -InputObject @(Get-CimInstance Win32_Process | Select-Object ProcessId,ExecutablePath,CommandLine)';
-
 /** The running processes but this one, or why they could not be read. Asked once per prune, and only when needed. */
 function listProcesses() {
-  const windows = process.platform === 'win32';
-  const result = windows
-    ? spawnSync('powershell.exe', ['-NoProfile', '-NonInteractive', '-Command', PROCESS_QUERY], { encoding: 'utf8', maxBuffer: 64 * 1024 * 1024, windowsHide: true })
-    : spawnSync('ps', ['-A', '-o', 'pid=', '-o', 'args='], { encoding: 'utf8', maxBuffer: 64 * 1024 * 1024, windowsHide: true });
-  const what = windows ? 'the process query' : 'ps';
-  if (result.error) return { error: `${what} could not start: ${result.error.message}` };
-  if (result.status !== 0) return { error: `${what} failed: ${gitSays(result.stderr || result.stdout || '')}` };
   try {
-    return { processes: parseProcesses(result.stdout, process.platform).filter((one) => one.pid !== process.pid) };
+    return { processes: namedProcesses(readTable()).filter((one) => one.pid !== process.pid) };
   } catch (error) {
-    return { error: `${what} answered what could not be read: ${error?.message ?? error}` };
+    return { error: `the process query failed: ${error?.message ?? error}` };
   }
 }
 

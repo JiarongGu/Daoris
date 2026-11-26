@@ -1,0 +1,24 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- Reads what Windows keeps of its processes and its free memory with the system's own calls, so a tool that wants either starts no
+       PowerShell and asks no WMI. Built by tools/machine-read.mjs
+       the first time a tool asks, and again when a source here changed; never shipped. -->
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <LangVersion>latest</LangVersion>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <IsPackable>false</IsPackable>
+    <AssemblyName>machine-read</AssemblyName>
+    <InvariantGlobalization>true</InvariantGlobalization>
+    <TieredPGO>false</TieredPGO>
+    <DebugType>none</DebugType>
+    <UseSystemResourceKeys>true</UseSystemResourceKeys>
+    <TieredCompilationQuickJitForLoops>true</TieredCompilationQuickJitForLoops>
+    <GenerateDocumentationFile>false</GenerateDocumentationFile>
+    <SatelliteResourceLanguages>en</SatelliteResourceLanguages>
+    <Description>reads the process table and the free memory without PowerShell or WMI</Description>
+  </PropertyGroup>
+
+</Project>

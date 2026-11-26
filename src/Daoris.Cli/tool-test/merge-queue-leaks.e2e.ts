@@ -102,17 +102,24 @@ describe('Nothing the merge tool and its tests start outlives what started it', 
     assert.equal(tool.waitSaid(standing({ ...empty, candidate: null }, two), { branch: 'b2', request: 'r2' })!.code, 1);
   });
 
-  test('a process list reads as rows: Windows prints pid, parent and command line, ps prints them in its columns', () => {
-    const windows = ['12|4|node C:\\repo\\local\\scope-tree\\a.js --flag', '', '13|12|"C:\\Program Files\\git\\git.exe" status', 'junk', '0||System Idle'].join('\r\n');
-    assert.deepEqual(procs.parseProcessRows(windows, 'rows'), [
+  test("a process list reads as rows from the machine reader on Windows and from ps elsewhere, and one that cannot be read is null, never an empty machine", () => {
+    const reader = [
+      { pid: 0, ppid: 0, created: 1, name: 'System Idle Process', path: null, command: null },
+      { pid: 12, ppid: 4, created: 1700000000000, name: 'node.exe', path: null, command: 'node C:\\repo\\local\\scope-tree\\a.js --flag' },
+      { pid: 13, ppid: 12, created: 1700000000500, name: 'git.exe', path: null, command: '"C:\\Program Files\\git\\git.exe" status' },
+    ];
+    const asked: string[] = [];
+    assert.deepEqual(procs.processList({ platform: 'win32', helper: 'H:\\machine-read.exe', run: (command: string) => { asked.push(command); return { status: 0, stdout: JSON.stringify(reader) }; } }), [
       { pid: 12, ppid: 4, command: 'node C:\\repo\\local\\scope-tree\\a.js --flag' },
       { pid: 13, ppid: 12, command: '"C:\\Program Files\\git\\git.exe" status' },
     ]);
-    const ps = ['  501     1 node /repo/local/scope-tree/a.js --flag', '  502   501 git status', '   bad'].join('\n');
-    assert.deepEqual(procs.parseProcessRows(ps, 'ps'), [
+    assert.deepEqual(asked, ['H:\\machine-read.exe'], 'no PowerShell');
+    const ps = ['  501     1 Thu Nov 26 05:47:01 2026 node /repo/local/scope-tree/a.js --flag', '  502   501 Thu Nov 26 05:47:02 2026 git status', '   bad'].join('\n');
+    assert.deepEqual(procs.processList({ platform: 'linux', run: () => ({ status: 0, stdout: ps }) }), [
       { pid: 501, ppid: 1, command: 'node /repo/local/scope-tree/a.js --flag' },
       { pid: 502, ppid: 501, command: 'git status' },
     ]);
+    assert.equal(procs.processList({ platform: 'win32', helper: 'H', run: () => ({ status: 1, stdout: '', stderr: 'denied' }) }), null);
   });
 
   test("the census names a process whose command line is under the repository's trees and whose parent is gone, and no other", () => {
@@ -314,22 +321,19 @@ describe('A dropped run ends what its tests had left running under the scope tre
       "a reused id that makes two processes each other's parent holds no root, and ends the walk");
   });
 
-  test('the rows a Windows listing gives are read whole, a command line with a bar in it kept', () => {
-    assert.deepEqual(procs.parseCreatedRows('4|0|1700000000000|\r\n12|4|1700000000500|node a.mjs "x|y"\r\nnot a row\r\n'),
-      [{ pid: 4, ppid: 0, created: 1700000000000, command: '' }, { pid: 12, ppid: 4, created: 1700000000500, command: 'node a.mjs "x|y"' }]);
-  });
-
   test('only Windows ends any, each root with its tree and nothing the run did not make; a list that cannot be read ends none', () => {
-    const rows = '10|99|1000500|node D:/work/repo/local/scope-tree/a.mjs\n11|99|1000500|node unrelated.mjs\n12|10|1000600|node b.mjs\n';
+    const rows = [
+      row(10, 99, 1000500, 'node D:/work/repo/local/scope-tree/a.mjs'), row(11, 99, 1000500, 'node unrelated.mjs'), row(12, 10, 1000600, 'node b.mjs'),
+    ];
     const ended: number[] = [];
     const asked: string[] = [];
-    const run = (script: string) => { asked.push(script); return rows; };
-    assert.deepEqual(procs.endStrandedUnder(FOLDER, 1_001_000, { platform: 'linux', run, end: (pid) => ended.push(pid) }), []);
+    const list = () => { asked.push('list'); return rows; };
+    assert.deepEqual(procs.endStrandedUnder(FOLDER, 1_001_000, { platform: 'linux', list, end: (pid) => ended.push(pid) }), []);
     assert.deepEqual(asked, [], 'nothing is read elsewhere');
-    assert.deepEqual(procs.endStrandedUnder(FOLDER, 1_001_000, { platform: 'win32', run, end: (pid) => ended.push(pid) }), [10]);
+    assert.deepEqual(procs.endStrandedUnder(FOLDER, 1_001_000, { platform: 'win32', list, end: (pid) => ended.push(pid) }), [10]);
     assert.deepEqual(ended, [10]);
-    assert.deepEqual(procs.endStrandedUnder(FOLDER, 1_001_000, { platform: 'win32', run: () => '', end: (pid) => ended.push(pid) }), []);
-    assert.deepEqual(procs.endStrandedUnder('', 1_001_000, { platform: 'win32', run, end: (pid) => ended.push(pid) }), []);
+    assert.deepEqual(procs.endStrandedUnder(FOLDER, 1_001_000, { platform: 'win32', list: () => { throw new Error('the machine reader failed'); }, end: (pid) => ended.push(pid) }), []);
+    assert.deepEqual(procs.endStrandedUnder('', 1_001_000, { platform: 'win32', list, end: (pid) => ended.push(pid) }), []);
   });
 
   test('a candidate dropped while its gate runs ends the orphans its tests left under the scope tree, one named by a descendant alone; a process outside it is untouched', { skip: process.platform !== 'win32' }, async () => {

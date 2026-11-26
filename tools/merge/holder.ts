@@ -3,6 +3,7 @@
  * is killed outright would read as held for as long as the machine runs. The creation time is the identity beside the pid.
  */
 import { spawnSync } from 'node:child_process';
+import { processStartOf } from '../machine-read.mjs';
 
 type Asked = { status: number | null; stdout?: unknown };
 type Run = (command: string, args: string[], options: { encoding: 'utf8'; windowsHide?: boolean; env?: NodeJS.ProcessEnv }) => Asked;
@@ -22,17 +23,21 @@ export function pidAlive(pid: number): boolean {
 export const START_TOLERANCE_MS = 2000;
 
 /** When the process `pid` began, in epoch milliseconds; null where it does not run or the machine would not say. */
-export function processStart(pid: number, { platform = process.platform, run = spawnSync as Run }: { platform?: string; run?: Run } = {}): number | null {
+export function processStart(pid: number, { platform = process.platform, run = spawnSync as Run, helper }: { platform?: string; run?: Run; helper?: string } = {}): number | null {
   if (!Number.isInteger(pid) || pid <= 0) return null;
   if (pid === process.pid) return Math.round(Date.now() - process.uptime() * 1000);
-  const asked = platform === 'win32'
-    ? run('powershell', ['-NoProfile', '-Command',
-      `$p = Get-Process -Id ${pid} -ErrorAction SilentlyContinue; if ($p) { [DateTimeOffset]::new($p.StartTime).ToUnixTimeMilliseconds() }`],
-    { encoding: 'utf8', windowsHide: true })
-    : run('ps', ['-o', 'lstart=', '-p', String(pid)], { encoding: 'utf8', env: { ...process.env, LC_ALL: 'C' } });
+  if (platform === 'win32') {
+    // The machine reader, never a PowerShell: a lock's holder is looked at on every wait for the lock.
+    try {
+      return processStartOf(pid, { platform, run, ...(helper === undefined ? {} : { helper }) });
+    } catch {
+      return null;
+    }
+  }
+  const asked = run('ps', ['-o', 'lstart=', '-p', String(pid)], { encoding: 'utf8', env: { ...process.env, LC_ALL: 'C' } });
   const text = String(asked.stdout ?? '').trim();
   if (asked.status !== 0 || !text) return null;
-  const at = platform === 'win32' ? Number(text) : Date.parse(text);
+  const at = Date.parse(text);
   return Number.isFinite(at) ? at : null;
 }
 

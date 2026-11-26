@@ -68,8 +68,8 @@
         "src/Daoris.Cli/src/platform/", "src/Daoris.Cli/src/tools/", "src/Daoris.Cli/test/_fixture.ts", "src/Daoris.Cli/tool-test/",
         "src/Daoris.Desktop/Daoris.Desktop.Driver/Agents/", "src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/fixtures/",
         "tools/ci-background.mjs", "tools/desktop-publish.mjs", "tools/doc-duplicates.mjs", "tools/fsx.mjs",
-        "tools/machine-admission.mjs", "tools/machine-admission.test.mjs", "tools/merge-branch.mjs", "tools/merge-queue.mjs",
-        "tools/process-reach.mjs", "tools/processes.mjs", "tools/reached-checks.mjs", "tools/merge/", "tools/tsconfig.json", "tools/worktree-setup.mjs", "tools/tree-prep.mjs", "tools/merge-backlog.mjs", "tools/rehearsal-kit.mjs", "tools/service-publish.mjs", "tools/setup-kit.mjs",
+        "tools/machine-admission.mjs", "tools/machine-admission.test.mjs", "tools/machine-read.mjs", "tools/machine-read/", "tools/merge-branch.mjs", "tools/merge-queue.mjs",
+        "tools/port-listeners.mjs", "tools/process-reach.mjs", "tools/processes.mjs", "tools/reached-checks.mjs", "tools/merge/", "tools/tsconfig.json", "tools/worktree-setup.mjs", "tools/tree-prep.mjs", "tools/merge-backlog.mjs", "tools/rehearsal-kit.mjs", "tools/service-publish.mjs", "tools/setup-kit.mjs",
         "tools/stand-ins.mjs", "tools/team-briefs.mjs", "tools/team-briefs.test.mjs", "tools/test-failures.mjs", "tools/test-map.mjs", "tools/test-map/", "tools/test-recall.mjs", "tools/desktop-publish/", "tools/merge-branch/"
       ] },
     { "name": "comments", "run": "node tools/comment-gate.mjs",
@@ -302,7 +302,7 @@
         "src/Daoris.Service/Directory.Build.props", "src/Daoris.Service/Directory.Packages.props", "src/Daoris.Service/README.md",
         "src/Daoris.Service/Daoris.Service.Core/", "src/Daoris.Service/Daoris.Service.Http/", "src/Daoris.Service/Daoris.Service.Mcp/",
         "src/Daoris.Service/Daoris.Service.Shared/", "tools/cdp.mjs", "tools/ci-background.mjs", "tools/deployment-rehearsal.mjs",
-        "tools/desktop-publish.mjs", "tools/desktop.mjs", "tools/fsx.mjs", "tools/processes.mjs", "tools/rehearsal-kit.mjs",
+        "tools/desktop-publish.mjs", "tools/desktop.mjs", "tools/fsx.mjs", "tools/machine-read.mjs", "tools/port-listeners.mjs", "tools/processes.mjs", "tools/rehearsal-kit.mjs",
         "tools/service-publish.mjs", "tools/stage-package.mjs", "tools/test-failures.mjs", "tools/desktop/", "tools/desktop-publish/"
       ] }
   ],
