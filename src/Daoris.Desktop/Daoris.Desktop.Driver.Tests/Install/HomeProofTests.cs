@@ -72,6 +72,28 @@ public sealed class HomeProofTests : IDisposable
     }
 
     [Fact]
+    public void A_run_on_Current_and_a_run_the_bind_held_are_records_the_product_writes_and_no_problem()
+    {
+        var at = new DateTimeOffset(2026, 11, 7, 9, 0, 0, TimeSpan.Zero);
+        var runs = new WorkflowRunFiles(Home);
+        Assert.True(runs.Bind(new WorkflowRunBinding("q1", "reports", "work", WorkflowSelection.Current, WorkflowLevels.Repository, at)));
+        Assert.True(runs.Bind(new WorkflowRunBinding("q2", "reports", "work", "ghost", WorkflowLevels.Repository, at).Held(BindingProblem.ForNotSaved("ghost"))));
+
+        var report = HomeProof.Read(Home);
+
+        Assert.Equal(2, report.Runs);
+        Assert.Empty(report.Problems);
+    }
+
+    [Fact]
+    public void A_line_that_is_not_the_report_is_not_read_as_one()
+    {
+        Assert.Null(HomeProof.Parse("{}"));
+        Assert.Null(HomeProof.Parse("{\"sessions\":1,\"runs\":2}"));
+        Assert.Null(HomeProof.Parse("{\"report\":1}\n{\"error\":\"x\"}"));
+    }
+
+    [Fact]
     public void A_workflow_file_that_cannot_be_read_is_a_problem()
     {
         Put("data/workflows/broken.json", "{ not json");

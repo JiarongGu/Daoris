@@ -71,7 +71,8 @@ internal sealed class HomeProofReading : IHomeProofReading
             if (!WorkflowRunBindings.IsRunId(run)) continue;
             count++;
             if (runs.Read(run) is not { } binding) problems.Add($"run `{run}`'s binding does not read");
-            else if (!held.Contains(binding.Workflow)) problems.Add($"run `{run}` binds the workflow `{binding.Workflow}`, which the home does not hold");
+            // A run on Current names no saved workflow, and one the bind held (its workflow not saved, unread) says so itself: both are records the product writes.
+            else if (!binding.IsCurrent && binding.Problem is null && !held.Contains(binding.Workflow)) problems.Add($"run `{run}` binds the workflow `{binding.Workflow}`, which the home does not hold");
         }
 
         return count;

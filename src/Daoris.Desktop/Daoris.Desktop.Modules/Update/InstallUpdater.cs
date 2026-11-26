@@ -459,7 +459,7 @@ public sealed class InstallUpdater(
         {
             // Checked by the application before it closes for it, as `daoris update --now` checks it; the launcher checks again
             // before it moves a file.
-            if (UpdateRefusal.Of(install!, home, staged?.Version, Running, Proof) is var (code, why)) refused = new UpdateProblem(code, why);
+            if (await Task.Run(() => UpdateRefusal.Of(install!, home, staged?.Version, Running, Proof)).ConfigureAwait(false) is var (code, why)) refused = new UpdateProblem(code, why);
             // What began after the look read no work (a turn a press let through opened, a helper the look
             // started, a conversation the window began, a plugin step a pass sent) is read again now that no press passes, and the drain
             // goes on for it. *Update now* closes whatever runs, so it reads nothing.

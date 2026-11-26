@@ -123,7 +123,7 @@ internal static class HomeCopy
     /// <summary>How many folders deep a folder outside the home's own is named in the copy.</summary>
     internal const int Depth = 5;
 
-    /// <summary>What the copy names of folders outside the home's own, at most.</summary>
+    /// <summary>What the copy names of each folder outside the home's own, at most.</summary>
     private const int Names = 200_000;
 
     /// <summary>The copy of <paramref name="home"/> in <paramref name="into"/>, laid out as the source is (an install, or a home that is its own folder); the copy's home.</summary>
@@ -137,11 +137,12 @@ internal static class HomeCopy
         var inside = !string.Equals(own, root, StringComparison.OrdinalIgnoreCase) && own.StartsWith(root + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase);
         var copyHome = inside ? Path.Combine(into, Path.GetRelativePath(root, own)) : into;
         if (inside) Copy(own, copyHome);
-        var left = Names;
         foreach (var child in Directory.EnumerateFileSystemEntries(root))
         {
             var name = Path.GetFileName(child);
             if (IsTheInstalls(name) || string.Equals(Path.GetFullPath(child), own, StringComparison.OrdinalIgnoreCase)) continue;
+            // A budget of its own for each folder: a large cache's names never use up what `profiles` needs, which the accounts are read from.
+            var left = Names;
             Mirror(child, Path.Combine(into, name), 1, ref left);
         }
 

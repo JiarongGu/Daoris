@@ -236,7 +236,11 @@ Each type is in a file of its name; `docs/index/README.md` says where a seam, ve
     as an empty one; every other folder of the Daoris folder as names to five levels, empty, with no link followed; the source is read and never
     written), and has the staged build's own driver read the copy (`daoris home proof`, one line of JSON; routed before the lease and the machine log,
     so it writes nothing). The swap is refused with `home` unless every account the running build lists is still listed and the staged build's report
-    holds no problem; a build that gives no readable report (no driver, no such verb, past two minutes) is refused as one that found the home amiss.
+    holds no problem; a build that gives no readable report (no driver, no such verb, past two minutes, a line without the report's fields) is refused as one that found the home amiss,
+    a build older than the verb too, whichever way the version runs: waving through the unread build would let past the one the proof exists for. A path no entry
+    names is a problem whoever reads it (the row's own words, HOMEORPHAN1), and `daoris home` lists them; a run on Current and a run the bind held
+    (its workflow not saved or unread) are records the product writes and are none. The proof runs off the caller's thread, since *Update now*'s SET would otherwise freeze the
+    window for the copy and the staged build's reading; each folder outside the home's own is named in the copy within a budget of its own.
     A refusal closes nothing, this build keeps running and the sentence says why; it is kept as rule 40's is. The copy is removed when the proof ends,
     and one whose proof no longer runs (a mark file beside it, held open by the proof) by the next. (from UPGRADEPROOF1, FIX-LOG 2026-11-20)
 48. A build that confirms and fails later is not rolled back. A launcher refuses a `build.json` schema it does not read. (from D139)

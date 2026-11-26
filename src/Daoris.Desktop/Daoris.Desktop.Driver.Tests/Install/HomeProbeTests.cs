@@ -108,6 +108,9 @@ public sealed class HomeProbeTests : IDisposable
         Assert.Contains("usage: daoris home purge", silent?.Sentence);
         Assert.Equal(HomeProbe.Code, garbled?.Code);
         Assert.Contains("no readable report", garbled?.Sentence);
+        // A line that parses as JSON but holds none of the report's fields is no report, and no exception either.
+        Assert.Contains("no readable report", HomeProbe.Refused(_install, Home, "0.0.9", (_, _) => (0, "{}"))?.Sentence);
+        Assert.Contains("no readable report", HomeProbe.Refused(_install, Home, "0.0.9", (_, _) => (1, "{\"error\":\"x\"}"))?.Sentence);
     }
 
     [Fact]

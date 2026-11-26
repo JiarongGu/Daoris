@@ -45,7 +45,8 @@ public static class HomeProof
         {
             try
             {
-                return JsonSerializer.Deserialize<HomeProofReport>(line, Options);
+                // A line with the report's fields missing (an error object, a renamed field) is not the report.
+                if (JsonSerializer.Deserialize<HomeProofReport>(line, Options) is { Accounts: not null, Problems: not null } report) return report;
             }
             catch (JsonException)
             {
