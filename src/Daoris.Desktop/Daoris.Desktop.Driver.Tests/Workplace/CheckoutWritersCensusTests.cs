@@ -42,7 +42,7 @@ public sealed partial class CheckoutWritersCensusTests
         ["UntrackedPatches.cs"] = (OwnTree, "Review's read of a session's own tree: its untracked files added as intents to a private index (GIT_INDEX_FILE) beside the tree's own, never that index, removed with its lock after", ["add@_root"]),
 
         // Refs no checkout has out, each from the tip judged or refused by git itself, and git's record of the trees.
-        ["BranchReplays.cs"] = (Refs, "a branch replayed in its own tree or one made for it (D109 §2), moved from the tip judged while no checkout has it out", ["rebase@tree", "switch@tree", "update-ref@root"]),
+        ["BranchReplays.cs"] = (Refs, "a branch replayed in its own tree or one made for it (D109 §2), moved from the tip judged while no checkout has it out", ["rebase@?", "rebase@tree", "switch@tree", "update-ref@root"]),
         ["ReplaySettles.cs"] = (OwnTree, "a work replayed and its stops settled in a tree made for it under the trees home and removed after; it moves no branch", ["add@tree", "checkout@tree", "rebase@tree", "rm@tree", "switch@tree", "worktree@root"]),
         ["ResolveTree.cs"] = (Refs, "a session's tree a hand-off reserves, the replay stopped there on a detached head so its branch never moves, put back on its branch at its tip with the resolver's edits on the node's edits ref", ["add@hand.Tree", "checkout@hand.Tree", "clean@hand.Tree", "rebase@?", "rebase@hand.Tree", "switch@hand.Tree", "symbolic-ref@hand.Tree", "update-ref@hand.Tree"]),
         ["TreeUpdates.cs"] = (Refs, "a session's branch brought up to date in its own tree, moved from the tip judged while that tree is detached", ["rebase@tree", "switch@full", "switch@tree", "update-ref@root"]),

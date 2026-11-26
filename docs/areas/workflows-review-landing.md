@@ -1104,7 +1104,9 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     its card is drawn (`landingStands`, the landing's `accept` with its attempt); the one press left outside the card is the ask-level *Accept the ask's parts…* in Sessions' list by ask.
 58. A landing's replay settles the declared backlog by its rows' ids: a row one side changed takes that side, one changed alike is
     kept once, any other is left for a person with both texts, and a result losing a side's words or covering an id twice is
-    refused. The integration's member merge and the merge tool (`fixtures/backlog-merges.json`) hold it alike.
+    refused. The integration's member merge and the merge tool (`fixtures/backlog-merges.json`) hold it alike. A replay's range
+    leaves out the commits the line holds as well as those the branch left (`BranchReplays.ReplayUpstreamAsync`), so a branch that
+    merged the line replays none of its commits as copies, and a row the line archived since stays archived. (ROWRESURRECT1)
 59. Setup is the Agents place's default. Workspace and repository pages in Repositories each have a Workflow tab, reading Current
     only while open; a workspace's own-rules door opens the repository's Workflow tab. Settings doors open the place in Agents → Setup
     (defaults under Workflow, access and Reach under Sessions).

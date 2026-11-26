@@ -294,9 +294,60 @@ export function folderFacts(root, folder) {
   return found;
 }
 
+/**
+ * The backlog rows the archive holds as done, as `{ id, backlogLine, archiveLine }` (1-based): an open row
+ * `- [ ] **ID — title**` whose whole bold span, id and title, an archive line `- [x] **ID — title**` repeats. A landing
+ * that carries a copy of a row main archived since brings it back, and nothing on the other side weighs against it.
+ * The title is part of the key because an archive line for a part of a row (`**ID — …**` beside a row still open,
+ * `**ID a — …**`) names its own words, never the open row's. Fenced examples are skipped.
+ */
+export function resurrected(backlog, archive) {
+  const spans = (text, line) => {
+    const rows = lines(text);
+    const inFence = fenced(rows);
+    const found = new Map();
+    rows.forEach((row, i) => {
+      const span = !inFence[i] && line.exec(row)?.[1];
+      if (span && !found.has(span)) found.set(span, i + 1);
+    });
+    return found;
+  };
+  const done = spans(archive, /^- \[x\] \*\*([^*]+?)\*\*/);
+  const open = spans(backlog, /^- \[ \] \*\*([^*]+?)\*\*/);
+  return [...open].filter(([span]) => done.has(span))
+    .map(([span, backlogLine]) => ({ id: span.split(' ')[0], backlogLine, archiveLine: done.get(span) }));
+}
+
+/** Where `daoris.json` declares a document (a path, or an object's `path`), `/`-separated; the fallback where it declares none. */
+function declaredDocument(root, key, fallback) {
+  try {
+    const entry = JSON.parse(readFileSync(join(root, 'daoris.json'), 'utf8')).documents?.[key];
+    const path = typeof entry === 'string' ? entry : entry?.path;
+    return typeof path === 'string' ? path.replace(/\\/g, '/') : fallback;
+  } catch {
+    return fallback;
+  }
+}
+
+/** The backlog's rows the archive holds done, as findings: the row's line and the archive's. */
+function resurrectedFacts(root) {
+  const [backlog, archive] = [declaredDocument(root, 'backlog', 'TASKS.md'), declaredDocument(root, 'archive', 'docs/task-archive.md')];
+  let texts;
+  try {
+    texts = [readFileSync(join(root, backlog), 'utf8'), readFileSync(join(root, archive), 'utf8')];
+  } catch {
+    return [];
+  }
+  return resurrected(...texts).map(({ id, backlogLine, archiveLine }) => ({
+    file: backlog,
+    fact: 'a row the archive holds done',
+    key: `${id} (line ${backlogLine}), done in ${archive} line ${archiveLine}`,
+  }));
+}
+
 /** Every finding in every record under `root`, as `{ file, fact, key }`; a record that is absent is skipped. */
 export function check(root) {
-  const found = [];
+  const found = resurrectedFacts(root);
   for (const { file, kind } of records(root)) {
     if (kind === 'decisions') {
       found.push(...folderFacts(root, file.slice(0, -'/*.md'.length)));
@@ -322,7 +373,7 @@ if (isMain(import.meta.url)) {
     const files = folder ? `, ${markdownIn(root, folder.file.slice(0, -'/*.md'.length)).length} decision files each whole` : '';
     console.log(`doc-duplicates: ${records(root).length} append-only records, nothing twice${files}`);
   } else {
-    console.error(`doc-duplicates: ${found.length} finding(s) — what a union merge can leave in a record:`);
+    console.error(`doc-duplicates: ${found.length} finding(s) — what a merge can leave in a record (a line twice, or a backlog row the archive holds done):`);
     for (const { file, fact, key } of found) console.error(`  ${file}: ${fact}: ${key.length > 110 ? key.slice(0, 110) + '…' : key}`);
     process.exit(1);
   }
