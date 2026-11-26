@@ -31,16 +31,17 @@ public static class UpdateCommand
     /// <param name="said">Everything the door said, for the caller to print.</param>
     /// <param name="fetch">How <c>--fetch</c> reaches the releases: the network and this machine's build, unless a test names its own.</param>
     public static int Run(
-        string[] args, string home, Func<DateTimeOffset> clock, MachineLog? log, string? session, out string said, ReleaseFetch? fetch = null)
+        string[] args, string home, Func<DateTimeOffset> clock, MachineLog? log, string? session, out string said, ReleaseFetch? fetch = null,
+        StagedProof? proof = null)
     {
         var output = new StringBuilder();
-        var code = Run(args, home, clock, log, session, output, fetch);
+        var code = Run(args, home, clock, log, session, output, fetch, proof);
         said = output.ToString();
         return code;
     }
 
     private static int Run(
-        string[] args, string home, Func<DateTimeOffset> clock, MachineLog? log, string? session, StringBuilder output, ReleaseFetch? fetch)
+        string[] args, string home, Func<DateTimeOffset> clock, MachineLog? log, string? session, StringBuilder output, ReleaseFetch? fetch, StagedProof? proof)
     {
         string? mode = null;
         string? install = null;
@@ -117,7 +118,7 @@ public static class UpdateCommand
 
         var what = build is null ? "whatever is staged" : $"build {build}";
         // The application's own refusal, checked here as it checks it, so the word is never answered as taken when nothing will close.
-        if (mode == UpdateMode.Now && install is not null && UpdateRefusal.Of(install, home, manifest?.Version, UpdateRefusal.Running) is var (_, why))
+        if (mode == UpdateMode.Now && install is not null && UpdateRefusal.Of(install, home, manifest?.Version, UpdateRefusal.Running, proof) is var (_, why))
         {
             output.AppendLine($"update: {what} is not installed now: {why}");
             output.AppendLine("  Nothing closes. `daoris update --now` tries again once that has moved.");
