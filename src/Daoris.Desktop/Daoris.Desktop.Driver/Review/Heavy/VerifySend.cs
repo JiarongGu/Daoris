@@ -39,6 +39,9 @@ public sealed record VerifySend(string Run, string Invocation, string Repository
     /// <summary>The workspace the work is bound to, which its access mode resolves through (<see cref="DeclarationMode"/>); null where none is known, so the repository's own levels decide.</summary>
     public string? Workspace { get; init; }
 
+    /// <summary>The ask its run serves, whose class it reads where its quest has none of its own; null for none.</summary>
+    public string? Ask { get; init; }
+
     /// <summary>The number of this send of the attempt (its first is 1), which its start and close marks carry; 0 where nothing counts sends.</summary>
     public int Delivery { get; init; }
 }

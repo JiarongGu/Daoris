@@ -7,7 +7,7 @@ namespace Daoris.Driver;
 /// <summary>
 /// Daoris's heavy executor: a check's attempt sent here is taken at once and runs on a task of its own, as many at once as the check slots
 /// admit (<see cref="CheckAdmission"/>), each holding a verification slot then a repository slot, tried without waiting so none holds one while
-/// it waits; the rest wait in the order sent, each said with why. Its gates run in one job below normal (a <c>clock</c> gate at normal), ended
+/// it waits; the rest wait in the queue's order (<see cref="QueueOrder"/>), each said with why. Its gates run in one job below normal (a <c>clock</c> gate at normal), ended
 /// and emptied at its end, bound or stop before the slots go; only then is its result written and the runtime told.
 /// </summary>
 /// <remarks>
@@ -52,11 +52,14 @@ public sealed class HeavyExecutor(string home, VerifyWorld? world = null) : IAsy
     internal Action? SlotsTaken { get; set; }
     private int _order;
 
-    private sealed class Queued(VerifySend send, int order, DateTimeOffset since)
+    private sealed class Queued(VerifySend send, int order, DateTimeOffset since, DateTimeOffset arrived)
     {
         public VerifySend Send { get; } = send;
         public int Order { get; } = order;
         public DateTimeOffset Since { get; } = since;
+        public DateTimeOffset Arrived { get; } = arrived;
+        public PriorityReading Priority { get; set; } = PriorityReading.None;
+        public CheckWait? Refused { get; set; }
         public DateTimeOffset? NotBefore { get; set; }
         public int Busy { get; set; }
         public string? For { get; set; }
@@ -75,10 +78,14 @@ public sealed class HeavyExecutor(string home, VerifyWorld? world = null) : IAsy
     public Task<bool> SendAsync(VerifySend send)
     {
         if (File.Exists(VerifyFiles.ResultOf(home, send.Run, send.Invocation))) return Task.FromResult(true);
+        var now = DateTimeOffset.UtcNow;
+        var looked = _world.Clock.GetUtcNow();
+        var arrived = CheckArrivals.Keep(home, send.Run, looked);
+        var priority = PriorityBook.OfRun(PriorityBook.Read(home), send.Run, send.Ask, looked);
         lock (_gate)
         {
             if (_running.ContainsKey(send.Invocation) || _queue.Any(each => each.Send.Invocation == send.Invocation)) return Task.FromResult(true);
-            var queued = new Queued(send, ++_order, DateTimeOffset.UtcNow);
+            var queued = new Queued(send, ++_order, now, arrived) { Priority = priority };
             _queue.Add(queued);
             Waiting(queued);
             _loop ??= Task.Run(LoopAsync);
@@ -188,11 +195,12 @@ public sealed class HeavyExecutor(string home, VerifyWorld? world = null) : IAsy
             var now = _world.Clock.GetUtcNow();
             lock (_gate)
             {
-                due = [.. _queue.Where(each => each.NotBefore is null || each.NotBefore <= now).OrderBy(each => each.Order)];
+                due = [.. _queue.Where(each => each.NotBefore is null || each.NotBefore <= now)];
                 soonest = _queue.Where(each => each.NotBefore > now).Select(each => each.NotBefore).Min();
             }
 
-            foreach (var each in due)
+            var ordered = Ordered(due, now);
+            foreach (var (each, at) in ordered.Select((each, at) => (each, at)))
             {
                 HeavyTaken? held;
                 try
@@ -203,6 +211,12 @@ public sealed class HeavyExecutor(string home, VerifyWorld? world = null) : IAsy
                 {
                     Unrunnable(each, error);
                     continue;
+                }
+
+                if (held is null && HoldsTheRest(each.Refused))
+                {
+                    foreach (var behind in ordered.Skip(at + 1)) Blocked(behind, each.Refused!);
+                    break;
                 }
 
                 if (held is null) continue;
@@ -291,6 +305,7 @@ public sealed class HeavyExecutor(string home, VerifyWorld? world = null) : IAsy
     private async Task<HeavyTaken?> TryTakeAsync(Queued queued)
     {
         var send = queued.Send;
+        queued.Refused = null;
         if (HeavySlot.KeyOf(send.Checkout) is not { } key)
         {
             lock (_gate) _queue.Remove(queued);
@@ -307,9 +322,13 @@ public sealed class HeavyExecutor(string home, VerifyWorld? world = null) : IAsy
             Gate = "reached",
         };
         var (taken, wait) = CheckAdmission.TryTake(home, _world.Rules(), ask);
+        queued.Refused = wait;
         if (taken is null) Blocked(queued, wait!);
         return taken;
     }
+
+    /// <summary>Whether a refusal ends the pass: every slot running or the admission's lock, the same wait for every check behind.</summary>
+    private static bool HoldsTheRest(CheckWait? refused) => refused is { Code: CheckWait.Slots or CheckWait.Admitting };
 
     private void Blocked(Queued queued, CheckWait wait)
     {
@@ -321,10 +340,31 @@ public sealed class HeavyExecutor(string home, VerifyWorld? world = null) : IAsy
         _world.Said.WriteLine($"verify: {queued.Send.Repository}'s check (run {queued.Send.Run}) is waiting for {what}.");
     }
 
+    /// <summary>The attempts due in the queue's order, each one's class read again now, never kept on the run, its row said again where it moved.</summary>
+    private List<Queued> Ordered(List<Queued> due, DateTimeOffset now)
+    {
+        if (due.Count == 0) return due;
+        var events = PriorityBook.Read(home);
+        foreach (var each in due)
+        {
+            var priority = PriorityBook.OfRun(events, each.Send.Run, each.Send.Ask, now);
+            if (priority == each.Priority) continue;
+            each.Priority = priority;
+            lock (_gate)
+            {
+                if (_queue.Contains(each)) Waiting(each);
+            }
+        }
+
+        return [.. QueueOrder.Of(due, each => each.Priority.Class, each => each.Arrived).ThenBy(each => each.Order)];
+    }
+
     private void Waiting(Queued queued) => VerifySlot.Wait(
         home, new VerifyWaiter(Environment.ProcessId, _started, queued.Send.Run, queued.Send.Invocation, queued.Send.Repository, queued.Since, queued.Order)
         {
             For = queued.For, Wait = queued.Wait,
+            Class = queued.Priority.Class, Source = queued.Priority.Source, By = queued.Priority.Event?.By, Why = queued.Priority.Event?.Why,
+            Arrived = queued.Arrived,
         });
 
     /// <summary>The attempt's run, both slots let go at its end; true where a busy runner sends it back to the queue for a later offer.</summary>
@@ -456,6 +496,7 @@ public sealed class HeavyExecutor(string home, VerifyWorld? world = null) : IAsy
         }
 
         lock (_gate) _answered.Add(send.Invocation);
+        if (result.Verdict == VerifyVerdicts.Reached) CheckArrivals.Forget(home, send.Run);
         var told = _world.Bus?.Tee(() => CheckBusFacts.CheckSettled(send, result)) == true;
         // The result stands on disk: a writer or a callback that throws must not end the loop, which nothing starts again.
         try

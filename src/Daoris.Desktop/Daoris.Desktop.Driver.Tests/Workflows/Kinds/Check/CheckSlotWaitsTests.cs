@@ -40,7 +40,7 @@ public sealed class CheckSlotWaitsTests
         Assert.Equal("2", wait.Values["position"]);
         Assert.Equal(Held.AddMinutes(2), wait.Since);
         var step = new WorkflowRunStep(WorkflowGraphRuns.Cell(Check, null), WorkflowRunStates.Working, WorkflowGraphDetails.Active) { Node = NodeKinds.Check, Wait = wait };
-        Assert.Equal("Waits for a check slot: 2 of 2 run; 2 of 2 in its queue.", WorkflowRunWords.Said(step));
+        Assert.Equal("Waits for a check slot: 2 of 2 run; 2 of 2 in its queue; ahead: run third, normal.", WorkflowRunWords.Said(step));
     }
 
     [Fact]
@@ -98,7 +98,24 @@ public sealed class CheckSlotWaitsTests
         var wait = CheckSlotWaits.Of(Graph, Sent("i-mine"), look)["check"];
 
         Assert.Equal(CheckSlotWaits.Queued, wait.Code);
-        Assert.Equal("Waits for a check slot: 2 of 3 in its queue.", CheckSlotWaits.Said(wait));
+        Assert.Equal("Waits for a check slot: 2 of 3 in its queue; ahead: run first, normal.", CheckSlotWaits.Said(wait));
+    }
+
+    [Fact]
+    public void A_check_s_wait_line_names_its_class_and_each_item_ahead_with_its_class_and_reason()
+    {
+        var urgent = Waiter("fix", "i-fix", 4) with { Class = PriorityClasses.Urgent, Source = PriorityBook.Quest, By = "the person", Why = "it slows every session" };
+        var fromAsk = Waiter("feature", "i-feature", 1) with { Class = PriorityClasses.High, Source = PriorityBook.Ask, By = "session s-9", Why = "the release" };
+        var look = new VerifyLook([Theirs], [urgent, fromAsk, Waiter("mine", "i-mine", 2, CheckWait.OfSlots(1, 1)) with { Class = PriorityClasses.Low, Source = PriorityBook.Quest, By = "the person", Why = "can wait" }]);
+
+        var wait = CheckSlotWaits.Of(Graph, Sent("i-mine"), look)["check"];
+
+        Assert.Equal(("3", "3", PriorityClasses.Low, "2"), (wait.Values["position"], wait.Values["of"], wait.Values["class"], wait.Values["ahead"]));
+        Assert.Equal(("fix", PriorityClasses.Urgent, PriorityBook.Quest), (wait.Values["ahead.1.run"], wait.Values["ahead.1.class"], wait.Values["ahead.1.source"]));
+        Assert.Equal(
+            "Waits for a check slot: 1 of 1 run; 3 of 3 in its queue, as low (set by the person: can wait); ahead: run fix, urgent (set by the person: it slows every session); "
+            + "run feature, high (from its ask, set by session s-9: the release).",
+            CheckSlotWaits.Said(wait));
     }
 
     [Fact]

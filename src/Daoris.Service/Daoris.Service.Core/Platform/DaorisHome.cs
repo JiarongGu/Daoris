@@ -299,6 +299,7 @@ public sealed record HomeEntry(string Name, HomeCategory Category, string New, p
     public static readonly HomeEntry LastBuild = new("last-build", HomeCategory.Data, "data/last-build.json");
     public static readonly HomeEntry TerminalActs = new("terminal-acts", HomeCategory.Data, "data/terminal-acts.json");
     public static readonly HomeEntry UxTrail = new("ux-trail", HomeCategory.Data, "data/ux-trail");
+    public static readonly HomeEntry Priority = new("priority", HomeCategory.Data, "data/priority.json");
     public static readonly HomeEntry Keys = new("keys", HomeCategory.Profiles, "profiles/keys.json");
     public static readonly HomeEntry Remotes = new("remotes", HomeCategory.Profiles, "profiles/remotes.json");
     public static readonly HomeEntry AgentHomes = new("agent-homes", HomeCategory.Profiles, "profiles/agents/*/*");
@@ -371,7 +372,7 @@ public sealed record HomeEntry(string Name, HomeCategory Category, string New, p
         Landings, SessionBranches, LinesMoved, OverlapsTold, RegistryFollowed, Abandoned, Update, Knowledge, DesktopDb, Memory, Sessions, Helpers, Partners, Checks, Handed, Setup,
         Workflows, ConfiguredAccess, OpinionGates, OpinionDues, BrowserSettings, BrowserFavorites, HomeId, Brainstorms,
         UsageHistory, Keeping, Notices, CheckBudgets, GitIdentities, AgentOffers, PipeWaiting, ActFiles, PlaceReceipts, StewardDesk,
-        LastBuild, TerminalActs, UxTrail,
+        LastBuild, TerminalActs, UxTrail, Priority,
         Keys, Remotes, AgentHomes, BrowserEngine, BrowserEdge, EdgeCookies, GitKeys, GitTokens, PluginPrivate, GitSshConfig, GitKnownHosts, GitConfig, Window, PipeSent,
         DepsSecret,
         Trees, HelpRoom, HelpRooms, Intake, OpinionPackets, QuestFiles, AskFiles, SessionFiles, Proof, UsageRead, BrainstormRooms, RoleRooms,
