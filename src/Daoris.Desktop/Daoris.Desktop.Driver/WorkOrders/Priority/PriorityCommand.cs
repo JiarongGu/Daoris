@@ -3,7 +3,11 @@ using System.Globalization;
 namespace Daoris.Driver;
 
 /// <summary>An ask or a quest a class is set on, as the service found it: which, its id, its workspace, and a quest's ask.</summary>
-public sealed record PriorityTarget(string Target, string Id, string Workspace, string? Ask);
+public sealed record PriorityTarget(string Target, string Id, string Workspace, string? Ask)
+{
+    /// <summary>The run a quest's work is (<see cref="QuestRuns"/>), which its check is named by; null for an ask.</summary>
+    public string? Run { get; init; }
+}
 
 /// <summary>What the command reads and writes: the home, how an id is found, the clock, and who sets the class.</summary>
 /// <param name="Find">The ask or quest an id names, or null where it names none.</param>
@@ -29,7 +33,18 @@ public sealed record PriorityWorld(string Home, Func<string, CancellationToken, 
         using var service = ServiceClient.FromEnvironment();
         if (await service.FindQuestAsync(id, ct).ConfigureAwait(false) is { } quest)
         {
-            return new PriorityTarget(PriorityBook.Quest, quest.Id, quest.Workspace, AskWords.AskOf(quest.From));
+            var chain = new Dictionary<string, QuestView>(StringComparer.Ordinal) { [quest.Id] = quest };
+            for (var (at, step) = (quest, 0); step < QuestRuns.Steps && at.Parent is { Length: > 0 } parent && !chain.ContainsKey(parent); step++)
+            {
+                if (await service.FindQuestAsync(parent, ct).ConfigureAwait(false) is not { } above) break;
+                chain[above.Id] = above;
+                at = above;
+            }
+
+            return new PriorityTarget(PriorityBook.Quest, quest.Id, quest.Workspace, AskWords.AskOf(quest.From))
+            {
+                Run = QuestRuns.Of(quest, parent => chain.GetValueOrDefault(parent)),
+            };
         }
 
         return await service.FindAskAsync(id, ct).ConfigureAwait(false) is { } ask ? new PriorityTarget(PriorityBook.Ask, ask.Id, ask.Workspace, null) : null;
@@ -70,7 +85,7 @@ public static class PriorityCommand
         }
 
         var until = asked.Until ?? (@class == PriorityClasses.Urgent ? now + world.Rules.UrgentLife : null);
-        var change = new PriorityEvent(now, target.Target, target.Id, target.Workspace, @class, asked.Why!, world.By) { Until = until };
+        var change = new PriorityEvent(now, target.Target, target.Id, target.Workspace, @class, asked.Why!, world.By) { Until = until, Run = target.Run };
         if (PriorityBook.Set(world.Home, change, now, world.Rules) is { } refused)
         {
             said.WriteLine($"priority: not set: {refused}");

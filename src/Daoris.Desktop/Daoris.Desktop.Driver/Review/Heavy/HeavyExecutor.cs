@@ -79,8 +79,9 @@ public sealed class HeavyExecutor(string home, VerifyWorld? world = null) : IAsy
     {
         if (File.Exists(VerifyFiles.ResultOf(home, send.Run, send.Invocation))) return Task.FromResult(true);
         var now = DateTimeOffset.UtcNow;
-        var arrived = CheckArrivals.Keep(home, send.Run, now);
-        var priority = PriorityBook.ClassOf(PriorityBook.Read(home), send.Run, send.Ask, _world.Clock.GetUtcNow());
+        var looked = _world.Clock.GetUtcNow();
+        var arrived = CheckArrivals.Keep(home, send.Run, looked);
+        var priority = PriorityBook.OfRun(PriorityBook.Read(home), send.Run, send.Ask, looked);
         lock (_gate)
         {
             if (_running.ContainsKey(send.Invocation) || _queue.Any(each => each.Send.Invocation == send.Invocation)) return Task.FromResult(true);
@@ -214,11 +215,7 @@ public sealed class HeavyExecutor(string home, VerifyWorld? world = null) : IAsy
 
                 if (held is null && HoldsTheRest(each.Refused))
                 {
-                    if (each.Refused!.Code is CheckWait.Slots or CheckWait.Admitting)
-                    {
-                        foreach (var behind in ordered.Skip(at + 1)) Blocked(behind, each.Refused);
-                    }
-
+                    foreach (var behind in ordered.Skip(at + 1)) Blocked(behind, each.Refused!);
                     break;
                 }
 
@@ -330,8 +327,8 @@ public sealed class HeavyExecutor(string home, VerifyWorld? world = null) : IAsy
         return taken;
     }
 
-    /// <summary>Whether a refusal ends the pass, so a slot freed meanwhile goes to the first in order: any wait but its own repository's slots.</summary>
-    private static bool HoldsTheRest(CheckWait? refused) => refused is { Code: not CheckWait.Repository };
+    /// <summary>Whether a refusal ends the pass: every slot running or the admission's lock, the same wait for every check behind.</summary>
+    private static bool HoldsTheRest(CheckWait? refused) => refused is { Code: CheckWait.Slots or CheckWait.Admitting };
 
     private void Blocked(Queued queued, CheckWait wait)
     {
@@ -350,7 +347,7 @@ public sealed class HeavyExecutor(string home, VerifyWorld? world = null) : IAsy
         var events = PriorityBook.Read(home);
         foreach (var each in due)
         {
-            var priority = PriorityBook.ClassOf(events, each.Send.Run, each.Send.Ask, now);
+            var priority = PriorityBook.OfRun(events, each.Send.Run, each.Send.Ask, now);
             if (priority == each.Priority) continue;
             each.Priority = priority;
             lock (_gate)
@@ -499,6 +496,7 @@ public sealed class HeavyExecutor(string home, VerifyWorld? world = null) : IAsy
         }
 
         lock (_gate) _answered.Add(send.Invocation);
+        if (result.Verdict == VerifyVerdicts.Reached) CheckArrivals.Forget(home, send.Run);
         var told = _world.Bus?.Tee(() => CheckBusFacts.CheckSettled(send, result)) == true;
         // The result stands on disk: a writer or a callback that throws must not end the loop, which nothing starts again.
         try

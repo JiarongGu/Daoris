@@ -5,7 +5,7 @@ namespace Daoris.Driver;
 
 /// <summary>
 /// When a run first asked the check slots: kept in its folder (<c>lines/&lt;run&gt;/arrival.json</c>) at its first
-/// send and read at every later one, so a run back at its checks keeps its first arrival in the queue.
+/// send and read at every later one, so a run back at its checks keeps its first arrival in the queue, until a check of it reaches.
 /// </summary>
 public static class CheckArrivals
 {
@@ -25,6 +25,18 @@ public static class CheckArrivals
         catch (Exception error) when (error is IOException or UnauthorizedAccessException or DriverException)
         {
             return now;
+        }
+    }
+
+    /// <summary>A run whose check reached: its next check is a new arrival. One that cannot be removed stays until the run's folder goes.</summary>
+    public static void Forget(string home, string run)
+    {
+        try
+        {
+            File.Delete(Path.Combine(VerifyFiles.RunFolder(home, run), Name));
+        }
+        catch (Exception error) when (error is IOException or UnauthorizedAccessException or DriverException)
+        {
         }
     }
 

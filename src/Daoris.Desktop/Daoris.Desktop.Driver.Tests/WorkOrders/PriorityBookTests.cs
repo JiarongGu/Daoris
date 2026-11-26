@@ -53,7 +53,7 @@ public sealed class PriorityBookTests : IDisposable
     public void Urgent_needs_an_end_after_now_a_why_and_one_of_the_four_words()
     {
         Assert.Contains("an end", Set(Event(PriorityBook.Quest, "q1", PriorityClasses.Urgent)));
-        Assert.Contains("an end", Set(Event(PriorityBook.Quest, "q1", PriorityClasses.Urgent, until: Now.AddMinutes(-1))));
+        Assert.Contains("end must be after now", Set(Event(PriorityBook.Quest, "q1", PriorityClasses.Urgent, until: Now.AddMinutes(-1))));
         Assert.Contains("why", Set(Event(PriorityBook.Quest, "q1", PriorityClasses.High, why: "  ")));
         Assert.Contains("urgent, high, normal or low", Set(Event(PriorityBook.Quest, "q1", "critical")));
         Assert.Empty(PriorityBook.Read(_home));
@@ -88,6 +88,45 @@ public sealed class PriorityBookTests : IDisposable
         Assert.Equal(("the fix that slows every session", "the person", Now.AddHours(2)), (kept[0].Why, kept[0].By, kept[0].Until));
         Assert.Equal(("session s-1", (DateTimeOffset?)null), (kept[1].By, kept[1].Until));
         Assert.Equal(PriorityClasses.Normal, PriorityBook.ClassOf(kept, "q1", null, Now.AddHours(1.5)).Class);
+    }
+
+    [Fact]
+    public void A_run_reads_the_highest_class_of_its_chain_s_quests_so_a_later_step_set_urgent_counts()
+    {
+        Assert.Null(Set(Event(PriorityBook.Quest, "q2", PriorityClasses.Urgent, until: Now.AddHours(2)) with { Run = "q1" }));
+        Assert.Null(Set(Event(PriorityBook.Quest, "q3", PriorityClasses.Low) with { Run = "q1" }));
+        Assert.Null(Set(Event(PriorityBook.Ask, "a1", PriorityClasses.High)));
+
+        var run = PriorityBook.OfRun(PriorityBook.Read(_home), "q1", "a1", Now);
+        Assert.Equal((PriorityClasses.Urgent, PriorityBook.Quest, "q2"), (run.Class, run.Source, run.Event!.Id));
+
+        // Once the urgent step ends, the run reads its chain's other quests, the low one set on its own.
+        Assert.Equal(PriorityClasses.Low, PriorityBook.OfRun(PriorityBook.Read(_home), "q1", "a1", Now.AddHours(3)).Class);
+        Assert.Equal(PriorityClasses.High, PriorityBook.OfRun(PriorityBook.Read(_home), "q9", "a1", Now).Class);
+    }
+
+    [Fact]
+    public void A_later_change_ends_an_earlier_urgent_so_the_cap_still_holds_when_the_later_change_ends()
+    {
+        var rules = new PriorityRules(UrgentCap: 2, UrgentLife: TimeSpan.FromHours(24));
+        Assert.Null(Set(Event(PriorityBook.Quest, "a", PriorityClasses.Urgent, until: Now.AddDays(2)), rules: rules));
+        Assert.Null(Set(Event(PriorityBook.Quest, "a", PriorityClasses.Low, until: Now.AddHours(1)) with { At = Now.AddMinutes(1) }, rules: rules));
+        Assert.Null(Set(Event(PriorityBook.Quest, "b", PriorityClasses.Urgent, until: Now.AddDays(1)), rules: rules));
+        Assert.Null(Set(Event(PriorityBook.Quest, "c", PriorityClasses.Urgent, until: Now.AddDays(1)), rules: rules));
+
+        var later = Now.AddHours(2);
+        Assert.Equal(PriorityClasses.Normal, PriorityBook.ClassOf(PriorityBook.Read(_home), "a", null, later).Class);
+        Assert.Equal(2, new[] { "a", "b", "c" }.Count(id => PriorityBook.ClassOf(PriorityBook.Read(_home), id, null, later).Class == PriorityClasses.Urgent));
+    }
+
+    [Fact]
+    public void A_past_end_on_a_class_that_is_not_urgent_is_said_as_a_past_end()
+    {
+        var refused = Set(Event(PriorityBook.Quest, "q1", PriorityClasses.High, until: Now.AddMinutes(-1)));
+
+        Assert.NotNull(refused);
+        Assert.DoesNotContain("urgent", refused);
+        Assert.Contains("after now", refused);
     }
 
     [Fact]

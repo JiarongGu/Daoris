@@ -58,6 +58,15 @@ public sealed class CheckQueueOrderTests : IDisposable
     }
 
     [Fact]
+    public void A_run_whose_check_passed_arrives_afresh_at_its_next_check()
+    {
+        CheckArrivals.Keep(_home, "v-0000000000000001", At);
+        CheckArrivals.Forget(_home, "v-0000000000000001");
+
+        Assert.Equal(At.AddDays(2), CheckArrivals.Keep(_home, "v-0000000000000001", At.AddDays(2)));
+    }
+
+    [Fact]
     public void A_waiter_with_no_class_set_reads_normal_arriving_when_it_was_sent()
     {
         VerifySlot.Wait(_home, new VerifyWaiter(1, 1, "old", "i-old", "Daoris", At, 1));

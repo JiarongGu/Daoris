@@ -22,6 +22,7 @@ public sealed class PriorityCommandTests : IDisposable
     private PriorityWorld World(string by = "the person") => new(_home, (id, _) => Task.FromResult(id.TrimStart('#') switch
     {
         "2c0c81fd6f19" => new PriorityTarget(PriorityBook.Quest, "2c0c81fd6f19", "games", "e27fc2"),
+        "second" => new PriorityTarget(PriorityBook.Quest, "second", "games", null) { Run = "2c0c81fd6f19" },
         "e27fc2" => new PriorityTarget(PriorityBook.Ask, "e27fc2", "games", null),
         _ => (PriorityTarget?)null,
     }), () => Now, by);
@@ -43,6 +44,15 @@ public sealed class PriorityCommandTests : IDisposable
         var kept = Assert.Single(PriorityBook.Read(_home));
         Assert.Equal((PriorityBook.Quest, "2c0c81fd6f19", "games", PriorityClasses.High, "the release waits on it", "session s-1", Now),
             (kept.Target, kept.Id, kept.Workspace, kept.Class, kept.Why, kept.By, kept.At));
+    }
+
+    [Fact]
+    public async Task A_class_set_on_a_chain_s_later_quest_is_kept_with_its_run_and_its_run_reads_it()
+    {
+        Assert.Equal(0, (await RunAsync(World(), "second", "urgent", "--why", "the fix", "--until", "2h")).Exit);
+
+        Assert.Equal("2c0c81fd6f19", Assert.Single(PriorityBook.Read(_home)).Run);
+        Assert.Equal(PriorityClasses.Urgent, PriorityBook.OfRun(PriorityBook.Read(_home), "2c0c81fd6f19", null, Now).Class);
     }
 
     [Fact]

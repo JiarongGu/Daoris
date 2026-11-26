@@ -13,6 +13,9 @@ public sealed record PriorityEvent(DateTimeOffset At, string Target, string Id, 
 {
     /// <summary>When it ends, after which the class set before it stands again; an urgent class always has one.</summary>
     public DateTimeOffset? Until { get; init; }
+
+    /// <summary>The run a quest's work is (its chain's first quest in its repository), which reads the class; null for an ask.</summary>
+    public string? Run { get; init; }
 }
 
 /// <summary>A class as read at a look: the class, where it comes from (the quest's own, its ask's, or none set) and the change that set it.</summary>
@@ -73,9 +76,22 @@ public static class PriorityBook
         }
     }
 
-    /// <summary>The newest change of one ask or quest still in force at <paramref name="now"/>, or null where none is.</summary>
-    public static PriorityEvent? Standing(IReadOnlyList<PriorityEvent> events, string target, string id, DateTimeOffset now) =>
-        events.LastOrDefault(each => each.Target == target && string.Equals(each.Id, id, StringComparison.OrdinalIgnoreCase) && (each.Until is null || each.Until > now));
+    /// <summary>
+    /// The newest change of one ask or quest still in force at <paramref name="now"/>, or null where none is. An urgent change that a later
+    /// change of the same one followed is ended by it, never only masked, so it cannot come back past the workspace's cap.
+    /// </summary>
+    public static PriorityEvent? Standing(IReadOnlyList<PriorityEvent> events, string target, string id, DateTimeOffset now)
+    {
+        var mine = events.Where(each => each.Target == target && string.Equals(each.Id, id, StringComparison.OrdinalIgnoreCase)).ToList();
+        for (var at = mine.Count - 1; at >= 0; at--)
+        {
+            if (mine[at].Until is { } until && until <= now) continue;
+            if (mine[at].Class == PriorityClasses.Urgent && at < mine.Count - 1) continue;
+            return mine[at];
+        }
+
+        return null;
+    }
 
     /// <summary>A quest's class at <paramref name="now"/>: its own, else its ask's, else normal.</summary>
     public static PriorityReading ClassOf(IReadOnlyList<PriorityEvent> events, string? quest, string? ask, DateTimeOffset now)
@@ -83,6 +99,21 @@ public static class PriorityBook
         if (quest is { Length: > 0 } && Standing(events, Quest, quest, now) is { } own) return new PriorityReading(own.Class, Quest, own);
         if (ask is { Length: > 0 } && Standing(events, Ask, ask, now) is { } asked) return new PriorityReading(asked.Class, Ask, asked);
         return PriorityReading.None;
+    }
+
+    /// <summary>
+    /// A run's class at <paramref name="now"/>: the highest standing on any quest of its chain (the run's own id, or a quest kept with it as
+    /// its run), the newest among equals; else its ask's; else normal.
+    /// </summary>
+    public static PriorityReading OfRun(IReadOnlyList<PriorityEvent> events, string run, string? ask, DateTimeOffset now)
+    {
+        var chain = events
+            .Where(each => each.Target == Quest && (string.Equals(each.Id, run, StringComparison.OrdinalIgnoreCase) || string.Equals(each.Run, run, StringComparison.OrdinalIgnoreCase)))
+            .Select(each => each.Id.ToLowerInvariant()).Distinct()
+            .Select(id => Standing(events, Quest, id, now)).OfType<PriorityEvent>()
+            .OrderBy(each => PriorityClasses.Rank(each.Class)).ThenByDescending(each => each.At)
+            .FirstOrDefault();
+        return chain is not null ? new PriorityReading(chain.Class, Quest, chain) : ClassOf(events, null, ask, now);
     }
 
     /// <summary>
@@ -95,10 +126,8 @@ public static class PriorityBook
         if (PriorityClasses.Parse(change.Class) is not { } @class) return $"a class is urgent, high, normal or low — `{change.Class}` is none of them.";
         if (string.IsNullOrWhiteSpace(change.Why)) return "a class is set with why: say it with --why.";
         if (change.Target is not (Ask or Quest) || string.IsNullOrWhiteSpace(change.Id)) return "a class is set on an ask or a quest.";
-        if ((@class == PriorityClasses.Urgent && change.Until is null) || (change.Until is { } until && until <= now))
-        {
-            return "an urgent class needs an end after now: give it with --until.";
-        }
+        if (change.Until is { } until && until <= now) return "a class's end must be after now.";
+        if (@class == PriorityClasses.Urgent && change.Until is null) return "an urgent class needs an end after now: give it with --until.";
 
         var file = PathOf(home);
         Directory.CreateDirectory(Path.GetDirectoryName(file)!);
@@ -136,7 +165,7 @@ public static class PriorityBook
         string? Text(string name) => raw.TryGetProperty(name, out var value) && value.ValueKind == JsonValueKind.String ? value.GetString() : null;
         DateTimeOffset? At(string name) => raw.TryGetProperty(name, out var value) && value.ValueKind == JsonValueKind.String && value.TryGetDateTimeOffset(out var at) ? at : null;
         return At("at") is { } when && Text("target") is { } target && Text("id") is { } id && Text("class") is { } @class
-            ? new PriorityEvent(when, target, id, Text("workspace") ?? "", @class, Text("why") ?? "", Text("by") ?? "") { Until = At("until") }
+            ? new PriorityEvent(when, target, id, Text("workspace") ?? "", @class, Text("why") ?? "", Text("by") ?? "") { Until = At("until"), Run = Text("run") }
             : null;
     }
 
@@ -159,6 +188,7 @@ public static class PriorityBook
                 writer.WriteString("why", each.Why);
                 writer.WriteString("by", each.By);
                 if (each.Until is { } until) writer.WriteString("until", until.ToUniversalTime().ToString("O", CultureInfo.InvariantCulture));
+                if (each.Run is { } run) writer.WriteString("run", run);
                 writer.WriteEndObject();
             }
 
