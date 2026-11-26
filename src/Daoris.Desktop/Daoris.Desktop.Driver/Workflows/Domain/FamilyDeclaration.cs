@@ -120,15 +120,18 @@ public sealed record FamilyDeclaration(
 }
 
 /// <summary>An edge's lag bound as the family file writes it: a count of days or hours, <c>3d</c> or <c>12h</c>.</summary>
-public static class FamilyLag
+public static partial class FamilyLag
 {
-    /// <summary>The span the text says, or null for anything else: no count, a count of zero, another unit.</summary>
+    /// <summary>The span the text says, or null for anything else: no count, a leading zero, a count past six digits, another unit.</summary>
     public static TimeSpan? Parse(string? text)
     {
-        if (text is not { Length: > 1 }) return null;
-        if (!int.TryParse(text[..^1], System.Globalization.NumberStyles.None, System.Globalization.CultureInfo.InvariantCulture, out var count) || count <= 0) return null;
-        return text[^1] switch { 'd' => TimeSpan.FromDays(count), 'h' => TimeSpan.FromHours(count), _ => null };
+        if (text is null || !Shape().IsMatch(text)) return null;
+        var count = int.Parse(text[..^1], System.Globalization.CultureInfo.InvariantCulture);
+        return text[^1] == 'd' ? TimeSpan.FromDays(count) : TimeSpan.FromHours(count);
     }
+
+    [System.Text.RegularExpressions.GeneratedRegex("^[1-9][0-9]{0,5}[dh]$", System.Text.RegularExpressions.RegexOptions.CultureInvariant)]
+    private static partial System.Text.RegularExpressions.Regex Shape();
 }
 
 /// <summary>A consumer's <c>daoris.family.lock</c> as the driver reads it: the commit it pins of each producer.</summary>

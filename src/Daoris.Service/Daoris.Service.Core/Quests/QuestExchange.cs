@@ -133,7 +133,9 @@ public sealed class QuestExchange
         }
 
         var move = await quests.ReviseAsync(quest, new QuestRevision(title.Trim(), body, found.Weight, found.Paths), now, ct).ConfigureAwait(false);
-        return new(QuestRespondRefusal.None, $"Quest `#{quest}`'s words are now \"{title.Trim()}\".", move.Quest);
+        return move is { Moved: false, Quest.Status: not (QuestStatus.Open or QuestStatus.Taken) }
+            ? new(QuestRespondRefusal.Closed, $"Quest `#{quest}` closed first, and its words stay as they were.", move.Quest)
+            : new(QuestRespondRefusal.None, $"Quest `#{quest}`'s words are now \"{title.Trim()}\".", move.Quest);
     }
 
     /// <summary>Post a set-up on a set-up step; the doors are <see cref="QuestReviews.PostSetUpAsync"/>'s.</summary>

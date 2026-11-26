@@ -77,6 +77,17 @@ public sealed class PinMovesTests
     }
 
     [Fact]
+    public void A_done_quest_settles_nothing_the_pin_does_so_a_retargeted_one_done_with_the_pin_unmoved_is_asked_again()
+    {
+        var retargeted = Quest("q1", "Taken", 1, B) with { Body = PinMoves.Words(Edge, C).Body };
+        var done = retargeted with { Status = "Done" };
+
+        Assert.Equal(PinMoves.KeyOf(Edge, 2), PinMoves.Plan(Edge, B, C, [done])!.Key);
+        Assert.Equal(PinMoves.KeyOf(Edge, 2), PinMoves.Plan(Edge, A, C, [done])!.Key);
+        Assert.Null(PinMoves.Plan(Edge, C, C, [done]));
+    }
+
+    [Fact]
     public void Quests_of_other_edges_and_other_requests_are_not_this_edges()
     {
         var other = new PinEdge("api", "core");
@@ -122,6 +133,8 @@ public sealed class PinMovesTests
         Assert.Contains("saves written before B no longer load", broke.Body);
         Assert.Contains(B, broke.Body);
         Assert.Contains("#q1", broke.Body);
+        Assert.Contains("declined", broke.Body);
+        Assert.DoesNotContain("stayed red", broke.Body);
     }
 
     [Fact]
@@ -141,8 +154,8 @@ public sealed class PinMovesTests
         var first = Quest("q1", "Declined", 1, B, updated: T0);
         var second = Quest("q2", "Declined", 2, C, updated: T0.AddDays(2));
 
-        Assert.Equal(new FamilyHold("web", "core", B, T0, 1), PinMoves.Hold(Edge, [first], T0.AddDays(9)));
-        Assert.Equal(new FamilyHold("web", "core", C, T0, 2), PinMoves.Hold(Edge, [first, second], T0.AddDays(9)));
+        Assert.Equal(new FamilyHold("web", "core", B, T0, 1), PinMoves.Hold(Edge, [first], A, B, T0.AddDays(9)));
+        Assert.Equal(new FamilyHold("web", "core", C, T0, 2), PinMoves.Hold(Edge, [first, second], A, C, T0.AddDays(9)));
     }
 
     [Fact]
@@ -152,9 +165,29 @@ public sealed class PinMovesTests
         var done = Quest("q2", "Done", 2, C, updated: T0.AddDays(1));
         var again = Quest("q3", "Declined", 3, "d".PadLeft(40, 'd'), updated: T0.AddDays(5));
 
-        Assert.Null(PinMoves.Hold(Edge, [red, done], T0.AddDays(9)));
-        Assert.Equal(1, PinMoves.Hold(Edge, [red, Quest("q2", "Open", 2, C)], T0.AddDays(9))!.Generation);
-        Assert.Equal(T0.AddDays(5), PinMoves.Hold(Edge, [red, done, again], T0.AddDays(9))!.Since);
+        Assert.Null(PinMoves.Hold(Edge, [red, done], C, C, T0.AddDays(9)));
+        Assert.Equal(1, PinMoves.Hold(Edge, [red, Quest("q2", "Open", 2, C)], A, C, T0.AddDays(9))!.Generation);
+        Assert.Equal(T0.AddDays(5), PinMoves.Hold(Edge, [red, done, again], C, "d".PadLeft(40, 'd'), T0.AddDays(9))!.Since);
+    }
+
+    [Fact]
+    public void A_done_quest_with_the_pin_unmoved_ends_no_hold()
+    {
+        var red = Quest("q1", "Declined", 1, B, updated: T0);
+        var done = Quest("q2", "Done", 2, C, updated: T0.AddDays(1));
+
+        Assert.NotNull(PinMoves.Hold(Edge, [red, done], A, C, T0.AddDays(9)));
+    }
+
+    [Fact]
+    public void A_pin_moved_by_another_path_to_the_commit_held_or_to_the_tip_ends_the_hold()
+    {
+        var red = Quest("q1", "Declined", 1, B, updated: T0);
+
+        Assert.Null(PinMoves.Hold(Edge, [red], B, C, T0.AddDays(9)));
+        Assert.Null(PinMoves.Hold(Edge, [red], C, C, T0.AddDays(9)));
+        Assert.NotNull(PinMoves.Hold(Edge, [red], A, C, T0.AddDays(9)));
+        Assert.NotNull(PinMoves.Hold(Edge, [red], null, null, T0.AddDays(9)));
     }
 
     [Fact]
@@ -162,14 +195,14 @@ public sealed class PinMovesTests
     {
         var red = Quest("q1", "Declined", 1, B) with { Updated = null };
 
-        Assert.Equal(T0.AddDays(4), PinMoves.Hold(Edge, [red], T0.AddDays(4))!.Since);
+        Assert.Equal(T0.AddDays(4), PinMoves.Hold(Edge, [red], A, B, T0.AddDays(4))!.Since);
     }
 
     [Fact]
     public void No_hold_stands_for_an_edge_none_has_declined()
     {
-        Assert.Null(PinMoves.Hold(Edge, [], T0));
-        Assert.Null(PinMoves.Hold(Edge, [Quest("q1", "Open", 1, B), Quest("q2", "Taken", 2, C)], T0));
+        Assert.Null(PinMoves.Hold(Edge, [], A, B, T0));
+        Assert.Null(PinMoves.Hold(Edge, [Quest("q1", "Open", 1, B), Quest("q2", "Taken", 2, C)], A, C, T0));
     }
 
     [Fact]

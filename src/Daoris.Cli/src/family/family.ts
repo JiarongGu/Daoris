@@ -36,7 +36,7 @@ export interface FamilyFile {
   edges?: EdgeLag[];
 }
 
-const LAG = /^[1-9][0-9]*[dh]$/;
+const LAG = /^[1-9][0-9]{0,5}[dh]$/;
 
 /** One producer's commit, as a consumer pins it. */
 export interface Pin {

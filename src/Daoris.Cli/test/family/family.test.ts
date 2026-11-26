@@ -38,7 +38,7 @@ test('a family file may bound each edge\'s lag in days or hours, which the drive
 });
 
 test('a family file of the wrong shape is a tool error naming the file, never a family read as empty', () => {
-  for (const text of ['[]', '{}', '{"layers": "alpha"}', '{"layers": [["alpha"], "beta"]}', '{"layers": [["alpha"]], "denied": [{"consumer": "x"}]}', '{"layers": [["alpha"]], "edges": [{"consumer": "x", "producer": "y", "lag": "soon"}]}', '{"layers": [["alpha"]], "edges": [{"consumer": "x", "producer": "y"}]}', 'not json']) {
+  for (const text of ['[]', '{}', '{"layers": "alpha"}', '{"layers": [["alpha"], "beta"]}', '{"layers": [["alpha"]], "denied": [{"consumer": "x"}]}', '{"layers": [["alpha"]], "edges": [{"consumer": "x", "producer": "y", "lag": "soon"}]}', '{"layers": [["alpha"]], "edges": [{"consumer": "x", "producer": "y"}]}', '{"layers": [["alpha"]], "edges": [{"consumer": "x", "producer": "y", "lag": "03d"}]}', '{"layers": [["alpha"]], "edges": [{"consumer": "x", "producer": "y", "lag": "1000000h"}]}', 'not json']) {
     const error = captureError(() => readFamily(text, 'daoris.family.json'));
     assert.equal(error.exitCode, 2, text);
     assert.match(error.message, /daoris\.family\.json/, text);

@@ -11,10 +11,10 @@ internal sealed class FamilyLook(ILookWiring wiring) : ILookPass
     public async Task RunAsync(LookRound round, CancellationToken ct)
     {
         var registry = round.State.Snapshot.Repositories;
-        if (!registry.Any(row => row.Root is { Length: > 0 }) || !HomeLease.HeldHere(wiring.Home)) return;
+        if (!FamilyFanout.HasFamily(registry) || !HomeLease.HeldHere(wiring.Home)) return;
         var now = wiring.Clock.GetUtcNow();
         var quests = await wiring.Service.EveryQuestAsync(ct).ConfigureAwait(false);
-        var done = await FamilyFanout.RunAsync(registry, quests, wiring.Service, (repo, token) => TipAsync(repo, token), now, ct).ConfigureAwait(false);
+        var done = await FamilyFanout.RunAsync(registry, quests, wiring.Service, TipAsync, LockAsync, now, ct).ConfigureAwait(false);
         round.Events.AddRange(done.Said);
         var occurrences = FamilyNotices.Occurrences(done.Told, registry, now);
         if (occurrences.Count > 0) new News(wiring.Home).Claim(FamilyNotices.Teller, occurrences, null, now);
@@ -25,4 +25,9 @@ internal sealed class FamilyLook(ILookWiring wiring) : ILookPass
         var line = (await CanonicalLine.ResolveAsync(repo.Root!, repo.Repository, repo.Workspace, wiring.Config, ct).ConfigureAwait(false)).Branch;
         return line is { Length: > 0 } ? await LineBatching.TipAsync(repo.Root!, line, ct).ConfigureAwait(false) : null;
     }
+
+    private async Task<LockText> LockAsync(RepoView repo, CancellationToken ct) =>
+        await TipAsync(repo, ct).ConfigureAwait(false) is { } tip
+            ? new LockText(true, await MachinePorts.Repository.TextAtAsync(repo.Root!, tip, FamilyLock.FileName, ct).ConfigureAwait(false))
+            : new LockText(false, null);
 }

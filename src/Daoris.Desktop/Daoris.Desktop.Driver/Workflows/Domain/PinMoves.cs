@@ -96,8 +96,8 @@ public static partial class PinMoves
 
     /// <summary>
     /// What a landing owes the edge now that <paramref name="tip"/> is the producer's line and the consumer pins <paramref name="pinned"/>
-    /// (null for no pin yet): nothing where the consumer pins the tip, or a quest already asks it or settled it, the live quest retargeted
-    /// where it asks another commit, else the next generation opened.
+    /// (null for no pin yet): nothing where the consumer pins the tip, or a live quest already asks it or a declined one settled it, the live
+    /// quest retargeted where it asks another commit, else the next generation opened. A done quest settles nothing: the pin says a move landed.
     /// </summary>
     public static PinMoveAct? Plan(PinEdge edge, string? pinned, string tip, IReadOnlyList<QuestView> quests)
     {
@@ -111,7 +111,7 @@ public static partial class PinMoves
                 : new PinMoveAct(edge, PinMoveActs.Retarget, tip, live.Request!, live.Id, title, body);
         }
 
-        if (mine.Any(quest => string.Equals(CommitOf(quest), tip, StringComparison.OrdinalIgnoreCase))) return null;
+        if (mine.Any(quest => quest.Status == "Declined" && Is(CommitOf(quest), tip))) return null;
         var next = (mine.Count == 0 ? 0 : mine.Max(quest => GenerationOf(edge, quest.Request, "pin")!.Value)) + 1;
         return new PinMoveAct(edge, PinMoveActs.Open, tip, KeyOf(edge, next), null, title, body);
     }
@@ -133,25 +133,30 @@ public static partial class PinMoves
     }
 
     /// <summary>
-    /// The edge's hold-back, read from its own quests so no record of it can drift from them: the pin stays where it is from the first
-    /// declined move after the last one that landed, until a move lands. Its age is that first red's time, kept through later reds, which move
-    /// only the commit held. Null where no move stands declined.
+    /// The edge's hold-back, read from its own quests and the consumer's pin: the pin stays at an older commit from the first declined move
+    /// after the last done one whose commit the pin now is, until a move lands. Its age is that first red's time, kept through later reds,
+    /// which move only the commit held. Null where no move stands declined, and where the pin is the commit held or the line's tip, however it got there.
     /// </summary>
+    /// <param name="pinned">The commit the consumer pins now, or null for none.</param>
+    /// <param name="tip">The producer's line tip, or null where it reads none.</param>
     /// <param name="now">The age start of a declined quest that carries no time.</param>
-    public static FamilyHold? Hold(PinEdge edge, IReadOnlyList<QuestView> quests, DateTimeOffset now)
+    public static FamilyHold? Hold(PinEdge edge, IReadOnlyList<QuestView> quests, string? pinned, string? tip, DateTimeOffset now)
     {
         var mine = OfEdge(edge, quests);
-        var landed = mine.Where(quest => quest.Status == "Done").Select(quest => GenerationOf(edge, quest.Request, "pin")!.Value).DefaultIfEmpty(0).Max();
+        var landed = mine.Where(quest => quest.Status == "Done" && Is(CommitOf(quest), pinned)).Select(quest => GenerationOf(edge, quest.Request, "pin")!.Value).DefaultIfEmpty(0).Max();
         var reds = mine.Where(quest => quest.Status == "Declined" && GenerationOf(edge, quest.Request, "pin")!.Value > landed && CommitOf(quest) is not null).ToList();
-        if (reds.Count == 0) return null;
+        if (reds.Count == 0 || Is(CommitOf(reds[^1]), pinned) || Is(tip, pinned)) return null;
         var newest = reds[^1];
         return new FamilyHold(edge.Consumer, edge.Producer, CommitOf(newest)!, reds[0].Updated ?? now, GenerationOf(edge, newest.Request, "pin")!.Value);
     }
 
+    private static bool Is(string? left, string? right) => left is not null && string.Equals(left, right, StringComparison.OrdinalIgnoreCase);
+
     private static (string Title, string Body) BreakWords(PinEdge edge, string commit, QuestView declined) =>
         ($"{Short(commit)} of {edge.Producer} breaks {edge.Consumer}",
-         $"`{edge.Consumer}` ran its gates at {edge.Producer}'s commit {commit}, and they stayed red, so its pin holds where it was and `{edge.Producer}`'s line "
-         + $"stays green for it.\n\n{CommitLabel}{commit}\nPin move: #{declined.Id.TrimStart('#')}\n\nThe failing case, as `{edge.Consumer}`'s session wrote it:\n\n"
+         $"`{edge.Consumer}` declined moving its pin to {edge.Producer}'s commit {commit}, which its pin-move quest asks only where its gates stay red there, so its pin "
+         + $"holds where it was and `{edge.Producer}`'s line stays green for it.\n\n{CommitLabel}{commit}\nPin move: #{declined.Id.TrimStart('#')}\n\n"
+         + $"The reason, which should be the failing case, as `{edge.Consumer}`'s session wrote it:\n\n"
          + (string.IsNullOrWhiteSpace(declined.Note) ? "(no case was written)" : declined.Note.Trim())
          + $"\n\nFix it in `{edge.Producer}` or say what `{edge.Consumer}` must change; the next landing of `{edge.Producer}` retargets the pin move.");
 

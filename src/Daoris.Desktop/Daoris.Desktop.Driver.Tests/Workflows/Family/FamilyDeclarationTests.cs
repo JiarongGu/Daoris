@@ -70,6 +70,7 @@ public sealed class FamilyDeclarationTests
     [InlineData("3d", 72)]
     [InlineData("12h", 12)]
     [InlineData("1h", 1)]
+    [InlineData("999999h", 999999)]
     public void A_lag_is_a_count_of_days_or_hours(string text, int hours)
     {
         Assert.Equal(TimeSpan.FromHours(hours), FamilyLag.Parse(text));
@@ -82,6 +83,9 @@ public sealed class FamilyDeclarationTests
     [InlineData("d3")]
     [InlineData("3w")]
     [InlineData("-1d")]
+    [InlineData("03d")]
+    [InlineData("1000000h")]
+    [InlineData("99999999d")]
     public void Anything_else_is_no_lag(string text)
     {
         Assert.Null(FamilyLag.Parse(text));
