@@ -77,7 +77,7 @@ const MAY_BE_TESTS = /testhost|vstest|dotnet|node/i;
 export function readProcesses() {
   if (process.platform !== 'win32') return [];
   try {
-    return readTable({ timeoutMs: FOREIGN_TIMEOUT }).filter((row) => MAY_BE_TESTS.test(row.name)).map((row) => ({ name: row.name, commandLine: row.command }));
+    return readTable({ timeoutMs: FOREIGN_TIMEOUT, build: false }).filter((row) => MAY_BE_TESTS.test(row.name)).map((row) => ({ name: row.name, commandLine: row.command }));
   } catch {
     return [];
   }

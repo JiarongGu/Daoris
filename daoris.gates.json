@@ -302,7 +302,7 @@
         "src/Daoris.Service/Directory.Build.props", "src/Daoris.Service/Directory.Packages.props", "src/Daoris.Service/README.md",
         "src/Daoris.Service/Daoris.Service.Core/", "src/Daoris.Service/Daoris.Service.Http/", "src/Daoris.Service/Daoris.Service.Mcp/",
         "src/Daoris.Service/Daoris.Service.Shared/", "tools/cdp.mjs", "tools/ci-background.mjs", "tools/deployment-rehearsal.mjs",
-        "tools/desktop-publish.mjs", "tools/desktop.mjs", "tools/fsx.mjs", "tools/machine-read.mjs", "tools/port-listeners.mjs", "tools/processes.mjs", "tools/rehearsal-kit.mjs",
+        "tools/desktop-publish.mjs", "tools/desktop.mjs", "tools/fsx.mjs", "tools/machine-read.mjs", "tools/machine-read/", "tools/port-listeners.mjs", "tools/processes.mjs", "tools/rehearsal-kit.mjs",
         "tools/service-publish.mjs", "tools/stage-package.mjs", "tools/test-failures.mjs", "tools/desktop/", "tools/desktop-publish/"
       ] }
   ],

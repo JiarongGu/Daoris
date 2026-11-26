@@ -20,6 +20,16 @@ test('the listeners of a port are read from netstat: either family, listening on
   assert.deepEqual(listenersOn(4200, undefined), []);
 });
 
+test('a listener is told by its foreign address, so a state printed in another language still reads', () => {
+  const german = [
+    '  TCP    0.0.0.0:4200           0.0.0.0:0              ABHÖREN         4242',
+    '  TCP    127.0.0.1:4200         127.0.0.1:50000        HERGESTELLT     77',
+    '  TCP    127.0.0.1:9333         0.0.0.0:0              ABHÖREN         4242',
+  ].join('\r\n');
+  assert.deepEqual(listenersOn(4200, german), [4242]);
+  assert.deepEqual(loopbackPortsOf(4242, german), [9333]);
+});
+
 test('the loopback ports a process listens on are read from netstat, no other process\'s and no other address\'s', () => {
   assert.deepEqual(loopbackPortsOf(4242, NETSTAT), [9333]);
   assert.deepEqual(loopbackPortsOf(4300, NETSTAT), [9334]);

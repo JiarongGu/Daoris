@@ -19,10 +19,10 @@ import { fileURLToPath } from 'node:url';
 import { execGit, isMain } from './fsx.mjs';
 
 /**
- * The entries a run keeps across runs on purpose: the pinned git the tests fetch and verify once, the rehearsals' incremental
- * builds, and the seeded repositories, whose folders `GitSeed` sweeps itself by whether their host still runs.
+ * The entries a run keeps across runs on purpose: the pinned git, the rehearsals' incremental builds, the machine reader's build (a
+ * long run holds its path) and the seeded repositories, whose folders `GitSeed` sweeps itself by whether their host still runs.
  */
-export const KEPT = Object.freeze(['pinned-mingit', 'rehearsal-builds', 'seeds']);
+export const KEPT = Object.freeze(['pinned-mingit', 'rehearsal-builds', 'seeds', 'machine-read-build']);
 
 const HOUR = 3600_000;
 

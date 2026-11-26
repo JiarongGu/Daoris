@@ -83,7 +83,7 @@ test('a folder\'s dependencies are current by the stamp its install left or by n
 test('the setup installs what is missing or stale from the lockfile, refuses a link, and always sets the merge drivers and primes the index, the declared regenerate steps, the restore and the base', () => {
   const commands = setup.setupCommands({ '.': 'current', 'src/Daoris.Web': 'stale' }, ours);
   assert.deepEqual(commands.map((each) => each.label), [
-    'install src/Daoris.Web', 'drivers', 'index', 'regenerate', 'restore', 'baseline',
+    'install src/Daoris.Web', 'drivers', 'index', 'regenerate', 'restore', 'reader', 'baseline',
   ]);
   assert.equal(commands.find((each) => each.label === 'regenerate')!.command, 'node tools/contracts.mjs --if-stale', 'the gates file declares it, as the driver reads it');
   assert.equal(commands.find((each) => each.label === 'baseline')!.command, 'node tools/quick.mjs --record-base');
@@ -91,9 +91,9 @@ test('the setup installs what is missing or stale from the lockfile, refuses a l
   assert.equal(commands[0]!.cwd, 'src/Daoris.Web');
   assert.match(commands.find((each) => each.label === 'restore')!.command, /^dotnet restore src\/Daoris\.Desktop\/Daoris\.Desktop\.Driver\.Tests\b/);
   assert.throws(() => setup.setupCommands({ '.': 'linked' }), /node_modules is a link/);
-  assert.deepEqual(setup.setupCommands({ '.': 'current', 'src/Daoris.Web': 'current' }, ours).map((each) => each.label), ['drivers', 'index', 'regenerate', 'restore', 'baseline']);
+  assert.deepEqual(setup.setupCommands({ '.': 'current', 'src/Daoris.Web': 'current' }, ours).map((each) => each.label), ['drivers', 'index', 'regenerate', 'restore', 'reader', 'baseline']);
   const bare = setup.setupCommands({ '.': 'current', 'src/Daoris.Web': 'current' }, { prep: { regenerate: ['a', 'b'], baseline: null } });
-  assert.deepEqual(bare.map((each) => each.label), ['drivers', 'index', 'regenerate', 'regenerate', 'restore'], 'nothing declared, no base run');
+  assert.deepEqual(bare.map((each) => each.label), ['drivers', 'index', 'regenerate', 'regenerate', 'restore', 'reader'], 'nothing declared, no base run');
 });
 
 test('the declared preparation is each gate\'s regenerate once and the top-level baseline, nothing where the file does not read', () => {

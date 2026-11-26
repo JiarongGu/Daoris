@@ -4,7 +4,7 @@ import { dirname, join, relative } from 'node:path';
 import { test } from 'node:test';
 import { fileURLToPath } from 'node:url';
 import {
-  HELPER_SOURCES, freeMemory, helperStanding, parseMemory, parseProcesses, processStartOf, readProcesses, sourceHash,
+  HELPER_SOURCES, freeMemory, helperPath, helperStanding, parseMemory, parseProcesses, processStartOf, readProcesses, sourceHash,
 } from './machine-read.mjs';
 import { FOREIGN_EVERY } from './time-load.mjs';
 import { MEMORY_POLL_MS, MEMORY_WAIT_MS } from './merge-branch.mjs';
@@ -87,6 +87,36 @@ test('the helper is rebuilt when a source of it changed, and only then', () => {
   assert.equal(helperStanding(REPO, { read, stamp: () => 'old', exists: () => true }).stale, true);
   assert.equal(helperStanding(REPO, { read, stamp: () => one, exists: () => false }).stale, true);
   assert.equal(helperStanding(REPO, { read, stamp: () => null, exists: () => true }).stale, true);
+});
+
+test('a remembered reader is used only while its file is there, and a caller with a short bound refuses to build one', () => {
+  const root = 'R:\tree-for-the-memo-test';
+  const fresh = { hash: 'h', exe: 'R:\tree\machine-read.exe', stale: false };
+  let there = true;
+  const asked = [];
+  const look = () => { asked.push('look'); return there ? fresh : { ...fresh, stale: true }; };
+  const exists = () => there;
+  assert.equal(helperPath(root, { look, exists }), fresh.exe);
+  assert.equal(helperPath(root, { look, exists }), fresh.exe);
+  assert.deepEqual(asked, ['look'], 'the second call is the memo, no look');
+  there = false;
+  assert.throws(() => helperPath(root, { look, exists, build: false }), /not built: run node tools\/machine-read.mjs --build/);
+  assert.deepEqual(asked, ['look', 'look'], 'a deleted build is looked for again, not read from the memo');
+});
+
+test('a short-bound read asks for the reader without building one', () => {
+  const seen = [];
+  const helper = (root, options) => { seen.push(options); return 'H'; };
+  readProcesses({ platform: 'win32', run: () => ({ status: 0, stdout: '[]' }), helper, build: false });
+  readProcesses({ platform: 'win32', run: () => ({ status: 0, stdout: '[]' }), helper });
+  assert.deepEqual(seen, [{ build: false }, undefined]);
+});
+
+test("ps is asked in UTC, since it prints a start in local time and the rows read it as UTC", () => {
+  let env;
+  readProcesses({ platform: 'linux', run: (command, args, options) => { env = options.env; return { status: 0, stdout: '' }; } });
+  assert.equal(env.TZ, 'UTC');
+  assert.equal(env.LC_ALL, 'C');
 });
 
 test('no tool asks Windows for its processes or its memory through a PowerShell or WMI', () => {

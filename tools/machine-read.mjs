@@ -17,6 +17,7 @@ import { createHash } from 'node:crypto';
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { basename, dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { isMain } from './fsx.mjs';
 import { withRunLock } from './run-lock.mjs';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
@@ -72,10 +73,17 @@ function buildHelper(root, hash, run) {
 
 const built = new Map();
 
-/** The built reader of the tree at `root`, built first where it is missing or stale; `run` and `look` are a test's. Throws where it cannot be. */
-export function helperPath(root = ROOT, { run = spawnSync, look = helperStanding } = {}) {
-  if (built.has(root)) return built.get(root);
+/**
+ * The built reader of the tree at `root`, built first where it is missing or stale; `run`, `look` and `exists` are a test's. A path
+ * remembered from an earlier call is used only while its file is there. With `build` false a reader that is not built is refused at
+ * once, saying so, for a caller whose bound is short (a sampler): the build takes minutes and `node tools/machine-read.mjs --build`
+ * (the worktree setup runs it) does it beforehand. Throws where it cannot be.
+ */
+export function helperPath(root = ROOT, { run = spawnSync, look = helperStanding, exists = existsSync, build = true } = {}) {
+  if (built.has(root) && exists(built.get(root))) return built.get(root);
+  built.delete(root);
   let standing = look(root);
+  if (standing.stale && !build) throw new Error('the machine reader is not built: run node tools/machine-read.mjs --build');
   if (standing.stale) {
     withRunLock(join(root, `${BUILD_FOLDER}.lock`), () => {
       standing = look(root);
@@ -125,7 +133,7 @@ export function parseMemory(text) {
   return { physical: read.physical, commit: read.commit, total: read.total };
 }
 
-/** `ps`'s rows (`pid ppid lstart args`, started in UTC) as the same rows. */
+/** `ps`'s rows (`pid ppid lstart args`, started as UTC: it prints local time, so it is asked with TZ=UTC) as the same rows. */
 function parsePs(text) {
   return String(text).split('\n').flatMap((line) => {
     const found = /^\s*(\d+)\s+(\d+)\s+(\w{3} \w{3}\s+\d+ [\d:]{8} \d{4})\s+(.*)$/.exec(line);
@@ -140,9 +148,9 @@ function parsePs(text) {
  * Every process on the machine (or those of `pids`) as `{ pid, ppid, created, name, path, command }`, read and changing nothing. Throws,
  * saying why, where the table could not be read. `run` and `helper` (a path, or a function that answers it) are a test's.
  */
-export function readProcesses({ platform = process.platform, run = spawnSync, helper = helperPath, pids = [], timeoutMs = READ_TIMEOUT_MS } = {}) {
-  if (platform === 'win32') return parseProcesses(asked({ run, helper, args: ['processes', ...pids.map(String)], timeoutMs }));
-  const ran = run('ps', ['-A', '-o', 'pid=', '-o', 'ppid=', '-o', 'lstart=', '-o', 'args='], { encoding: 'utf8', windowsHide: true, maxBuffer: 64 * 1024 * 1024, timeout: timeoutMs, env: { ...process.env, LC_ALL: 'C' } });
+export function readProcesses({ platform = process.platform, run = spawnSync, helper = helperPath, pids = [], timeoutMs = READ_TIMEOUT_MS, build = true } = {}) {
+  if (platform === 'win32') return parseProcesses(asked({ run, helper: build ? helper : () => (typeof helper === 'function' ? helper(ROOT, { build: false }) : helper), args: ['processes', ...pids.map(String)], timeoutMs }));
+  const ran = run('ps', ['-A', '-o', 'pid=', '-o', 'ppid=', '-o', 'lstart=', '-o', 'args='], { encoding: 'utf8', windowsHide: true, maxBuffer: 64 * 1024 * 1024, timeout: timeoutMs, env: { ...process.env, LC_ALL: 'C', TZ: 'UTC' } });
   if (ran.error) throw new Error(`ps could not start: ${ran.error.message}`);
   if (ran.status !== 0) throw new Error(`ps failed: ${said(ran.stderr || ran.stdout)}`);
   const rows = parsePs(ran.stdout);
@@ -158,4 +166,17 @@ export function freeMemory({ platform = process.platform, run = spawnSync, helpe
 /** When the process `pid` began, in epoch milliseconds; null where it does not run. Throws where the table could not be read. */
 export function processStartOf(pid, options = {}) {
   return readProcesses({ ...options, pids: [pid] }).find((row) => row.pid === pid)?.created ?? null;
+}
+
+if (isMain(import.meta.url) && process.argv[2] === '--build') {
+  if (process.platform !== 'win32') {
+    console.log('machine-read: nothing to build off Windows');
+  } else {
+    try {
+      console.log(`machine-read: ${helperPath()}`);
+    } catch (error) {
+      console.error(`machine-read: ${error.message}`);
+      process.exitCode = 1;
+    }
+  }
 }

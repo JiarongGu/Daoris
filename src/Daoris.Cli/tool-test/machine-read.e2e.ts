@@ -34,7 +34,7 @@ test('the reader answers the table with this process in it, and the memory the p
   assert.ok(Math.abs(memory.physical - freemem()) < 2 * 2 ** 30, 'the free physical memory is the one Node reports');
 });
 
-test('a read of the table and of the memory starts the reader and nothing else: no PowerShell, counted by the programs a run starts', { skip: !win, timeout: 300_000 }, () => {
+test('the reads the merge makes (its memory gate, census, stray ender, lock holder and load sampler) start the reader and nothing else: no PowerShell, counted by the programs a run starts', { skip: !win, timeout: 300_000 }, () => {
   const scratch = mkdtempSync(join(REPO, '_fixtures', 'machine-read-test-'));
   try {
     const counted = join(scratch, 'started.txt');
@@ -47,15 +47,23 @@ test('a read of the table and of the memory starts the reader and nothing else: 
       "  cp[name] = function (command, ...rest) { fs.appendFileSync(process.env.STARTED_FILE, `${name} ${String(command).split(/[\\\\/]/).pop()}\\n`); return real.call(this, command, ...rest); };",
       '}',
     ].join('\n'));
-    const reader = new URL('../../../tools/machine-read.mjs', import.meta.url).href;
-    const ran = spawnSync(process.execPath, ['--require', join(scratch, 'count.cjs'), '--input-type=module', '-e',
-      `import { readProcesses, freeMemory } from ${JSON.stringify(reader)}; readProcesses(); freeMemory();`],
+    const tool = (name: string) => JSON.stringify(new URL(`../../../tools/${name}`, import.meta.url).href);
+    const script = [
+      `import { readProcesses, freeMemory } from ${tool('machine-read.mjs')};`,
+      `import { readMemory } from ${tool('merge-branch/memory.mjs')};`,
+      `import { processList, endStrandedUnder } from ${tool('processes.mjs')};`,
+      `import { readProcesses as loadRead } from ${tool('time-load.mjs')};`,
+      `import { processStart } from ${tool('merge/holder.ts')};`,
+      'readProcesses(); freeMemory(); readMemory(); processList(); loadRead(); processStart(process.ppid);',
+      `endStrandedUnder(${JSON.stringify(join(scratch, 'no-such-folder'))}, Date.now());`,
+    ].join('\n');
+    const ran = spawnSync(process.execPath, ['--require', join(scratch, 'count.cjs'), '--input-type=module', '-e', script],
     { encoding: 'utf8', windowsHide: true, env: { ...process.env, STARTED_FILE: counted } });
     assert.equal(ran.status, 0, ran.stderr);
     const started = readFileSync(counted, 'utf8').split('\n').filter(Boolean);
     assert.deepEqual(started.filter((line) => /powershell|pwsh|wmic|cscript/i.test(line)), [], started.join('\n'));
-    // A build, when the reader is stale, is the SDK's; the reads themselves are two starts of the reader.
-    assert.deepEqual(started.filter((line) => !/ dotnet(?:\.exe)?$/i.test(line)), ['spawnSync machine-read.exe', 'spawnSync machine-read.exe']);
+    // A build, when the reader is stale, is the SDK's; every ask is one start of the reader: seven asks, seven starts.
+    assert.deepEqual(started.filter((line) => !/ dotnet(?:\.exe)?$/i.test(line)), Array(7).fill('spawnSync machine-read.exe'));
   } finally {
     rmSync(scratch, { recursive: true, force: true });
   }
