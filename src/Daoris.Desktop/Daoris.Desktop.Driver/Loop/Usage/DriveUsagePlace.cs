@@ -76,6 +76,11 @@ internal static class DriveUsagePlace
           --wait <minutes> | --no-wait
               with any command that presses: how long it waits on its Confirm in Daoris's window, 0 to 30 (the
               default 30). --no-wait returns once it is asked, naming its id; `press result <id>` says how it ended.
+          priority <ask|quest> [urgent|high|normal|low --why "…" [--until <time>|<n>m|h|d]]
+              set an ask's or a quest's class, kept with your why as a change on this machine, or with the id alone
+              say the class standing and where it comes from. A quest with none of its own reads its ask's, else
+              normal. Urgent ends at --until, else in a day, and a workspace holds two at once. The check queue
+              of the machine's heavy-run admission waits by class, then by when each run first asked.
           quest pause <id>  ·  quest resume <id>  ·  quest abandon <id> [--reason "…" --yes]
               the same for one quest's work: stop it and start nothing of it until you resume it, or list what
               abandoning it would decline, discard and archive, and with --reason and --yes give it up.

@@ -14,6 +14,7 @@ public static class RunChecks
         return new VerifySend(binding.Run, attempt.Call.Invocation, binding.Repository, root, attempt.Call.SubjectRevision, accepted)
         {
             Workspace = binding.Workspace,
+            Ask = binding.Ask,
             Gates = CheckNode.GatesOf(node),
             Reached = CheckNode.ReachedChoice(node),
             Bound = WorkPerformer.Timeout(node),

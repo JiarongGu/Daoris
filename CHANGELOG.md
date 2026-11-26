@@ -5,6 +5,11 @@ with the version and date at release.
 
 ## Unreleased
 
+- An ask or a quest can be given a class, urgent, high, normal or low, with `daoris priority <ask|quest> <class> --why "…"`, an urgent
+  one with an end (`--until`, else a day) and at most two in a workspace at once; each change is kept on this machine with its why and
+  who set it, and the id alone says the class standing. Checks waiting for the machine's check slots now go by their quest's class
+  (its own, else its ask's), then by when their run first asked, which a run back at its checks keeps, so an urgent quest's check
+  takes the next freed slot. A waiting check's line names its class and each check ahead of it with its class and who set it.
 - A family member's gates build against the commits it pins, never a sibling checkout as it stands. `daoris family materialize` writes
   each pin of the repository's own `daoris.family.lock` as its producer's files at the pinned commit into `pinned/<producer>` (`--into`
   names another folder inside the repository), read from git's own files with no process. Wherever `family check` would refuse, or an

@@ -623,6 +623,17 @@ try
         return exit;
     }
 
+    // An ask's or a quest's class from a terminal: set as a change kept on this machine, or said; the check queue of the
+    // machine's heavy-run admission reads it at each look.
+    if (args is ["priority", .. var priorityArgs])
+    {
+        var priorityHome = DaorisHome.Resolve() ?? throw new DriverException(DaorisHome.Sentence);
+        using var prioritySaid = new StringWriter();
+        var exit = await PriorityCommand.RunAsync(priorityArgs, PriorityWorld.OfThisTerminal(priorityHome, TimeProvider.System), prioritySaid, closing.Token);
+        (exit == 0 ? Console.Out : Console.Error).Write(prioritySaid.ToString());
+        return exit;
+    }
+
     // Free up space from a terminal: the Disk space card's *Free up space…* is the other door to the same
     // list and run. Listed first and changing nothing; with --yes, the client of a running Daoris (confirmed in its window), or alone
     // under the home's run lock, refused from a session's terminal.

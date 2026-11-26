@@ -7,13 +7,25 @@ namespace Daoris.Driver;
 /// <summary>The verification run holding the home's verification slot: its process, its run and attempt, its repository, since when.</summary>
 public sealed record VerifyHolder(int Pid, long Started, string Run, string Invocation, string Repository, DateTimeOffset Since);
 
-/// <summary>An attempt sent to the executor that has not started, in the order sent, and what it waits for now.</summary>
+/// <summary>An attempt sent to the executor that has not started, what it waits for now, and its run's class and first arrival, which order it.</summary>
 public sealed record VerifyWaiter(int Pid, long Started, string Run, string Invocation, string Repository, DateTimeOffset Since, int Order)
 {
     /// <summary>What it waits for, in words, and by code (<see cref="CheckWait"/>) where the admission said; null before its first look.</summary>
     public string? For { get; init; }
 
     public CheckWait? Wait { get; init; }
+
+    public string Class { get; init; } = PriorityClasses.Normal;
+
+    public string Source { get; init; } = PriorityReading.Unset;
+
+    public string? By { get; init; }
+
+    public string? Why { get; init; }
+
+    public DateTimeOffset? Arrived { get; init; }
+
+    public DateTimeOffset FirstArrival => Arrived ?? Since;
 }
 
 /// <summary>The home's verification slots as they stand: their holders and the attempts waiting, each only while its process runs.</summary>
@@ -82,7 +94,7 @@ public sealed class VerifySlot : IDisposable
         _file.Dispose();
     }
 
-    /// <summary>The slots' holders, the first taken first, and their waiters, the first sent first, each only where its process runs. Reads files only.</summary>
+    /// <summary>The slots' holders, the first taken first, and their waiters in the queue's order (<see cref="QueueOrder"/>), each only where its process runs. Reads files only.</summary>
     public static VerifyLook Look(string home, Func<int, long, bool>? alive = null)
     {
         alive ??= HeavySlot.Running;
@@ -105,7 +117,9 @@ public sealed class VerifySlot : IDisposable
             if (Read(file) is { } one && Waiter(one) is { } waiter && alive(waiter.Pid, waiter.Started)) waiters.Add(waiter);
         }
 
-        return new VerifyLook([.. holders.OrderBy(holder => holder.Since)], [.. waiters.OrderBy(waiter => waiter.Since).ThenBy(waiter => waiter.Order)]);
+        return new VerifyLook(
+            [.. holders.OrderBy(holder => holder.Since)],
+            [.. QueueOrder.Of(waiters, waiter => waiter.Class, waiter => waiter.FirstArrival).ThenBy(waiter => waiter.Since).ThenBy(waiter => waiter.Order)]);
     }
 
     /// <summary>Say an attempt waits, in a file of its own named by its invocation; one that cannot be written costs the page a waiter.</summary>
@@ -123,6 +137,11 @@ public sealed class VerifySlot : IDisposable
                 writer.WriteString("repository", waiter.Repository);
                 writer.WriteString("since", waiter.Since.ToUniversalTime().ToString("O", CultureInfo.InvariantCulture));
                 writer.WriteNumber("order", waiter.Order);
+                writer.WriteString("class", waiter.Class);
+                writer.WriteString("source", waiter.Source);
+                if (waiter.By is { } by) writer.WriteString("by", by);
+                if (waiter.Why is { } why) writer.WriteString("why", why);
+                if (waiter.Arrived is { } arrived) writer.WriteString("arrived", arrived.ToUniversalTime().ToString("O", CultureInfo.InvariantCulture));
                 if (waiter.For is { } what) writer.WriteString("for", what);
                 if (waiter.Wait is { } wait)
                 {
@@ -154,7 +173,13 @@ public sealed class VerifySlot : IDisposable
         && Text(root, "run") is { } run && Text(root, "invocation") is { } invocation
         && root.TryGetProperty("since", out var since) && since.TryGetDateTimeOffset(out var at)
             ? new VerifyWaiter(id, ticks, run, invocation, Text(root, "repository") ?? "", at,
-                root.TryGetProperty("order", out var order) && order.TryGetInt32(out var number) ? number : 0) { For = Text(root, "for"), Wait = WaitOf(root) }
+                root.TryGetProperty("order", out var order) && order.TryGetInt32(out var number) ? number : 0)
+            {
+                For = Text(root, "for"), Wait = WaitOf(root),
+                Class = PriorityClasses.Parse(Text(root, "class")) ?? PriorityClasses.Normal, Source = Text(root, "source") ?? PriorityReading.Unset,
+                By = Text(root, "by"), Why = Text(root, "why"),
+                Arrived = root.TryGetProperty("arrived", out var arrived) && arrived.TryGetDateTimeOffset(out var first) ? first : null,
+            }
             : null;
 
     private static CheckWait? WaitOf(JsonElement root) =>

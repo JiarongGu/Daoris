@@ -37,6 +37,7 @@ public sealed class RunChecksTests : IDisposable
         Assert.Equal((Run, "inv-1", "engine", Path.GetFullPath("checkout-engine"), Tip), (send.Run, send.Invocation, send.Repository, send.Checkout, send.Commit));
         Assert.False(send.Reached);
         Assert.True(send.AsMerged);
+        Assert.Equal("a1", send.Ask);
     }
 
     [Fact]
@@ -49,7 +50,7 @@ public sealed class RunChecksTests : IDisposable
         var plain = RunChecks.SendOf(_home, RunUnits.IdOf("q7"), Attempt("q7"), Check);
         var reached = RunChecks.SendOf(_home, RunUnits.IdOf("q7"), Attempt("q7"), Reached());
 
-        Assert.Equal(("q7", Tip), (plain!.Run, plain.Commit));
+        Assert.Equal(("q7", Tip, (string?)null), (plain!.Run, plain.Commit, plain.Ask));
         Assert.False(plain.Reached);
         Assert.True(reached!.Reached);
         Assert.Null(reached.Gates);

@@ -21,6 +21,7 @@ public static class HomeHistory
         HomeEntry.OpinionGates, HomeEntry.OpinionDues, HomeEntry.Brainstorms, HomeEntry.Keeping, HomeEntry.Notices,
         HomeEntry.PipeWaiting, HomeEntry.PipeSent, HomeEntry.StewardDesk, HomeEntry.FilesFound, HomeEntry.Intake,
         HomeEntry.OpinionPackets, HomeEntry.QuestFiles, HomeEntry.AskFiles, HomeEntry.SessionFiles, HomeEntry.BrainstormRooms,
+        HomeEntry.Priority,
     ];
 
     /// <summary>

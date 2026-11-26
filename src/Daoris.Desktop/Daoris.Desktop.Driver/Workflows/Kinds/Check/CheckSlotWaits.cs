@@ -55,7 +55,16 @@ public static class CheckSlotWaits
             var values = new Dictionary<string, string>(StringComparer.Ordinal)
             {
                 ["position"] = (at.index + 1).ToString(CultureInfo.InvariantCulture), ["of"] = look.Waiters.Count.ToString(CultureInfo.InvariantCulture),
+                ["ahead"] = at.index.ToString(CultureInfo.InvariantCulture),
             };
+            Place(values, "", at.waiter);
+            foreach (var (ahead, index) in look.Waiters.Take(at.index).Select((ahead, index) => (ahead, index)))
+            {
+                var prefix = $"ahead.{index + 1}.";
+                values[prefix + "run"] = ahead.Run;
+                Place(values, prefix, ahead);
+            }
+
             var said = at.waiter.Wait;
             var code = said?.Code switch
             {
@@ -93,11 +102,33 @@ public static class CheckSlotWaits
         return waits;
     }
 
-    /// <summary>The terminal's words for a slot's wait: why it waits, and the check's place in the queue.</summary>
+    private static void Place(Dictionary<string, string> values, string prefix, VerifyWaiter waiter)
+    {
+        values[prefix + "class"] = waiter.Class;
+        values[prefix + "source"] = waiter.Source;
+        if (waiter.By is { } by) values[prefix + "by"] = by;
+        if (waiter.Why is { } why) values[prefix + "why"] = why;
+    }
+
+    /// <summary>A class as the terminal says it, with where it comes from: <c>urgent (from its ask, set by the person: why)</c>; a class none set is its word alone.</summary>
+    private static string Class(WorkflowRunWait wait, string prefix)
+    {
+        var @class = wait.Values.GetValueOrDefault(prefix + "class") ?? PriorityClasses.Normal;
+        if (wait.Values.GetValueOrDefault(prefix + "by") is not { } by) return @class;
+        var from = wait.Values.GetValueOrDefault(prefix + "source") == PriorityBook.Ask ? "from its ask, " : "";
+        return $"{@class} ({from}set by {by}: {wait.Values.GetValueOrDefault(prefix + "why")})";
+    }
+
+    /// <summary>The terminal's words for a slot's wait: why it waits, its place and class in the queue, and each check ahead with its class.</summary>
     public static string Said(WorkflowRunWait wait)
     {
         string Value(string name) => wait.Values.GetValueOrDefault(name) ?? "?";
-        var queue = $"{Value("position")} of {Value("of")} in its queue";
+        var own = wait.Values.ContainsKey("by") ? $", as {Class(wait, "")}" : "";
+        var count = int.TryParse(wait.Values.GetValueOrDefault("ahead"), NumberStyles.None, CultureInfo.InvariantCulture, out var ahead) ? ahead : 0;
+        var before = count == 0
+            ? ""
+            : "; ahead: " + string.Join("; ", Enumerable.Range(1, count).Select(at => $"run {Value($"ahead.{at}.run")}, {Class(wait, $"ahead.{at}.")}"));
+        var queue = $"{Value("position")} of {Value("of")} in its queue{own}{before}";
         return wait.Code switch
         {
             Full => $"Waits for a check slot: {Value("running")} of {Value("slots")} run; {queue}.",
