@@ -86,25 +86,6 @@ public static class PriorityBook
     }
 
     /// <summary>
-    /// A run's class: a run is named by its chain's first quest here, and its binding names the ask that asked it (<see cref="WorkflowRunBinding.Ask"/>).
-    /// </summary>
-    public static PriorityReading OfRun(string home, string run, IReadOnlyList<PriorityEvent> events, DateTimeOffset now)
-    {
-        if (events.Count == 0) return PriorityReading.None;
-        string? ask = null;
-        try
-        {
-            ask = WorkflowRunBindings.IsRunId(run) ? WorkflowRunBindings.Read(home, run)?.Ask : null;
-        }
-        catch (Exception error) when (error is IOException or UnauthorizedAccessException or JsonException or DriverException)
-        {
-            // A binding that does not read leaves the quest's own class.
-        }
-
-        return ClassOf(events, run, ask, now);
-    }
-
-    /// <summary>
     /// Keep one change, or say why not: a class none of the four, no why, an urgent class with no end after <paramref name="now"/>, or
     /// one more urgent than its workspace's cap. Null where it is kept.
     /// </summary>

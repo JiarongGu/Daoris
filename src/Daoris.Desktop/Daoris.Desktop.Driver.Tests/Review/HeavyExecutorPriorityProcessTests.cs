@@ -50,6 +50,9 @@ public sealed class HeavyExecutorPriorityProcessTests : IAsyncLifetime
         return new VerifySend($"v-000000000000000{at}", $"i-{at}", $"r{at}", checkout, commit, blob) { Tree = checkout + "-verify" };
     }
 
+    private string Rows() => string.Join("; ", VerifySlot.Look(Home).Waiters.Select(waiter => $"{waiter.Invocation} {waiter.Class} for {waiter.For ?? "-"}"))
+        + " | holders: " + string.Join(", ", VerifySlot.Look(Home).Holders.Select(holder => holder.Invocation));
+
     [Fact]
     public async Task An_urgent_quest_s_check_asking_after_three_ordinary_ones_takes_the_next_freed_slot()
     {
@@ -68,17 +71,17 @@ public sealed class HeavyExecutorPriorityProcessTests : IAsyncLifetime
             foreach (var at in new[] { 1, 2, 3, 4 })
             {
                 Assert.True(await _executor.SendAsync(sends[at]));
-                await Poll.Until(() => VerifySlot.Look(Home).Waiters.Count == at);
+                await Poll.Until(() => VerifySlot.Look(Home).Waiters.Count == at, Rows);
             }
 
-            await Poll.Until(() => VerifySlot.Look(Home).Waiters is { Count: 4 } waiters && waiters.All(waiter => waiter.For is not null) && waiters[0].Class == PriorityClasses.Urgent);
+            await Poll.Until(() => VerifySlot.Look(Home).Waiters is { Count: 4 } waiters && waiters.All(waiter => waiter.For is not null) && waiters[0].Class == PriorityClasses.Urgent, Rows);
             Assert.Equal(["i-4", "i-1", "i-2", "i-3"], VerifySlot.Look(Home).Waiters.Select(waiter => waiter.Invocation));
         }
 
         foreach (var at in new[] { 4, 1, 2, 3 })
         {
             var result = VerifyFiles.ResultOf(Home, sends[at].Run, sends[at].Invocation);
-            await Poll.Until(() => File.Exists(result), () => $"no result at {result}");
+            await Poll.Until(() => File.Exists(result), () => $"no result at {result}; " + Rows());
             Assert.Equal(VerifyVerdicts.Reached, VerifyResult.Read(result)?.Verdict);
         }
 

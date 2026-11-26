@@ -903,8 +903,11 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     free and needed), every slot of its repository held (`slot-repository`), else its place in the queue (`slot-queued`), each with that place,
     its class where one is set and each check ahead with its class and where that comes from (`CheckSlotWaits`, read from the slots' waiter
     files at each look). The check queue waits in one order (`QueueOrder`, PRIORITY1a, D365): its run's class (`PriorityBook`, read again
-    at each look and never kept on the run), then its run's first arrival (`CheckArrivals`, `lines/<run>/arrival.json`, which a run back
-    at its checks keeps), then the order sent; the executor tries its due attempts in that order and each takes a slot only as its own
+    at each look and never kept on the run: the class set on the quest the run is named by, else on the ask its send carries, which
+    `RunChecks` reads from the run's binding, so an ask's delivery run reads its ask's class), then its run's first arrival (`CheckArrivals`, `lines/<run>/arrival.json`, which a run back
+    at its checks keeps), then the order sent; the executor tries its due attempts in that order, a pass ending at the first refused for any wait but its own repository's
+    slots (so a slot freed while a pass goes on is never taken by a check behind the first, and a smaller check no longer passes one
+    waiting for memory), and each takes a slot only as its own
     admission allows, so an urgent quest's check takes the next freed slot and nothing running is cut. A session's `run-heavy`, the
     integration's gated lines and the machine's places (`MachineAdmission`) still wait first come. `["reached"]` in a list still names a gate called so. (D192, D293) A declaration's `reached` entry (`run` with `{base}`, `cwd`, `clock`, and
     `outcome`, the marker of the last line the runner prints, JSON of `ran`, `replayed`, `flaked`, `mainRed`, `red`) replaces the

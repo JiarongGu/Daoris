@@ -59,6 +59,7 @@ public sealed class HeavyExecutor(string home, VerifyWorld? world = null) : IAsy
         public DateTimeOffset Since { get; } = since;
         public DateTimeOffset Arrived { get; } = arrived;
         public PriorityReading Priority { get; set; } = PriorityReading.None;
+        public CheckWait? Refused { get; set; }
         public DateTimeOffset? NotBefore { get; set; }
         public int Busy { get; set; }
         public string? For { get; set; }
@@ -79,7 +80,7 @@ public sealed class HeavyExecutor(string home, VerifyWorld? world = null) : IAsy
         if (File.Exists(VerifyFiles.ResultOf(home, send.Run, send.Invocation))) return Task.FromResult(true);
         var now = DateTimeOffset.UtcNow;
         var arrived = CheckArrivals.Keep(home, send.Run, now);
-        var priority = PriorityBook.OfRun(home, send.Run, PriorityBook.Read(home), _world.Clock.GetUtcNow());
+        var priority = PriorityBook.ClassOf(PriorityBook.Read(home), send.Run, send.Ask, _world.Clock.GetUtcNow());
         lock (_gate)
         {
             if (_running.ContainsKey(send.Invocation) || _queue.Any(each => each.Send.Invocation == send.Invocation)) return Task.FromResult(true);
@@ -197,7 +198,8 @@ public sealed class HeavyExecutor(string home, VerifyWorld? world = null) : IAsy
                 soonest = _queue.Where(each => each.NotBefore > now).Select(each => each.NotBefore).Min();
             }
 
-            foreach (var each in Ordered(due, now))
+            var ordered = Ordered(due, now);
+            foreach (var (each, at) in ordered.Select((each, at) => (each, at)))
             {
                 HeavyTaken? held;
                 try
@@ -208,6 +210,16 @@ public sealed class HeavyExecutor(string home, VerifyWorld? world = null) : IAsy
                 {
                     Unrunnable(each, error);
                     continue;
+                }
+
+                if (held is null && HoldsTheRest(each.Refused))
+                {
+                    if (each.Refused!.Code is CheckWait.Slots or CheckWait.Admitting)
+                    {
+                        foreach (var behind in ordered.Skip(at + 1)) Blocked(behind, each.Refused);
+                    }
+
+                    break;
                 }
 
                 if (held is null) continue;
@@ -296,6 +308,7 @@ public sealed class HeavyExecutor(string home, VerifyWorld? world = null) : IAsy
     private async Task<HeavyTaken?> TryTakeAsync(Queued queued)
     {
         var send = queued.Send;
+        queued.Refused = null;
         if (HeavySlot.KeyOf(send.Checkout) is not { } key)
         {
             lock (_gate) _queue.Remove(queued);
@@ -312,9 +325,13 @@ public sealed class HeavyExecutor(string home, VerifyWorld? world = null) : IAsy
             Gate = "reached",
         };
         var (taken, wait) = CheckAdmission.TryTake(home, _world.Rules(), ask);
+        queued.Refused = wait;
         if (taken is null) Blocked(queued, wait!);
         return taken;
     }
+
+    /// <summary>Whether a refusal ends the pass, so a slot freed meanwhile goes to the first in order: any wait but its own repository's slots.</summary>
+    private static bool HoldsTheRest(CheckWait? refused) => refused is { Code: not CheckWait.Repository };
 
     private void Blocked(Queued queued, CheckWait wait)
     {
@@ -333,7 +350,7 @@ public sealed class HeavyExecutor(string home, VerifyWorld? world = null) : IAsy
         var events = PriorityBook.Read(home);
         foreach (var each in due)
         {
-            var priority = PriorityBook.OfRun(home, each.Send.Run, events, now);
+            var priority = PriorityBook.ClassOf(events, each.Send.Run, each.Send.Ask, now);
             if (priority == each.Priority) continue;
             each.Priority = priority;
             lock (_gate)
