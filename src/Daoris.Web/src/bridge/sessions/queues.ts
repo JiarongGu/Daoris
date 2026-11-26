@@ -1,15 +1,11 @@
+import { useEffect } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useShenora } from '@shenora/react';
 import { keys } from '../../data/queries';
-import { type QueueRow, readQueueRows } from '../../overview/queuePlaces';
+import { readQueueRows } from '../../overview/queuePlaces';
 import { call, type Payload } from '../call';
 import { askHeld } from '../state/held';
-
-/**
- * How soon the machine's queues are asked again: every 5 s while anything waits, so a slot taken or a start begun is seen within
- * seconds; every 30 s while nothing does, since nothing wakes the page when a check is sent or a look plans.
- */
-export const queuesAgainIn = (rows: readonly QueueRow[] | undefined): number => (rows && rows.length > 0 ? 5_000 : 30_000);
+import { useConsidered } from '../driverConsiderations';
 
 /**
  * Every item waiting in the machine's queues, the one reader `daoris queue` prints (`QUEUES`): the last look's waiting starts and
@@ -19,13 +15,18 @@ export const queuesAgainIn = (rows: readonly QueueRow[] | undefined): number => 
 export const useQueues = ({ enabled = true }: { enabled?: boolean } = {}) => {
   const { isAvailable } = useShenora();
   const client = useQueryClient();
-  return useQuery({
+  const queues = useQuery({
     queryKey: keys.queues,
     queryFn: () => askHeld('QUEUES', client, keys.queues, {}, readQueueRows),
     enabled: isAvailable && enabled,
     retry: false,
-    refetchInterval: (query: { state: { data?: QueueRow[] } }) => queuesAgainIn(query.state.data),
   });
+  // Asked again when the driver's look moves, as its considerations' slice is pushed, never on a clock: an idle window asks nothing.
+  const looked = useConsidered().dataUpdatedAt;
+  useEffect(() => {
+    if (looked > 0) void client.invalidateQueries({ queryKey: keys.queues });
+  }, [client, looked]);
+  return queues;
 };
 
 /**
