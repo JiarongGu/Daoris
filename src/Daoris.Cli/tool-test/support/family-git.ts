@@ -1,4 +1,6 @@
 import { spawnSync } from 'node:child_process';
+import { mkdirSync, rmSync, writeFileSync } from 'node:fs';
+import { dirname, join } from 'node:path';
 
 /**
  * Real git for the family's tests, run in a fixture's folder: the code under test reads git's files and never starts git, so these
@@ -25,6 +27,26 @@ export function initWithCommit(cwd: string, message = 'first'): string {
 /** One more empty commit on the branch checked out, its id returned. */
 export function commit(cwd: string, message: string): string {
   git(cwd, 'commit', '-q', '--allow-empty', '-m', message);
+  return git(cwd, 'rev-parse', 'HEAD');
+}
+
+/**
+ * One commit of the files given on the branch checked out, written over the tree (a null deletes the file), its id returned. A name
+ * ending `*` is written executable.
+ */
+export function commitFiles(cwd: string, files: Record<string, string | null>, message: string): string {
+  for (const [name, text] of Object.entries(files)) {
+    const path = join(cwd, name.replace(/\*$/, ''));
+    if (text === null) {
+      rmSync(path, { force: true });
+      continue;
+    }
+    mkdirSync(dirname(path), { recursive: true });
+    writeFileSync(path, text);
+  }
+  git(cwd, 'add', '-A');
+  for (const name of Object.keys(files).filter((each) => each.endsWith('*'))) git(cwd, 'update-index', '--chmod=+x', name.slice(0, -1));
+  git(cwd, 'commit', '-q', '-m', message);
   return git(cwd, 'rev-parse', 'HEAD');
 }
 

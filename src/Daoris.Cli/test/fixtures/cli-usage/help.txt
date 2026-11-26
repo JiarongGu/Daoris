@@ -24,6 +24,8 @@ daoris <command> [options]
   family check         the family beside this repository: each member's uses
                        against the layers, and each pin one full commit on its
                        producer's line (offline; reads ../daoris.family.json)
+  family materialize   each pin of this repository written as its producer's
+                       tree at the pinned commit, into pinned/<producer> (offline)
 
   These are the doctrine commands, and every one is offline. Every other command
   (`daoris help` names them) is the desktop's program's: this daoris hands it the
@@ -37,5 +39,6 @@ Options:
   --force              overwrite locally-drifted files (sync only)
   --all                every drifted file (upstream only)
   --out <folder>       where a dry run writes its scratch (declaration only; default _fixtures/declaration-split)
-  --family <file>      the family file to check (family only)
+  --family <file>      the family file to read (family only)
+  --into <folder>      where materialize writes, inside this repository (family only)
   --help, --version
