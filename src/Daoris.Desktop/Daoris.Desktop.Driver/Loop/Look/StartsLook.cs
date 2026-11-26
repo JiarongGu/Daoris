@@ -22,7 +22,7 @@ internal sealed class StartsLook(IStartsWiring wiring) : ILookPass
         var claimed = new List<Consideration>();
         foreach (var start in starts)
         {
-            if (LandStandings.Holds(wiring.Home, start, wiring.Clock.GetUtcNow())) continue;
+            if (Planner.OwesLanding(wiring.Home, start, wiring.Clock.GetUtcNow())) continue;
 
             if (start is { GoesOn: true, Resumes: { } record })
             {

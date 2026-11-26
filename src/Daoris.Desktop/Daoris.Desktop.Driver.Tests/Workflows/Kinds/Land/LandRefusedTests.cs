@@ -85,9 +85,9 @@ public sealed class LandRefusedTests
         var home = Guid.NewGuid().ToString("N");
         LandStandings.Wait(home, "q1", Now);
 
-        Assert.True(LandStandings.Holds(home, Start("q1", "Taken"), Now));
-        Assert.False(LandStandings.Holds(home, Start("q2", "Taken"), Now));
-        Assert.False(LandStandings.Holds(Guid.NewGuid().ToString("N"), Start("q1", "Taken"), Now));
+        Assert.True(Planner.OwesLanding(home, Start("q1", "Taken"), Now));
+        Assert.False(Planner.OwesLanding(home, Start("q2", "Taken"), Now));
+        Assert.False(Planner.OwesLanding(Guid.NewGuid().ToString("N"), Start("q1", "Taken"), Now));
     }
 
     /// <summary>Words said to the session go on in it whatever its landing waits on, and a quest not taken starts as before.</summary>
@@ -97,8 +97,8 @@ public sealed class LandRefusedTests
         var home = Guid.NewGuid().ToString("N");
         LandStandings.Wait(home, "q1", Now);
 
-        Assert.False(LandStandings.Holds(home, Start("q1", "Taken", goesOn: true), Now));
-        Assert.False(LandStandings.Holds(home, Start("q1", "Open"), Now));
+        Assert.False(Planner.OwesLanding(home, Start("q1", "Taken", goesOn: true), Now));
+        Assert.False(Planner.OwesLanding(home, Start("q1", "Open"), Now));
     }
 
     /// <summary>The wait ends with the landing, and a wait no look has read again lapses, so a quest started anew is never held by an old one.</summary>
@@ -111,9 +111,9 @@ public sealed class LandRefusedTests
 
         LandStandings.Done(home, "q2");
 
-        Assert.False(LandStandings.Holds(home, Start("q2", "Taken"), Now));
-        Assert.True(LandStandings.Holds(home, Start("q1", "Taken"), Now + LandRetries.Fresh - TimeSpan.FromSeconds(1)));
-        Assert.False(LandStandings.Holds(home, Start("q1", "Taken"), Now + LandRetries.Fresh));
+        Assert.False(Planner.OwesLanding(home, Start("q2", "Taken"), Now));
+        Assert.True(Planner.OwesLanding(home, Start("q1", "Taken"), Now + LandRetries.Fresh - TimeSpan.FromSeconds(1)));
+        Assert.False(Planner.OwesLanding(home, Start("q1", "Taken"), Now + LandRetries.Fresh));
     }
 
     /// <summary>The performer marks the standing for every wait and refusal that keeps a landing owed, and clears it at the landing.</summary>
