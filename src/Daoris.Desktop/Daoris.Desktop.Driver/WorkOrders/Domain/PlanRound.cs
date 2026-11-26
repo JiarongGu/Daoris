@@ -1,3 +1,5 @@
+using System.Globalization;
+
 namespace Daoris.Driver;
 
 /// <summary>
@@ -58,9 +60,9 @@ internal sealed class PlanRound
         var considerations = new List<Consideration>();
 
         // The service already orders open-oldest-first; keeping its order is what makes "oldest starts first" one implementation
-        // rather than two that drift. But a record the person wrote to goes first: a reopen goes before every start the driver
-        // planned itself, so the quests whose last session here has words waiting are planned ahead of the rest, the open list's in
-        // its order and then the closed ones no list holds.
+        // rather than two that drift. The quests whose last session here has the person's words waiting come ahead of the rest, the
+        // open list's in its order and then the closed ones no list holds; the comparator below, stable, keeps that order only among
+        // what it leaves equal, so such a reply is a resume and goes before a new start of its class, never before a higher class.
         var writtenTo = Snapshot.Quests.Concat(Snapshot.Closed)
             .Where(reading.WrittenTo)
             .DistinctBy(quest => quest.Id, StringComparer.OrdinalIgnoreCase)
@@ -194,13 +196,15 @@ internal sealed class PlanRound
         var run = QuestRuns.Of(quest, id => Snapshot.Quests.FirstOrDefault(each => string.Equals(each.Id, id, StringComparison.OrdinalIgnoreCase)));
         var @class = PriorityBook.OfRun(look.Events, run, AskWords.AskOf(quest.From), look.Now).Class;
         var last = Snapshot.LastRun.GetValueOrDefault(quest.Id);
-        // Its words' earliest moment where its session waits on them, else when the service says the quest last moved; none known
-        // leaves it where the service's order put it and never ages it.
-        var waited = last?.Waiting.Select(word => word.At).Where(at => at > DateTimeOffset.MinValue).Select(at => (DateTimeOffset?)at).Min();
-        var arrived = waited ?? quest.Updated;
+        // A resume waits from the later of its words' earliest moment and its last session's end, never from the quest's take, which
+        // counts the session's running; a new start from when the service says the quest last moved. An arrival not known never ages
+        // an item and sorts after every known one, the service's order kept among those.
+        var arrived = last is null
+            ? quest.Updated
+            : new[] { last.Waiting.Select(word => (DateTimeOffset?)word.At).Where(at => at > DateTimeOffset.MinValue).Min(), last.Updated }.Max();
         var aged = QueueOrder.Age(@class, arrived, look.Now, look.Rules);
         return new WalkSlot(
-            new QueuePlace(aged.Class, last is null ? QueueStage.NewStart : QueueStage.Resume, arrived ?? DateTimeOffset.MinValue), aged.From, look.Rules);
+            new QueuePlace(aged.Class, last is null ? QueueStage.NewStart : QueueStage.Resume, arrived ?? DateTimeOffset.MaxValue), aged.From, look.Rules);
     }
 
     /// <summary>A quest ordered by a promoted class says so where it waits or starts, and carries the class it came from.</summary>
@@ -216,7 +220,7 @@ internal sealed class PlanRound
         return each with
         {
             AgedFrom = from,
-            Reason = $"{each.Reason} It is ordered as {at.Place.Class} (aged from {from}: it has waited past {bound.TotalHours:0.##} h).",
+            Reason = $"{each.Reason} It is ordered as {at.Place.Class} (aged from {from}: it has waited past {bound.TotalHours.ToString("0.##", CultureInfo.InvariantCulture)} h).",
         };
     }
 

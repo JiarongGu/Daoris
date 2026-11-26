@@ -84,8 +84,9 @@ built, but nothing outside tests makes, takes or ends one; `LinePlaces` answers 
    what the ledger would refuse, and gives each refusal a sentence first. (D46)
 9. Only repositories the person opted into are driven. A held repository starts nothing new. A repository needs a registration,
    adoption where the door needs it, and a root. (D46, D70)
-10. Quests whose last session here has the person's words waiting are planned first; the rest in the service's order, oldest open
-    first. (D46, D137)
+10. Quests are planned by the one comparator (rule 16): class, then a resume before a new start, then first arrival. A quest whose last
+    session here has the person's words waiting is a resume, so it goes before a new start of its class and after a higher class; what the
+    comparator leaves equal keeps the person's words first, then the service's order, oldest open first. (D46, D137, D365)
 11. The cap counts what the driver started, passes included (helpers, partners, opinions, brainstorms), never a conversation the
     person holds. It is at least one. A session awaiting its step (`awaiting-step`: its turn ended on a held check, a hold or an opinion,
     running no process) holds no place: it stays in the active list for its tree and its quest, but the count is of the sessions that
@@ -144,8 +145,10 @@ built, but nothing outside tests makes, takes or ends one; `LinePlaces` answers 
     (Workflows, review and landing) and the planner's starts and resumes read it by the one comparator (`QueueOrder`, PRIORITY1b): the class,
     then the stage (a landing, a run back at its checks, a resume, first checks, a new start), then first arrival. Each look reads a quest's
     class (`Snapshot.Priority`, `PriorityBook.OfRun`) and orders the walk of `PlanRound` by it, never copying it into a run; a quest a
-    session of this machine's ran on is a resume, any other a new start, and its arrival is its earliest waiting word, else the service's
-    `updated`, so a resume goes before a new start of its class and a quest with no known arrival keeps the service's order and never ages.
+    session of this machine's ran on is a resume, any other a new start, and its arrival is, for a resume, the later of its
+    earliest waiting word and its last session's end (never the take, which counts the session's running), and for a new start the service's
+    `updated`. A quest with no known arrival keeps the service's order after every known one and never ages. `Snapshot.Priority` is set by the
+    loop's plan and by the fresh plans of the sessions list and the pause's holds (`PriorityLook.Read`), so they say one verdict.
     Aging is by promotion (`QueueOrder.Age`): a normal item that waited past 2 hours is ordered as high, a low one past 8 hours as normal,
     keeping its first arrival, never into urgent; its consideration carries `AgedFrom` and its reason says "aged from normal". The bounds
     are `PriorityRules.AgeNormal` and `AgeLow`, Daoris's defaults until a workspace's setting carries them. A start that came to a hold is

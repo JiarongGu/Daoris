@@ -249,6 +249,19 @@ public sealed class EntryPartsPlanTests
         Assert.Contains("#01ba2c71", resume.Reason);
     }
 
+    /// <summary>With no class set a resume goes before a request the service lists first, so it keeps its tree and the request runs alongside.</summary>
+    [Fact]
+    public void A_resume_listed_after_a_request_still_takes_its_tree_when_no_class_is_set()
+    {
+        var snapshot = At0759();
+        var plan = Planner.Plan(snapshot with { Quests = [snapshot.Quests[2], snapshot.Quests[0]], Closed = [snapshot.Quests[1] with { Status = "Done" }] }, Config());
+
+        Assert.Equal("283ef343", Assert.Single(plan, c => c.Quest.Id == "3068f747").Resumes?.Session);
+        var request = Assert.Single(plan, c => c.Quest.Id == "01ba2c71");
+        Assert.Equal(StartVerdict.Start, request.Verdict);
+        Assert.Null(request.Entry?.Into);
+    }
+
     /// <summary>A quest whose publisher no record here names has no entry the planner can read: it starts as a first start does.</summary>
     [Fact]
     public void A_request_whose_entry_no_record_names_starts_as_before()

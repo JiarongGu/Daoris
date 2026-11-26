@@ -32,6 +32,20 @@ public sealed class HeldStartsPlanTests
     }
 
     [Fact]
+    public void A_held_carry_on_into_its_own_tree_takes_none_of_the_repository_s_turn()
+    {
+        var quests = new[] { Quest("q1", "Taken"), Quest("q2") };
+        var ran = Snap(quests, "q1") with
+        {
+            LastRun = new Dictionary<string, PriorSession>(StringComparer.OrdinalIgnoreCase) { ["q1"] = new PriorSession("s1", "D:/trees/s1", "failed", "timed out.") },
+        };
+
+        var plan = Planner.Plan(ran, Config());
+
+        Assert.All(plan, each => Assert.Equal(StartVerdict.Start, each.Verdict));
+    }
+
+    [Fact]
     public void A_held_quest_is_tried_again_where_nothing_else_waits()
     {
         var plan = Planner.Plan(Snap([Quest("q1")], "q1"), Config());

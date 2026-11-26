@@ -54,6 +54,9 @@ public sealed record PriorityLook(IReadOnlyList<PriorityEvent> Events, PriorityR
 {
     /// <summary>No class set, read at no moment: every quest is normal and none ages.</summary>
     public static PriorityLook None { get; } = new([], PriorityRules.Default, DateTimeOffset.MinValue);
+
+    /// <summary>The classes this home keeps, read at <paramref name="now"/>: what every plan over a snapshot carries, the loop's and a fresh one alike.</summary>
+    public static PriorityLook Read(string home, DateTimeOffset now) => new(PriorityBook.Read(home), PriorityRules.Default, now);
 }
 
 /// <summary>

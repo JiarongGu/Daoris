@@ -104,4 +104,73 @@ public sealed class PriorityStartOrderTests
 
         Assert.Equal(["new"], Started(plan));
     }
+
+    private static IReadOnlyList<Consideration> PlanRecords(
+        int cap, QuestView[] quests, PriorityEvent[] events, Dictionary<string, PriorSession> records, PriorityRules? rules = null)
+    {
+        var snapshot = new Snapshot(quests, [new RepoView("Game", true, Root)], [])
+        {
+            LastRun = new Dictionary<string, PriorSession>(records, StringComparer.OrdinalIgnoreCase),
+            Priority = new PriorityLook(events, rules ?? PriorityRules.Default, Now),
+        }.Apart("Game");
+        return Planner.Plan(snapshot, DriverConfig.Empty with { Drivable = ["Game"], Cap = cap });
+    }
+
+    private static PriorSession CutOff(int endedMinutesAgo) =>
+        new("s1", "D:/trees/s1", "failed", "timed out.") { Updated = Now.AddMinutes(-endedMinutesAgo) };
+
+    [Fact]
+    public void A_resume_waits_from_its_session_s_end_and_not_from_the_take_that_counts_its_running()
+    {
+        var events = new[] { Set(PriorityBook.Quest, "x", PriorityClasses.High) };
+        var justEnded = PlanRecords(1, [Open("x", 1), Resume("y", 180)], events, new() { ["y"] = CutOff(1) });
+        var longEnded = PlanRecords(1, [Open("x", 1), Resume("y", 180)], events, new() { ["y"] = CutOff(180) });
+
+        Assert.Equal(["x"], Started(justEnded));
+        Assert.Null(justEnded.Single(each => each.Quest.Id == "y").AgedFrom);
+        Assert.Equal(["y"], Started(longEnded));
+        Assert.Equal("normal", longEnded.Single(each => each.Quest.Id == "y").AgedFrom);
+    }
+
+    [Fact]
+    public void A_reply_to_a_session_goes_before_a_new_start_of_its_class_and_after_a_higher_class()
+    {
+        var reply = new PriorSession("s0", "D:/trees/s0", "completed", "ended.") { Said = PersonWords.Of("Go on."), Updated = Now.AddMinutes(-1) };
+        var records = new Dictionary<string, PriorSession> { ["r"] = reply };
+
+        var same = PlanRecords(1, [Open("new", 100), Resume("r", 30)], [], records);
+        var higher = PlanRecords(1, [Resume("r", 30), Open("new", 1)], [Set(PriorityBook.Quest, "new", PriorityClasses.High)], records);
+
+        Assert.Equal(["r"], Started(same));
+        Assert.Equal(["new"], Started(higher));
+        Assert.Equal(StartVerdict.AtCapacity, higher.Single(each => each.Quest.Id == "r").Verdict);
+    }
+
+    [Fact]
+    public void A_quest_with_no_known_arrival_sorts_after_the_known_ones_and_never_ages()
+    {
+        var unknown = Open("unknown") with { Updated = null };
+
+        var plan = PlanRecords(1, [unknown, Open("known", 30)], [], []);
+
+        Assert.Equal(["known"], Started(plan));
+        Assert.Null(plan.Single(each => each.Quest.Id == "unknown").AgedFrom);
+    }
+
+    [Fact]
+    public void The_aged_note_says_its_bound_in_hours_whatever_the_culture()
+    {
+        var before = System.Globalization.CultureInfo.CurrentCulture;
+        try
+        {
+            System.Globalization.CultureInfo.CurrentCulture = new System.Globalization.CultureInfo("de-DE");
+            var plan = PlanRecords(1, [Open("aged", 100)], [], [], PriorityRules.Default with { AgeNormal = TimeSpan.FromMinutes(90) });
+
+            Assert.Contains("past 1.5 h", plan.Single().Reason);
+        }
+        finally
+        {
+            System.Globalization.CultureInfo.CurrentCulture = before;
+        }
+    }
 }
