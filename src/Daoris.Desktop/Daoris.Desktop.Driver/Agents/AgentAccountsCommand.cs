@@ -401,7 +401,7 @@ internal static class AgentAccountsCommand
     /// <summary>
     /// <c>profile on|off &lt;agent&gt; &lt;account&gt;</c>: the person's switch (<see cref="AccountSwitch"/>), kept in
     /// <c>accounts.json</c>. An account switched off stays signed in and is read as before; Daoris starts no session on it and moves none
-    /// to it, and a session on it goes on to its turn's end and is then moved to another ready account.
+    /// to it, and a session on it goes on to its turn's end and is then moved to another ready account where there is one.
     /// </summary>
     private static AgentPress Switch(AccountVerbContext at, bool off)
     {

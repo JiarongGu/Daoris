@@ -108,6 +108,9 @@ public static class HandOverWhy
     /// </summary>
     public static bool Known(string? why) => why is Press or Near or Limit or Agent or Curve;
 
+    /// <summary>Whether a part this reason began is one just handed on: an agent's ask waits a turn after it.</summary>
+    public static bool Handed(string? why) => Known(why) || why is Off;
+
     /// <summary>Whether a word is one of the reasons a record continues another by: each has its <c>note.handed.why.*</c> line.</summary>
     public static bool Continues(string? why) => Known(why) || why is Off or Resume or CarryOn or Retry or NotOffered or Transient or Failed or Quiet or Budget;
 }

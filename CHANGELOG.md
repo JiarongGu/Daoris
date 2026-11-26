@@ -27,7 +27,8 @@ with the version and date at release.
 - Each agent account has the person's on/off switch: `daoris agent account off <agent> <account>` (and `on`), or *Switch off* in Agents → the
   agent's page → Accounts. A switched-off account stays signed in and is read as before, shows as off in the window and in `daoris agent list`,
   and gets no session started on it and none moved to it; a session already on it goes on to its turn's end and is then moved to another
-  ready account of its agent (a conversation at its turn's end, whatever the account has used; a resumed session by the walk). The window
+  ready account of its agent where there is one (a conversation at its turn's end, whatever the account has used, so one idle when you
+  switch the account off is moved at the end of its next turn; a resumed session by the walk). The window
   says *off, by you* wherever it names the account, dims its usage, and says the next start passes it because it is off. It is
   the same record for Claude Code, Codex and every other agent, kept in `accounts.json` beside the account's name, and only your own press
   writes it (a session's terminal is refused), as a sign-in is yours.

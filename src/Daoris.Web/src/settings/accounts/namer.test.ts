@@ -33,7 +33,7 @@ describe('the roster’s one namer', () => {
     expect(nameOf('claude-code', 'acct-0badc0de')).toBe(i18n.t('harness.profile.keyName', { handle: 'sk-…a1b2' }));
   });
 
-    it('says an account the person switched off as off, by you, wherever a card names it', async () => {
+  it('says an account the person switched off as off, by you, wherever a card names it', async () => {
     const off = namer(i18n.t.bind(i18n), [{
       door: 'claude-code', present: true,
       profiles: [

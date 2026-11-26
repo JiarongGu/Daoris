@@ -153,7 +153,7 @@
   "harness.account.named": "{{account}} (off, by you)",
   "harness.account.shared": "Shares its sign-in with {{accounts}}: its store looks copied from another sign-in. One single-use refresh token in several stores is spent for all by whichever refreshes first, which signs the rest out. Sign this account in to Daoris on its own to separate them.",
   "harness.account.sharedDevice": "Shares its sign-in with {{accounts}}: its store looks copied from another sign-in. One single-use refresh token in several stores is spent for all by whichever refreshes first, which signs the rest out. Sign this account in to Daoris on its own with a device code (finished on another device) to separate them.",
-  "harness.account.offTip": "You switched it off. It stays signed in and is read as before, but Daoris starts no session on it and moves none to it; a session already on it goes on to its turn's end and is then moved to another account that is ready.",
+  "harness.account.offTip": "You switched it off. It stays signed in and is read as before, but Daoris starts no session on it and moves none to it; a session already on it goes on to its turn's end and is then moved to another ready account where there is one. One idle when you switch it off is moved at the end of its next turn.",
   "harness.account.switchOn": "Switch on",
   "harness.account.switchOnFor": "switch {{account}} on",
   "harness.account.switchOff": "Switch off",

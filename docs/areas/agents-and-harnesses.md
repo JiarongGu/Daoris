@@ -197,9 +197,11 @@ where a seam, route, verb or fixture is. Which folder owns which job:
     conversation's turn-end move (`CurveMove`) moves by the account's curve, and reads its own account's switch too: at its turn's end
     a conversation on an off account moves to another ready account of its agent whatever it has used (`SwitchChoice.MoveOff`, the
     candidates the curve's, one with the margin's room first), its record's reason `off` (`HandOverWhy.Off`, its line *its account was
-    switched off*), asked by Daoris, never under a scope whose switch is `off` and staying where no other account is ready; a running
-    session is never moved *to* an off account (`SwitchCandidates` reads `Before`). The window names an off account *off, by you*
-    wherever it names one (the roster's namer, the row's pill with its usage dimmed), and the next start's held line says it is passed
+    switched off*), asked by Daoris, never under a scope whose switch is `off` and staying where no other account is ready, and a part it began waits a turn before an agent's own ask (`HandOverWhy.Handed`);
+    it is judged at a turn's end only, so a conversation idle when the account is switched off is moved at the end of its next turn, which
+    runs on the off account; a running session is never moved *to* an off account (`SwitchCandidates` reads `Before`). The window names an off account *off, by you*
+    wherever it names one (the roster's namer, the row's pill with its usage dimmed), as the account stands now, so a name in a past
+    line carries it too, and the next start's held line says it is passed
     because it is off. Only the person's press
     writes it, as a sign-in is theirs: the window and the terminal on their own, a session's terminal refused.
 28. The person's own sign-in is outside the set: Daoris never signs it in or out, asks it anything or starts work in it. On the

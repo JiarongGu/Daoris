@@ -67,7 +67,7 @@ internal sealed class CurveMove(IExecutorWiring wiring) : IExecutor
     }
 
     /// <summary>
-    /// Judge a conversation by its account's usage curve and, where the decision says so, move it. Its account, agent
+    /// Judge a conversation by its account's usage curve or the person's switch on it and, where the decision says so, move it. Its account, agent
     /// and workspace are its record's; the scope's switch and curve, the scope's list and what each account said are this machine's.
     /// </summary>
     /// <returns>What the decision says; null where nothing is judged (a hand-over waits or is taken, or it is no conversation of
@@ -179,7 +179,7 @@ internal sealed class CurveMove(IExecutorWiring wiring) : IExecutor
     private static bool Admits(RotationUse use) => use.Switch != "off";
 
     /// <summary>
-    /// The move as the course decided it: a conversation's, by the brief, for the curve, asked by Daoris, on the
+    /// The move as the course decided it: a conversation's, by the brief, for the curve or the switch, asked by Daoris, on the
     /// account the decision named; the agent is the conversation's own, so none is named.
     /// </summary>
     private static MoveDecision Decision(string sessionId, string account, string why) =>

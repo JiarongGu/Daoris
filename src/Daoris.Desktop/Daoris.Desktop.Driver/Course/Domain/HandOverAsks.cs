@@ -94,7 +94,7 @@ public static class HandOverAskJudge
             return HandOverAskVerdict.Refuse(HandOverAskWhy.AskerUnfit);
         }
 
-        if (record.From is not null && HandOverWhy.Known(record.FromWhy) && !turnSince) return HandOverAskVerdict.Refuse(HandOverAskWhy.JustHanded);
+        if (record.From is not null && HandOverWhy.Handed(record.FromWhy) && !turnSince) return HandOverAskVerdict.Refuse(HandOverAskWhy.JustHanded);
         if (rule.Mode == HandOverRules.Off) return HandOverAskVerdict.Refuse(HandOverAskWhy.Off);
 
         // The person's yes names the agent the look named when it waited; with none kept, the order's next.
