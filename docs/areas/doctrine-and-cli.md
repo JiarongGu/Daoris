@@ -253,7 +253,9 @@ skill, and `co-working` as a pack.
 
 54. A family is declared by `daoris.family.json` in the folder the members' checkouts share, the parent `repository create` puts a
     workspace's new repositories under, or by the file `--family` names. It is workspace data: no member tracks it and it holds no path.
-    It names the members by the registry's names, in `layers` lowest first, and optional `denied` pairs (`consumer`, `producer`, `why`);
+    It names the members by the registry's names, in `layers` lowest first, optional `denied` pairs (`consumer`, `producer`, `why`) and
+    optional `edges` (`consumer`, `producer`, `lag`, a count of days or hours, `3d` or `12h`), which the check reads for shape and the driver's
+    fan-out reads for the lag past which a held pin is told (co-working rule 39b);
     a name in two layers is a tool error. A member is a name, never a kind: no format, check or message says what a repository is. Each member's checkout is the folder of its name beside the file; a session's tree, a
     linked worktree standing elsewhere, is read back to its checkout through git's files (`member.ts`: its `.git` file's `gitdir`, then
     `commondir`), so a family command run from a tree finds the same file and member. With no family file there is

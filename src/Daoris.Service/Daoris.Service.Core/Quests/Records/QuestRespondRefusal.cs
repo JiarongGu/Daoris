@@ -136,4 +136,6 @@ public enum QuestRespondRefusal
     /// (<see cref="HandbackNotes"/>): the note is the handback itself, and the answer quotes the pointer and says what one holds.
     /// </summary>
     PointsElsewhere,
+
+    NotRequested,
 }
