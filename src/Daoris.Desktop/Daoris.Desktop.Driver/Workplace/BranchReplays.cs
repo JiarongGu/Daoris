@@ -170,8 +170,10 @@ internal sealed class BranchReplays(TreeContext context, PassLeftovers leftovers
     /// </remarks>
     internal static async Task<(bool Failed, string Words)> RebaseInAsync(string tree, string onto, string upstream, CancellationToken ct)
     {
+        var (bound, boundWords) = await ReplayUpstreamAsync(tree, onto, upstream, ct).ConfigureAwait(false);
+        if (bound is null) return (true, boundWords);
         var (code, output, err) = await WorkingTree.GitAsync(
-            tree, ["-c", "rebase.updateRefs=false", "-c", "rebase.autoStash=false", "rebase", "--onto", onto, upstream],
+            tree, ["-c", "rebase.updateRefs=false", "-c", "rebase.autoStash=false", .. ReplayArguments(onto, bound)],
             environment: null, SyncBounds.Replay, ct).ConfigureAwait(false);
         if (code == 0) return (false, "");
 
@@ -183,6 +185,24 @@ internal sealed class BranchReplays(TreeContext context, PassLeftovers leftovers
         return (true, conflicts.Count > 0
             ? string.Join("; ", conflicts.Take(3)) + (conflicts.Count > 3 ? $"; and {conflicts.Count - 3} more." : ".")
             : Failure(err.Length > 0 ? err : output));
+    }
+
+    internal static string[] ReplayArguments(string onto, string upstream) => ["rebase", "--reapply-cherry-picks", "--onto", onto, upstream];
+
+    /// <summary>
+    /// The upstream a replay is bound by: a commit of <paramref name="upstream"/>'s tree with it and <paramref name="onto"/> as parents, held by no ref.
+    /// A range from <paramref name="upstream"/> alone reaches a merged line's own commits and replays them as copies, so a row the line archived since returns.
+    /// </summary>
+    internal static async Task<(string? Upstream, string Words)> ReplayUpstreamAsync(string tree, string onto, string upstream, CancellationToken ct)
+    {
+        var (code, made, err) = await WorkingTree.GitAsync(
+            tree,
+            [
+                "-c", "user.name=Daoris", "-c", "user.email=daoris@localhost", "-c", "commit.gpgsign=false",
+                "commit-tree", $"{upstream}^{{tree}}", "-p", upstream, "-p", onto, "-m", "the replay's upstream",
+            ],
+            ct).ConfigureAwait(false);
+        return code == 0 && made.Trim() is { Length: > 0 } sha ? (sha, "") : (null, $"git could not bound its replay: {Failure(err)}");
     }
 
     /// <summary>

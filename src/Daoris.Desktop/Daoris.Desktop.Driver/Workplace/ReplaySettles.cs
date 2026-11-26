@@ -263,8 +263,10 @@ internal sealed class ReplaySettles(TreeContext context, PassLeftovers leftovers
     private static async Task<(bool Failed, string Words, Stop? Stop)> RebaseTakingGeneratedAsync(
         string tree, string onto, string upstream, List<string> generated, BacklogMerge.Stops backlog, CancellationToken ct)
     {
+        var (bound, boundWords) = await BranchReplays.ReplayUpstreamAsync(tree, onto, upstream, ct).ConfigureAwait(false);
+        if (bound is null) return (true, boundWords, null);
         var (code, output, err, paths) = await SettleStopsAsync(
-            tree, ["-c", "rebase.updateRefs=false", "-c", "rebase.autoStash=false", "rebase", "--onto", onto, upstream], generated, backlog, partly: false, ct)
+            tree, ["-c", "rebase.updateRefs=false", "-c", "rebase.autoStash=false", .. BranchReplays.ReplayArguments(onto, bound)], generated, backlog, partly: false, ct)
             .ConfigureAwait(false);
         if (code == 0) return (false, "", null);
         var stopped = paths.Count > 0 && await CommitOfAsync(tree, "REBASE_HEAD", ct).ConfigureAwait(false) is { } at ? new Stop(at, [.. paths]) : null;

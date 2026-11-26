@@ -5,6 +5,13 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-11-26 - A landing's replay brought back a backlog row the line had archived (ROWRESURRECT1)
+
+- **Sighting:** LOOKLANDING1's landing (`93adcfe34a`) put EXTENDSEAMS1's row back into `TASKS.md` an hour after it landed and was archived; its branch carried `f54f506273`, a copy of the steward's rows commit `1c22295c16`.
+- **Root cause:** the replay ran `git rebase --onto <line> <first>^` (`BranchReplays.RebaseInAsync`, `ReplaySettles.RebaseTakingGeneratedAsync`), whose range reaches the second parent of a merge of the line the session had made, and git compares patches only against that upstream, never against the line; so the line's own commits were replayed, and the rows commit, which the line had changed since, was not empty and re-added the row. The replay by ancestry was introduced with the flat replay of landings; no check read a row open here and done in the archive.
+- **Fix:** the replay's upstream is a commit of the branch point's tree with the branch point and the line as parents (`ReplayUpstreamAsync`), so its range leaves out what the line holds; `tools/doc-duplicates.mjs` fails a backlog row whose id and title an archive `[x]` line repeats, naming both lines.
+- **Verify:** `RebaseReplayGitTests` (a work that merged the line), `tools/doc-duplicates.test.mjs`, and `resurrected` over `93adcfe34a`'s own `TASKS.md` and archive, which names EXTENDSEAMS1; a plain-git replay of the same shape took the copy before and leaves it out now.
+
 ## 2026-11-25 - A reached run's run-again-alone ran beside builds, and a loaded assertion failure went back to the work (WEBROOTFLAKE1)
 
 - **Sighting:** `app/pageRoot`, `zoomed` and `pushedState` timed out at 10 s in reached runs on unrelated branches, in the "run again alone" step too, while the gate built other projects beside it; and 18 web tests (sessionsBadge, WorkFrame…) failed by assertion in a check under load and went back to the work, though they pass alone.

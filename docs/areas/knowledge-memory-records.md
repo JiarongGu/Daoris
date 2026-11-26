@@ -212,7 +212,8 @@ one job each, checked by `verify`.
 36. Changelog, archive, fix log and twins merge by union; decisions by the `notes` driver; the router by the `rows` driver; the
     backlog as plain text. `npm ci` installs both drivers. (from D106, D134)
 37. `doc-duplicates` (in `verify`) refuses a decision number, heading, index row or changelog line written twice, and a decision
-    file with a heading not its own or a glued note label. (from D106, D134)
+    file with a heading not its own or a glued note label, and a backlog row whose id and title an archive `[x]` line repeats
+    (a landing that brought back a row main archived since), naming both lines. (from D106, D134)
 38. The index of where things are is written in each checkout and never committed: the checkout hooks and the knowledge server
     write it, and `orient-index --check` fails a stale file or a refused note mark. (from D151, D220)
 39. A present fact has one home and is rewritten in place; a superseded way is removed with it. History is appended, kept whole in
