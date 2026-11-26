@@ -25,7 +25,7 @@ internal static class IntegrationPresses
             var store = new IntegrationStore(home);
             var admitted = new IntegrationRequests(new HomeIntegrationRecords(home), store, () => config, home)
                 .Press(repository, workspace, branch, tip, line, delivered, automatic);
-            if (admitted is not { Admitted: true, Request: { } request }) return (false, $"Nothing was merged: {admitted.Message}", null, null);
+            if (admitted is not { Admitted: true, Request: { } request }) return (false, Said(admitted), CodeOf(admitted), null);
 
             LandingConflict? conflict = null;
             var asks = new IntegrationSweepAsks(
@@ -48,9 +48,25 @@ internal static class IntegrationPresses
                     LandingCode.Queued, null),
             };
         }
-        catch (Exception error) when (error is IOException or UnauthorizedAccessException or SqliteException or IntegrationRefusedException)
+        catch (Exception error) when (error is IOException or UnauthorizedAccessException or SqliteException)
+        {
+            var (said, code) = Unkept(error, line);
+            return (false, said, code, null);
+        }
+        catch (IntegrationRefusedException error)
         {
             return (false, $"the integration's record could not be kept ({error.Message}), so nothing was merged.", null, null);
         }
     }
+
+    /// <summary>A request already open for the branch is another landing under way, a cause that passes.</summary>
+    internal static string? CodeOf(IntegrationAdmission refused) => refused.Refusal == IntegrationRefusals.Open ? LandingCode.Busy : null;
+
+    internal static string Said(IntegrationAdmission refused) =>
+        $"Nothing was merged: {refused.Message}" + (CodeOf(refused) is null ? "" : " It is tried again by itself once that landing ends.");
+
+    /// <summary>A store another landing holds, or its record being written: the line's own state, which passes.</summary>
+    internal static (string Said, string Code) Unkept(Exception error, string line) =>
+        ($"the integration's record could not be kept ({error.Message}), so nothing was merged into `{line}`: another landing of it is under way "
+         + "or its record is being written. It is tried again by itself once that ends.", LandingCode.Busy);
 }
