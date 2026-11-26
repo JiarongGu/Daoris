@@ -160,9 +160,9 @@ internal sealed class RoundConsidering(PlanRound round)
             };
         }
 
-        // The TREE is the lock, and where every session here opens its own there is no reason to run one at a time. What still
-        // holds is the one tree a resume or a carry-on goes back into.
-        if (apart is not null)
+        // The TREE is the lock: a session in a tree of its own, the place's root aside, waits for no one's turn but that tree's.
+        var ownTree = into is { Tree: { Length: > 0 } held } && !Planner.SameTree(held, repo.Root);
+        if (apart is not null || ownTree)
         {
             // A first start, not one going back into its own tree, waits while the place's sessions apart fill the step's count.
             if (into is not { Tree.Length: > 0 } && PlaceCount.Full(round, apart, quest.To, repo.Root, Itself) is { } atOnce)
@@ -260,14 +260,14 @@ internal sealed class RoundConsidering(PlanRound round)
             round.Slots--;
         }
 
-        round.StartedThisTick[quest.To] = quest.Id;
+        if (apart is not null || !ownTree) round.StartedThisTick[quest.To] = quest.Id;
         round.StartsThisLook.Add(quest);
-        if (apart is not null && into is { Tree: { Length: > 0 } back }) round.TreesThisTick.Add((back, quest.Id));
+        if ((apart is not null || ownTree) && into is { Tree: { Length: > 0 } back }) round.TreesThisTick.Add((back, quest.Id));
         return new(quest, StartVerdict.Start,
             overlap is null ? $"starting in `{quest.To}`." : $"starting in `{quest.To}`; it {overlap.Said}.", repo.Root, repo.Workspace)
         {
             Overlaps = overlap,
-            Isolate = apart,
+            Isolate = apart ?? (ownTree ? IsolateStep.Resumed : null),
         };
     }
 

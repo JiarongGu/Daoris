@@ -117,7 +117,13 @@ built, but nothing outside tests makes, takes or ends one; `LinePlaces` answers 
     to look) is weighed after every quest that can start, so it never holds a repository's turn or a place under the cap from
     one; it is tried again at each look it is the only one left, and goes the moment it can. A go-on, carry-on or resume into a
     record a run of this machine's already goes on in (`RunningSessions.TryGoOn`, held for the run's life) begins nothing, so the
-    plan reads it busy (`Snapshot.GoingOn`) and it never heads a repository's queue. Each quest queued behind another's start is said
+    plan reads it busy (`Snapshot.GoingOn`) and it never heads a repository's queue. Where the look reads a repository as working
+    in its one place (no isolate step), only a start in that place shares its one turn per look: a go-on, carry-on or resume
+    into its session's own existing tree, one that is not the repository's root, queues behind no other start of the repository
+    and takes none of its turn. It carries an isolation (`IsolateStep.Resumed`), so its run goes on in that tree and not in the
+    root, and a session whose check verdict waits goes on at the first look after the verdict while another start holds the turn.
+    What still holds it is that tree's one session (a live session, a helper's wait, a start opening or planned at this look
+    into the same tree) and the machine's admission: the cap, which every resume spends. (STARTWAKE1) Each quest queued behind another's start is said
     once per change in the machine log as `start.queued` (its quest, repository, code, the head, the head's verdict and session:
     `StartQueueLog`), so a queue that stands reads apart from one that moves. (STARTQUEUE1)
 14. Under `overlap: wait`, a first start whose declared paths meet earlier unintegrated work in the repository, a done unit's open

@@ -45,4 +45,6 @@ public sealed record IsolateStep(string Kind, int? AtOnce, bool OverlapWaits)
 
     /// <summary>A worktree for each session, as many at once as the cap allows, starting beside overlapping work.</summary>
     public static IsolateStep Trees { get; } = new(Worktree, null, false);
+
+    public static IsolateStep Resumed { get; } = new(Auto, null, false);
 }

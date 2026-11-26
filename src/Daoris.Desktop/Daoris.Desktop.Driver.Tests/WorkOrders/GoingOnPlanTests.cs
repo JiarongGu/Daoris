@@ -11,7 +11,7 @@ public sealed class GoingOnPlanTests
     private static QuestView Quest(string id, string status = "Open") => new(id, "Asker", "Game", $"Ask {id}", "Here is why.", status);
 
     private static readonly PriorSession Waiting =
-        new("s1", "D:/trees/s1", "completed", "ended on its step.") { Said = PersonWords.Of("Go on.") };
+        new("s1", "D:/fam/Game", "completed", "ended on its step.") { Said = PersonWords.Of("Go on.") };
 
     private static Snapshot Snap(params string[] goingOn) =>
         new Snapshot([Quest("q1", "Taken"), Quest("q2")], [new RepoView("Game", true, "D:/fam/Game")], [])
