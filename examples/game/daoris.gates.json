@@ -1,0 +1,9 @@
+{
+  "gates": [
+    {
+      "name": "build",
+      "run": "node build.mjs",
+      "regenerate": "daoris family materialize"
+    }
+  ]
+}

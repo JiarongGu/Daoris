@@ -1,9 +1,9 @@
-// A producer's refs and commits, read from git's own files.
+// A producer's refs, commits and trees, read from git's own files.
 //
-// The family check needs no service and no runtime dependency, and the CLI starts one program only, the desktop's (`dogfood.test.ts`
+// The family commands need no service and no runtime dependency, and the CLI starts one program only, the desktop's (`dogfood.test.ts`
 // holds both), so a pin is read here without starting git: the files backend's refs (loose, then `packed-refs`), loose objects and
-// version-2 pack indexes with their packs, deltas included, and the alternates a clone may borrow objects from. It reads; it never
-// writes. A reftable store is refused by name rather than read as empty.
+// version-2 pack indexes with their packs, deltas included, and the alternates a clone may borrow objects from; a pinned commit's
+// tree and blobs for `family materialize`. It reads; it never writes. A reftable store is refused by name rather than read as empty.
 
 import { closeSync, existsSync, openSync, readdirSync, readFileSync, readSync, statSync } from 'node:fs';
 import { join, resolve } from 'node:path';
@@ -19,10 +19,45 @@ export interface Repository {
   commitOf(id: string): string | null;
   /** Whether a commit is one of the tips or reached from them by its parents. */
   isAncestor(id: string, tips: readonly string[]): boolean;
+  /** A commit's files, folders walked, in the tree's order; null where it holds no such commit. A blob's bytes, or null. */
+  filesOf(commit: string): TreeFile[] | null;
+  blob(id: string): Buffer | null;
+  /** Whether the store holds an object, read from no object's content. */
+  has(id: string): boolean;
   /** True where the history is cut (a shallow clone), so a commit not reached may still be on the line. */
   readonly shallow: boolean;
   /** How many hex digits a full id has here: 40, or 64 in a SHA-256 repository. */
   readonly idLength: number;
+}
+
+export interface TreeEntry {
+  mode: string;
+  name: string;
+  id: string;
+}
+
+/** A file of a commit's tree, its path joined by `/`, its mode as git writes it (`100755`, `120000` a link, `160000` a submodule). */
+export interface TreeFile {
+  path: string;
+  mode: string;
+  id: string;
+}
+
+export function parseTree(data: Buffer, hashBytes: number): TreeEntry[] {
+  const entries: TreeEntry[] = [];
+  let at = 0;
+  while (at < data.length) {
+    const space = data.indexOf(0x20, at);
+    const nul = data.indexOf(0, space + 1);
+    if (space < 0 || nul < 0 || nul + 1 + hashBytes > data.length) throw new DaorisError('a tree object is cut short; the tree cannot be read');
+    entries.push({
+      mode: data.toString('latin1', at, space),
+      name: data.toString('utf8', space + 1, nul),
+      id: data.toString('hex', nul + 1, nul + 1 + hashBytes),
+    });
+    at = nul + 1 + hashBytes;
+  }
+  return entries;
 }
 
 interface GitObject {
@@ -119,6 +154,34 @@ class FileRepository implements Repository {
     return false;
   }
 
+  filesOf(commit: string): TreeFile[] | null {
+    const object = this.read(commit.toLowerCase());
+    if (!object || object.type !== 'commit') return null;
+    const end = object.data.indexOf('\n\n');
+    const tree = /^tree ([0-9a-f]+)$/m.exec(object.data.toString('utf8', 0, end < 0 ? object.data.length : end));
+    if (!tree) return null;
+    const files: TreeFile[] = [];
+    const walk = (id: string, prefix: string): void => {
+      const folder = this.read(id);
+      if (!folder || folder.type !== 'tree') throw new DaorisError(`the tree ${id.slice(0, 12)} of ${commit.slice(0, 12)} is not in the repository`);
+      for (const entry of parseTree(folder.data, this.idLength / 2)) {
+        if (entry.mode === '40000') walk(entry.id, `${prefix}${entry.name}/`);
+        else files.push({ path: `${prefix}${entry.name}`, mode: entry.mode, id: entry.id });
+      }
+    };
+    walk(tree[1]!, '');
+    return files;
+  }
+
+  blob(id: string): Buffer | null {
+    const object = this.read(id.toLowerCase());
+    return object?.type === 'blob' ? object.data : null;
+  }
+
+  has(id: string): boolean {
+    return this.stores.some((store) => store.has(id.toLowerCase()));
+  }
+
   /** A ref's loose file: per-worktree refs from the tree's own folder, every other from the common one. */
   private loose(name: string): string | null {
     const own = name === 'HEAD' || name.startsWith('refs/worktree/') || name.startsWith('refs/bisect/');
@@ -194,6 +257,10 @@ class ObjectStore {
       if (offset !== null) return pack.readAt(offset, readAnywhere);
     }
     return null;
+  }
+
+  has(id: string): boolean {
+    return existsSync(join(this.dir, id.slice(0, 2), id.slice(2))) || this.allPacks().some((pack) => pack.offsetOf(id) !== null);
   }
 
   private allPacks(): Pack[] {

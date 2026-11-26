@@ -56,6 +56,11 @@ full commit in its own `daoris.family.lock`, and `daoris family check`, run from
 no service. No lock is tracked here: these examples are folders of this repository, not repositories with lines of their
 own, so the rehearsal makes `engine` one and writes the pin.
 
+`game`'s build reads `engine` at that pin, never the `engine` folder beside it: its one gate in
+[`daoris.gates.json`](game/daoris.gates.json) declares `daoris family materialize` as its `regenerate`, which writes `engine`'s
+files at the pinned commit into `game/pinned/engine` (ignored), and its `run`, [`build.mjs`](game/build.mjs), fails where that
+`engine`'s [`interface.json`](engine/interface.json) lacks a call `game` makes.
+
 ## How it is proven
 
 `npm run rehearse:family` (`tools/family-rehearsal.mjs`) runs the whole story end to end and leaves a
@@ -64,7 +69,8 @@ transcript in `_fixtures/rehearsal-logs/`:
 - both examples hold **current, clean doctrine** — a canon change that forgot to re-sync them fails
   here, which is the same discipline this repository applies to its own `.claude/`;
 - the **family's pins hold** (D364): `game` pinned to a landed `engine` commit checks green, and a
-  planted cycle and a planted branch pin are each refused;
+  planted cycle and a planted branch pin are each refused; `game`'s gate passes at an `engine` pin behind
+  `engine`'s line where the line's head, which drops a call `game` makes, fails it;
 - the HTTP host comes up over a scratch store rooted at `examples/`;
 - both projects register, through the real `daoris repository connect`;
 - a quest goes `game → engine`; one to a stranger is **refused naming who is addressable**; declining

@@ -1,17 +1,18 @@
 // `daoris family check`: the family beside this repository judged with no service.
 //
-// The family file is found in the folder this repository's checkout shares with its siblings (`--family` names another), each
+// The family file is found beside this repository's checkout, a tree read back to it (`member.ts`; `--family` names another), each
 // member's checkout is the folder of its name there, and every pin is read against its producer's checkout from git's own files.
 // It writes nothing. Exit 0 green (warnings said), 1 where anything is refused, 2 for a tool error (a file of the wrong shape).
 
 import { existsSync, readFileSync, statSync } from 'node:fs';
-import { dirname, join, resolve } from 'node:path';
+import { dirname, join } from 'node:path';
 import { DaorisError, type ExitCode } from '../platform/errors.ts';
 import type { CommandArgs } from '../platform/types.ts';
 import {
-  FAMILY_FILE, LOCK_FILE, edgeCount, judgeFamily, readFamily, readLock, readablePins, usesOf, type Finding, type MemberState,
+  LOCK_FILE, edgeCount, judgeFamily, readFamily, readLock, readablePins, usesOf, type Finding, type MemberState,
 } from './family.ts';
 import { openRepository, type Repository } from './gitread.ts';
+import { familyOf } from './member.ts';
 import { judgePin, type PinOk } from './pins.ts';
 
 const USAGE = 'usage: daoris family check [--family <file>]';
@@ -26,9 +27,8 @@ function readJson(file: string): unknown {
   }
 }
 
-/** A member as its checkout beside the family file declares it: its `uses` and its pins. */
-function readMember(folder: string, name: string): MemberState {
-  const checkout = join(folder, name);
+/** A member as the folder `checkout` declares it, its own checkout or a tree of it: its `uses` and its pins. */
+export function memberAt(checkout: string, name: string): MemberState {
   if (!existsSync(checkout) || !statSync(checkout).isDirectory()) return { checkout: false, uses: [], pins: [] };
   const manifest = join(checkout, 'daoris.json');
   const json = existsSync(manifest) ? readJson(manifest) as { domain?: { uses?: unknown } } : {};
@@ -40,12 +40,17 @@ function readMember(folder: string, name: string): MemberState {
   };
 }
 
-export function commandFamily({ root, argv, write }: Pick<CommandArgs, 'root' | 'argv' | 'write'>): ExitCode {
-  if (argv[0] !== 'check') throw new DaorisError(USAGE);
-  const at = argv.indexOf('--family');
-  const named = at >= 0 ? argv[at + 1] : undefined;
-  if (at >= 0 && (named === undefined || named.startsWith('--'))) throw new DaorisError(USAGE);
-  const file = named ? resolve(root, named) : resolve(root, '..', FAMILY_FILE);
+export function optionOf(argv: readonly string[], name: string, usage: string): string | undefined {
+  const at = argv.indexOf(name);
+  if (at < 0) return undefined;
+  const value = argv[at + 1];
+  if (value === undefined || value.startsWith('--')) throw new DaorisError(usage);
+  return value;
+}
+
+export function commandFamilyCheck({ root, argv, write }: Pick<CommandArgs, 'root' | 'argv' | 'write'>): ExitCode {
+  const named = optionOf(argv, '--family', USAGE);
+  const { file } = familyOf(root, named);
 
   if (!existsSync(file)) {
     if (named) throw new DaorisError(`no family file at ${file}`);
@@ -55,7 +60,7 @@ export function commandFamily({ root, argv, write }: Pick<CommandArgs, 'root' | 
 
   const family = readFamily(readFileSync(file, 'utf8'), file);
   const folder = dirname(file);
-  const members = new Map(family.layers.flat().map((name) => [name, readMember(folder, name)] as const));
+  const members = new Map(family.layers.flat().map((name) => [name, memberAt(join(folder, name), name)] as const));
 
   const repositories = new Map<string, Repository | null>();
   const repositoryOf = (producer: string) => {
