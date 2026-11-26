@@ -909,8 +909,8 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     has not started says why it waits on its step, never *Ready*: every slot running (`slot`, how many of how many), memory (`slot-memory`,
     free and needed), every slot of its repository held (`slot-repository`), else its place in the queue (`slot-queued`), each with that place,
     its class where one is set and each check ahead with its class and where that comes from (`CheckSlotWaits`, read from the slots' waiter
-    files at each look; the window's step says the place alone, its class and the checks ahead being the terminal's line until the
-    queues view, PRIORITY1d). The check queue waits in one order (`QueueOrder`, PRIORITY1a, D365; every item there is at the stage first checks, a run back at its checks not yet told apart from a first one, and it does not age yet): its run's class (`PriorityBook.OfRun`,
+    files at each look; the window's step says the place alone, and the Overview's queues card each check's class, where it comes
+    from and the checks ahead, from the one reader of the waiting items, `QueueRows`, whose slot reason is `CheckSlotWaits.Reason`). The check queue waits in one order (`QueueOrder`, PRIORITY1a, D365; every item there is at the stage first checks, a run back at its checks not yet told apart from a first one, and it does not age yet): its run's class (`PriorityBook.OfRun`,
     read again at each look and never kept on the run: the highest standing on any quest of its chain, each change kept with the run its
     quest's work is, else the class on the ask its send carries, which `RunChecks` reads from the run's binding), then its run's first
     arrival (`CheckArrivals`, `lines/<run>/arrival.json`, which a run back at its checks keeps until a check of it reaches), then the

@@ -61,6 +61,8 @@ export const keys = {
   checkBudgets: (repository: string) => ['driver', 'check-budgets', repository] as const,
   /** Who holds a repository's heavy-run slot and who waits — a read of the records beside the slot, under the driver's key. */
   heavySlot: (repository: string) => ['driver', 'heavy-slot', repository] as const,
+  /** Every item waiting in the machine's queues — the last look's waiting starts and the checks' waiters, under the driver's key. */
+  queues: ['driver', 'queues'] as const,
   /** A run's review at an attempt (0 for its newest record) — read from the run's own records, under the driver's key. */
   runReview: (run: string, attempt: number) => ['driver', 'run-review', run, attempt] as const,
   /** The review of the run a session's quest is, read by the session — `not-run` where none governs it. */

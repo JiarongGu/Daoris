@@ -9,11 +9,13 @@ import {
   SkeletonRows, Tile, Tip, useErrorNotify,
 } from '../design/ui';
 import { QuestStatus } from '../quests/QuestStatus';
-import { useAttention, useMessages, useNotices } from '../bridge/shell';
+import { useAttention, useMessages, useNotices, useQueues, useSetPriority } from '../bridge/shell';
+import { sentence } from '../locales/format';
 import type { NotificationsGroup } from '../notifications/NotificationsView';
 import type { Confirmation } from '../person/Confirmations';
 import { questName } from '../work/identity';
 import { NeedsSummary } from './NeedsSummary';
+import { QueuesCard } from './QueuesCard';
 
 /**
  * The management landing. A person overseeing several projects' agents opens this window to
@@ -52,6 +54,9 @@ export function OverviewView({ onNavigate, onOpenQuest, notify, presses = [], on
   const quests = useQuests(null, false);
   // What this machine's driver said about each open quest on its last look — empty in a browser.
   const considered = useConsidered().data ?? [];
+  // The machine's waiting items, each place composed on the page; empty in a browser, where no driver answers.
+  const queues = useQueues();
+  const setPriority = useSetPriority();
   useErrorNotify(repositories.error ?? registry.error ?? quests.error, notify);
 
   const repos = repositories.data ?? [];
@@ -115,6 +120,20 @@ export function OverviewView({ onNavigate, onOpenQuest, notify, presses = [], on
           note={t('overview.tiles.knowledge.note', { count: repos.length })}
         />
       </div>
+
+      {/* What waits for a place on this machine, and the press that orders it: a driver's, so a browser draws none. */}
+      {queues.data !== undefined || queues.isLoading ? (
+        <div className="mb-4">
+          <QueuesCard
+            rows={queues.data}
+            busy={setPriority.isPending}
+            onSet={(change, answered) => setPriority.mutate(change, {
+              onSuccess: () => answered.done(),
+              onError: (error: unknown) => answered.refused(sentence(error)),
+            })}
+          />
+        </div>
+      ) : null}
 
       {/* Two cards side by side by the main area's own width, never the viewport's: the side bar
           and a list narrow the main area while the window stays as wide. 56rem is where a

@@ -153,6 +153,18 @@ built, but nothing outside tests makes, takes or ends one; `LinePlaces` answers 
     keeping its first arrival, never into urgent; its consideration carries `AgedFrom` and its reason says "aged from normal". The bounds
     are `PriorityRules.AgeNormal` and `AgeLow`, Daoris's defaults until a workspace's setting carries them. A start that came to a hold is
     still weighed after every quest that can start, whatever its class. The landing line and opinions do not read it yet.
+    Every waiting item says its place (PRIORITY1d): one reader (`QueueRows`) gives the starts and resumes the last plan leaves waiting
+    (`AtCapacity`, and `RepositoryBusy` behind another's start or work, never a quest being worked on or opening) and the checks waiting
+    for a slot, each row carrying its sort inputs (the class as ordered, the stage, the first arrival, its queue's own order: the walk,
+    or the slots' waiters), where its class comes from (set by whom and why, its ask's, aged from) and why it waits as a code with its
+    facts and in English; each plan's consideration carries its `Place` and class reading for it. The reader composes each place with
+    the comparator (`QueueRows.Placed`: per queue, starts first, the items ahead with their class and stage); `daoris queue [--json]`
+    prints it, through the running Daoris's `QUEUES` where it answers (its last look's plan) and over a fresh plan alone, and the
+    Overview's queues card reads the same rows and composes the place with its twin (`queuePlaces.ts`), the shared table
+    `fixtures/queue-places.json` holding both. The card's one press sets a class (`PRIORITY_SET`, the person's) through the operation
+    `daoris priority` calls (`PriorityCommand.SetAsync`). From a session's terminal that set is the risk policy's act `priority.set` at
+    the target's workspace, `none` by the seed: a verdict that gates it sets nothing and says whom it waits on, each judgement one
+    `risk.judged` line; the person's own terminal and the window's press are not judged.
 17. A taken quest whose take is not this machine's sits: nothing carries it on or resumes it here, and the ledger refuses the open
     as `TakenElsewhere`. (D80, D178)
 18. At each start the plugins are asked first, and a hold names the plugin. A start held at spawn (a harness absent or signed out,

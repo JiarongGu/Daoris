@@ -236,7 +236,7 @@ A folder past twenty sources keeps its scopes in folders named for what they hol
 - `workflow/`: the workflow tab, its start node and the model at its top; `chart/`, `edit/` (the step editor), `place/`
   (a repository's Workflow section), `task/` and `verify/`.
 - `bridge/`: the barrel, the domains' helper, the driver's standing state and the machine's own domains at its top;
-  `sessions/` (a session's life, conversation, console, tree, entries and trace, an ask's or a quest's work, its clear,
+  `sessions/` (a session's life, conversation, console, tree, entries and trace, an ask's or a quest's work, its clear, the machine's queues and the class that orders them,
   and an ask's channel), `repositories/` (a repository's line and rules, Git's reads, reading across, set-up, workflow,
   the registry's machine half and the remotes), `agents/` (the agents, their accounts, rules and tools) and `state/`
   (the state hub, the pushed slices and what the driver publishes).
