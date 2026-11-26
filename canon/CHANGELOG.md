@@ -12,6 +12,8 @@ network.
 
 ## Unreleased
 
+- **A pack for a product of several repositories: `family`.** One rule: pin one landed commit of each producer, never a branch, a tag or "latest"; a pin move is a change of its own; shared code moves in three changes (the shared repository gains it with its tests and attribution, each consumer moves its pin, each deletes its copy with its tests unchanged); a feature across repositories lands its consumer part with the pin moved to the commit the producer's part landed. It names no kind of repository. **Adopting repositories:** add `family` to `packs` in `daoris.json` where this repository uses, or is used by, another of the same product, then run `daoris sync`.
+
 - **The area template gains *Adding to it*, and the index gathers it.** `templates/area.md` and `development-documents` ask each
   area document for one table of the kinds of addition its part takes: the place that holds each, the registration it
   needs and the check that fails until it is there, so "where does a new gate, route, setting or key go" is answered in the
