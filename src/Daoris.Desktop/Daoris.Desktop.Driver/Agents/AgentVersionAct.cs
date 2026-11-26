@@ -7,7 +7,7 @@ namespace Daoris.Driver;
 /// in the home's journal naming the act; where it gates on a role or the owner the move waits on that holder, the verdict said with its rule,
 /// and the terminal does nothing (alone, no card can hold it; the running Daoris puts a proved session's press on the holder's card,
 /// <c>PipeDelegate</c>). A person's own terminal is not judged here: its word is the owner's. The judge is Workflows', reached through
-/// <see cref="IAgentVersionRisk"/>, so this speaks only the settings' vocabulary.
+/// <see cref="ITerminalRisk"/>, so this speaks only the settings' vocabulary.
 /// </summary>
 public static class AgentVersionAct
 {
@@ -25,11 +25,11 @@ public static class AgentVersionAct
 
     /// <summary>The verdict on a version move at <paramref name="workspace"/>'s place (the machine's where none is named), read at <paramref name="home"/> now.</summary>
     public static RiskVerdict Verdict(string home, string? workspace, string actor, string subject) =>
-        AgentVersionRisk.Current.Verdict(home, Named(workspace), actor, subject);
+        TerminalRisk.Current.Verdict(home, RiskActs.AgentVersion, Named(workspace), actor, subject);
 
     /// <summary>One <c>risk.judged</c> line for a version move: its key the move's own, so a hold's open and its release share it.</summary>
     public static void Journal(string home, string? workspace, RiskVerdict verdict, RiskLine line) =>
-        AgentVersionRisk.Current.Journal(home, Named(workspace), verdict, line);
+        TerminalRisk.Current.Journal(home, RiskActs.AgentVersion, Named(workspace), verdict, line);
 
     private static string? Named(string? workspace) => workspace?.Trim() is { Length: > 0 } named ? named : null;
 
@@ -77,40 +77,4 @@ public static class AgentVersionAct
 
     /// <summary>A session as a verdict's actor: <c>session &lt;id&gt;</c>, as a session's own press is logged.</summary>
     public static string PipeSessionActor(string session) => $"session {session}";
-}
-
-/// <summary>One journal line of a version move: its key, the hold's release or its open, the actor, the subject, what it did, whether it held, and when.</summary>
-public sealed record RiskLine(string Key, bool Release, string Actor, string Subject, string Today, bool Held, DateTimeOffset At);
-
-/// <summary>What a version move asks of the risk policy, which Workflows keeps: the verdict at its place, and its journal line. Workflows installs it when the driver loads.</summary>
-public interface IAgentVersionRisk
-{
-    RiskVerdict Verdict(string home, string? workspace, string actor, string subject);
-
-    void Journal(string home, string? workspace, RiskVerdict verdict, RiskLine line);
-}
-
-/// <summary>The Workflows operation; unwired, it reads no judge, so a version move from a session waits on the owner.</summary>
-public static class AgentVersionRisk
-{
-    private static IAgentVersionRisk? _current;
-
-    public static IAgentVersionRisk Current
-    {
-        get => _current ?? Unwired;
-        set => _current = value;
-    }
-
-    private static IAgentVersionRisk Unwired { get; } = new UnwiredRisk();
-
-    private sealed class UnwiredRisk : IAgentVersionRisk
-    {
-        public RiskVerdict Verdict(string home, string? workspace, string actor, string subject) =>
-            new(RiskActs.AgentVersion, null, RiskVerdict.OwnerOutcome, RiskClasses.Owner, null, RiskVerdict.Unreadable, "unwired",
-                "no judge of the risk policy is wired in this process, so it reads at the owner");
-
-        public void Journal(string home, string? workspace, RiskVerdict verdict, RiskLine line)
-        {
-        }
-    }
 }

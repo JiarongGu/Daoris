@@ -1013,6 +1013,7 @@
         "    reach.widen      role, by `approver` → agent, the seed  (0 passed, 0 asked)",
         "    command.change   owner, the seed  (0 passed, 0 asked)",
         "    agent.version    none, the seed  (0 passed, 0 asked)",
+        "    priority.set     none, the seed  (0 passed, 0 asked)",
         "    history.rewrite  owner, the seed  (0 passed, 0 asked)",
         "    data.delete      owner, the seed  (0 passed, 0 asked)",
         "    policy.change    owner, locked  (0 passed, 0 asked)"

@@ -96,6 +96,60 @@ public sealed class PriorityCommandTests : IDisposable
         Assert.Equal(cap, PriorityBook.Read(_home).Count);
     }
 
+    /// <summary>A judge that answers one outcome for every act, and keeps each verdict asked and each line journaled.</summary>
+    private sealed class StandInRisk(string outcome) : ITerminalRisk
+    {
+        public List<(string Kind, string? Workspace, string Actor)> Asked { get; } = [];
+
+        public List<RiskLine> Lines { get; } = [];
+
+        public RiskVerdict Verdict(string home, string kind, string? workspace, string actor, string subject)
+        {
+            Asked.Add((kind, workspace, actor));
+            return new RiskVerdict(kind, null, outcome, outcome == RiskVerdict.Pass ? RiskClasses.None : RiskClasses.Role,
+                outcome == RiskVerdict.Gate ? "approver" : null, RiskVerdict.Seed, "r1", "the workspace asks it");
+        }
+
+        public void Journal(string home, string kind, string? workspace, RiskVerdict verdict, RiskLine line) => Lines.Add(line);
+    }
+
+    [Fact]
+    public async Task A_session_s_set_the_risk_policy_gates_waits_on_its_holder_and_sets_nothing()
+    {
+        var risk = new StandInRisk(RiskVerdict.Gate);
+
+        var (exit, said) = await RunAsync(World("session s-1") with { Session = "s-1", Risk = risk }, "2c0c81fd6f19", "high", "--why", "mine first");
+
+        Assert.Equal(1, exit);
+        Assert.Contains("`priority.set` `role` at the `games` workspace: it waits on `approver`'s yes", said);
+        Assert.Empty(PriorityBook.Read(_home));
+        Assert.Equal((RiskActs.PrioritySet, "games", "session s-1"), Assert.Single(risk.Asked));
+        Assert.True(Assert.Single(risk.Lines).Held);
+    }
+
+    [Fact]
+    public async Task A_session_s_set_the_policy_passes_is_kept_and_the_person_s_own_is_not_judged()
+    {
+        var passing = new StandInRisk(RiskVerdict.Pass);
+        Assert.Equal(0, (await RunAsync(World("session s-1") with { Session = "s-1", Risk = passing }, "2c0c81fd6f19", "high", "--why", "w")).Exit);
+        Assert.False(Assert.Single(passing.Lines).Held);
+
+        var gating = new StandInRisk(RiskVerdict.Gate);
+        Assert.Equal(0, (await RunAsync(World() with { Risk = gating }, "e27fc2", "low", "--why", "w")).Exit);
+        Assert.Empty(gating.Asked);
+        Assert.Equal(2, PriorityBook.Read(_home).Count);
+    }
+
+    [Fact]
+    public async Task The_window_s_press_sets_through_the_same_operation_and_a_refusal_is_its_words()
+    {
+        var said = await PriorityCommand.SetAsync(World(), "#e27fc2", PriorityClasses.High, "the release", null, CancellationToken.None);
+
+        Assert.Equal("ask #e27fc2 is high, set by the person: the release.", said);
+        var nothing = await Assert.ThrowsAsync<PriorityRefused>(() => PriorityCommand.SetAsync(World(), "nope", PriorityClasses.High, "w", null, CancellationToken.None));
+        Assert.Equal("`nope` names no ask or quest here.", nothing.Message);
+    }
+
     [Theory]
     [InlineData]
     [InlineData("2c0c81fd6f19", "critical", "--why", "w")]
