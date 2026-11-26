@@ -5,6 +5,11 @@ with the version and date at release.
 
 ## Unreleased
 
+- A family member's gates build against the commits it pins, never a sibling checkout as it stands. `daoris family materialize` writes
+  each pin of the repository's own `daoris.family.lock` as its producer's files at the pinned commit into `pinned/<producer>` (`--into`
+  names another folder inside the repository), read from git's own files with no process, and refuses any pin `family check` would refuse
+  without writing anything. A repository declares it, or a command of its own, as its gates' `regenerate`, which already runs before each
+  gate. Both family commands now find the family file from a session's tree as from the member's own checkout.
 - A product of several repositories can be declared as a family: `daoris.family.json` in the folder the members' checkouts share names
   the members in layers (lowest first) and any pairs it denies, and each consumer pins one full commit of each producer it `uses` in its own
   `daoris.family.lock`. `daoris family check`, run from a member, needs no service and starts no process: it refuses a cycle (with its
