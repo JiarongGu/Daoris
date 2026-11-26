@@ -35,6 +35,8 @@ internal sealed record IntegrationReplayAsk(string Repository, string Workspace,
     public TrainSelection? Train { get; init; }
 
     public string? TrainBase { get; init; }
+
+    public Func<IReadOnlyList<IntegrationRequest>, IReadOnlyList<IntegrationRequest>>? Order { get; init; }
 }
 
 /// <summary>What a form-and-replay answered (<see cref="IntegrationReplayRuns"/>), in words, with the candidate and its members as they now stand.</summary>
@@ -136,6 +138,7 @@ internal sealed class IntegrationReplays(IntegrationStore store, string treesRoo
 
         var queued = store.Queued(ask.Repository, ask.Line);
         if (ask.Train is { } train && queued.Count > 0) queued = await train.ReadyAsync(queued, ct).ConfigureAwait(false);
+        if (ask.Order is { } order) queued = order(queued);
         if (queued.Count == 0) return new(IntegrationReplayRuns.Idle, $"no request of `{ask.Line}` is queued and ready.");
 
         if (ask.TrainBase is { } trainBase && TrainBranch.AskOf(ask.Line) is { } trainAsk)
