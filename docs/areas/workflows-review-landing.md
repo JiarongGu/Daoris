@@ -562,7 +562,10 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     read (`QuestMoves`): the quests whose records differ, every quest of their chains (parents and children, which a step opinion
     reads) and their repositories (which a landing opinion reads whole: every open set-up step there). A move round judges only the
     owed opinions those names reach; a move that names nothing (no earlier read, no difference found, more than a fact lists, a list
-    that could not be read) and each node begun and choices written judge every owed opinion. A burst of moves folds: those waiting in
+    that could not be read) and the choices written judge every owed opinion. A node begun judges its run's alone (`NodeBegunReach`):
+    a chat run's own, and a quest's run's those whose quest sits in that run's chain as the service lists the quests at the fact; a node
+    begun on a unit that is no run's, or while the list does not read, judges every one (a round of every owed opinion for each node
+    of every run, one judgment of a repository at a time, kept the gate about 42 minutes a node begun on the install, LOOKSTALL1). A burst of moves folds: those waiting in
     a row on one subject into the last, whose handling stands for them (the queue tells the consumer each folded entry, so its names
     are kept), and those of several subjects into one round of judgments, a move heard before a round began being judged by it. What it found is the
     gate's view (`LookFacts`), which the look's plan reads for the quests it sits and the attention band's gates and never judges;
