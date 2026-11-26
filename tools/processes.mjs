@@ -1,10 +1,13 @@
 /**
- * Which processes run from a given executable, asked of Windows — by PATH, never guessed by name.
+ * Which processes run from a given executable, asked of the machine reader (`tools/machine-read.mjs`: no PowerShell, no WMI) —
+ * by PATH, never guessed by name.
  *
- * One home for the query: the dev loop, the deployment gate and the desktop publish
- * share it, so the quoting that makes it match a path with an apostrophe in it is written once.
+ * One home for the query: the dev loop, the deployment gate and the desktop publish share it. What is DONE to a process
+ * (closing its windows) is still a PowerShell's, and the quoting that makes it match a path with an apostrophe in it is written once.
  */
 import { spawnSync } from 'node:child_process';
+import { realpathSync } from 'node:fs';
+import { readProcesses as readTable } from './machine-read.mjs';
 
 /** Run a PowerShell script and answer its standard output — empty when it wrote none. */
 export const powershell = (script) =>
@@ -17,22 +20,34 @@ export const powershell = (script) =>
  */
 export const psQuote = (text) => `'${String(text).replaceAll("'", "''")}'`;
 
+/** A path as it is compared: Windows' paths are the same in any case and with either slash. */
+const samePathText = (text) => String(text ?? '').replaceAll('/', '\\').toLowerCase();
+
+/** The path as the file system has it, a junction or a link resolved; the path itself where it is not there. */
+const resolvedPath = (path) => {
+  try {
+    return realpathSync.native(path);
+  } catch {
+    return path;
+  }
+};
+
 /**
- * Run `each` — a PowerShell block with the process as `$_` — for every process started from `exe`,
- * and answer what it printed.
- *
- * Quoted by {@link psQuote}: a comparison that never matches is a kill that silently no-ops, leaving
- * the old window holding the port.
+ * The processes started from `exe`, by their full path, as the machine reader's rows. A comparison that never matches is a kill
+ * that silently no-ops, leaving the old window holding the port, so the path is compared whole, in any case, with either slash,
+ * and as the system names it: the system names the file a junction or a link leads to (a Node started through a junction runs from
+ * the folder it points at), so `exe` matches by itself or resolved.
+ * Throws, saying why, where the table could not be read.
  */
-export const processesAt = (exe, each) => powershell(
-  `Get-Process -ErrorAction SilentlyContinue | Where-Object { $_.Path -eq ${psQuote(exe)} } | `
-  + `ForEach-Object { ${each} }`);
+export const startedFrom = (exe, options = {}) => {
+  const wanted = new Set([samePathText(exe), samePathText(resolvedPath(exe))]);
+  return readTable(options).filter((row) => row.path !== null && wanted.has(samePathText(row.path)));
+};
 
 /** The pids running from a given executable. */
 export const running = (exe) => {
   if (!exe) return [];
-  return processesAt(exe, '$_.Id')
-    .split('\n').map((line) => Number(line.trim())).filter((pid) => Number.isInteger(pid) && pid > 0);
+  return startedFrom(exe).map((row) => row.pid).filter((pid) => Number.isInteger(pid) && pid > 0);
 };
 
 /**
@@ -78,7 +93,7 @@ const rowsOf = (rows) => rows.split('\n')
 
 /**
  * The applications running from `exe`, the engine's own processes and the browser left out, from
- * `pid|command line` rows. Exported for its test: the query is PowerShell's, the judgement is this.
+ * `pid|command line` rows. Exported for its test: the query is the machine reader's, the judgement is this.
  */
 export function applicationsIn(rows) {
   return rowsOf(rows)
@@ -93,12 +108,9 @@ export function browsersIn(rows) {
 
 /**
  * Every process running from `exe`, as `pid|command line` rows: what the judgements above read. Exported
- * for `shot`, which reads both judgements from one query: each costs a PowerShell start.
+ * for `shot`, which reads both judgements from one query: each costs a start of the reader.
  */
-export const commandLinesAt = (exe) => powershell(
-  'Get-CimInstance Win32_Process -ErrorAction SilentlyContinue | '
-  + `Where-Object { $_.ExecutablePath -eq ${psQuote(exe)} } | `
-  + 'ForEach-Object { "$($_.ProcessId)|$($_.CommandLine)" }');
+export const commandLinesAt = (exe) => startedFrom(exe).map((row) => `${row.pid}|${row.command}`).join('\n');
 
 /** The pids of the applications running from `exe`: {@link running}, without the engine's own or the browser. */
 export const applicationsAt = (exe) => (exe ? applicationsIn(commandLinesAt(exe)) : []);
@@ -106,7 +118,7 @@ export const applicationsAt = (exe) => (exe ? applicationsIn(commandLinesAt(exe)
 /** The pids of Daoris's browsers running from `exe`, the application's own executable. */
 export const browsersAt = (exe) => (exe ? browsersIn(commandLinesAt(exe)) : []);
 
-/** {@link processesAt} for the applications only: `each` runs for every one {@link applicationsAt} finds. */
+/** The applications only, as `running` finds them: `each` runs for every one {@link applicationsAt} finds. */
 export const eachApplicationAt = (exe, each) => {
   const pids = applicationsAt(exe);
   return pids.length === 0 ? '' : powershell(
@@ -155,30 +167,16 @@ export const stopProcesses = (pids) => (pids.length === 0 ? '' : powershell(
   `Get-Process -Id ${pids.join(',')} -ErrorAction SilentlyContinue | ForEach-Object { ${CLOSE} }`));
 
 /**
- * Process rows as `{ pid, ppid, command }`, the malformed left out: `rows` is `pid|parent|command line` per line (what
- * {@link processList} asks of Windows), `ps` is `ps -A -o pid= -o ppid= -o args=`'s columns.
+ * Every process on the machine as `{ pid, ppid, command }`, read and changing nothing: null where the list could not be read, never an
+ * empty machine. One start of the machine reader, bounded by its read timeout; `run` and `helper` are a test's.
  */
-export function parseProcessRows(text, form) {
-  return String(text ?? '').split('\n').map((line) => line.replace(/\r$/, '').trim()).filter(Boolean).flatMap((line) => {
-    const match = form === 'ps' ? /^(\d+)\s+(\d+)\s+(.*)$/.exec(line) : /^(\d+)\|(\d+)\|(.*)$/.exec(line);
-    const [pid, ppid] = match ? [Number(match[1]), Number(match[2])] : [0, 0];
-    return pid > 0 ? [{ pid, ppid, command: match[3] }] : [];
-  });
-}
-
-/** The longest a read of the machine's process list may take: a loaded machine's CIM query took tens of seconds, and a census waits for it. */
-const LIST_TIMEOUT_MS = 90_000;
-
-/** Every process on the machine as `{ pid, ppid, command }`, read and changing nothing: null where the list could not be read, never an empty machine. */
-export function processList({ platform = process.platform, run = spawnSync } = {}) {
-  if (platform === 'win32') {
-    const asked = run('powershell', ['-NoProfile', '-Command',
-      'Get-CimInstance Win32_Process -ErrorAction SilentlyContinue | ForEach-Object { "$($_.ProcessId)|$($_.ParentProcessId)|$($_.CommandLine)" }'],
-    { encoding: 'utf8', windowsHide: true, timeout: LIST_TIMEOUT_MS });
-    return asked.status === 0 && asked.stdout ? parseProcessRows(asked.stdout, 'rows') : null;
+export function processList(options = {}) {
+  try {
+    const rows = readTable(options).filter((row) => row.pid > 0).map(({ pid, ppid, command }) => ({ pid, ppid, command }));
+    return rows.length > 0 ? rows : null;
+  } catch {
+    return null;
   }
-  const asked = run('ps', ['-A', '-o', 'pid=', '-o', 'ppid=', '-o', 'args='], { encoding: 'utf8', timeout: LIST_TIMEOUT_MS });
-  return asked.status === 0 && asked.stdout ? parseProcessRows(asked.stdout, 'ps') : null;
 }
 
 /**
@@ -193,12 +191,16 @@ export function processList({ platform = process.platform, run = spawnSync } = {
  */
 export function endOrphans(parent, since, until = null) {
   if (process.platform !== 'win32' || !Number.isInteger(parent) || parent <= 0) return [];
-  const before = Number.isFinite(until) && until !== null ? ` -and $_.CreationDate -lt [DateTimeOffset]::FromUnixTimeMilliseconds(${Math.floor(until)}).LocalDateTime` : '';
-  const orphans = powershell(
-    `Get-CimInstance Win32_Process -Filter "ParentProcessId = ${parent}" -ErrorAction SilentlyContinue | `
-    + `Where-Object { $_.CreationDate -ge [DateTimeOffset]::FromUnixTimeMilliseconds(${Math.floor(since) - 1000}).LocalDateTime${before} } | `
-    + 'ForEach-Object { $_.ProcessId }')
-    .split('\n').map((line) => Number(line.trim())).filter((pid) => Number.isInteger(pid) && pid > 0);
+  const bounded = Number.isFinite(until) && until !== null;
+  let table;
+  try {
+    table = readTable();
+  } catch {
+    return [];
+  }
+  const orphans = table
+    .filter((row) => row.ppid === parent && row.created >= Math.floor(since) - 1000 && (!bounded || row.created < Math.floor(until)))
+    .map((row) => row.pid).filter((pid) => Number.isInteger(pid) && pid > 0);
   for (const pid of orphans) spawnSync('taskkill', ['/F', '/T', '/PID', String(pid)], { stdio: 'ignore', windowsHide: true });
   return orphans;
 }
@@ -247,14 +249,6 @@ export function strandedRoots(processes, { folder, since, except = [] }) {
     .map(({ each }) => each);
 }
 
-/** `pid|parent|created|command line` per line (what {@link strandedProcesses} asks of Windows), as `{ pid, ppid, created, command }` rows. */
-export function parseCreatedRows(text) {
-  return String(text ?? '').split('\n').flatMap((line) => {
-    const match = /^(\d+)\|(\d+)\|(\d+)\|(.*)$/.exec(line.replace(/\r$/, '').trim());
-    return match ? [{ pid: Number(match[1]), ppid: Number(match[2]), created: Number(match[3]), command: match[4] }] : [];
-  });
-}
-
 /**
  * End what a run's tests left running under `folder`: the {@link strandedRoots} created at or after `since` (epoch
  * milliseconds), each with its tree. Answers the pids it ended, roots only. Only Windows ends any: there a kill reaches the one process
@@ -263,13 +257,15 @@ export function parseCreatedRows(text) {
  *
  * A root must be created since the run began, name the folder or hold a process that does, and neither be the runner nor hold it (`except`).
  */
-export function endStrandedUnder(folder, since, { except = [], platform = process.platform, run = powershell, end = (pid) => spawnSync('taskkill', ['/F', '/T', '/PID', String(pid)], { stdio: 'ignore', windowsHide: true }) } = {}) {
+export function endStrandedUnder(folder, since, { except = [], platform = process.platform, list = readTable, end =(pid) => spawnSync('taskkill', ['/F', '/T', '/PID', String(pid)], { stdio: 'ignore', windowsHide: true }) } = {}) {
   if (platform !== 'win32' || typeof folder !== 'string' || folder.length === 0) return [];
-  const listing = run(
-    'Get-CimInstance Win32_Process -ErrorAction SilentlyContinue | ForEach-Object { '
-    + '$ms = if ($_.CreationDate) { [DateTimeOffset]::new($_.CreationDate).ToUnixTimeMilliseconds() } else { 0 }; '
-    + '"$($_.ProcessId)|$($_.ParentProcessId)|$ms|$($_.CommandLine)" }');
-  const roots = strandedRoots(parseCreatedRows(listing), { folder, since: Math.floor(since) - 1000, except: [...except, process.pid] }).map((each) => each.pid);
+  let table;
+  try {
+    table = list();
+  } catch {
+    return [];
+  }
+  const roots = strandedRoots(table, { folder, since: Math.floor(since) - 1000, except: [...except, process.pid] }).map((each) => each.pid);
   for (const pid of roots) end(pid);
   return roots;
 }

@@ -63,6 +63,7 @@ export function setupCommands(states, { build = false, prep = declaredPrep(TOOL_
     { label: 'index', command: 'node tools/orient-index.mjs', cwd: '.' },
     ...prep.regenerate.map((command) => ({ label: 'regenerate', command, cwd: '.' })),
     { label: 'restore', command: TEST_PROJECTS.map((project) => `dotnet restore ${project}`).join(' && '), cwd: '.' },
+    { label: 'reader', command: 'node tools/machine-read.mjs --build', cwd: '.' },
   );
   if (build) commands.push(...TEST_PROJECTS.slice(0, 2).map((project) => ({ label: 'build', command: `dotnet build ${project} -nodeReuse:false`, cwd: '.' })));
   if (prep.baseline) commands.push({ label: 'baseline', command: prep.baseline, cwd: '.', okCodes: [0, 1] });

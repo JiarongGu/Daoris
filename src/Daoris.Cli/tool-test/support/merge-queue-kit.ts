@@ -134,10 +134,9 @@ export const tool = await import(
 export const procs = await import(
   // @ts-expect-error — untyped workspace tooling
   '../../../../tools/processes.mjs') as {
-  parseProcessRows: (text: string, form: 'rows' | 'ps') => ProcessRow[];
-  parseCreatedRows: (text: string) => (ProcessRow & { created: number })[];
+  processList: (options?: { platform?: string; helper?: string; run?: (command: string, args: string[], options: object) => { status: number | null; stdout?: string; stderr?: string } }) => ProcessRow[] | null;
   strandedRoots: (processes: (ProcessRow & { created: number })[], options: { folder: string; since: number; except?: number[] }) => (ProcessRow & { created: number })[];
-  endStrandedUnder: (folder: string, since: number, options?: { except?: number[]; platform?: string; run?: (script: string) => string; end?: (pid: number) => void }) => number[];
+  endStrandedUnder: (folder: string, since: number, options?: { except?: number[]; platform?: string; list?: () => (ProcessRow & { created: number })[]; end?: (pid: number) => void }) => number[];
 };
 
 export const AT = '2026-10-24T10:00:00.000Z';

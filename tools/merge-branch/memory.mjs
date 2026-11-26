@@ -10,6 +10,7 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { homeEntry } from '../../src/Daoris.Cli/src/platform/home.ts';
 import { freemem as osFreemem, totalmem as osTotalmem } from 'node:os';
+import { freeMemory } from '../machine-read.mjs';
 
 /**
  * What a gate that died of memory leaves in its log: .NET's `OutOfMemoryException` (the sensitive scan's), "cannot
@@ -40,11 +41,6 @@ export function memoryDeath(log, ...codes) {
   }
   return null;
 }
-
-// One CIM query: the free physical memory and the free commit (`FreeVirtualMemory`, the commit limit less the commit charge).
-const MEMORY_QUERY = 'ConvertTo-Json -Compress -InputObject (Get-CimInstance Win32_OperatingSystem | Select-Object FreePhysicalMemory,FreeVirtualMemory)';
-
-const kilobytes = (value) => (typeof value === 'number' && Number.isFinite(value) ? value * 1024 : null);
 
 const GB = 2 ** 30;
 
@@ -127,18 +123,6 @@ export function reserveGb({ total = null, home = null, now = Date.now(), read = 
   return Math.max(floor, measuredHeadroomGb({ total, home, now, read }));
 }
 
-/** What a failed command said: its first `error:` or `fatal:` line, else its first line. */
-const firstSaid = (text) => {
-  const all = text.replace(/\r\n/g, '\n').split('\n').map((line) => line.trim()).filter(Boolean);
-  return all.find((line) => /^(?:error|fatal):/.test(line)) ?? all[0] ?? 'no reason given';
-};
-
-/** The CIM query's answer in bytes: its fields are in KB, and one it leaves out or empties is null. */
-export function parseWindowsMemory(text) {
-  const parsed = JSON.parse(String(text).replace(/^﻿/, '').trim());
-  return { physical: kilobytes(parsed?.FreePhysicalMemory), commit: kilobytes(parsed?.FreeVirtualMemory) };
-}
-
 /** Linux's free commit from `/proc/meminfo`: `CommitLimit` less `Committed_AS`, in bytes, or null when either is missing. */
 export function parseMeminfo(text) {
   const field = (name) => {
@@ -152,23 +136,21 @@ export function parseMeminfo(text) {
 
 /**
  * The machine's free memory, read once, in bytes: `physical`, `commit` (null where it cannot be read, with `why`),
- * and `total`, its physical memory in all. On Windows one CIM query reads `Win32_OperatingSystem`'s FreePhysicalMemory and
- * FreeVirtualMemory, the free commit; a query that fails leaves Node's free memory. Linux holds a
+ * and `total`, its physical memory in all. On Windows the machine reader (`tools/machine-read.mjs`, no PowerShell and no WMI) reads
+ * `GlobalMemoryStatusEx`'s free physical memory and free commit (the commit limit less the commit charge: what WMI's FreeVirtualMemory
+ * said); a read that fails leaves Node's free memory. Linux holds a
  * process to a commit limit only under strict overcommit (`vm.overcommit_memory` 2), so only there is it read; elsewhere there
- * is none to read, and the free physical memory judges alone.
+ * is none to read, and the free physical memory judges alone. `helper` is the reader's path, a test's.
  */
-export function readMemory({ platform = process.platform, run = spawnSync, freemem = osFreemem, totalmem = osTotalmem, read = (path) => readFileSync(path, 'utf8') } = {}) {
+export function readMemory({ platform = process.platform, run = spawnSync, helper = undefined, freemem = osFreemem, totalmem = osTotalmem, read = (path) => readFileSync(path, 'utf8') } = {}) {
   const total = totalmem();
   const without = (why, physical = null) => ({ physical: physical ?? freemem(), commit: null, total, why });
   if (platform === 'win32') {
-    const result = run('powershell.exe', ['-NoProfile', '-NonInteractive', '-Command', MEMORY_QUERY], { encoding: 'utf8', windowsHide: true, timeout: 30_000 });
-    if (result.error) return without(`the memory query could not start: ${result.error.message}`);
-    if (result.status !== 0) return without(`the memory query failed: ${firstSaid(result.stderr || result.stdout || '')}`);
     try {
-      const { physical, commit } = parseWindowsMemory(result.stdout);
-      return commit === null ? without('the memory query named no free commit', physical) : { physical: physical ?? freemem(), commit, total };
+      const { physical, commit, total: whole } = freeMemory({ platform, run, ...(helper === undefined ? {} : { helper }) });
+      return { physical, commit, total: whole > 0 ? whole : total };
     } catch (error) {
-      return without(`the memory query answered what could not be read: ${error?.message ?? error}`);
+      return without(`the free memory could not be read: ${error?.message ?? error}`);
     }
   }
   if (platform === 'linux') {

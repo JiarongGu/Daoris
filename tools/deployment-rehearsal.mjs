@@ -494,8 +494,10 @@ const {
   CLEARED, PAGE_IDENTITY, REDIRECTED, debugEnvironment, isShell,
 } = await import('./desktop.mjs');
 const {
-  applicationsAt, browsersAt, eachApplicationAt, powershell, psQuote, running, stopAll,
+  applicationsAt, browsersAt, eachApplicationAt, powershell, psQuote, running, startedFrom, stopAll,
 } = await import('./processes.mjs');
+const { processStartOf, readProcesses } = await import('./machine-read.mjs');
+const { listenersOn, listeningText, loopbackPortsOf } = await import('./port-listeners.mjs');
 const {
   Cdp, pickPageTarget, targetsAt,
 } = await import('./cdp.mjs');
@@ -557,14 +559,9 @@ async function answers(base, attempts = 200) {
  * this gate's own first run failed a passing check. Whose host it is has to be a process identity.
  */
 function hostProcesses() {
-  return powershell(
-    'Get-Process -ErrorAction SilentlyContinue -Name daoris-knowledge-http | '
-    + 'ForEach-Object { "$($_.Id)|$($_.Path)" }')
-    .split('\n').map((line) => line.trim()).filter(Boolean)
-    .map((line) => {
-      const bar = line.indexOf('|');
-      return { pid: Number(line.slice(0, bar)), path: line.slice(bar + 1) };
-    });
+  return readProcesses()
+    .filter((row) => /^daoris-knowledge-http(?:\.exe)?$/i.test(row.name))
+    .map((row) => ({ pid: row.pid, path: row.path ?? '' }));
 }
 
 /**
@@ -573,21 +570,21 @@ function hostProcesses() {
  * script's name because a plugin process is `node <script>`, and `node` alone is everybody's.
  */
 function hookProcesses() {
-  // 🔴 `node.exe` only: the PowerShell process running this very query carries the pattern in its
-  // own command line and would match itself — one phantom hook process while the shell runs, and one
-  // "orphan" after it closes.
+  // 🔴 `node.exe` only: a program that names the pattern on its own command line (a reader of the process table, a shell
+  // running this query) would match itself — one phantom hook process while the shell runs, and one "orphan" after it closes.
   // 🔴 And only THIS install's: matched by the pattern alone, the check counted a hook of the
   // same example plugin running anywhere on the machine would count — another rehearsal's, or the owner's own.
-  return hookLines(powershell(
-    "Get-CimInstance Win32_Process -Filter \"Name = 'node.exe'\" -ErrorAction SilentlyContinue | "
-    + 'ForEach-Object { "$($_.ProcessId)|$($_.CommandLine)" }'), scratch);
+  return hookLines(readProcesses().filter((row) => row.name.toLowerCase() === 'node.exe').map((row) => `${row.pid}|${row.command}`).join('\n'), scratch);
 }
+
+/** The ticks of the Unix epoch, 0001-01-01 being tick 0 (a .NET `DateTime`'s ticks, 100 ns each). */
+const EPOCH_TICKS = 621355968000000000n;
 
 /** A process's start time as UTC ticks, or empty when no process has that id: what `isMarkedProcess` compares. */
 function startedTicks(pid) {
   if (!Number.isInteger(pid) || pid <= 0) return '';
-  return powershell(
-    `$p = Get-Process -Id ${pid} -ErrorAction SilentlyContinue; if ($p) { $p.StartTime.ToUniversalTime().Ticks }`).trim();
+  const at = processStartOf(pid);
+  return at === null ? '' : String(EPOCH_TICKS + BigInt(Math.round(at)) * 10_000n);
 }
 
 /** A promise, or `fallback` once `ms` have passed: a CDP socket that dies mid-call never answers. */
@@ -1119,18 +1116,13 @@ if (!done.ok) throw new Error(done.text);
   const shellPids = applicationsAt(shellExe);
   let renderers = [];
   for (let attempt = 0; attempt < 20 && renderers.length === 0; attempt += 1) {
-    renderers = powershell(
-      'Get-CimInstance Win32_Process -ErrorAction SilentlyContinue | '
-      + `Where-Object { $_.ExecutablePath -eq ${psQuote(shellExe)} -and $_.CommandLine -like '*--type=renderer*' } | `
-      + 'ForEach-Object { $_.ProcessId }')
-      .split('\n').map((line) => line.trim()).filter(Boolean);
+    renderers = startedFrom(shellExe).filter((row) => row.command.includes('--type=renderer')).map((row) => String(row.pid));
     if (renderers.length === 0) await sleep(500);
   }
   check('the page renders on the install’s own Chromium', renderers.length > 0,
     'no renderer process started from the install’s executable');
-  const webviews = shellPids.length === 0 ? '' : powershell(
-    'Get-CimInstance Win32_Process -Filter "Name = \'msedgewebview2.exe\'" -ErrorAction SilentlyContinue | '
-    + `Where-Object { @(${shellPids.join(',')}) -contains $_.ParentProcessId } | ForEach-Object { $_.ProcessId }`).trim();
+  const webviews = shellPids.length === 0 ? '' : readProcesses()
+    .filter((row) => row.name.toLowerCase() === 'msedgewebview2.exe' && shellPids.includes(row.ppid)).map((row) => row.pid).join(' ');
   check('…and not on WebView2', webviews === '', `WebView2 processes under the shell: ${webviews}`);
 
   // INSTALLED.md tells whoever opens the folder that `data/` is this install's own state. Nothing
@@ -1247,10 +1239,7 @@ if (!done.ok) throw new Error(done.text);
   check('the session’s start brought up no browser from the install’s application',
     browsersAt(shellExe).length === 0, browsersAt(shellExe).join(', '));
   const shellPid = applicationsAt(shellExe)[0];
-  const heldPorts = shellPid === undefined ? [] : powershell(
-    `Get-NetTCPConnection -State Listen -OwningProcess ${shellPid} -ErrorAction SilentlyContinue | `
-    + "Where-Object { $_.LocalAddress -eq '127.0.0.1' } | ForEach-Object { $_.LocalPort }")
-    .split('\n').map((line) => Number(line.trim()))
+  const heldPorts = shellPid === undefined ? [] : loopbackPortsOf(shellPid, listeningText())
     .filter((port) => Number.isInteger(port) && port > 0 && port !== cdpPort && port !== shellPort);
   check('…and the session was handed the browser’s endpoint, a port the shell holds',
     heldPorts.length > 0, `listening for the application (pid ${shellPid}) besides its own ports: none`);
@@ -1274,7 +1263,7 @@ if (!done.ok) throw new Error(done.text);
   // withheld.
   const browsers = browsersAt(shellExe);
   const browserLine = browsers.length
-    ? powershell(`(Get-CimInstance Win32_Process -Filter "ProcessId = ${browsers[0]}").CommandLine`).trim()
+    ? (readProcesses({ pids: [browsers[0]] })[0]?.command ?? '')
     : '';
   check('the deployed shell’s driver brought up the install’s own browser for the session',
     browsers.length === 1, browsers.length ? `pid ${browsers.join(', ')}` : 'no browser from the install’s application');
@@ -1282,10 +1271,8 @@ if (!done.ok) throw new Error(done.text);
     browserLine.includes(homeEntry(home, 'browser-engine')), browserLine || '(no command line)');
   // One Chromium, the install's: the browser's pages render in the application's own executable too,
   // in engine processes whose profile is the browser's rather than the window's.
-  const browserRenderers = browsers.length === 0 ? '' : powershell(
-    'Get-CimInstance Win32_Process -ErrorAction SilentlyContinue | '
-    + `Where-Object { $_.ExecutablePath -eq ${psQuote(shellExe)} -and $_.CommandLine -like '*--type=*' `
-    + `-and @(${browsers.join(',')}) -contains $_.ParentProcessId } | ForEach-Object { $_.ProcessId }`).trim();
+  const browserRenderers = browsers.length === 0 ? '' : startedFrom(shellExe)
+    .filter((row) => row.command.includes('--type=') && browsers.includes(row.ppid)).map((row) => row.pid).join(' ');
   check('…and its engine is the application’s own Chromium', browserRenderers !== '',
     'no engine process started from the install’s executable under the browser');
   check('…and the session was handed the server that drives it',
@@ -1598,9 +1585,7 @@ if (!done.ok) throw new Error(done.text);
     const { cdp: page, found } = await shellPage(cdpPort, base);
     if (!page) {
       // Who holds the debug port, by process, so a page that never answers says whether the port is bound at all.
-      const holders = spawnSync('powershell', ['-NoProfile', '-Command',
-        `Get-NetTCPConnection -LocalPort ${cdpPort} -ErrorAction SilentlyContinue | ForEach-Object { $p = Get-Process -Id $_.OwningProcess -ErrorAction SilentlyContinue; "$($_.State) pid $($_.OwningProcess) $($p.Path)" }`],
-      { encoding: 'utf8', windowsHide: true }).stdout?.trim();
+      const holders = listenersOn(cdpPort, listeningText()).map((pid) => `LISTENING pid ${pid} ${readProcesses({ pids: [pid] })[0]?.path ?? ''}`.trim()).join('; ');
       lastUpdateRead = `${found}; the port: ${holders || 'nothing bound'}`;
       return null;
     }

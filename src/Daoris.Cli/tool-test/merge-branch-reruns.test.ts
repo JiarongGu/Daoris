@@ -562,22 +562,19 @@ test('MEMGATE1: a run a failure stopped runs no gate again for memory, and says 
 
 
 test("MEMGATE1: the machine's memory is read from the platform: Windows' free physical memory and free commit, Linux's commit only where it is held", () => {
-  // Win32_OperatingSystem's fields are in KB, as the CIM query answers them.
-  assert.deepEqual(tool.parseWindowsMemory('{"FreePhysicalMemory":22818728,"FreeVirtualMemory":15787368}'),
-    { physical: 22818728 * 1024, commit: 15787368 * 1024 });
-  assert.deepEqual(tool.parseWindowsMemory('﻿{"FreePhysicalMemory":null,"FreeVirtualMemory":1024}\r\n'), { physical: null, commit: 1024 * 1024 });
+  // On Windows the machine reader answers it in bytes, with no PowerShell and no WMI.
   const asked: string[] = [];
   const windows = tool.readMemory({
-    platform: 'win32', freemem: () => 7, totalmem: () => 64 * GiB,
-    run: (command, args) => { asked.push(`${command} ${args.join(' ')}`); return { status: 0, stdout: '{"FreePhysicalMemory":1048576,"FreeVirtualMemory":2097152}' }; },
+    platform: 'win32', helper: 'H:\\machine-read.exe', freemem: () => 7, totalmem: () => 8,
+    run: (command, args) => { asked.push(`${command} ${args.join(' ')}`); return { status: 0, stdout: `{"physical":${GiB},"commit":${2 * GiB},"total":${64 * GiB}}` }; },
   });
   assert.deepEqual(windows, { physical: GiB, commit: 2 * GiB, total: 64 * GiB });
-  assert.match(asked[0]!, /^powershell\.exe .*Win32_OperatingSystem.*FreePhysicalMemory.*FreeVirtualMemory/);
-  // A query that fails leaves Node's free memory, and says why the commit is not read.
-  const failed = tool.readMemory({ platform: 'win32', freemem: () => 7, totalmem: () => 8, run: () => ({ status: 1, stdout: '', stderr: 'denied' }) });
+  assert.deepEqual(asked, ['H:\\machine-read.exe memory']);
+  // A read that fails leaves Node's free memory, and says why the commit is not read.
+  const failed = tool.readMemory({ platform: 'win32', helper: 'H', freemem: () => 7, totalmem: () => 8, run: () => ({ status: 1, stdout: '', stderr: 'denied' }) });
   assert.equal(failed.physical, 7);
   assert.equal(failed.commit, null);
-  assert.match(failed.why!, /the memory query failed: denied/);
+  assert.match(failed.why!, /the free memory could not be read: the machine reader failed: denied/);
 
   // Linux holds a process to a commit limit only under strict overcommit (mode 2); otherwise there is none to read.
   const meminfo = 'MemTotal:       16000000 kB\nMemAvailable:    8000000 kB\nCommitLimit:    12000000 kB\nCommitted_AS:    9000000 kB\n';

@@ -24,6 +24,7 @@ import { appendFileSync, mkdirSync, rmSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { setTimeout as sleep } from 'node:timers/promises';
+import { readProcesses } from './machine-read.mjs';
 
 const repoRoot = dirname(dirname(fileURLToPath(import.meta.url)));
 const scratch = join(repoRoot, '_fixtures', 'console3-probe');
@@ -103,9 +104,8 @@ log({ exited: exit });
 console.log(`exited: ${exit} after ${Math.round((Date.now() - started) / 1000)}s, ${lines.length} lines`);
 
 // Is the background command still running, now the binary has gone?
-const ticking = () => spawnSync('powershell', ['-NoProfile', '-Command',
-  "Get-CimInstance Win32_Process -Filter \"Name = 'node.exe'\" | Where-Object { $_.CommandLine -like '*console3 bg tick*' } | ForEach-Object { $_.ProcessId }"],
-{ encoding: 'utf8', windowsHide: true }).stdout.trim();
+const ticking = () => readProcesses()
+  .filter((row) => row.name.toLowerCase() === 'node.exe' && row.command.includes('console3 bg tick')).map((row) => row.pid).join('\n');
 const afterExit = ticking();
 await sleep(LINGER_MS);
 const later = ticking();

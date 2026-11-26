@@ -24,7 +24,8 @@
  *
  * Exit codes: 0 read · 2 it could not read (not Windows, or the query failed).
  */
-import { isEngineProcess, isBrowserProcess, powershell } from './processes.mjs';
+import { isEngineProcess, isBrowserProcess } from './processes.mjs';
+import { readProcesses } from './machine-read.mjs';
 import { isMain } from './fsx.mjs';
 
 const OWN_NAME = /^daoris(?:[-.][^\\/]*)?\.exe$/i;
@@ -121,13 +122,9 @@ export function said({ applications, outside }) {
 }
 
 /** Every process of this machine as the census reads them, or null where the query did not answer. */
-export function machine() {
-  const text = powershell('Get-CimInstance Win32_Process -ErrorAction SilentlyContinue | ForEach-Object { [pscustomobject]@{ '
-    + 'pid = $_.ProcessId; ppid = $_.ParentProcessId; name = $_.Name; path = $_.ExecutablePath; line = $_.CommandLine; '
-    + 'created = if ($_.CreationDate) { ([DateTimeOffset]$_.CreationDate).ToUnixTimeMilliseconds() } else { 0 } } } | ConvertTo-Json -Compress');
+export function machine(read = readProcesses) {
   try {
-    const rows = JSON.parse(text);
-    return (Array.isArray(rows) ? rows : [rows]).filter((row) => row && row.pid !== process.pid && row.ppid !== process.pid);
+    return read().map(({ command, ...row }) => ({ ...row, line: command })).filter((row) => row.pid !== process.pid && row.ppid !== process.pid);
   } catch {
     return null;
   }

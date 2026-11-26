@@ -13,11 +13,11 @@
  * this mark is. With no Daoris home nothing is shared and nothing counts. `reached` and the merge's gate step write the marks.
  */
 import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
-import { spawnSync } from 'node:child_process';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { writeAtomic } from './fsx.mjs';
 import { lookAt } from './machine-admission.mjs';
+import { readProcesses as readTable } from './machine-read.mjs';
 
 /** The most places a run may itself hold and still be alone: its own. */
 export const ALONE_HOLDS = 1;
@@ -69,20 +69,15 @@ export function stampLoad(dir, holds, since) {
 /** The checkout the tools sit in: the run's own root. */
 const OWN_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 
-const FOREIGN_EVERY = 15_000;
+export const FOREIGN_EVERY = 15_000;
 const FOREIGN_TIMEOUT = 5_000;
-const READ = "Get-CimInstance Win32_Process | Where-Object { $_.Name -match 'testhost|vstest|dotnet|node' } | " +
-  'Select-Object Name,CommandLine | ConvertTo-Json -Compress';
+const MAY_BE_TESTS = /testhost|vstest|dotnet|node/i;
 
 /** The processes that may be test runs, `[{ name, commandLine }]` (empty off Windows, or when the read fails). */
 export function readProcesses() {
   if (process.platform !== 'win32') return [];
   try {
-    const out = spawnSync('powershell', ['-NoProfile', '-NonInteractive', '-Command', READ],
-      { encoding: 'utf8', windowsHide: true, timeout: FOREIGN_TIMEOUT });
-    if (out.status !== 0 || !out.stdout.trim()) return [];
-    const rows = [JSON.parse(out.stdout)].flat();
-    return rows.map((row) => ({ name: String(row.Name ?? ''), commandLine: String(row.CommandLine ?? '') }));
+    return readTable({ timeoutMs: FOREIGN_TIMEOUT, build: false }).filter((row) => MAY_BE_TESTS.test(row.name)).map((row) => ({ name: row.name, commandLine: row.command }));
   } catch {
     return [];
   }
