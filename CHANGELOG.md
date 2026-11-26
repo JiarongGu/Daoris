@@ -10,6 +10,9 @@ with the version and date at release.
   who set it, and the id alone says the class standing. Checks waiting for the machine's check slots now go by their quest's class
   (its own, else its ask's), then by when their run first asked, which a run back at its checks keeps, so an urgent quest's check
   takes the next freed slot. A waiting check's line names its class and each check ahead of it with its class and who set it.
+  Starts and resumes take the same order: by class, then a session going on before a new start, then by how long it has waited, so an
+  urgent quest takes the next free place under the cap; a normal quest that has waited over two hours is ordered as high, and a low one
+  over eight as normal, and its reason says "aged from normal".
 - A family member's gates build against the commits it pins, never a sibling checkout as it stands. `daoris family materialize` writes
   each pin of the repository's own `daoris.family.lock` as its producer's files at the pinned commit into `pinned/<producer>` (`--into`
   names another folder inside the repository), read from git's own files with no process. Wherever `family check` would refuse, or an

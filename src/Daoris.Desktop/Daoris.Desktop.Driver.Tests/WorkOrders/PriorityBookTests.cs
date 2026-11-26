@@ -140,6 +140,17 @@ public sealed class PriorityBookTests : IDisposable
     }
 
     [Fact]
+    public void A_look_of_a_home_carries_the_classes_it_keeps_at_the_moment_asked()
+    {
+        Assert.Null(Set(Event(PriorityBook.Quest, "q1", PriorityClasses.High)));
+
+        var look = PriorityLook.Read(_home, Now.AddHours(1));
+
+        Assert.Equal(Now.AddHours(1), look.Now);
+        Assert.Equal(PriorityClasses.High, PriorityBook.ClassOf(look.Events, "q1", null, look.Now).Class);
+    }
+
+    [Fact]
     public void The_four_classes_rank_urgent_first_and_low_last()
     {
         Assert.Equal([PriorityClasses.Urgent, PriorityClasses.High, PriorityClasses.Normal, PriorityClasses.Low], PriorityClasses.All);

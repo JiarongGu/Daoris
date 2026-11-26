@@ -62,6 +62,7 @@ public sealed class HandOverLookTests : IDisposable
         return new Daoris.Driver.Driver(service, Config(), adapters, _home, harnesses: new HarnessRoster(adapters, DaorisHome.Entry(_home, HomeEntry.Harnesses)))
         {
             Moves = Moves(),
+            RetryClock = new StandInNow(),
             Stops = (session, note) =>
             {
                 _stopped.Add((session, note));
@@ -78,6 +79,12 @@ public sealed class HandOverLookTests : IDisposable
     }
 
     private string? _phaseAtStop;
+
+    /// <summary>The stand-in ledger's own day, so a quest it dates is not read as hours old against the machine's clock.</summary>
+    private sealed class StandInNow : TimeProvider
+    {
+        public override DateTimeOffset GetUtcNow() => new(2026, 10, 1, 9, 5, 0, TimeSpan.Zero);
+    }
 
     /// <summary>The ask as the terminal or an agent's go makes it: judged, and decided as a driven move in the store, no box.</summary>
     private async Task Ask(string session, string agent = "codex-acp") =>

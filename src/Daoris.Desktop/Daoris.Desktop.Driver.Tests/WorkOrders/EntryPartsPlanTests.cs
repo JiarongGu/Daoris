@@ -228,17 +228,38 @@ public sealed class EntryPartsPlanTests
         Assert.Null(request.Entry?.Into);
     }
 
-    /// <summary>A request planned into a tree at this look holds it, so a resume into that tree waits for the request's part to end.</summary>
+    /// <summary>A request planned into a tree at this look holds it, so a resume into that tree waits; its run's higher class puts it first.</summary>
     [Fact]
     public void A_resume_into_a_tree_a_request_took_at_this_look_waits()
     {
         var snapshot = At0759();
-        var plan = Planner.Plan(snapshot with { Quests = [snapshot.Quests[2], snapshot.Quests[0]], Closed = [snapshot.Quests[1] with { Status = "Done" }] }, Config());
+        var request = snapshot.Quests[2];
+        var first = new PriorityEvent(At, PriorityBook.Quest, request.Id, "games", PriorityClasses.High, "the request goes first", "the person");
+        var plan = Planner.Plan(
+            snapshot with
+            {
+                Quests = [request, snapshot.Quests[0]], Closed = [snapshot.Quests[1] with { Status = "Done" }],
+                Priority = new PriorityLook([first], PriorityRules.Default, At.AddHours(2)),
+            },
+            Config());
 
         Assert.Equal("283ef343", Assert.Single(plan, c => c.Quest.Id == "01ba2c71").Entry?.Into?.Session);
         var resume = Assert.Single(plan, c => c.Quest.Id == "3068f747");
         Assert.Equal(StartVerdict.RepositoryBusy, resume.Verdict);
         Assert.Contains("#01ba2c71", resume.Reason);
+    }
+
+    /// <summary>With no class set a resume goes before a request the service lists first, so it keeps its tree and the request runs alongside.</summary>
+    [Fact]
+    public void A_resume_listed_after_a_request_still_takes_its_tree_when_no_class_is_set()
+    {
+        var snapshot = At0759();
+        var plan = Planner.Plan(snapshot with { Quests = [snapshot.Quests[2], snapshot.Quests[0]], Closed = [snapshot.Quests[1] with { Status = "Done" }] }, Config());
+
+        Assert.Equal("283ef343", Assert.Single(plan, c => c.Quest.Id == "3068f747").Resumes?.Session);
+        var request = Assert.Single(plan, c => c.Quest.Id == "01ba2c71");
+        Assert.Equal(StartVerdict.Start, request.Verdict);
+        Assert.Null(request.Entry?.Into);
     }
 
     /// <summary>A quest whose publisher no record here names has no entry the planner can read: it starts as a first start does.</summary>

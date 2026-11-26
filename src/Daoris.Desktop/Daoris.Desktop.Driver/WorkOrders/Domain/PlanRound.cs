@@ -1,3 +1,5 @@
+using System.Globalization;
+
 namespace Daoris.Driver;
 
 /// <summary>
@@ -58,15 +60,18 @@ internal sealed class PlanRound
         var considerations = new List<Consideration>();
 
         // The service already orders open-oldest-first; keeping its order is what makes "oldest starts first" one implementation
-        // rather than two that drift. But a record the person wrote to goes first: a reopen goes before every start the driver
-        // planned itself, so the quests whose last session here has words waiting are planned ahead of the rest, the open list's in
-        // its order and then the closed ones no list holds.
+        // rather than two that drift. The quests whose last session here has the person's words waiting come ahead of the rest, the
+        // open list's in its order and then the closed ones no list holds; the comparator below, stable, keeps that order only among
+        // what it leaves equal, so such a reply is a resume and goes before a new start of its class, never before a higher class.
         var writtenTo = Snapshot.Quests.Concat(Snapshot.Closed)
             .Where(reading.WrittenTo)
             .DistinctBy(quest => quest.Id, StringComparer.OrdinalIgnoreCase)
             .ToList();
-        foreach (var quest in writtenTo.Concat(Snapshot.Quests.Where(quest => !reading.WrittenTo(quest)))
-                     .OrderBy(quest => Snapshot.HeldStarts.Contains(quest.Id)))
+        var queue = writtenTo.Concat(Snapshot.Quests.Where(quest => !reading.WrittenTo(quest))).ToList();
+        var placed = new Dictionary<string, WalkSlot>(StringComparer.OrdinalIgnoreCase);
+        foreach (var quest in queue) placed.TryAdd(quest.Id, PlaceOf(quest));
+        // The sort is stable, so the order above decides only what the comparator leaves equal; a held start still goes last.
+        foreach (var quest in QueueOrder.Of(queue, each => placed[each.Id].Place).OrderBy(quest => Snapshot.HeldStarts.Contains(quest.Id)))
         {
             // A step whose source the person reopened: withdrawn while open and held while taken, until they go on with it on the
             // new work or abandon it. Before every other reason, a pause and the person's stop included, since neither Resume nor
@@ -181,6 +186,43 @@ internal sealed class PlanRound
             }
         }
 
-        return considerations;
+        return [.. considerations.Select(each => Aged(each, placed))];
     }
+
+    /// <summary>A quest's place in the one order: its class aged at this look, a resume where a session of this machine's ran on it, else a new start, and when it began to wait.</summary>
+    private WalkSlot PlaceOf(QuestView quest)
+    {
+        var look = Snapshot.Priority;
+        var run = QuestRuns.Of(quest, id => Snapshot.Quests.FirstOrDefault(each => string.Equals(each.Id, id, StringComparison.OrdinalIgnoreCase)));
+        var @class = PriorityBook.OfRun(look.Events, run, AskWords.AskOf(quest.From), look.Now).Class;
+        var last = Snapshot.LastRun.GetValueOrDefault(quest.Id);
+        // A resume waits from the later of its words' earliest moment and its last session's end, never from the quest's take, which
+        // counts the session's running; a new start from when the service says the quest last moved. An arrival not known never ages
+        // an item and sorts after every known one, the service's order kept among those.
+        var arrived = last is null
+            ? quest.Updated
+            : new[] { last.Waiting.Select(word => (DateTimeOffset?)word.At).Where(at => at > DateTimeOffset.MinValue).Min(), last.Updated }.Max();
+        var aged = QueueOrder.Age(@class, arrived, look.Now, look.Rules);
+        return new WalkSlot(
+            new QueuePlace(aged.Class, last is null ? QueueStage.NewStart : QueueStage.Resume, arrived ?? DateTimeOffset.MaxValue), aged.From, look.Rules);
+    }
+
+    /// <summary>A quest ordered by a promoted class says so where it waits or starts, and carries the class it came from.</summary>
+    private static Consideration Aged(Consideration each, Dictionary<string, WalkSlot> placed)
+    {
+        if (each.Verdict is not (StartVerdict.Start or StartVerdict.AtCapacity or StartVerdict.RepositoryBusy)
+            || !placed.TryGetValue(each.Quest.Id, out var at) || at.From is not { } from)
+        {
+            return each;
+        }
+
+        var bound = at.Rules.BoundOf(from)!.Value;
+        return each with
+        {
+            AgedFrom = from,
+            Reason = $"{each.Reason} It is ordered as {at.Place.Class} (aged from {from}: it has waited past {bound.TotalHours.ToString("0.##", CultureInfo.InvariantCulture)} h).",
+        };
+    }
+
+    private sealed record WalkSlot(QueuePlace Place, string? From, PriorityRules Rules);
 }
