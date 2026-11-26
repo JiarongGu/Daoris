@@ -285,7 +285,7 @@ export const NOTE_VALUES: Readonly<
   // The build an update installed when its close cut a run, as `version` is said.
   build: 'text',
   until: 'moment', at: 'moment', seen: 'moment',
-  exit: 'number', minutes: 'number', paths: 'number', turn: 'number',
+  exit: 'number', minutes: 'number', paths: 'number', turn: 'number', rate: 'number', takes: 'number',
   // How long Ask Daoris's start waited for the machine's reading, in whole seconds.
   seconds: 'number',
   // An account's room under its usage curve, in whole percent points.
