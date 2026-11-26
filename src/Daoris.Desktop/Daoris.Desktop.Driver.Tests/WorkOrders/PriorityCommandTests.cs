@@ -96,6 +96,38 @@ public sealed class PriorityCommandTests : IDisposable
         Assert.Equal(cap, PriorityBook.Read(_home).Count);
     }
 
+    [Fact]
+    public async Task A_hold_on_a_chain_s_later_quest_is_kept_with_its_run_said_and_lifted_by_the_same_word()
+    {
+        var (exit, said) = await RunAsync(World("session s-1"), "second", "hold", "--why", "make room for the fix");
+
+        Assert.Equal(0, exit);
+        Assert.Contains("quest #second is held", said);
+        Assert.Contains("make room for the fix", said);
+        var kept = Assert.Single(HoldBook.Read(_home));
+        Assert.Equal((PriorityBook.Quest, "second", "2c0c81fd6f19", true, "session s-1"), (kept.Target, kept.Id, kept.Run, kept.Held, kept.By));
+        Assert.True(HoldBook.IsHeld(HoldBook.Read(_home), "2c0c81fd6f19", null));
+        Assert.Empty(PriorityBook.Read(_home));
+
+        var (lifted, liftedSaid) = await RunAsync(World(), "second", "lift");
+        Assert.Equal(0, lifted);
+        Assert.Contains("quest #second is not held", liftedSaid);
+        Assert.False(HoldBook.IsHeld(HoldBook.Read(_home), "2c0c81fd6f19", null));
+    }
+
+    [Fact]
+    public async Task The_id_alone_says_a_hold_beside_the_class_and_a_hold_needs_its_why()
+    {
+        Assert.Equal(2, (await RunAsync(World(), "e27fc2", "hold")).Exit);
+        await RunAsync(World(), "e27fc2", "hold", "--why", "stand aside");
+
+        var (exit, said) = await RunAsync(World(), "e27fc2");
+
+        Assert.Equal(0, exit);
+        Assert.Contains("ask #e27fc2 is normal", said);
+        Assert.Contains("held by the person: stand aside", said);
+    }
+
     [Theory]
     [InlineData]
     [InlineData("2c0c81fd6f19", "critical", "--why", "w")]
