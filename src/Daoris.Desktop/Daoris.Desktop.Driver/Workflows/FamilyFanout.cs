@@ -115,7 +115,7 @@ public static class FamilyFanout
         if (row?.Root is not { Length: > 0 } root) return [];
         try
         {
-            return JsonNode.Parse(File.ReadAllText(Path.Combine(root, "daoris.json")))?["domain"] is JsonObject domain
+            return JsonNode.Parse(File.ReadAllText(Path.Combine(root, DeclarationNames.Manifest)))?["domain"] is JsonObject domain
                 ? LineRegistration.UsesOf(domain["uses"], row.Repository)
                 : [];
         }
