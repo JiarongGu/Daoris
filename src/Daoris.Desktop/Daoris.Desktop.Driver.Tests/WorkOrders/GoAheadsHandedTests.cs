@@ -287,7 +287,7 @@ public sealed class GoAheadsHandedTests
             Daoris.Desktop.Driver.Tests.WorkspaceRoot.Folder, "src", "Daoris.Desktop", "Daoris.Desktop.Driver.Host", "AskConsole.cs"));
         Assert.Contains("if (read.GoAhead is { } goAhead)", host);
         Assert.Contains("answer.Words, goesOn: true)", host);
-        Assert.Contains("\"--go-ahead\" => read with { GoAhead = value },", File.ReadAllText(SourceFiles.Driver("AskArguments.cs")));
+        Assert.Contains("\"--go-ahead\" => read with { GoAhead = value },", SourceTexts.Of(SourceFiles.Driver("AskArguments.cs")));
     }
 
     /// <summary>The terminal's words after `--go-ahead <id>`: the number, approve or refuse, then the person's words as one sentence.</summary>

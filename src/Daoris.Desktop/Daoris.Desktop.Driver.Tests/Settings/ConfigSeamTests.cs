@@ -76,7 +76,7 @@ public sealed partial class ConfigSeamTests
             var folder = Path.Combine(root, project);
             if (!Directory.Exists(folder)) continue;
 
-            foreach (var file in Directory.EnumerateFiles(folder, "*.cs", SearchOption.AllDirectories))
+            foreach (var file in SourceFiles.Under(folder, "*.cs"))
             {
                 if (file.Contains($"{Path.DirectorySeparatorChar}obj{Path.DirectorySeparatorChar}")
                     || file.Contains($"{Path.DirectorySeparatorChar}bin{Path.DirectorySeparatorChar}"))
@@ -85,7 +85,7 @@ public sealed partial class ConfigSeamTests
                 }
 
                 scanned++;
-                var source = File.ReadAllText(file);
+                var source = SourceTexts.Of(file);
                 if (string.Equals(Path.GetFullPath(file), owning, StringComparison.OrdinalIgnoreCase))
                 {
                     owner = source;

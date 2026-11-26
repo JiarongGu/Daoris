@@ -186,7 +186,7 @@ public sealed class PluginCatalogTests : IDisposable
         var driver = Path.Combine(WorkspaceRoot.Folder, "src", "Daoris.Desktop", "Daoris.Desktop.Driver");
         string Built(string folder) => $"{Path.DirectorySeparatorChar}{folder}{Path.DirectorySeparatorChar}";
 
-        var spelled = Directory.EnumerateFiles(driver, "*.cs", SearchOption.AllDirectories)
+        var spelled = SourceFiles.Under(driver, "*.cs")
             .Where(path => !path.Contains(Built("obj"), StringComparison.Ordinal) && !path.Contains(Built("bin"), StringComparison.Ordinal))
             .Where(path => SourceTexts.Of(path).Contains("[a-z0-9][a-z0-9.-]", StringComparison.Ordinal))
             .Select(path => Path.GetFileName(path))

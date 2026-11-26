@@ -27,7 +27,7 @@ public sealed class PullRequestOccasionTests
     {
         Assert.DoesNotContain(HookPoints.State, HookPoints.Loop);
         // The loop's set asks only what its points say; a plugin that speaks only the query is never kept running beside it.
-        Assert.DoesNotContain("AskStatesAsync", File.ReadAllText(SourceFiles.Driver("HookSet.cs")));
+        Assert.DoesNotContain("AskStatesAsync", SourceTexts.Of(SourceFiles.Driver("HookSet.cs")));
     }
 
     /// <summary>Every ask is made from one of the occasions, and only the occasion's helper asks the plugins.</summary>
@@ -83,7 +83,7 @@ public sealed class PullRequestOccasionTests
     [Fact]
     public void The_facts_part_of_the_clean_ups_list_reads_the_kept_answers_and_asks_nothing()
     {
-        var part = Body(File.ReadAllText(SourceFiles.Driver("LandedCleanups.cs")), "SweepPartAsync");
+        var part = Body(SourceTexts.Of(SourceFiles.Driver("LandedCleanups.cs")), "SweepPartAsync");
 
         Assert.DoesNotContain("AskStatesAsync(", part);
         Assert.DoesNotContain("CleanPlanAsync(", part);
@@ -108,7 +108,7 @@ public sealed class PullRequestOccasionTests
 
         Assert.Equal(["TreesSyncVerb.cs", "TreesTidyDesk.cs"], doors);
         // The look and the press are `TreeSync`'s; the front keeps one-line calls, which hold no body to read.
-        var sync = File.ReadAllText(SourceFiles.Driver("TreeSync.cs"));
+        var sync = SourceTexts.Of(SourceFiles.Driver("TreeSync.cs"));
         var look = Body(sync, "SyncPlanAsync");
         var fetched = look.IndexOf("FetchedAsync(", StringComparison.Ordinal);
         var asked = look.IndexOf("AskStatesAsync(", StringComparison.Ordinal);
@@ -170,7 +170,7 @@ public sealed class PullRequestOccasionTests
         Assert.True(loop.Count >= 3, $"expected the loop's files, found {loop.Count}");
         foreach (var file in loop)
         {
-            var source = File.ReadAllText(file);
+            var source = SourceTexts.Of(file);
             foreach (var look in looks) Assert.DoesNotContain($"{look}(", source);
         }
     }
@@ -192,7 +192,7 @@ public sealed class PullRequestOccasionTests
         {
             var folder = Path.Combine(root, project);
             if (!Directory.Exists(folder)) continue;
-            foreach (var file in Directory.EnumerateFiles(folder, "*.cs", SearchOption.AllDirectories))
+            foreach (var file in SourceFiles.Under(folder, "*.cs"))
             {
                 if (file.Contains($"{Path.DirectorySeparatorChar}obj{Path.DirectorySeparatorChar}")
                     || file.Contains($"{Path.DirectorySeparatorChar}bin{Path.DirectorySeparatorChar}"))
@@ -200,7 +200,7 @@ public sealed class PullRequestOccasionTests
                     continue;
                 }
 
-                var source = File.ReadAllText(file);
+                var source = SourceTexts.Of(file);
                 var declarations = Regex.Matches(source,
                     @"^[ \t]*(?:public|private|internal|protected)[^\n;=(]*?\b(\w+)\s*\(", RegexOptions.Multiline);
                 foreach (Match call in Regex.Matches(source, pattern))

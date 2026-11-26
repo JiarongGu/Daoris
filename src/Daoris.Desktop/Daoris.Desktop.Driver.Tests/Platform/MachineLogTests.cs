@@ -464,7 +464,7 @@ public sealed class MachineLogTests : IDisposable
     [Fact]
     public void The_desktop_runs_its_application_watched()
     {
-        var program = File.ReadAllText(SourceFiles.Find("Daoris.Desktop.App", "Program.cs"));
+        var program = SourceTexts.Of(SourceFiles.Find("Daoris.Desktop.App", "Program.cs"));
 
         Assert.Contains("log.RunWatched(() => app.Run());", program);
         Assert.DoesNotContain("\n        app.Run();", program.ReplaceLineEndings("\n"));

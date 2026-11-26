@@ -301,7 +301,7 @@ public sealed partial class HeldFactsTests : IDisposable
         string[] keeper = ["EndKeeping.cs"];
         string[] records = ["LandedBranches.cs", "SessionBranches.cs", "HeldFact.cs"];
         var offenders = new List<string>();
-        foreach (var file in CensusScope.Judged(typeof(HeldFactsTests), Directory.EnumerateFiles(driver, "*.cs", SearchOption.AllDirectories)))
+        foreach (var file in CensusScope.Judged(typeof(HeldFactsTests), SourceFiles.Under(driver, "*.cs")))
         {
             if (file.Contains($"{Path.DirectorySeparatorChar}obj{Path.DirectorySeparatorChar}", StringComparison.Ordinal)) continue;
             var name = Path.GetFileName(file);

@@ -32,17 +32,42 @@ internal static class SourceFiles
         Single(project, name, All(project, name).Where(path => Path.GetFileName(path) == name));
 
     /// <summary>Every file under a desktop project's folder whose name matches the pattern, at any depth, its build output aside, in order.</summary>
-    public static IEnumerable<string> All(string project, string pattern) =>
-        Walked.GetOrAdd((project, pattern), key => new Lazy<string[]>(() =>
-        {
-            var folder = Project(key.Project);
-            return [.. Directory.EnumerateFiles(folder, key.Pattern, SearchOption.AllDirectories)
-                .Where(path => Path.GetRelativePath(folder, path).Split(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar)[0] is not ("bin" or "obj"))
-                .Order(StringComparer.Ordinal)];
-        })).Value;
+    public static IEnumerable<string> All(string project, string pattern) => Under(Project(project), pattern);
 
-    // One walk of each project's folder a run, shared by every census that lists it (the file texts are SourceTexts').
-    private static readonly System.Collections.Concurrent.ConcurrentDictionary<(string Project, string Pattern), Lazy<string[]>> Walked = new();
+    /// <summary>
+    /// Every file under a folder of the workspace whose name matches the pattern, at any depth, in order, walked once a run and shared
+    /// by every census that walks it. A project's build output, the <c>bin/</c> and <c>obj/</c> beside its <c>.csproj</c>, is no source;
+    /// a folder of that name elsewhere is (the CLI's <c>bin/</c> holds its commands).
+    /// </summary>
+    public static IEnumerable<string> Under(string folder, string pattern) =>
+        Walked.GetOrAdd((Path.GetFullPath(folder).TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar), pattern), key => new Lazy<string[]>(() =>
+            [.. Directory.EnumerateFiles(key.Folder, key.Pattern, SearchOption.AllDirectories)
+                .Where(path => !IsBuildOutput(key.Folder, path))
+                .Order(StringComparer.Ordinal)])).Value;
+
+    private static bool IsBuildOutput(string folder, string path)
+    {
+        var at = folder;
+        foreach (var segment in Path.GetRelativePath(folder, path).Split(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar)[..^1])
+        {
+            if (segment is "bin" or "obj" && Projects.GetOrAdd(at, here => Directory.EnumerateFiles(here, "*.csproj").Any())) return true;
+            at = Path.Combine(at, segment);
+        }
+
+        return false;
+    }
+
+    private static readonly System.Collections.Concurrent.ConcurrentDictionary<(string Folder, string Pattern), Lazy<string[]>> Walked = new(new FolderKey());
+
+    private static readonly System.Collections.Concurrent.ConcurrentDictionary<string, bool> Projects = new(StringComparer.OrdinalIgnoreCase);
+
+    private sealed class FolderKey : IEqualityComparer<(string Folder, string Pattern)>
+    {
+        public bool Equals((string Folder, string Pattern) x, (string Folder, string Pattern) y) =>
+            StringComparer.OrdinalIgnoreCase.Equals(x.Folder, y.Folder) && StringComparer.Ordinal.Equals(x.Pattern, y.Pattern);
+
+        public int GetHashCode((string Folder, string Pattern) key) => HashCode.Combine(StringComparer.OrdinalIgnoreCase.GetHashCode(key.Folder), key.Pattern);
+    }
 
     /// <summary>
     /// The one CLI source of this name, at any depth of <c>src/Daoris.Cli/src/</c> but its command rows' <c>cli/</c>, whose

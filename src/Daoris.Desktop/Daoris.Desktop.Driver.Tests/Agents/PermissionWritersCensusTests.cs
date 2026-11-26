@@ -21,7 +21,7 @@ public sealed class PermissionWritersCensusTests
         var scanned = 0;
         foreach (var project in Projects)
         {
-            var files = Directory.EnumerateFiles(Path.Combine(root, project), "*.cs", SearchOption.AllDirectories)
+            var files = SourceFiles.Under(Path.Combine(root, project), "*.cs")
                 .Where(path => !Path.GetRelativePath(root, path).Replace('\\', '/').Contains("/obj/") && !Path.GetRelativePath(root, path).Replace('\\', '/').Contains("/bin/"))
                 .ToList();
             scanned += files.Count;

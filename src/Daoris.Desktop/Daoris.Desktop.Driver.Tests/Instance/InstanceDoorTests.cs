@@ -828,7 +828,7 @@ public sealed class InstanceDoorTests : IAsyncLifetime
             Assert.DoesNotContain("may still be confirmed there", source);
         }
 
-        Assert.DoesNotContain("\"CANCEL\"", File.ReadAllText(SourceFiles.Driver("InstanceClient.cs")));
+        Assert.DoesNotContain("\"CANCEL\"", SourceTexts.Of(SourceFiles.Driver("InstanceClient.cs")));
     }
 
     /// <summary>The desktop's source folder, found up from the test's output.</summary>

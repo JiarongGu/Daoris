@@ -28,7 +28,7 @@ public sealed partial class StepAuthorityCensusTests
     private static string Root => Path.Combine(EveryChildIsHandedTheToolsTests.SourceRoot(), "Daoris.Desktop.Driver");
 
     private static IEnumerable<(string Path, string Text)> Sources() =>
-        CensusScope.Judged(typeof(StepAuthorityCensusTests), Directory.EnumerateFiles(Root, "*.cs", SearchOption.AllDirectories))
+        CensusScope.Judged(typeof(StepAuthorityCensusTests), SourceFiles.Under(Root, "*.cs"))
             .Where(file => !file.Contains($"{Path.DirectorySeparatorChar}obj{Path.DirectorySeparatorChar}", StringComparison.Ordinal))
             .Select(file => (Path.GetRelativePath(Root, file).Replace('\\', '/'), SourceTexts.Of(file)));
 

@@ -34,9 +34,9 @@ public sealed class ChildRecordsCensusTests : IDisposable
     public void Only_the_named_readers_open_a_subagent_s_own_record()
     {
         var driver = Path.Combine(WorkspaceRoot.Folder, "src", "Daoris.Desktop", "Daoris.Desktop.Driver");
-        var opening = Directory.EnumerateFiles(driver, "*.cs", SearchOption.AllDirectories)
+        var opening = SourceFiles.Under(driver, "*.cs")
             .Where(file => !file.Contains($"{Path.DirectorySeparatorChar}obj{Path.DirectorySeparatorChar}", StringComparison.Ordinal))
-            .Where(file => File.ReadAllText(file) is var text
+            .Where(file => SourceTexts.Of(file) is var text
                 && (text.Contains("new ChildRecords(", StringComparison.Ordinal) || text.Contains("ChildRecords.Folder", StringComparison.Ordinal)
                     || text.Contains("ChildRecords? ", StringComparison.Ordinal)))
             .Select(file => Path.GetRelativePath(driver, file).Replace('\\', '/'))

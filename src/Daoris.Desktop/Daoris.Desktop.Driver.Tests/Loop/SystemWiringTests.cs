@@ -567,10 +567,10 @@ public sealed class SystemWiringTests : IDisposable
         var source = Path.Combine(root.FullName, "src");
 
         var named = new HashSet<string>(StringComparer.Ordinal);
-        foreach (var file in Directory.EnumerateFiles(source, "*.*", SearchOption.AllDirectories))
+        foreach (var file in SourceFiles.Under(source, "*.*"))
         {
             if (!WiringVariables.Searched(Path.GetRelativePath(source, file))) continue;
-            foreach (Match match in Regex.Matches(File.ReadAllText(file), @"\bDAORIS_[A-Z0-9_]+\b")) named.Add(match.Value);
+            foreach (Match match in Regex.Matches(SourceTexts.Of(file), @"\bDAORIS_[A-Z0-9_]+\b")) named.Add(match.Value);
         }
 
         var listed = WiringVariables.Shown.Select(v => v.Name).Concat(WiringVariables.SetAside.Keys).ToHashSet(StringComparer.Ordinal);
