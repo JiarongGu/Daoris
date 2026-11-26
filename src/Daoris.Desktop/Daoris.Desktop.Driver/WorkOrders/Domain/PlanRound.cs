@@ -194,7 +194,7 @@ internal sealed class PlanRound
     {
         var look = Snapshot.Priority;
         var run = QuestRuns.Of(quest, id => Snapshot.Quests.FirstOrDefault(each => string.Equals(each.Id, id, StringComparison.OrdinalIgnoreCase)));
-        var @class = PriorityBook.OfRun(look.Events, run, AskWords.AskOf(quest.From), look.Now).Class;
+        var reading = PriorityBook.OfRun(look.Events, run, AskWords.AskOf(quest.From), look.Now);
         var last = Snapshot.LastRun.GetValueOrDefault(quest.Id);
         // A resume waits from the later of its words' earliest moment and its last session's end, never from the quest's take, which
         // counts the session's running; a new start from when the service says the quest last moved. An arrival not known never ages
@@ -202,19 +202,17 @@ internal sealed class PlanRound
         var arrived = last is null
             ? quest.Updated
             : new[] { last.Waiting.Select(word => (DateTimeOffset?)word.At).Where(at => at > DateTimeOffset.MinValue).Min(), last.Updated }.Max();
-        var aged = QueueOrder.Age(@class, arrived, look.Now, look.Rules);
+        var aged = QueueOrder.Age(reading.Class, arrived, look.Now, look.Rules);
         return new WalkSlot(
-            new QueuePlace(aged.Class, last is null ? QueueStage.NewStart : QueueStage.Resume, arrived ?? DateTimeOffset.MaxValue), aged.From, look.Rules);
+            new QueuePlace(aged.Class, last is null ? QueueStage.NewStart : QueueStage.Resume, arrived ?? DateTimeOffset.MaxValue), aged.From, reading, look.Rules);
     }
 
-    /// <summary>A quest ordered by a promoted class says so where it waits or starts, and carries the class it came from.</summary>
+    /// <summary>Each quest carries its place and class reading (<see cref="QueueRows"/>); one ordered by a promoted class says so and carries the class it came from.</summary>
     private static Consideration Aged(Consideration each, Dictionary<string, WalkSlot> placed)
     {
-        if (each.Verdict is not (StartVerdict.Start or StartVerdict.AtCapacity or StartVerdict.RepositoryBusy)
-            || !placed.TryGetValue(each.Quest.Id, out var at) || at.From is not { } from)
-        {
-            return each;
-        }
+        if (!placed.TryGetValue(each.Quest.Id, out var at)) return each;
+        each = each with { Place = at.Place, Priority = at.Reading };
+        if (each.Verdict is not (StartVerdict.Start or StartVerdict.AtCapacity or StartVerdict.RepositoryBusy) || at.From is not { } from) return each;
 
         var bound = at.Rules.BoundOf(from)!.Value;
         return each with
@@ -224,5 +222,5 @@ internal sealed class PlanRound
         };
     }
 
-    private sealed record WalkSlot(QueuePlace Place, string? From, PriorityRules Rules);
+    private sealed record WalkSlot(QueuePlace Place, string? From, PriorityReading Reading, PriorityRules Rules);
 }

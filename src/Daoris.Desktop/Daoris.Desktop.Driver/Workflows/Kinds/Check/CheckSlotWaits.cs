@@ -65,41 +65,46 @@ public static class CheckSlotWaits
                 Place(values, prefix, ahead);
             }
 
-            var said = at.waiter.Wait;
-            var code = said?.Code switch
-            {
-                CheckWait.Slots => Full,
-                CheckWait.Memory => Memory,
-                CheckWait.Reserve => Reserve,
-                CheckWait.Repository => Repository,
-                CheckWait.Admitting => Admitting,
-                _ => Queued,
-            };
-            if (code == Full)
-            {
-                values["running"] = said!.Values.GetValueOrDefault("running") ?? "?";
-                values["slots"] = said.Values.GetValueOrDefault("of") ?? "?";
-            }
-            else if (code == Memory)
-            {
-                values["free"] = said!.Values.GetValueOrDefault("free") ?? "?";
-                values["need"] = said.Values.GetValueOrDefault("need") ?? "?";
-            }
-            else if (code == Reserve)
-            {
-                values["free"] = said!.Values.GetValueOrDefault("free") ?? "?";
-                values["need"] = said.Values.GetValueOrDefault("need") ?? "?";
-                values["reserve"] = said.Values.GetValueOrDefault("reserve") ?? "?";
-            }
-            else if (code == Repository)
-            {
-                values["repository"] = said!.Values.GetValueOrDefault("repository") ?? at.waiter.Repository;
-            }
-
+            var (code, reason) = Reason(at.waiter);
+            foreach (var (name, value) in reason) values[name] = value;
             waits[node.Id] = new WorkflowRunWait(code, values, at.waiter.Since);
         }
 
         return waits;
+    }
+
+    /// <summary>Why a waiter waits, as its code and the facts its words name: the step's wait and the queues' row (<see cref="QueueRows"/>) both read it.</summary>
+    public static (string Code, Dictionary<string, string> Values) Reason(VerifyWaiter waiter)
+    {
+        var said = waiter.Wait;
+        var values = new Dictionary<string, string>(StringComparer.Ordinal);
+        string Value(string name) => said!.Values.GetValueOrDefault(name) ?? "?";
+        var code = said?.Code switch
+        {
+            CheckWait.Slots => Full,
+            CheckWait.Memory => Memory,
+            CheckWait.Reserve => Reserve,
+            CheckWait.Repository => Repository,
+            CheckWait.Admitting => Admitting,
+            _ => Queued,
+        };
+        if (code == Full)
+        {
+            values["running"] = Value("running");
+            values["slots"] = Value("of");
+        }
+        else if (code is Memory or Reserve)
+        {
+            values["free"] = Value("free");
+            values["need"] = Value("need");
+            if (code == Reserve) values["reserve"] = Value("reserve");
+        }
+        else if (code == Repository)
+        {
+            values["repository"] = said!.Values.GetValueOrDefault("repository") ?? waiter.Repository;
+        }
+
+        return (code, values);
     }
 
     private static void Place(Dictionary<string, string> values, string prefix, VerifyWaiter waiter)
@@ -129,14 +134,20 @@ public static class CheckSlotWaits
             ? ""
             : "; ahead: " + string.Join("; ", Enumerable.Range(1, count).Select(at => $"run {Value($"ahead.{at}.run")}, {Class(wait, $"ahead.{at}.")}"));
         var queue = $"{Value("position")} of {Value("of")} in its queue{own}{before}";
-        return wait.Code switch
+        return $"{Why(wait.Code, wait.Values)}{(wait.Code == Queued ? ":" : ";")} {queue}.";
+    }
+
+    public static string Why(string code, IReadOnlyDictionary<string, string> values)
+    {
+        string Value(string name) => values.GetValueOrDefault(name) ?? "?";
+        return code switch
         {
-            Full => $"Waits for a check slot: {Value("running")} of {Value("slots")} run; {queue}.",
-            Memory => $"Waits for memory: {Value("free")} GB free, the next check needs {Value("need")} GB; {queue}.",
-            Reserve => $"Waits for the reserve kept for your own work: {Value("free")} GB free, the next check needs {Value("need")} GB and {Value("reserve")} GB stays free; {queue}.",
-            Repository => $"Waits for a heavy-run slot of {Value("repository")}: its other heavy runs hold every one it has; {queue}.",
-            Admitting => $"Waits for the admission's lock, which another start holds; {queue}.",
-            _ => $"Waits for a check slot: {queue}.",
+            Full => $"Waits for a check slot: {Value("running")} of {Value("slots")} run",
+            Memory => $"Waits for memory: {Value("free")} GB free, the next check needs {Value("need")} GB",
+            Reserve => $"Waits for the reserve kept for your own work: {Value("free")} GB free, the next check needs {Value("need")} GB and {Value("reserve")} GB stays free",
+            Repository => $"Waits for a heavy-run slot of {Value("repository")}: its other heavy runs hold every one it has",
+            Admitting => "Waits for the admission's lock, which another start holds",
+            _ => "Waits for a check slot",
         };
     }
 }
