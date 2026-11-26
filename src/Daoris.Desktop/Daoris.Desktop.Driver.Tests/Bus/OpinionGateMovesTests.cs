@@ -244,6 +244,20 @@ public sealed class OpinionGateMovesTests : IDisposable
     }
 
     [Fact]
+    public async Task A_node_begun_judges_every_owed_opinion_where_the_quest_list_throws()
+    {
+        await using var bus = Open();
+        using var gate = Gate(quests: _ => throw new InvalidOperationException("the list did not read"));
+        await using var queue = await BusQueue.StartAsync(bus, [gate], Quick);
+        await Started();
+        _judged.Clear();
+
+        bus.Append(OpinionBusFacts.NodeBegun(RunUnits.IdOf("q-0"), ["opinion"]));
+        await Poll.Until(() => Judged("s-1") >= 1 && Judged("s-2") >= 1 && Judged("s-3") >= 1, () => $"not all judged: {string.Join(", ", _judged)}", Soon);
+        await Unarmed(bus);
+    }
+
+    [Fact]
     public void A_node_begun_reaches_its_chains_quests_a_chat_runs_own_and_names_nothing_it_cannot_place()
     {
         var chat = new OpinionDue("s-9", "", "engine", "", "tree-9", OpinionRules.Landing, At) { Run = "chat-s-9" };

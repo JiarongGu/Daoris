@@ -134,8 +134,8 @@ internal sealed class OpinionGateConsumer : BusFlowConsumer<GateWork>, IDisposab
             {
                 quests = await _quests(ct).ConfigureAwait(false);
             }
-            catch (Exception error) when (error is HttpRequestException or DriverException or System.Text.Json.JsonException or IOException
-                                              or TaskCanceledException && !ct.IsCancellationRequested)
+            catch (Exception error) when (error is HttpRequestException or DriverException or System.Text.Json.JsonException or IOException or InvalidOperationException
+                                              || (error is OperationCanceledException && !ct.IsCancellationRequested))
             {
                 quests = null;
             }
