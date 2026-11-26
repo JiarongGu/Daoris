@@ -418,7 +418,7 @@
   "work.sitting.RepositoryBusy_tree": "会话 `{{session}}` 正在 `#{{quest}}` 要回到的工作树中运行——每个工作树同时只有一个会话。",
   "work.sitting.RepositoryBusy_treeOpening": "排在委托 `#{{other}}` 之后：它正在 `#{{quest}}` 要回到的工作树中启动——每个工作树同时只有一个会话。",
   "work.sitting.RepositoryBusy_treeThisLook": "排在委托 `#{{other}}` 之后：这一轮查看中，它会进入 `#{{quest}}` 要回到的工作树——每个工作树同时只有一个会话。",
-  "work.sitting.RepositoryBusy_landingOwed": "它提交的工作正等在落地环节，落地会自行重试：不会为它启动会话。",
+  "work.sitting.RepositoryBusy_landingOwed": "它的工作已做完，正等在落地环节，落地会自行再次进行：不会为它启动会话。",
   "work.sitting.RepositoryBusy_place": "会话 `{{session}}` 正在 {{to}} 中工作；它这一轮结束后，这项工作才开始。",
   "work.sitting.RepositoryBusy_placeKept": "会话 `{{session}}` 以自己未提交的路径占用着 {{to}} 的检出（{{paths}}）；这些路径提交、丢弃，或者由人放手让别人在此工作之后，这项工作才开始。",
   "work.sitting.RepositoryBusy_apart": "{{to}} 中已有 {{cap}} 项工作同时分开进行；其中一项结束后，这项工作才开始。",
