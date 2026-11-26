@@ -821,6 +821,17 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     line holds the tip. This repository maps `ask-delivery` to `tools/workflows/daoris-ask.json` (parts, the whole checked on the
     gates reached, the review, a merge into main) and appoints an agent landing supervisor for it, so its wide review is an agent's of
     another family and no step waits on the owner; a place at high risk appoints none, and its review waits for the person. (TEAMWORK1f, D296)
+39c. An ask across repositories of one family lands its consumer part with its pin moved (`AskPins`, `AskPinning`, `TrainPins`, `TrainRefs`; D364 point 5). An ask run's `land`
+    keeps the line's commit it landed as on `refs/daoris/landed/<ask>` in its repository (`AskLanding`, `TrainRefs.KeepLandedAsync`). For each open ask run, the
+    look's `family` pass (co-working 39b) reads the plan's parts, and for each producer of the run's repository, a member of the family file's lower layer that
+    the repository's own `uses` names and the family does not deny, which the plan gives a part, that ref against the lock the repository's own ask branch holds
+    (`AskPinDoors`): not landed is waiting, landed and not pinned is owed, pinned is done, a lock that is no lock is left as it is and waited on. Once every part
+    of the plan given to the repository is on its ask branch, an owed pin is made a commit of its own on that branch (`TrainPins`: `hash-object`, `mktree`,
+    `commit-tree`, one verified `update-ref`, so no checkout is touched, a lost race changes nothing and another producer's pin stays), so the run's `check` and
+    review read the branch pinned and its `land` carries the pin. The `parts` node waits for any pin not yet made (`PartsReport.PinsWaiting`, read by
+    `WatchNodes` through `AskPinning.WithWaitsAsync`; a report with no family, or no run, is read as before). The fan-out asks no quest of an edge whose
+    producer's line stands at the commit an open run's pin carries (`FamilyFanout`'s `carried`); a newer landing still does. No word of it names a kind of repository.
+    (from D364)
 40. A verification pipeline's `check` is Daoris's, off the pass under the heavy slots, with no agent session, never skipped; a gate
     that would not start makes it unknown, named. Where the landed route names a pipeline with accepted gates, each whole look binds
     a line run, based on the line's newest verdict, once the tip passed it and none is in flight. A run holds the line until every
@@ -1138,8 +1149,8 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
 - **Which workflow work follows:** `WorkflowSelection`, held by `fixtures/workflow-selection.json`.
 - **A shipped workflow:** a JSON file under `Defaults/workflows/`; the presets derive.
 - **A landing:** `Workflows/Kinds/Land/`; the act in `Workplace/` (`LandPerformer`, `TreeLands`, the deliveries).
-- **An ask's parts landing:** `Workplace/Train/` (`TrainParts`, `TrainPlan`, `TrainSelection`, `TrainBranch`, `TrainBases`, `TrainRefs`), hooked at `IntegrationReplayAsk.Train` and `.TrainBase`; the part a quest is the worker's of (`TrainPartOf`) beside the scope's landing in `Workflows/AskRuns/`; the `parts` kind in `Workflows/Kinds/Parts/`.
-- **An ask's delivery run:** `Workflows/AskRuns/` (`AskRunKey`, `AskRunBinder`, `AskRunReads`, `AskRunScopes`, `AskRunContent`, `AskLanding`, `AskRunEnds`; a part's wait and its run's view of the parts, `PartReceipts`, `PartViews`), hooked at `WatchNodes` (the bind and the read), `NodeGoverning.Governs`, `NodeRunKeeping.EndAsync`, `CheckNode.Door` (its send, `Kinds/Check/RunChecks`) and `LandNode.Door` (`LandingDoor`'s `asks`); held by `Workflows/AskRuns/` tests.
+- **An ask's parts landing:** `Workplace/Train/` (`TrainParts`, `TrainPlan`, `TrainSelection`, `TrainBranch`, `TrainBases`, `TrainRefs`, `TrainPins`), hooked at `IntegrationReplayAsk.Train` and `.TrainBase`; the part a quest is the worker's of (`TrainPartOf`) beside the scope's landing in `Workflows/AskRuns/`; the `parts` kind in `Workflows/Kinds/Parts/`.
+- **An ask's delivery run:** `Workflows/AskRuns/` (`AskRunKey`, `AskRunBinder`, `AskRunReads`, `AskRunScopes`, `AskRunContent`, `AskLanding`, `AskPinDoors`, `AskRunEnds`; a part's wait and its run's view of the parts, `PartReceipts`, `PartViews`), hooked at `WatchNodes` (the bind and the read), `NodeGoverning.Governs`, `NodeRunKeeping.EndAsync`, `CheckNode.Door` (its send, `Kinds/Check/RunChecks`) and `LandNode.Door` (`LandingDoor`'s `asks`); held by `Workflows/AskRuns/` tests.
 - **A gate or hold:** `Review/Domain/` (look, opinion) or `Workflows/Domain/GraphGate.cs`.
 - **A door:** a route in the module's `Bridge/Routes/`, its census rows, the page under `src/workflow/` or `src/agents/setup/`.
 - **Tests:** driver `Workflows/`, `Review/`, `Workplace/` (each landing through a run bound by `GraphLand`), `Setup/`; modules

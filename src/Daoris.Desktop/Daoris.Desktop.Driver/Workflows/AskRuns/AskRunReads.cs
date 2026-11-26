@@ -4,7 +4,10 @@ namespace Daoris.Driver;
 public sealed record AskBranchRead(string Ask, string? Line, string? Base);
 
 /// <summary>Each open ask run's branch read by run, and the ask of every open run, whose plan a part's run reads its waits and joint checks from.</summary>
-public sealed record AskRunsRead(IReadOnlyDictionary<string, AskBranchRead> Branches, IReadOnlyList<string> Asks);
+public sealed record AskRunsRead(IReadOnlyDictionary<string, AskBranchRead> Branches, IReadOnlyList<string> Asks)
+{
+    public IReadOnlyList<AskRunOf> Runs { get; init; } = [];
+}
 
 /// <summary>The one read a pass makes of the runs for asks: every binding read once, and the open ask runs' branches against the line.</summary>
 public static class AskRunReads
@@ -14,6 +17,7 @@ public static class AskRunReads
     {
         var read = new Dictionary<string, AskBranchRead>(StringComparer.Ordinal);
         var asks = new List<string>();
+        var runs = new List<AskRunOf>();
         var folder = WorkflowRunBindings.FolderOf(home);
         if (!Directory.Exists(folder)) return new AskRunsRead(read, asks);
         var records = new NodeRecordFiles(home);
@@ -34,6 +38,7 @@ public static class AskRunReads
             var ask = binding.Ask;
             var askRun = AskRunKey.Is(binding);
             if (askRun || GraphRun.Names(binding)) asks.Add(ask);
+            if (askRun) runs.Add(new AskRunOf(ask, binding.Repository));
             if (!askRun || !roots.TryGetValue(binding.Repository, out var root)) continue;
             var line = (await CanonicalLine.ResolveAsync(root, binding.Repository, binding.Workspace, config, ct).ConfigureAwait(false)).Branch;
             var shared = line is null
@@ -42,6 +47,6 @@ public static class AskRunReads
             read[binding.Run] = new AskBranchRead(ask, line, shared);
         }
 
-        return new AskRunsRead(read, [.. asks.Distinct(StringComparer.Ordinal)]);
+        return new AskRunsRead(read, [.. asks.Distinct(StringComparer.Ordinal)]) { Runs = runs };
     }
 }

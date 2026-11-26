@@ -12,18 +12,25 @@ public sealed record PartsReport(string Ask, int Revision, IReadOnlyList<string>
     /// <summary>What each part waits on before it starts (<see cref="PartReceipts"/>), and the quest the plan gives each, whose run is the part's.</summary>
     public IReadOnlyDictionary<string, IReadOnlyList<PartWait>> Waits { get; init; } = new Dictionary<string, IReadOnlyList<PartWait>>();
 
-    /// <summary>One repository's delivery waits for its parts, and for any the plan gives to none, which land nowhere yet.</summary>
+    /// <summary>The producers each repository's part of the ask still waits on for its pin (<see cref="AskPinning.WaitsAsync"/>): a consumer lands with its pin moved.</summary>
+    public IReadOnlyDictionary<string, IReadOnlyList<string>> PinWaits { get; init; } = new Dictionary<string, IReadOnlyList<string>>();
+
+    /// <summary>The producers the repository this report is for waits on for its pin, as <see cref="For"/> reads them from <see cref="PinWaits"/>.</summary>
+    public IReadOnlyList<string> PinsWaiting { get; init; } = [];
+
+    /// <summary>One repository's delivery waits for its parts, and for any the plan gives to none, which land nowhere yet, and for its pins.</summary>
     public PartsReport For(string repository) =>
         this with
         {
             Required = [.. Required.Where(part => !Repositories.TryGetValue(part, out var at) || string.Equals(at, repository, StringComparison.OrdinalIgnoreCase))],
+            PinsWaiting = PinWaits.FirstOrDefault(each => string.Equals(each.Key, repository, StringComparison.OrdinalIgnoreCase)).Value ?? [],
         };
 
     /// <summary>The required parts not landed yet.</summary>
     public IReadOnlyList<string> Waiting => [.. Required.Where(part => !Landed.Contains(part))];
 
-    /// <summary>Every required part landed; a plan with no part has none to deliver and reaches nothing.</summary>
-    public bool Reached => Required.Count > 0 && Waiting.Count == 0;
+    /// <summary>Every required part landed and every pin moved; a plan with no part has none to deliver and reaches nothing.</summary>
+    public bool Reached => Required.Count > 0 && Waiting.Count == 0 && PinsWaiting.Count == 0;
 }
 
 /// <summary>The reports a pass reads, one per ask the train holds a request for.</summary>
@@ -58,7 +65,7 @@ public static class PartsReports
 
 /// <summary>
 /// The <c>parts</c> node read from the integration's record: reached once every required part of the standing plan has landed on the ask's
-/// branch, its batch green. A part's quest being Done is the worker's completion and counts for nothing here. Pure: the caller hands in the
+/// branch, its batch green, and each pin of a producer the ask gave a part has moved to the commit that part landed (<see cref="AskPinning"/>). A part's quest being Done is the worker's completion and counts for nothing here. Pure: the caller hands in the
 /// report, and nothing is asked or written.
 /// </summary>
 public static class PartsReading
@@ -71,10 +78,15 @@ public static class PartsReading
         if (NodeObserving.NotBound(reading) is { } refused) return refused;
         if (reading.Parts is not { } report) return NodeObserving.Seen(reading, null, "the ask's plan and what landed of it were not read");
         if (report.Required.Count == 0) return NodeObserving.Seen(reading, null, $"ask #{report.Ask}'s plan names no part to land yet");
-        if (!report.Reached)
+        if (report.Waiting.Count > 0)
         {
             var left = report.Waiting;
             return NodeObserving.Seen(reading, null, $"waits for {left.Count} of {report.Required.Count} parts to land on the ask's branch ({string.Join(", ", left)})");
+        }
+
+        if (report.PinsWaiting.Count > 0)
+        {
+            return NodeObserving.Seen(reading, null, $"waits for its pin of {string.Join(", ", report.PinsWaiting)} to name the commit the ask's part there landed on its line");
         }
 
         return NodeObserving.Seen(reading, NodeStates.Reached, $"every part of ask #{report.Ask}'s plan (revision {report.Revision}) landed on its branch") with

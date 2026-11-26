@@ -81,6 +81,19 @@ public sealed class FamilyFanoutTests : IDisposable
     }
 
     [Fact]
+    public async Task A_commit_an_open_asks_consumer_part_lands_with_its_pin_is_asked_of_no_quest_and_a_newer_one_is()
+    {
+        var registry = Family(pin: A);
+        var carried = new Dictionary<PinEdge, string> { [new PinEdge("web", "core")] = B };
+
+        await FamilyFanout.RunAsync(registry, [], _doors, Tips(B), Locks, T0, default, edge => carried.GetValueOrDefault(edge));
+        Assert.Empty(_doors.Published);
+
+        await FamilyFanout.RunAsync(registry, [], _doors, Tips(C), Locks, T0, default, edge => carried.GetValueOrDefault(edge));
+        Assert.Contains(C, Assert.Single(_doors.Published).Body);
+    }
+
+    [Fact]
     public async Task A_second_landing_retargets_that_quest_and_opens_no_other()
     {
         var registry = Family(pin: A);

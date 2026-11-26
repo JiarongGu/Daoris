@@ -20,7 +20,7 @@ public static class FamilyFanout
     public static async Task<FamilyRound> RunAsync(
         IReadOnlyList<RepoView> registry, IReadOnlyList<QuestView> quests, IFamilyDoors doors,
         Func<RepoView, CancellationToken, Task<string?>> lineTip, Func<RepoView, CancellationToken, Task<LockText>> lockAt,
-        DateTimeOffset now, CancellationToken ct)
+        DateTimeOffset now, CancellationToken ct, Func<PinEdge, string?>? carried = null)
     {
         var said = new List<string>();
         var told = new List<FamilyHold>();
@@ -37,7 +37,8 @@ public static class FamilyFanout
                 foreach (var (edge, row) in consumers)
                 {
                     var pinned = PinIn(await lockAt(row!, ct).ConfigureAwait(false), producer.Repository);
-                    if (tip is not null && pinned.Readable && PinMoves.Plan(edge, pinned.Commit, tip, quests) is { } act)
+                    var onItsWay = tip is not null && string.Equals(carried?.Invoke(edge), tip, StringComparison.OrdinalIgnoreCase);
+                    if (tip is not null && !onItsWay && pinned.Readable && PinMoves.Plan(edge, pinned.Commit, tip, quests) is { } act)
                     {
                         said.Add(await ActAsync(act, doors, ct).ConfigureAwait(false));
                     }
@@ -95,11 +96,11 @@ public static class FamilyFanout
         }
     }
 
-    private static bool Same(string left, string right) => string.Equals(left, right, StringComparison.OrdinalIgnoreCase);
+    internal static bool Same(string left, string right) => string.Equals(left, right, StringComparison.OrdinalIgnoreCase);
 
-    private static string ParentOf(string root) => Path.GetDirectoryName(Path.GetFullPath(root).TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar)) ?? "";
+    internal static string ParentOf(string root) => Path.GetDirectoryName(Path.GetFullPath(root).TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar)) ?? "";
 
-    private static FamilyDeclaration? Read(string file)
+    internal static FamilyDeclaration? Read(string file)
     {
         try
         {
@@ -112,7 +113,7 @@ public static class FamilyFanout
     }
 
     /// <summary>A member's <c>uses</c>, read from its checkout's manifest by the registry's rule; none where it has no manifest or none that reads.</summary>
-    private static IReadOnlyList<string> UsesOf(RepoView? row)
+    internal static IReadOnlyList<string> UsesOf(RepoView? row)
     {
         if (row?.Root is not { Length: > 0 } root) return [];
         try
@@ -128,7 +129,7 @@ public static class FamilyFanout
     }
 
     /// <summary>The commit a lock's text pins of the producer: none where there is no lock or no pin yet, and unreadable where it is no lock, which is left for the check.</summary>
-    private static (bool Readable, string? Commit) PinIn(LockText lockText, string producer)
+    internal static (bool Readable, string? Commit) PinIn(LockText lockText, string producer)
     {
         if (!lockText.Read) return (false, null);
         if (lockText.Text is null) return (true, null);

@@ -18,4 +18,12 @@ public static class TrainRefs
         var (kept, _, _) = await WorkingTree.GitAsync(root, ["update-ref", $"{Prefix}{ask}/{next}", tip], ct).ConfigureAwait(false);
         return kept == 0;
     }
+
+    /// <summary>The ref an ask's landing on its repository's line is kept on, beside the batches and not among them.</summary>
+    public static string LandedRef(string ask) => $"refs/daoris/landed/{ask.TrimStart('#')}";
+
+    public static async Task<bool> KeepLandedAsync(string root, string ask, string commit, CancellationToken ct) =>
+        (await WorkingTree.GitAsync(root, ["update-ref", LandedRef(ask), commit], ct).ConfigureAwait(false)).Code == 0;
+
+    public static Task<string?> LandedAsync(string root, string ask, CancellationToken ct) => MachinePorts.Repository.CommitOfAsync(root, LandedRef(ask), ct);
 }
