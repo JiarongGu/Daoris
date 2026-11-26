@@ -156,13 +156,11 @@ public sealed class ClaudeUsageProcessTests : IDisposable
     {
         var home = HarnessSettings.ProfileHome(_home, "door", "hangs");
         Directory.CreateDirectory(home);
-        var timer = Stopwatch.StartNew();
 
         var readings = await CodexUsage.ReadAsync(
             CodexUsage.Prepare(["node", Script], Toolchain, home), TimeSpan.FromSeconds(2), CancellationToken.None, Ask());
 
         Assert.Null(readings);
-        Assert.InRange(timer.Elapsed, TimeSpan.Zero, Poll.Patience);
     }
 
     [Fact]

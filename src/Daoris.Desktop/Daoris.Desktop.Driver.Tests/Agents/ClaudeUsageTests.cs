@@ -356,10 +356,8 @@ public sealed class ClaudeUsageTests
     public async Task A_cli_that_never_answers_is_unknown_once_its_patience_is_spent()
     {
         var cli = new FakeCli((_, _) => []);
-        var timer = System.Diagnostics.Stopwatch.StartNew();
 
         Assert.Null(await Ask(cli, TimeSpan.FromMilliseconds(200), clock: TimeProvider.System));
-        Assert.InRange(timer.Elapsed, TimeSpan.Zero, Poll.Patience);
     }
 
     [Fact]

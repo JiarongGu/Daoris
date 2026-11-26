@@ -89,15 +89,7 @@ public sealed class AgentStartsProcessTests : IDisposable
     }
 
     /// <summary>Until <paramref name="holds"/> holds, bounded: a condition that never holds fails.</summary>
-    private static async Task Until(Func<bool> holds, string what)
-    {
-        var bound = Stopwatch.StartNew();
-        while (!holds())
-        {
-            Assert.True(bound.Elapsed < TimeSpan.FromSeconds(30), what);
-            await Task.Delay(50);
-        }
-    }
+    private static Task Until(Func<bool> holds, string what) => Poll.Until(holds, () => what, TimeSpan.FromSeconds(30));
 
     [Theory]
     [InlineData(ContainedKind.Agent)]

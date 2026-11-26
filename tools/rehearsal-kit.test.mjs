@@ -210,15 +210,16 @@ test('a wait answers what its ask found once it is ready, asking until then', as
 });
 
 test('a wait is bounded by the clock, however long each ask takes, and says it ran out', async () => {
-  const began = Date.now();
+  let asks = 0;
   const waited = await waitFor(async () => {
+    asks += 1;
     await sleep(40);
     return false;
   }, { within: 200, every: 5 });
 
   assert.equal(waited.ended, 'timeout');
-  assert.ok(waited.ms >= 200, `it ran out after ${waited.ms} ms, before its bound`);
-  assert.ok(Date.now() - began < 1_000, `it ran out after ${Date.now() - began} ms, long past its bound`);
+  assert.ok(waited.ms >= 200, `ran out at ${waited.ms} ms`);
+  assert.ok(asks <= 200 / 40 + 1, `${asks} asks`);
 });
 
 test('an ask that throws, as a host does while it restarts, is not ready, and the wait goes on', async () => {
@@ -267,11 +268,10 @@ test('a host is restarted only once the session using it is between requests, an
 });
 
 test('a session never between requests within the bound: the host is restarted after it, and the answer says so', async () => {
-  const began = Date.now();
-  let stoppedAt = -1;
+  const done = [];
   const restarted = await restartBetweenRequests({
-    quiet: () => false,
-    stop: () => { stoppedAt = Date.now() - began; },
+    quiet: () => { done.push('quiet'); return false; },
+    stop: () => { done.push('stop'); },
     start: () => 'host b',
     within: 150,
     every: 5,
@@ -279,7 +279,7 @@ test('a session never between requests within the bound: the host is restarted a
   });
 
   assert.equal(restarted.quiet, false);
-  assert.ok(stoppedAt >= 150, `the host was stopped ${stoppedAt} ms in, before the bound`);
+  assert.deepEqual([done[0], done.at(-1), done.filter((each) => each === 'stop').length], ['quiet', 'stop', 1]);
   assert.ok(restarted.waited >= 150);
   assert.equal(restarted.host, 'host b');
 });

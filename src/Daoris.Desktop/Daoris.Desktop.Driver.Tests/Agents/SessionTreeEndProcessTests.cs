@@ -72,15 +72,7 @@ public sealed class SessionTreeEndProcessTests : IDisposable
         }
     }
 
-    private static async Task Until(Func<bool> holds, string what)
-    {
-        var bound = Stopwatch.StartNew();
-        while (!holds())
-        {
-            Assert.True(bound.Elapsed < TimeSpan.FromSeconds(30), what);
-            await Task.Delay(50);
-        }
-    }
+    private static Task Until(Func<bool> holds, string what) => Poll.Until(holds, () => what, TimeSpan.FromSeconds(30));
 
     public enum Ending { Exits, Untracked, Stopped }
 

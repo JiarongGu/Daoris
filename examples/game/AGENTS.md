@@ -47,7 +47,7 @@ Generated from the shared canon; edit the canon, not this. `daoris reconcile` sa
    is generated, and read the ranges it gives, not whole files. Look the library (decisions, archive, fixes) up for a
    reason, never to orient; before reversing a rule an area states, look up why it stands.
 2. Mirror one exemplar; new behaviour goes in a unit of its own.
-3. Write the test first and see it fail, then the code.
+3. Write the test first, see it fail, then the code: relations, never durations (`test-worth`).
 4. In the same commit, rewrite each area sentence the change made false, in the present tense. Write a decision only
    for a choice that rejected an alternative; a finished row leaves the backlog for one archive line.
 5. Run the checks your diff can reach (the brief names them); commit when green as `type(scope): what changed`, with

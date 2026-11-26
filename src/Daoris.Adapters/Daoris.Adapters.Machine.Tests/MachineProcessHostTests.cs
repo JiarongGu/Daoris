@@ -68,11 +68,9 @@ public sealed class MachineProcessHostTests
         var spec = new ProcessSpec("cmd.exe", ["/d", "/c", "start /b ping -n 60 127.0.0.1 & echo said"], "Git", AdmissionClasses.Background);
         await using var run = await host.StartAsync(spec, CancellationToken.None);
 
-        var clock = Stopwatch.StartNew();
         var end = await run.EndAsync(CancellationToken.None).AsTask().WaitAsync(Patience);
 
         Assert.Equal(0, end.Exit);
-        Assert.True(clock.Elapsed < TimeSpan.FromSeconds(20));
         await run.StopAsync(CancellationToken.None);
     }
 }

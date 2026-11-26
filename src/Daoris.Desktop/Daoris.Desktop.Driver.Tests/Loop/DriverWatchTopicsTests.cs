@@ -219,7 +219,7 @@ public sealed class DriverWatchTopicsTests : IDisposable
                 wakes++;
                 await Poll.Until(() => Count(reports) > seen, () => $"wake {wakes} never looked", Poll.Patience);
                 await Task.Delay(100);
-                Assert.True(started.Elapsed < TimeSpan.FromSeconds(40), $"{Passes() - synced} deadline(s), {Count(reports) - first} look(s) for {wakes} wakes");
+                Assert.True(wakes < 400, $"{Passes() - synced} deadline(s), {Count(reports) - first} look(s) for {wakes} wakes");
             }
 
             // The deadline is pollSeconds after the last whole look, so over the time the stream ran there are at most one per second

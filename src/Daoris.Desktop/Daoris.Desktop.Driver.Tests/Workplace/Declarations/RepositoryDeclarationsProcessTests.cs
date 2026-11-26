@@ -35,13 +35,10 @@ public sealed class RepositoryDeclarationsProcessTests : LandedFixture
         }
 
         using var warm = GitStartTally.Open(root);
-        var watch = Stopwatch.StartNew();
         Assert.IsType<DeclarationAnswer.Present>(await RepositoryDeclarations.AtAsync(root, commit, DeclarationNames.Gates, None));
         Assert.IsType<DeclarationAnswer.Absent>(await RepositoryDeclarations.AtAsync(root, commit, DeclarationNames.Lanes, None));
         Assert.Equal(commit, await TipOf.OfAsync(root, "refs/heads/main", None));
-        watch.Stop();
         Assert.Empty(warm.Starts);
-        Assert.True(watch.Elapsed < TimeSpan.FromMilliseconds(50), $"three warm asks took {watch.Elapsed.TotalMilliseconds} ms");
     }
 
     [Fact]

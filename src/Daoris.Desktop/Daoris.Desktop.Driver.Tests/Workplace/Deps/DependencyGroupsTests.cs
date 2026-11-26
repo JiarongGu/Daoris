@@ -218,12 +218,10 @@ public sealed class DependencyGroupsTests : IDisposable
                 Assert.True(TreeVisit.Take(Home, tree));
             });
         };
-        var clock = Stopwatch.StartNew();
 
         var stopped = await StageAsync(tree);
         await visit!;
 
-        Assert.True(clock.Elapsed < TimeSpan.FromSeconds(60), $"the install was ended, not waited out ({clock.Elapsed})");
         Assert.True(stopped.Stopped);
         Assert.False(TreeFilesRecord.Read(Home, tree)!.Unworked);
         Assert.Null(TreeFilesRecord.Read(Home, tree)!.Of("a/"));

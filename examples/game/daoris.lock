@@ -1,7 +1,7 @@
 {
   "version": 1,
   "canonVersion": "0.0.1",
-  "canonDigest": "577cce9c1da0c1435bbddde88215bac4b143b9162efeaac4022f51244e621e09",
+  "canonDigest": "dfb53d758349eb57a734384a0d667c624ef86b57895dca1fc6880a5697e2a8a2",
   "source": "daoris@0.0.1",
   "entries": [
     {
@@ -125,6 +125,13 @@
     },
     {
       "pack": "core",
+      "source": "core/knowledge/test-worth.md",
+      "target": "knowledge/test-worth.md",
+      "canonVersion": "0.0.1",
+      "sha256": "e5b444a7c1e67f74192f8801359800a844c993444faf09a30d562eed3b3d943e"
+    },
+    {
+      "pack": "core",
       "source": "core/rules/every-session.md",
       "target": "rules/every-session.md",
       "canonVersion": "0.0.1",
@@ -136,7 +143,7 @@
       "source": "core/rules/how-a-change-goes.md",
       "target": "rules/how-a-change-goes.md",
       "canonVersion": "0.0.1",
-      "sha256": "1eaed8f804cee42062a0801bb9f286f6bc30e2e0f130bca4a1537f438b678687",
+      "sha256": "63d7963478c99c6ce5a2a6214699f2f0dbf96182e90ee97f3dadabe15856fe83",
       "in": "AGENTS.md"
     },
     {

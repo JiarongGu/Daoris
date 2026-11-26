@@ -28,7 +28,7 @@ test('a docs-only change runs the documents\' checks and what reads every path, 
   for (const doc of ['doc-budgets', 'doc-current', 'doc-shapes', 'doc-duplicates', 'doc-system', 'doc-links', 'release-prep']) {
     assert.ok(chosen.some((run) => run.includes(`tools/${doc}.mjs`)), doc);
   }
-  for (const left of ['typecheck', 'comment-gate', 'size-ratchet', 'partials', 'read-shares', 'optional-locks', 'live-logins', 'console-windows', 'tool-test-census', 'contracts.mjs']) {
+  for (const left of ['typecheck', 'comment-gate', 'size-ratchet', 'partials', 'read-shares', 'optional-locks', 'live-logins', 'console-windows', 'tool-test-census', 'timing-census', 'contracts.mjs']) {
     assert.ok(!chosen.some((run) => run.includes(left)), left);
   }
   assert.ok(!chosen.includes(DEVKIT), 'the universal gate runs the devkit\'s check in the merge');
@@ -42,7 +42,7 @@ test('the gate makes the generated contracts current itself before it checks the
 
 test('a web-only change runs the source checks that read the page, and leaves the typechecks and the documents\' checks', () => {
   const chosen = runs(selectSteps(CHECK_STEPS, ['src/Daoris.Web/src/pages/Home.tsx'], { gates: GATES }).run);
-  for (const reads of ['comment-gate.mjs', 'size-ratchet', 'console-windows', 'test-patience', 'orient-index', 'doc-current', 'tool-test-census']) {
+  for (const reads of ['comment-gate.mjs', 'size-ratchet', 'console-windows', 'test-patience', 'orient-index', 'doc-current', 'tool-test-census', 'timing-census']) {
     assert.ok(chosen.some((run) => run.includes(reads)), reads);
   }
   for (const left of ['typecheck', 'doc-budgets', 'doc-shapes', 'doc-duplicates', 'doc-system', 'partials', 'read-shares', 'optional-locks', 'contracts.mjs']) {

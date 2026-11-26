@@ -58,7 +58,7 @@ function wrap(element: Element): Element {
   return holder;
 }
 
-describe('every record page wraps at one edge', () => {
+describe('every record page wraps at one edge', { timeout: 30_000 }, () => {
   it('reads the pages at all — a glob that matched nothing would pass every story below', () => {
     expect(Object.keys(modules).length).toBeGreaterThanOrEqual(14);
   });

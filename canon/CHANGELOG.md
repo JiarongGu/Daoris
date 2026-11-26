@@ -19,6 +19,13 @@ network.
   `docs/index/adding.md`); the canon's index template lists that page as a shape, never a path.
   **Adopting repositories:** run `daoris sync`; add the section to each area document for the kinds that part takes, each
   row naming a place and pointing at the area's rule, never restating it.
+- **`test-worth` (new) says what a test pins, and step 3 of `how-a-change-goes` names it.** A test earns its place by
+  guarding a behaviour a plausible change could break and no other test catches; it asserts relations (inside, wider,
+  changed, before, at most) rather than values the project chose, and never a wall-clock duration, which is a budget
+  the gate that judges durations holds, not an assertion; a bug fix's test fails without the fix; cutting or
+  quarantining tests is a change of its own that lists each one. `current-knowledge` keeps its line that tests pin
+  behaviour, not shape. **Adopting repositories:** run `daoris sync`; one that asserts durations may keep a census of
+  them with each kept one's reason, so the list only shrinks.
 
 - **Rules 1 and 3 of `every-session` read the repository's risk policy.** Whether an act needs a yes, and whose, is one
   declared policy: where it declares no risk nothing waits, a role's yes is a role's, and the owner is asked only for acts

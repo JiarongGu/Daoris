@@ -268,13 +268,11 @@ public sealed class GitDoorsTests : IDisposable
         Put(HomeEntry.DriverConfig, """{"machineGitAccess":{"write":"ask"}}""");
         var error = new StringWriter();
         var variables = new Dictionary<string, string?> { [GitRouting.HomeVariable] = Home, ["PATH"] = "" };
-        var clock = Stopwatch.StartNew();
 
         var code = GitDoors.Ssh(["git@host", "git-receive-pack 'org/engine.git'"], name => variables.GetValueOrDefault(name), error, _root);
 
         Assert.Equal(GitDoors.Refused, code);
         Assert.Equal(GitDoorAsks.NotRunningLine, error.ToString().Trim());
-        Assert.True(clock.Elapsed < TimeSpan.FromSeconds(10), $"the door took {clock.Elapsed}");
         Assert.Empty(GitAsks.List(Home, DateTimeOffset.UtcNow));
         Assert.Contains(Lines("git.refused"), line => Field(line, "code") == "not-running");
     }

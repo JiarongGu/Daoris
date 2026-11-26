@@ -170,12 +170,12 @@ describe('find', () => {
 });
 
 describe('at scale', () => {
-  it('lays out 5,000 closed in well under a second with every dependency counted once', () => {
+  it('lays out 5,000 closed as the groups alone, with every dependency counted once', () => {
     const { modules, dependencies } = syntheticMap(5000);
-    const started = performance.now();
     const tree = buildTree(modules, dependencies);
     const scene = layoutCode(tree, defaultOpen(tree));
-    expect(performance.now() - started).toBeLessThan(750);
+    expect([...scene.world.boxes.keys()].every((id) => id.startsWith('folder:'))).toBe(true);
+    expect(scene.world.boxes.size).toBeLessThan(modules.length / 10);
     expect(noneOverlap(scene.world.boxes.values())).toBe(true);
     const inside = dependencies.filter((d) => tree.owner.get(d.from) === tree.owner.get(d.to) ||
       scene.standsFor.get(d.from) === scene.standsFor.get(d.to)).length;
