@@ -110,50 +110,66 @@ public sealed class PinMovesTests
     }
 
     [Fact]
-    public void A_declined_move_files_one_break_quest_to_the_producer_with_the_failing_case_and_holds_the_pin()
+    public void A_declined_move_files_one_break_quest_to_the_producer_with_the_failing_case()
     {
         var declined = Quest("q1", "Declined", 1, B, note: "saves written before B no longer load", updated: T0.AddHours(2));
 
-        var reactions = PinMoves.Breaks(Edge, [declined], []);
+        var broke = Assert.Single(PinMoves.Breaks(Edge, [declined]));
 
-        var broke = Assert.Single(reactions);
         Assert.Equal(PinMoves.BreakKeyOf(Edge, 1), broke.Key);
         Assert.Equal("web", broke.From);
         Assert.Equal("core", broke.To);
         Assert.Contains("saves written before B no longer load", broke.Body);
         Assert.Contains(B, broke.Body);
-        Assert.Equal(new FamilyHold("web", "core", B, T0.AddHours(2), 1), broke.Hold);
+        Assert.Contains("#q1", broke.Body);
     }
 
     [Fact]
-    public void A_break_already_filed_is_not_filed_again()
+    public void A_break_already_filed_is_not_filed_again_and_each_red_move_owes_its_own()
     {
-        var declined = Quest("q1", "Declined", 1, B, note: "red");
+        var first = Quest("q1", "Declined", 1, B, note: "red");
+        var second = Quest("q2", "Declined", 2, C, note: "still red");
         var filed = new QuestView("b1", "web", "core", "t", "b", "Open") { Request = PinMoves.BreakKeyOf(Edge, 1) };
 
-        Assert.Empty(PinMoves.Breaks(Edge, [declined, filed], []));
+        Assert.Empty(PinMoves.Breaks(Edge, [first, filed]));
+        Assert.Equal([PinMoves.BreakKeyOf(Edge, 2)], PinMoves.Breaks(Edge, [first, second, filed]).Select(each => each.Key));
     }
 
     [Fact]
-    public void A_second_red_keeps_the_hold_s_first_age_and_moves_its_commit()
+    public void A_red_move_holds_the_pin_from_its_first_red_and_a_later_red_moves_the_commit_not_the_age()
     {
-        var held = new FamilyHold("web", "core", B, T0, 1);
-        var second = Quest("q2", "Declined", 2, C, note: "still red", updated: T0.AddDays(2));
+        var first = Quest("q1", "Declined", 1, B, updated: T0);
+        var second = Quest("q2", "Declined", 2, C, updated: T0.AddDays(2));
 
-        var broke = Assert.Single(PinMoves.Breaks(Edge, [Quest("q1", "Declined", 1, B), second,
-            new QuestView("b1", "web", "core", "t", "b", "Open") { Request = PinMoves.BreakKeyOf(Edge, 1) }], [held]));
-
-        Assert.Equal(new FamilyHold("web", "core", C, T0, 2), broke.Hold);
+        Assert.Equal(new FamilyHold("web", "core", B, T0, 1), PinMoves.Hold(Edge, [first], T0.AddDays(9)));
+        Assert.Equal(new FamilyHold("web", "core", C, T0, 2), PinMoves.Hold(Edge, [first, second], T0.AddDays(9)));
     }
 
     [Fact]
-    public void A_later_move_that_lands_clears_the_hold_and_an_older_one_does_not()
+    public void A_later_move_that_lands_ends_the_hold_and_the_next_red_starts_a_new_age()
     {
-        var held = new FamilyHold("web", "core", B, T0, 2);
+        var red = Quest("q1", "Declined", 1, B, updated: T0);
+        var done = Quest("q2", "Done", 2, C, updated: T0.AddDays(1));
+        var again = Quest("q3", "Declined", 3, "d".PadLeft(40, 'd'), updated: T0.AddDays(5));
 
-        Assert.True(PinMoves.Released(held, [Quest("q3", "Done", 3, C)]));
-        Assert.False(PinMoves.Released(held, [Quest("q2", "Done", 2, B)]));
-        Assert.False(PinMoves.Released(held, [Quest("q3", "Open", 3, C)]));
+        Assert.Null(PinMoves.Hold(Edge, [red, done], T0.AddDays(9)));
+        Assert.Equal(1, PinMoves.Hold(Edge, [red, Quest("q2", "Open", 2, C)], T0.AddDays(9))!.Generation);
+        Assert.Equal(T0.AddDays(5), PinMoves.Hold(Edge, [red, done, again], T0.AddDays(9))!.Since);
+    }
+
+    [Fact]
+    public void A_red_move_with_no_time_ages_from_the_look_that_found_it()
+    {
+        var red = Quest("q1", "Declined", 1, B) with { Updated = null };
+
+        Assert.Equal(T0.AddDays(4), PinMoves.Hold(Edge, [red], T0.AddDays(4))!.Since);
+    }
+
+    [Fact]
+    public void No_hold_stands_for_an_edge_none_has_declined()
+    {
+        Assert.Null(PinMoves.Hold(Edge, [], T0));
+        Assert.Null(PinMoves.Hold(Edge, [Quest("q1", "Open", 1, B), Quest("q2", "Taken", 2, C)], T0));
     }
 
     [Fact]

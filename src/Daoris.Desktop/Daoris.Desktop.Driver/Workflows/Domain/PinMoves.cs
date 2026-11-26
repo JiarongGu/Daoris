@@ -19,8 +19,8 @@ public enum PinMoveActs
 /// <summary>One act the fan-out makes on an edge: the key and words of the quest, and the quest to move where one stands.</summary>
 public sealed record PinMoveAct(PinEdge Edge, PinMoveActs Act, string Commit, string Key, string? Quest, string Title, string Body);
 
-/// <summary>A break quest owed to the producer: asked by the consumer, with the failing case, and the hold its filing keeps.</summary>
-public sealed record PinBreak(string Key, string From, string To, string Title, string Body, FamilyHold Hold);
+/// <summary>A break quest owed to the producer: asked by the consumer, with the failing case.</summary>
+public sealed record PinBreak(string Key, string From, string To, string Title, string Body);
 
 /// <summary>
 /// A pin held back: the consumer's pin of the producer stays at its older commit because the move to <paramref name="Commit"/> came out red.
@@ -39,8 +39,8 @@ public sealed record FamilyHold(string Consumer, string Producer, string Commit,
 /// <summary>
 /// The fan-out of a producer's landing, as pure rules over values the look reads: for each consumer edge one pin-move quest,
 /// opened at the first landing the consumer does not pin and retargeted by every later one while it is live, a closed one settling the commit
-/// it asked. Nothing is written into the consumer. A quest is the edge's by its request key, so no store of its own is kept; a hold-back
-/// is the one record the quests cannot say, its age, and is kept beside them.
+/// it asked. Nothing is written into the consumer. A quest is the edge's by its request key, so no store of its own is kept: a hold-back and its
+/// age are read from the quests too.
 /// </summary>
 public static partial class PinMoves
 {
@@ -116,27 +116,36 @@ public static partial class PinMoves
         return new PinMoveAct(edge, PinMoveActs.Open, tip, KeyOf(edge, next), null, title, body);
     }
 
-    /// <summary>
-    /// The breaks the edge's declined pin-move quests owe the producer, oldest first, each with the hold it leaves: a quest whose break is not
-    /// filed yet. A hold stands from its first red and moves to the newest red commit; a quest older than the hold's own is already counted.
-    /// </summary>
-    /// <param name="now">The age a declined quest that carries no time starts its hold at.</param>
-    public static IReadOnlyList<PinBreak> Breaks(PinEdge edge, IReadOnlyList<QuestView> quests, IReadOnlyList<FamilyHold> holds, DateTimeOffset now = default)
+    /// <summary>The breaks the edge's declined pin-move quests owe the producer, oldest first: one for each whose break is not filed yet.</summary>
+    public static IReadOnlyList<PinBreak> Breaks(PinEdge edge, IReadOnlyList<QuestView> quests)
     {
         var filed = quests.Select(quest => GenerationOf(edge, quest.Request, "break")).Where(each => each is not null).Select(each => each!.Value).ToHashSet();
-        var current = holds.FirstOrDefault(hold => hold.Edge == edge);
         var owed = new List<PinBreak>();
         foreach (var quest in OfEdge(edge, quests).Where(quest => quest.Status == "Declined"))
         {
             var generation = GenerationOf(edge, quest.Request, "pin")!.Value;
             if (filed.Contains(generation) || CommitOf(quest) is not { } commit) continue;
-            var since = current?.Since ?? quest.Updated ?? now;
-            current = new FamilyHold(edge.Consumer, edge.Producer, commit, since, generation);
             var (title, body) = BreakWords(edge, commit, quest);
-            owed.Add(new PinBreak(BreakKeyOf(edge, generation), edge.Consumer, edge.Producer, title, body, current));
+            owed.Add(new PinBreak(BreakKeyOf(edge, generation), edge.Consumer, edge.Producer, title, body));
         }
 
         return owed;
+    }
+
+    /// <summary>
+    /// The edge's hold-back, read from its own quests so no record of it can drift from them: the pin stays where it is from the first
+    /// declined move after the last one that landed, until a move lands. Its age is that first red's time, kept through later reds, which move
+    /// only the commit held. Null where no move stands declined.
+    /// </summary>
+    /// <param name="now">The age start of a declined quest that carries no time.</param>
+    public static FamilyHold? Hold(PinEdge edge, IReadOnlyList<QuestView> quests, DateTimeOffset now)
+    {
+        var mine = OfEdge(edge, quests);
+        var landed = mine.Where(quest => quest.Status == "Done").Select(quest => GenerationOf(edge, quest.Request, "pin")!.Value).DefaultIfEmpty(0).Max();
+        var reds = mine.Where(quest => quest.Status == "Declined" && GenerationOf(edge, quest.Request, "pin")!.Value > landed && CommitOf(quest) is not null).ToList();
+        if (reds.Count == 0) return null;
+        var newest = reds[^1];
+        return new FamilyHold(edge.Consumer, edge.Producer, CommitOf(newest)!, reds[0].Updated ?? now, GenerationOf(edge, newest.Request, "pin")!.Value);
     }
 
     private static (string Title, string Body) BreakWords(PinEdge edge, string commit, QuestView declined) =>
@@ -145,10 +154,6 @@ public static partial class PinMoves
          + $"stays green for it.\n\n{CommitLabel}{commit}\nPin move: #{declined.Id.TrimStart('#')}\n\nThe failing case, as `{edge.Consumer}`'s session wrote it:\n\n"
          + (string.IsNullOrWhiteSpace(declined.Note) ? "(no case was written)" : declined.Note.Trim())
          + $"\n\nFix it in `{edge.Producer}` or say what `{edge.Consumer}` must change; the next landing of `{edge.Producer}` retargets the pin move.");
-
-    /// <summary>Whether the hold ended: a pin-move quest of a later generation than its newest red came out done, so the pin moved on.</summary>
-    public static bool Released(FamilyHold hold, IReadOnlyList<QuestView> quests) =>
-        OfEdge(hold.Edge, quests).Any(quest => quest.Status == "Done" && GenerationOf(hold.Edge, quest.Request, "pin")!.Value > hold.Generation);
 
     /// <summary>Whether the hold has outlasted the edge's lag bound: never where the family declares none for the edge.</summary>
     public static bool Overdue(FamilyHold hold, TimeSpan? lag, DateTimeOffset now) => lag is { } bound && hold.Age(now) > bound;

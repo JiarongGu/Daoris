@@ -23,7 +23,7 @@ namespace Daoris.Driver;
 /// <c>Helpers</c> and <c>Partners</c>); the methods below are the one-line doors callers name. A class reaches the HTTP,
 /// the JSON reading and the watchers through the internal surface here.
 /// </remarks>
-public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPort, IRequestPort
+public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPort, IFamilyDoors
 {
     private readonly IServiceDoors _doors;
     private readonly string _base;
@@ -199,6 +199,8 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
 
     // The ports' halves the quest doors answer, sent through QuestViews.
     Task<RequestPublished> IRequestPort.PublishAsync(RequestAsk ask, CancellationToken ct) => this.PublishAsync(ask, ct);
+
+    Task<(bool Ok, string Message)> IFamilyDoors.ReviseWordsAsync(string id, string title, string body, CancellationToken ct) => this.ReviseWordsAsync(id, title, body, ct);
 
     Task<QuestCloseAnswer> IQuestClosePort.CloseQuestsAsync(
         string quest, string key, string token, IReadOnlyList<QuestCloseItem> quests, CancellationToken ct) =>
