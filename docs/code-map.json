@@ -225,6 +225,11 @@
       "id": "GitLibraryBench",
       "path": "tools/git-library-bench",
       "summary": ""
+    },
+    {
+      "id": "MachineRead",
+      "path": "tools/machine-read",
+      "summary": "reads the process table and the free memory without PowerShell or WMI"
     }
   ],
   "dependencies": [
