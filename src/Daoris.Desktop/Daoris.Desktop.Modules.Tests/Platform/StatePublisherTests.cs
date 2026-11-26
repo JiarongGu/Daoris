@@ -557,6 +557,8 @@ public sealed class StatePublisherTests : DriverModuleBridge
     [InlineData("SET_CHECK_BUDGETS", "driver", null)]
     [InlineData("CHECK_BUDGETS", "", null)]
     [InlineData("HEAVY_SLOT", "", null)]
+    [InlineData("PRIORITY_SET", "driver", null)]
+    [InlineData("QUEUES", "", null)]
     [InlineData("SET_NOTIFY", "driver", null)]
     [InlineData("SET_COOLOFF", "driver", null)]
     [InlineData("SET_CAP", "driver", null)]
