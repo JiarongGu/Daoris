@@ -50,6 +50,7 @@ internal sealed class OpinionGateConsumer : BusFlowConsumer<GateWork>, IDisposab
     private readonly Func<OpinionDue, Action<string>, CancellationToken, Task<OpinionFact?>> _judge;
     private readonly Func<string, CancellationToken, Task<OpinionView?>> _read;
     private readonly Func<IReadOnlyList<OpinionDue>> _open;
+    private readonly Func<CancellationToken, Task<IReadOnlyList<QuestView>?>>? _quests;
     private readonly TimeProvider _clock;
     private readonly Action<string, string> _warn;
     private readonly ConcurrentDictionary<string, CancellationTokenSource> _again = new(StringComparer.OrdinalIgnoreCase);
@@ -61,14 +62,17 @@ internal sealed class OpinionGateConsumer : BusFlowConsumer<GateWork>, IDisposab
     /// <param name="open">The opinions owed now.</param>
     /// <param name="clock">The clock its turns wait on.</param>
     /// <param name="warn">Where a judgment between facts that failed is said, once for each key.</param>
+    /// <param name="quests">The quests listed, which place a node begun's run (<see cref="NodeBegunReach"/>); none, and it judges every owed opinion.</param>
     public OpinionGateConsumer(
         Func<OpinionDue, Action<string>, CancellationToken, Task<OpinionFact?>> judge, Func<string, CancellationToken, Task<OpinionView?>> read,
-        Func<IReadOnlyList<OpinionDue>> open, TimeProvider clock, Action<string, string> warn)
+        Func<IReadOnlyList<OpinionDue>> open, TimeProvider clock, Action<string, string> warn,
+        Func<CancellationToken, Task<IReadOnlyList<QuestView>?>>? quests = null)
         : base(Name, Reads, Bounds, clock)
     {
         _judge = judge;
         _read = read;
         _open = open;
+        _quests = quests;
         _clock = clock;
         _warn = warn;
     }
@@ -82,7 +86,8 @@ internal sealed class OpinionGateConsumer : BusFlowConsumer<GateWork>, IDisposab
             return await gate.JudgeDueAsync(due, ct).ConfigureAwait(false);
         },
         service.Opinions.ReadAsync, () => new OpinionDues(home).OpenStrict(), bus.Clock,
-        (once, why) => bus.Warn("gate:" + once, "opinion.gate-unjudged", ("why", why)));
+        (once, why) => bus.Warn("gate:" + once, "opinion.gate-unjudged", ("why", why)),
+        async ct => await new ServiceReviewWorld(service).QuestsAsync(ct).ConfigureAwait(false));
 
     /// <summary>The facts every owed opinion's judgment reads: its quests' holds and chains, its run's nodes, its rule and process.</summary>
     private static readonly HashSet<string> Everyone = new([BusTypes.QuestMoved.Kind, BusTypes.NodeBegun.Kind, BusTypes.ChoicesWritten.Kind], StringComparer.Ordinal);
@@ -112,15 +117,39 @@ internal sealed class OpinionGateConsumer : BusFlowConsumer<GateWork>, IDisposab
     /// <summary>The owed opinions a fact reaches, each a piece of work keyed by the opinion and grouped by its repository.</summary>
     protected override async Task<IReadOnlyList<BusFlowPiece<GateWork>>> PiecesAsync(BusEnvelope entry, CancellationToken ct)
     {
-        var dues = Everyone.Contains(entry.Kind) ? Reached(entry) : await DuesOfAsync(entry, ct).ConfigureAwait(false);
+        var dues = entry.Kind == BusTypes.NodeBegun.Kind ? await BegunAsync(entry, ct).ConfigureAwait(false)
+            : Everyone.Contains(entry.Kind) ? Reached(entry)
+            : await DuesOfAsync(entry, ct).ConfigureAwait(false);
         return [.. dues.Select(due => Piece(due, entry.Kind))];
+    }
+
+    /// <summary>A node begun's owed opinions, its run's (<see cref="NodeBegunReach"/>); a list that does not read judges every one, never failing the fact.</summary>
+    private async Task<IEnumerable<OpinionDue>> BegunAsync(BusEnvelope entry, CancellationToken ct)
+    {
+        var open = _open();
+        IReadOnlyList<QuestView>? quests = null;
+        if (_quests is not null && RunUnits.Is(entry.Subject))
+        {
+            try
+            {
+                quests = await _quests(ct).ConfigureAwait(false);
+            }
+            catch (Exception error) when (error is HttpRequestException or DriverException or System.Text.Json.JsonException or IOException
+                                              or TaskCanceledException && !ct.IsCancellationRequested)
+            {
+                quests = null;
+            }
+        }
+
+        return NodeBegunReach.Reached(entry.Subject, open, quests) ?? open;
     }
 
     private static BusFlowPiece<GateWork> Piece(OpinionDue due, string woke) => new(OpinionGateJudge.Subject(due), new GateWork(due, woke), due.Repository);
 
     /// <summary>
     /// The owed opinions a move reaches: one that names its quests and repositories reaches the opinions they reach
-    /// (<see cref="QuestMoves.Reaches"/>); a node begun, the standing choices written, and a move that names nothing reach every one.
+    /// (<see cref="QuestMoves.Reaches"/>); the standing choices written and a move that names nothing reach every one (a node begun is
+    /// its run's, <see cref="BegunAsync"/>).
     /// </summary>
     private IEnumerable<OpinionDue> Reached(BusEnvelope entry)
     {

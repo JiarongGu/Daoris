@@ -215,7 +215,51 @@ public sealed class OpinionGateMovesTests : IDisposable
         return store.Timers(null, 1000);
     }
 
-    private OpinionGateConsumer Gate(Func<OpinionDue, Task>? during = null) => new(
+    [Fact]
+    public async Task A_node_begun_judges_only_the_owed_opinions_of_its_run_and_every_one_where_it_cannot_place_the_run()
+    {
+        IReadOnlyList<QuestView>? listed = [Quest("q-0", "engine"), Quest("q-1", "engine", "q-0"), Quest("q-2", "game"), Quest("q-3", "engine")];
+        await using var bus = Open();
+        using var gate = Gate(quests: _ => Task.FromResult(listed));
+        await using var queue = await BusQueue.StartAsync(bus, [gate], Quick);
+        await Started();
+        _judged.Clear();
+
+        bus.Append(OpinionBusFacts.NodeBegun(RunUnits.IdOf("q-0"), ["opinion"]));
+        await Poll.Until(() => Judged("s-1") >= 1, () => "the run's own owed opinion was not judged", Soon);
+        await Unarmed(bus);
+        Assert.Equal(1, Judged("s-1"));
+        Assert.Equal(0, Judged("s-2") + Judged("s-3"));
+
+        _judged.Clear();
+        bus.Append(OpinionBusFacts.NodeBegun("unit-1", ["opinion"]));
+        await Poll.Until(() => Judged("s-1") >= 1 && Judged("s-2") >= 1 && Judged("s-3") >= 1, () => $"not all judged: {string.Join(", ", _judged)}", Soon);
+        await Unarmed(bus);
+
+        _judged.Clear();
+        listed = null;
+        bus.Append(OpinionBusFacts.NodeBegun(RunUnits.IdOf("q-2"), ["opinion"]));
+        await Poll.Until(() => Judged("s-1") >= 1 && Judged("s-2") >= 1 && Judged("s-3") >= 1, () => $"not all judged: {string.Join(", ", _judged)}", Soon);
+        await Unarmed(bus);
+    }
+
+    [Fact]
+    public void A_node_begun_reaches_its_chains_quests_a_chat_runs_own_and_names_nothing_it_cannot_place()
+    {
+        var chat = new OpinionDue("s-9", "", "engine", "", "tree-9", OpinionRules.Landing, At) { Run = "chat-s-9" };
+        OpinionDue[] open = [.. new OpinionDues(_home).OpenStrict(), chat];
+        QuestView[] quests = [Quest("q-0", "engine"), Quest("q-1", "engine", "q-0"), Quest("q-2", "game"), Quest("q-3", "engine")];
+
+        Assert.Equal(["s-1"], NodeBegunReach.Reached(RunUnits.IdOf("q-1"), open, quests)!.Select(due => due.Session));
+        Assert.Equal(["s-1"], NodeBegunReach.Reached(RunUnits.IdOf("q-0"), open, quests)!.Select(due => due.Session));
+        Assert.Equal(["s-9"], NodeBegunReach.Reached(RunUnits.IdOf("chat-s-9"), open, quests)!.Select(due => due.Session));
+        // A run no quest of the list is (an ask's delivery run) reaches none; its own quest's opinion only were it one.
+        Assert.Empty(NodeBegunReach.Reached(RunUnits.IdOf("a-7"), open, quests)!);
+        Assert.Null(NodeBegunReach.Reached("unit-1", open, quests));
+        Assert.Null(NodeBegunReach.Reached(RunUnits.IdOf("q-1"), open, null));
+    }
+
+    private OpinionGateConsumer Gate(Func<OpinionDue, Task>? during = null, Func<CancellationToken, Task<IReadOnlyList<QuestView>?>>? quests = null) => new(
         async (due, _, _) =>
         {
             _judged.Enqueue(OpinionGateJudge.Subject(due));
@@ -223,7 +267,7 @@ public sealed class OpinionGateMovesTests : IDisposable
             return new OpinionFact(new Dictionary<string, OpinionSit>(), null, null);
         },
         (_, _) => Task.FromResult<OpinionView?>(null),
-        () => new OpinionDues(_home).OpenStrict(), Machine, (_, _) => { });
+        () => new OpinionDues(_home).OpenStrict(), Machine, (_, _) => { }, quests);
 
     /// <summary>🔴 A due file that cannot be read is a failure of the move that needed it, never "nothing owed": the move is retried and judged, its timer ending then.</summary>
     [Fact]
