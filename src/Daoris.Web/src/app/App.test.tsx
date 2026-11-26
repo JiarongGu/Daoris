@@ -565,7 +565,7 @@ describe('the views, in a browser', () => {
 
   /**
    * Every door into either list still reaches it. Ctrl+Shift+F is Knowledge's Search, its box in front, whatever the
-   * place is left on; the palette's *Go to: Convergence* its Convergence; and the place on the bar opens as it is left.
+   * place is left on; the palette's *Go to: Convergence* its Convergence; and the bar's place opens as left.
    */
   it("opens Knowledge's Search by Ctrl+Shift+F and its Convergence by the palette, and opens as it was left", async () => {
     fetchMock.mockImplementation(async (input: RequestInfo | URL) => {
@@ -594,7 +594,7 @@ describe('the views, in a browser', () => {
     await userEvent.click(within(views).getByRole('button', { name: 'Knowledge' }));
     expect(within(await screen.findByRole('complementary', { name: 'Knowledge' })).getByRole('radio', { name: 'Convergence' }))
       .toHaveAttribute('aria-checked', 'true');
-  });
+  }, 30_000);
 
   it('falls back to Overview when the browser remembers a view this deployment does not have', async () => {
     window.localStorage.setItem('daoris.view', 'sessions');

@@ -80,7 +80,7 @@
   "src/Daoris.Web/e2e/platform.spec.ts": 56527,
   "src/Daoris.Web/src/agents/AgentsView.test.tsx": 117562,
   "src/Daoris.Web/src/agents/agents.test.ts": 42050,
-  "src/Daoris.Web/src/app/App.test.tsx": 44930,
+  "src/Daoris.Web/src/app/App.test.tsx": 44927,
   "src/Daoris.Web/src/app/pushedState.test.tsx": 64567,
   "src/Daoris.Web/src/design/ui.test.tsx": 66527,
   "src/Daoris.Web/src/help/AskDaoris.test.tsx": 93431,
