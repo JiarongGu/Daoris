@@ -56,7 +56,7 @@ test('no command writes into a repository other than the one it runs in', () => 
   try {
     // Every command that writes anything, plus the ones that only read — a read-only command that
     // started writing would be the surprising case, so it is worth including.
-    for (const argv of [['init'], ['sync'], ['index'], ['check'], ['status'], ['doctor'], ['analyze']]) {
+    for (const argv of [['init'], ['sync'], ['index'], ['check'], ['status'], ['doctor'], ['analyze'], ['family', 'materialize']]) {
       runCli(argv, mine.root, () => {});
     }
   } finally {

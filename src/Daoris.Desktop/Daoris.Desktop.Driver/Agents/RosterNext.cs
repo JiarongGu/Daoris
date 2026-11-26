@@ -266,6 +266,8 @@ internal sealed class RosterNext(HarnessRoster roster)
             {
                 // A reading not read is nothing said, as one never told is.
             }
+
+            facts[account] = facts[account] with { Rate = roster.SpendRateOf(owner, account, now) };
         }
 
         return facts;

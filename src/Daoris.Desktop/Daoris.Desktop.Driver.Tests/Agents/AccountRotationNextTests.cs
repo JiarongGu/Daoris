@@ -162,6 +162,16 @@ public sealed class AccountRotationNextTests
     }
 
     [Fact]
+    public void A_week_that_lapses_with_no_rate_measured_says_no_rate()
+    {
+        var next = Next("account-1 account-2 account-3", "account-3:W97@+12h");
+
+        Assert.Equal(NextReason.Lapsing, next.Reason);
+        Assert.Null(next.Rate);
+        Assert.Null(next.Needs);
+    }
+
+    [Fact]
     public void A_start_not_ranked_by_what_would_lapse_says_no_window()
     {
         var next = Next("account-1 account-2 account-3", "account-1:W40@+4d account-2:W10@+4d account-3:W20@+4d");

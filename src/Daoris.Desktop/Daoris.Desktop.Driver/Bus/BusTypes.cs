@@ -146,7 +146,7 @@ public static class BusTypes
         "quest.moved", 1, BusClasses.Fact, Ledger, OpinionGate, BusDeadline.Stated(TimeSpan.FromMinutes(10), AtTheGate), 2, BusGiveUps.Held,
         [new("families", BusShapes.Ids), new("quests", BusShapes.Ids), new("repositories", BusShapes.Ids)]);
 
-    /// <summary>A run's node record began nodes (left blocked or ready): the opinion's gate must judge every owed opinion, which a graph's opinion node holds until begun. Its subject is the unit.</summary>
+    /// <summary>A run's node record began nodes (left blocked or ready): the opinion's gate must judge the owed opinions of that run (<see cref="NodeBegunReach"/>), which a graph's opinion node holds until begun. Its subject is the unit.</summary>
     public static readonly BusType NodeBegun = new(
         "node.begun", 1, BusClasses.Fact, Nodes, OpinionGate, BusDeadline.Stated(TimeSpan.FromMinutes(10), AtTheGate), 2, BusGiveUps.Held,
         [new("nodes", BusShapes.Ids)]);

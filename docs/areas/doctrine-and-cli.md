@@ -34,7 +34,7 @@ skill, and `co-working` as a pack.
 | Layouts | `src/Daoris.Cli/src/layout/harness.ts`, `layout.ts`, `mirror.ts`, `rooms.ts`, `pointers.ts`, `links.ts` | The `claude-code` and `agents` descriptors, the lock's layout, the skills mirror, rooms, the retired pointers, links |
 | Adoption reads | `src/Daoris.Cli/src/doctrine/analyze.ts`, `budget.ts`, `twins.ts`, `lineendings.ts` | `analyze` (what adopting would do, its budget projection in `budget.ts`), `doctor` (look-alike documents), the LF pin |
 | Declaration split | `src/Daoris.Cli/src/declaration/` (`members.ts`, `split.ts`, `folder.ts`, `reading.ts`, `proof.ts`, `dryrun.ts`), `cli/declaration.ts` | `declaration split --dry-run`: the member table as data, the gates file split into a folder and the home's values in scratch, read back and proved equal to the old file |
-| Family check | `src/Daoris.Cli/src/family/` (`family.ts`, `pins.ts`, `gitread.ts`, `check.ts`), `cli/family.ts` | `family check`: the family file and each member's `uses` and lock read, the graph judged (`family.ts`), each pin read against its producer's checkout (`pins.ts`) through git's own files (`gitread.ts`) |
+| Family | `src/Daoris.Cli/src/family/` (`family.ts`, `pins.ts`, `gitread.ts`, `member.ts`, `check.ts`, `writepins.ts`), `cli/family.ts` | `family check`: the family file and each member's `uses` and lock read, the graph judged (`family.ts`), each pin read against its producer's checkout (`pins.ts`) through git's own files (`gitread.ts`); `family materialize`: each pin written as its producer's tree at the pin; `member.ts` reads a tree back to its checkout |
 | The canon | `canon/core/`, `canon/packs/*/`, `canon/canon.json`, `canon/CHANGELOG.md` | The doctrine itself, its version and why each version changed |
 | Command tree | `Daoris.Desktop.Driver/Platform/CommandGroupAttribute.cs`, `CommandWords.cs`, `Loop/CommandTree.cs` | Each group's mark on its command, the groups collected at start, the router, and the carried CLI's path |
 | Doctrine hand-back | `Daoris.Desktop.Driver.Host/DoctrineConsole.cs` | Runs a word no group owns through the CLI an install carries, marked `DAORIS_HANDED=driver`; the CLI's usage at the end of `daoris help` |
@@ -178,7 +178,7 @@ skill, and `co-working` as a pack.
     until the child ends (`InterruptHold`). The CLI's own entry (`bin/node-floor.mjs`, before the dispatcher loads) refuses a
     Node below 22, exit 2, as `engines` and the set-up's `NodeRefusal` hold it. (from D124, D194)
 38. No CLI module touches the network. The one spawn is the seam's `startChild`, and nothing a doctrine command reaches can
-    spawn: `family check` reads git's files, never git. The package has no runtime dependencies. (from D8, D33)
+    spawn: `family check` and `family materialize` read git's files, never git. The package has no runtime dependencies. (from D8, D33)
 39. Exit codes are 0 clean, 1 policy failure, 2 tool error. A failure nobody anticipated is 2, said in one line.
     (from D8)
 40. Each half of the tree is declared by the code that owns it: a program group by `[CommandGroup]` on its library command,
@@ -254,7 +254,9 @@ skill, and `co-working` as a pack.
 54. A family is declared by `daoris.family.json` in the folder the members' checkouts share, the parent `repository create` puts a
     workspace's new repositories under, or by the file `--family` names. It is workspace data: no member tracks it and it holds no path.
     It names the members by the registry's names, in `layers` lowest first, and optional `denied` pairs (`consumer`, `producer`, `why`);
-    a name in two layers is a tool error. A member is a name, never a kind: no format, check or message says what a repository is. Each member's checkout is the folder of its name beside the file. With no family file there is
+    a name in two layers is a tool error. A member is a name, never a kind: no format, check or message says what a repository is. Each member's checkout is the folder of its name beside the file; a session's tree, a
+    linked worktree standing elsewhere, is read back to its checkout through git's files (`member.ts`: its `.git` file's `gitdir`, then
+    `commondir`), so a family command run from a tree finds the same file and member. With no family file there is
     no family: the check says so, exit 0. (from D364, D48)
 55. A member's edges are its own `daoris.json` `uses`, read by the registry's rule; a consumer's pins are its own
     `daoris.family.lock`, `{ "pins": [{ "producer", "commit" }] }`, so a pin move is a change to that path alone. No producer lists
@@ -268,7 +270,26 @@ skill, and `co-working` as a pack.
     green, 1 refused, 2 a file of the wrong shape. (from D364)
 57. `npm run rehearse:family`'s first section runs it on a copy of the examples (`tools/family-pins.mjs`, run whole by
     `tool-test/family-pins.e2e.ts`): `examples/daoris.family.json` puts engine below game, and the check is green on game pinned to a landed
-    engine commit and red on a planted cycle and a planted branch pin. (from D364)
+    engine commit and red on a planted cycle and a planted branch pin. Its gate stage (`tools/family-gates.mjs`, run whole by
+    `tool-test/family-gates.e2e.ts`) runs game's declared commands itself, `regenerate` then `run` in the driver's order, with the
+    workspace's CLI first on the PATH, not through the driver's gate runner (a driver run of a member's gate is FAMILY1c's rehearsal): green
+    as the example tracks it, pinning nothing; green at an engine pin behind engine's line; red with the pin at the line's head, which drops
+    a call game makes. (from D364)
+58. `family materialize` turns this repository's pins into what its build reads, the one way Daoris supplies; a repository declares it,
+    or a command of its own, as its gates' `regenerate`, which the driver runs before each gate and when it prepares a tree, so its gates
+    build against the pin and never the sibling checkout. It judges the family as `family check` does, this repository read from the
+    folder it runs in (a session's tree reads its own lock, where a pin move is made), and refuses wherever the check refuses; then it
+    writes each of its pins as the producer's files at the pinned commit into `<into>/<producer>/` (`pinned` by default; `--into` must
+    stand inside the repository by its real path and outside any `.git`, else exit 2), read from the producer's git store beside the
+    family file, never its working tree. A `.daoris-pin` there names the commit: a folder with none is the repository's own and refused;
+    the same pin is left only where the folder holds exactly the tree's files, so a build output or a deleted file there makes it written
+    again (a file edited in place is not seen: the folder is materialize's, never a build's). Every object is found before anything is
+    written and each producer is written beside its folder and swapped in, so any refusal writes nothing, exit 1, and a write cut short
+    leaves the old pin. A path into a `.git`, out of the folder or not a name on this machine is refused, on Windows as git refuses it on
+    NTFS (trailing dots and spaces, `git~1`, device names, control characters); a link is written as a file holding its target, as git
+    writes one where links are off; a blob's bytes are written as stored, with no line-ending conversion; a producer whose `.gitattributes`
+    routes files through LFS is warned, its pointers written as they are; a submodule is said and not written. With no pin it says so,
+    exit 0. (from D364)
 
 ## Where a change goes
 
@@ -293,9 +314,9 @@ skill, and `co-working` as a pack.
 - CLI: `test/doctrine/` (`sync`, `check`, `switchoff`, `keep`, `reconcile`, `update-check`, `newer-lock`, `upstream`,
   `upstream-request`, `region`, `tierrender`, `indexgen`, `packapi`); `test/layout/` (`layout-move`, `layout-mirror`,
   `layout-rooms`, `layout-links`, `documents-*`); `test/cli/` (`cli`, `cli-usage`, `cli-tree`, `containment`); `test/declaration/` (`split`, `proof`, `dryrun`: this
-  repository's own file converts with no difference); `test/family/family.test.ts` (the graph); the family's real-git cases are
-  end-to-end, in `tool-test/` (`family-gitread`, `family-check`, `family-pins`: git lays each repository out and the reader is held
-  to it);
+  repository's own file converts with no difference); `test/family/family.test.ts` (the graph), `test/family/writepins.test.ts` (a tree's entries, the paths refused);
+  the family's real-git cases are end-to-end, in `tool-test/` (`family-gitread`, `family-check`, `family-materialize`, `family-pins`,
+  `family-gates`: git lays each repository out and the reader is held to it);
   `test/platform/driverprogram.test.ts`.
 - `test/dogfood.test.ts`: canon frontmatter, no private names in the canon, this repository checks clean, no CLI module on
   the network, one spawn, `check` with no canon. `test/structure.test.ts` holds the CLI's module structure.

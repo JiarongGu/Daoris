@@ -22,6 +22,7 @@ import { fileURLToPath } from 'node:url';
 import { setTimeout as sleep } from 'node:timers/promises';
 import { copyTree, treeDiff } from './fsx.mjs';
 import { familyPinsStage } from './family-pins.mjs';
+import { familyGatesStage } from './family-gates.mjs';
 import { apartVerbs } from './rehearsal-apart.mjs';
 // Every home place is asked of the home table, never joined here.
 import { homeEntry } from '../src/Daoris.Cli/src/platform/home.ts';
@@ -83,8 +84,8 @@ process.env.DAORIS_DRIVER_PROGRAM = driverProgram;
 const PERSON = { DAORIS_SESSION_ID: undefined };
 
 openTranscript(repoRoot, 'family', { beforeExit: () => stopEverything() });
-// A failed check that hands its evidence keeps it beside the transcripts, in a folder of this run's: the scratch is
-// wiped at the next start, and the rerun after a failure took the failed run's session transcript with it.
+// A failed check's evidence is kept beside the transcripts, in a folder of this run's: the scratch is wiped at the
+// next start, and a rerun after a failure took the failed run's session transcript with it.
 const { totals, check, section } = makeChecker({ keep: evidenceFolder(repoRoot, 'family') });
 
 // Every command this run makes, its git held to the repositories it made, under its scratch: git walks UP from
@@ -359,8 +360,7 @@ function stopEverything() {
 
 section('1. The examples hold current, clean doctrine, and their family\'s pins');
 
-// WOULD sync change anything? Asked of a copy, file by file: synced in place, the first run would repair the examples it
-// found stale and every later run pass on the repair; a gate never fixes the tree it judges. A git diff would read an
+// WOULD sync change anything? Asked of a copy: a gate never fixes the tree it judges. A git diff would read an
 // edit to `examples/README.md`, which sync never touches, as a canon change nobody synced.
 rmSync(scratch, { recursive: true, force: true });
 const changedBySync = [];
@@ -382,6 +382,7 @@ for (const name of EXAMPLES) {
   check(`${name}: check is clean`, gate.code === 0, gate.out);
 }
 familyPinsStage({ examplesRoot, cliBin, scratch: join(scratch, 'pins'), run, check });
+familyGatesStage({ examplesRoot, cliBin, scratch: join(scratch, 'gates'), run, check });
 
 // -------------------------------------------------- 2. the service comes up
 

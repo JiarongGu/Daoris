@@ -39,7 +39,7 @@ const ADMISSION = { fixture: (args) => args !== '' && !LIVE_HOME.test(args), why
 /** The readers of the machine's load as it stands, each with what makes a call a fixture's: a test's words change with the load it runs beside. */
 const LIVE_READS = [
   { name: 'loadSeam', fixture: () => false, why: 'the merge\'s own reading of the machine; a test hands the flow a seam of its own (`load`)' },
-  { name: 'readProcesses', fixture: () => false, why: 'the process list of the machine; a test hands `foreignTrees` its `processes`' },
+  { name: 'readProcesses', fixture: (args) => /\b(?:run|helper)\b/.test(args), why: 'the process list of the machine; a test hands it a `run` of its own, or `foreignTrees` its `processes`' },
   { name: 'createAdmission', fixture: (args) => /\bdaorisHome\b/.test(args) && !LIVE_HOME.test(args), why: 'the live admission of the Daoris home; a test names a `daorisHome` of its own' },
   { name: 'heldNow', ...ADMISSION },
   { name: 'lookAt', ...ADMISSION },

@@ -363,7 +363,7 @@ public static class RotationWords
             WalkStep.Near or WalkStep.Room => Near(over!, facts.GetValueOrDefault(over!)?.Said, scope.Use, now),
             WalkStep.Headroom => Headroom(own.Said, over!, facts.GetValueOrDefault(over!)?.Said, scope.Use, now),
             WalkStep.Fewest => Reason("it runs the fewest of Daoris's sessions", OpeningWhy.Fewest),
-            WalkStep.Lapsing => Lapses(own.Said, scope.Use, now),
+            WalkStep.Lapsing => Lapses(own, scope.Use, now),
             WalkStep.Pace when scope.Use.Switch == "off" => Pace(own.Said, over!, facts.GetValueOrDefault(over!)?.Said, now),
             WalkStep.Pace => MostRoom(own.Said, over!, facts.GetValueOrDefault(over!)?.Said, scope.Use, now),
             WalkStep.LeastRecent => own is { Chosen: null, LastStarted: null }
@@ -450,12 +450,19 @@ public static class RotationWords
     /// Why the account it ran on ranked ahead by what would lapse (step 4): the window that won, how much of it is
     /// unused, when it resets, and how old that reading is. A step this account's reading cannot say keeps the line's English with no parts.
     /// </summary>
-    private static StepSaid Lapses(AccountSaid? own, RotationUse use, DateTimeOffset now) =>
-        UsageCurves.Lapsing(use, own, now) is { Window: { Used: { } used } week }
-            ? Reason(
-                $"its {week.Window} window resets in {Until(week.Reset - now)} with {Percent(1 - used)} of it unused, read {Age(week.Seen, now)}",
-                OpeningWhy.Lapses,
-                ("window", week.Window), ("unused", Whole(1 - used)), ("at", NoteCodes.Moment(week.Reset)), ("seen", NoteCodes.Moment(week.Seen)))
+    private static StepSaid Lapses(AccountFacts own, RotationUse use, DateTimeOffset now) =>
+        UsageCurves.Lapsing(use, own.Said, now, own.Rate) is { Window: { Used: { } used } week } lapse
+            ? lapse.Needs is { } needs && own.Rate is { } rate
+                ? Reason(
+                    $"its {week.Window} window resets in {Until(week.Reset - now)} with {Percent(1 - used)} of it unused, read {Age(week.Seen, now)}, "
+                    + $"and at {Math.Round(rate, 1).ToString("0.#", CultureInfo.InvariantCulture)}% an hour, the rate Daoris's sessions reached on it, its room takes {Math.Round(needs, MidpointRounding.AwayFromZero)} h to spend",
+                    OpeningWhy.LapsesAtRate,
+                    ("window", week.Window), ("unused", Whole(1 - used)), ("at", NoteCodes.Moment(week.Reset)), ("seen", NoteCodes.Moment(week.Seen)),
+                    ("rate", Math.Round(rate, 1)), ("needs", (int)Math.Round(needs, MidpointRounding.AwayFromZero)))
+                : Reason(
+                    $"its {week.Window} window resets in {Until(week.Reset - now)} with {Percent(1 - used)} of it unused, read {Age(week.Seen, now)}",
+                    OpeningWhy.Lapses,
+                    ("window", week.Window), ("unused", Whole(1 - used)), ("at", NoteCodes.Moment(week.Reset)), ("seen", NoteCodes.Moment(week.Seen)))
             : Reason("its week resets first", null);
 
     /// <summary>How long until a moment, as a reset is said: <i>40 min</i>, <i>8 h</i> (the nearest hour).</summary>

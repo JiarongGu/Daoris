@@ -72,6 +72,16 @@ test('TESTDIET1: a link is never followed nor removed, and what it names outside
   }
 });
 
+test("the machine reader's build is kept however long ago it was built: a long run holds its path, and it changes only when its sources do", () => {
+  assert.ok(KEPT.includes('machine-read-build'));
+  const root = checkout([{ name: 'machine-read-build', hours: 900 }, { name: 'left-by-a-killed-run', hours: 72 }]);
+  try {
+    assert.deepEqual(stale(root, { now: NOW, hours: 24 }).map((entry) => entry.name), ['left-by-a-killed-run']);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
 test('the sweep the prune runs removes what the rule says, and refuses a folder git does not ignore', () => {
   const root = checkout([{ name: 'left-by-a-killed-run', hours: 72 }, { name: 'today', hours: 1 }, { name: KEPT[1], hours: 900 }]);
   try {

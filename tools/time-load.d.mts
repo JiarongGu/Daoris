@@ -1,5 +1,6 @@
 /** Types of `tools/time-load.mjs` for the merge tool's TypeScript: the load under way as a gate's timing records are taken. */
 export declare const ALONE_HOLDS: number;
+export declare const FOREIGN_EVERY: number;
 export declare function heldNow(home?: string, seam?: object): number;
 export declare function readMarks(dir: string): Record<string, { holds: number; at: number }>;
 export declare function isLoaded(marks: Record<string, { holds: number; at: number }>, file: string, at: number): boolean;

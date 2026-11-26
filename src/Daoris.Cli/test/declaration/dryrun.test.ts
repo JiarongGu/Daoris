@@ -131,15 +131,19 @@ test('this repository\'s declaration converts with no difference but the sets it
   for (const overlap of proof.overlaps) assert.ok(overlap.sets.length >= 2 && overlap.today, `${overlap.file} is named with its sets`);
 });
 
-test('the examples hold no gates file, so there is nothing for them to convert', () => {
-  for (const example of ['engine', 'game']) {
-    const root = join(REPOSITORY, 'examples', example);
-    assert.ok(existsSync(root), example);
-    const { code, out } = run(root, ['split', '--dry-run']);
-    assert.equal(code, 0, out);
-    assert.match(out, /no daoris\.gates\.json: nothing to convert/);
-    assert.ok(!existsSync(join(root, '_fixtures')), 'nothing is written where nothing converts');
-  }
+test('the example engine holds no gates file, and the example game\'s, copied out of the tracked example, converts member for member', () => {
+  const engine = join(REPOSITORY, 'examples', 'engine');
+  const none = run(engine, ['split', '--dry-run']);
+  assert.equal(none.code, 0, none.out);
+  assert.match(none.out, /no daoris\.gates\.json: nothing to convert/);
+  assert.ok(!existsSync(join(engine, '_fixtures')), 'nothing is written where nothing converts');
+
+  const fixture = makeFixture('declaration-example-game');
+  fixture.write('daoris.gates.json', readFileSync(join(REPOSITORY, 'examples', 'game', 'daoris.gates.json'), 'utf8'));
+  const game = run(fixture.root, ['split', '--dry-run']);
+  assert.equal(game.code, 0, game.out);
+  assert.match(game.out, /resolves to the old declaration member for member/);
+  fixture.cleanup();
 });
 
 test('a folder the command did not make is never cleared: an existing daoris folder or home.json under --out is refused and kept', () => {

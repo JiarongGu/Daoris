@@ -12,18 +12,20 @@ test('a pid that is no positive whole number runs nothing, and this process runs
   assert.equal(pidAlive(process.pid), true);
 });
 
-test('a process\'s start is asked of PowerShell on Windows and of ps elsewhere, and a machine that will not say answers null', () => {
+test('a process\'s start is asked of the machine reader on Windows (never a PowerShell) and of ps elsewhere, and a machine that will not say answers null', () => {
   const asked: string[] = [];
   const run = (stdout: string, status = 0) => (command: string) => {
     asked.push(command);
     return { status, stdout };
   };
-  assert.equal(processStart(4242, { platform: 'win32', run: run(String(BEGAN)) }), BEGAN);
+  const row = (pid: number) => JSON.stringify([{ pid, ppid: 1, created: BEGAN, name: 'x.exe', path: null, command: null }]);
+  assert.equal(processStart(4242, { platform: 'win32', helper: 'H:\\machine-read.exe', run: run(row(4242)) }), BEGAN);
   assert.equal(processStart(4242, { platform: 'linux', run: run('Sun Nov  1 08:00:00 2026') }), Date.parse('Sun Nov  1 08:00:00 2026'));
-  assert.deepEqual(asked, ['powershell', 'ps']);
-  assert.equal(processStart(4242, { platform: 'win32', run: run('', 0) }), null, 'no such process');
+  assert.deepEqual(asked, ['H:\\machine-read.exe', 'ps']);
+  assert.equal(processStart(4242, { platform: 'win32', helper: 'H', run: run('[]') }), null, 'no such process');
+  assert.equal(processStart(4242, { platform: 'win32', helper: 'H', run: run('', 1) }), null, 'the reader refused');
   assert.equal(processStart(4242, { platform: 'linux', run: run('x', 1) }), null, 'ps refused');
-  assert.equal(processStart(0, { run: run(String(BEGAN)) }), null);
+  assert.equal(processStart(0, { run: run(row(0)) }), null);
 });
 
 test('the holder is the same while the pid\'s start is within the tolerance, and another once a later process took the pid', () => {

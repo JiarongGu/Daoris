@@ -9,7 +9,7 @@ namespace Daoris.Driver;
 /// agent asks nothing of its server and <see cref="SwitchDecision.Fresh"/> stands.
 /// </param>
 /// <param name="Size">Its plan's size in its agent's base plans (<see cref="AccountFacts.Size"/>), or null where none is declared.</param>
-public sealed record SwitchCandidate(string Account, AccountSaid? Said, bool Ready, TimeSpan? Floor = null, double? Size = null)
+public sealed record SwitchCandidate(string Account, AccountSaid? Said, bool Ready, TimeSpan? Floor = null, double? Size = null, double? Rate = null)
 {
     /// <summary>What its room and lapse are weighed by, as the walk's (<see cref="AccountFacts.Units"/>).</summary>
     public double Units => Size is { } size and > 0 ? size : 1;
@@ -126,7 +126,7 @@ public static class SwitchDecision
             .Select(each => (
                 each.Account,
                 Room: UsageCurves.TightestSaid(use, each.Said, now)?.Room,
-                Lapse: (UsageCurves.Lapsing(use, each.Said, now)?.Rate ?? 0) * each.Units,
+                Lapse: (UsageCurves.Lapsing(use, each.Said, now, each.Rate)?.Rate ?? 0) * each.Units,
                 each.Units))
             .Where(each => each.Room >= UsageCurves.SwitchMargin)
             .OrderByDescending(each => each.Lapse)

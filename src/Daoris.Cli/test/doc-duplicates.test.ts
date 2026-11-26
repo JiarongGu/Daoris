@@ -9,10 +9,11 @@ import { makeFixture } from './_fixture.ts';
 // a changelog line twice. The decisions record is a folder of one file per decision; the tool
 // refuses what union can leave in one decision's file, and a decision written into the page the record left.
 // @ts-expect-error — untyped workspace tooling; the same seam dogfood.test.ts documents
-const { duplicates, check, records, PAGE } = await import('../../../tools/doc-duplicates.mjs') as {
+const { duplicates, check, records, resurrected, PAGE } = await import('../../../tools/doc-duplicates.mjs') as {
   duplicates: (text: string, kind: string) => string[];
   check: (root: string) => { file: string; fact: string; key: string }[];
   records: (root: string) => { file: string; kind: string }[];
+  resurrected: (backlog: string, archive: string) => { id: string; backlogLine: number; archiveLine: number }[];
   PAGE: string;
 };
 
@@ -236,5 +237,43 @@ test("a decisions record still one file is checked as it was: a number twice, an
   fx.write('daoris.json', JSON.stringify({ documents: { decisions: 'docs/DECISIONS.md' } }));
   fx.write('docs/DECISIONS.md', '## D1 — a\n\nText.\n*As built (X, 2026-10-01): glued to the text.\n\n## D1 — the same number again\n');
   assert.deepEqual(check(fx.root), [{ file: 'docs/DECISIONS.md', fact: 'twice', key: 'D1' }]);
+  fx.cleanup();
+});
+
+const OPEN = '- [ ] **EXTENDSEAMS1 — each area says how its part takes an addition** (canon, docs; M): the rest.';
+const DONE = '- [x] **EXTENDSEAMS1 — each area says how its part takes an addition** (canon, docs; 2026-11-26): what shipped.';
+const FENCE = '```';
+
+test('a backlog row the archive holds done under the same id and title is named with both lines', () => {
+  const found = resurrected(`# Tasks\n\n## Now\n${OPEN}\n`, `# Task archive\n\nintro\n${DONE}\n`);
+  assert.deepEqual(found, [{ id: 'EXTENDSEAMS1', backlogLine: 4, archiveLine: 4 }]);
+});
+
+test('a row the archive holds only in part, or a different row of the same id, is no resurrection', () => {
+  const backlog = '- [ ] **FOUNDATION1 — one generic foundation** (driver): left.\n- [ ] **FABRIC-PIPELINE1 — verification as a pipeline** (driver): left.\n';
+  const archive = '- [x] **FOUNDATION1 — one foundation for who acts** (D212): every row but n.\n- [x] **FABRIC-PIPELINE1d — the check performed** (driver).\n'
+    + '- **FOUNDATION1 (2026-11-16):** a dated line is no title to compare.\n';
+  assert.deepEqual(resurrected(backlog, archive), []);
+});
+
+test('an open archive line, a done backlog line and a fenced example are no resurrection', () => {
+  assert.deepEqual(resurrected(OPEN.replace('[ ]', '[x]'), DONE), []);
+  assert.deepEqual(resurrected(OPEN, OPEN), []);
+  assert.deepEqual(resurrected(`${FENCE}\n${OPEN}\n${FENCE}\n`, DONE), []);
+  assert.deepEqual(resurrected(OPEN, `${FENCE}\n${DONE}\n${FENCE}\n`), []);
+});
+
+test('check reads the declared backlog and archive and fails the resurrected row, naming both lines', () => {
+  const fx = makeFixture('doc-duplicates-resurrected');
+  fx.write('daoris.json', JSON.stringify({ documents: { backlog: { path: 'ROWS.md' }, archive: 'docs/done.md' } }));
+  fx.write('ROWS.md', `# Rows\n\n${OPEN}\n`);
+  fx.write('docs/done.md', `# Done\n\n\n${DONE}\n`);
+  const found = check(fx.root).filter((each) => each.fact === 'a row the archive holds done');
+  assert.equal(found.length, 1);
+  const [one] = found;
+  assert.equal(one?.file, 'ROWS.md');
+  assert.match(one?.key ?? '', /EXTENDSEAMS1/);
+  assert.match(one?.key ?? '', /line 3/);
+  assert.match(one?.key ?? '', /docs\/done\.md line 4/);
   fx.cleanup();
 });

@@ -144,6 +144,37 @@ public sealed class UpdateCommandTests : IDisposable
     }
 
     [Fact]
+    public void Update_now_asks_the_staged_build_s_proof_and_a_refusal_closes_nothing_until_it_reads_clean()
+    {
+        Stage("b1");
+        var asked = 0;
+        var clean = false;
+        StagedProof proof = (_, _, _) =>
+        {
+            asked++;
+            return clean ? null : (HomeProbe.Code, "the staged build did not start clean on a copy of this home: the account `claude-code/acct-b` is no longer listed. Nothing was replaced and this build keeps running.");
+        };
+
+        var code = UpdateCommand.Run(["--now"], Home, () => Now, null, null, out var said, proof: proof);
+
+        Assert.Equal(1, code);
+        Assert.Contains("build b1 is not installed now", said);
+        Assert.Contains("claude-code/acct-b", said);
+        Assert.Contains("keeps running", said);
+        Assert.Contains("Nothing closes", said);
+
+        clean = true;
+        code = UpdateCommand.Run(["--now"], Home, () => Now, null, null, out said, proof: proof);
+        Assert.Equal(0, code);
+        Assert.Contains("the desktop closes", said);
+        Assert.Equal(2, asked);
+
+        // A word that closes nothing (when idle, not now) starts no proof: it copies the home only for a close.
+        UpdateCommand.Run(["--when-idle"], Home, () => Now, null, null, out _, proof: proof);
+        Assert.Equal(2, asked);
+    }
+
+    [Fact]
     public void Not_now_said_of_one_build_reads_as_when_idle_for_the_next()
     {
         Stage("b1");

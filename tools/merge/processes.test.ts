@@ -1,6 +1,6 @@
 import { test } from 'vitest';
 import assert from 'node:assert/strict';
-import { abnormalEnd, ownedAfter, parseWindowsList, stopOwned, type Proc } from './processes.ts';
+import { abnormalEnd, ownedAfter, procsOf, stopOwned, type Proc } from './processes.ts';
 
 const p = (pid: number, ppid: number, created: string, command = 'x'): Proc => ({ pid, ppid, created, command });
 const T0 = '2026-11-13T10:00:00.000Z';
@@ -41,7 +41,7 @@ test('an exit that says the process ended (a signal, a crash status) is abnormal
   for (const code of [0, 1, 2]) assert.equal(abnormalEnd(code), false, String(code));
 });
 
-test('the Windows listing is read with each process\'s parent and creation time', () => {
-  const text = JSON.stringify([{ ProcessId: 4, ParentProcessId: 1, CreationDate: '2026-11-13T10:00:05.0000000Z', CommandLine: 'node a' }]);
-  assert.deepEqual(parseWindowsList(text), [{ pid: 4, ppid: 1, created: '2026-11-13T10:00:05.000Z', command: 'node a' }]);
+test('the machine reader\'s rows are read with each process\'s parent and creation time as an instant', () => {
+  const rows = [{ pid: 4, ppid: 1, created: Date.parse('2026-11-13T10:00:05Z'), name: 'node.exe', path: null, command: 'node a' }];
+  assert.deepEqual(procsOf(rows), [{ pid: 4, ppid: 1, created: '2026-11-13T10:00:05.000Z', command: 'node a' }]);
 });

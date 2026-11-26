@@ -145,10 +145,9 @@ export const tool = await import(
   memoryDeath: (log: string, ...codes: number[]) => { said: string } | null;
   readMemory: (options?: {
     platform?: string; run?: (command: string, args: string[], options: object) => { status: number | null; stdout?: string; stderr?: string; error?: Error };
-    freemem?: () => number; totalmem?: () => number; read?: (path: string) => string;
+    helper?: string; freemem?: () => number; totalmem?: () => number; read?: (path: string) => string;
   }) => Reading;
   reserveGb: (options?: { total?: number | null; home?: string | null; now?: number; read?: (path: string) => string }) => number;
-  parseWindowsMemory: (text: string) => { physical: number | null; commit: number | null };
   parseMeminfo: (text: string) => { commit: number | null };
   flakeNote: (flakes: GateResult[]) => string;
   memoryLine: (failed: GateResult[]) => string | null;
@@ -199,7 +198,7 @@ export const tool = await import(
   HARNESS_IDLE_MINUTES: number;
   ENDED_IDLE_MINUTES: number;
   newestWrite: (path: string) => number;
-  parseProcesses: (text: string, platform?: string) => Proc[];
+  namedProcesses: (rows: { pid: number; path: string | null; command: string }[]) => Proc[];
   processesInside: (folder: string, processes: Proc[], platform?: string) => Proc[];
   disposableLocal: (path: string, directory?: boolean, setupCopies?: readonly string[]) => boolean;
   firstFile: (dir: string, skip?: (path: string, directory: boolean) => boolean) => string | null;

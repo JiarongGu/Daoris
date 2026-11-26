@@ -174,6 +174,28 @@ public sealed class RebaseReplayGitTests : LandedFixture
         Assert.Equal(["TASKS.md"], fourth.Stop!.Paths);
     }
 
+    /// <summary>A work that merged the line replays only its own commits, so a row the line archived after the merge stays archived.</summary>
+    [Fact]
+    public async Task A_work_that_merged_the_line_replays_none_of_the_commits_the_line_holds_so_a_row_it_archived_stays_archived()
+    {
+        var root = await RepositoryAsync("engine");
+        var tree = await new SessionTrees(Home).OpenAsync(root, "engine", "aurora");
+        await CommitAsync(tree.Path, "work.txt", "the work\n", "the work");
+        await CommitAsync(root, "TASKS.md", Rows + "- [ ] **A4** four.\n", "the line's row A4");
+        await GitAsync(tree.Path, "merge", "--no-ff", "--no-edit", "main");
+        await CommitAsync(tree.Path, "work-two.txt", "more work\n", "the work, again");
+        await CommitAsync(root, "TASKS.md", Rows, "the line archives A4");
+        var line = await LineAsync(root);
+
+        var made = await Replay.ReplayAsync(await WorkAsync(root, tree), tree.Path, line, [], CancellationToken.None);
+
+        Assert.Equal(RebaseOutcomes.Ready, made.Outcome);
+        Assert.Equal(2, made.Replayed);
+        Assert.Equal(Rows, await GitAsync(root, "show", $"{made.Commit}:TASKS.md"));
+        Assert.Equal("2", (await GitAsync(root, "rev-list", "--count", $"{line.Tip}..{made.Commit}")).Trim());
+        Assert.Equal("more work\n", await GitAsync(root, "show", $"{made.Commit}:work-two.txt"));
+    }
+
     /// <summary>A stop while the tree of its own is being made, and one while git replays in it: either way the tree is gone.</summary>
     [Theory]
     [InlineData(300)]

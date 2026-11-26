@@ -12,6 +12,7 @@ import { setTimeout as sleep } from 'node:timers/promises';
 import { portIsFree } from './cdp.mjs';
 import { spawnGit } from './fsx.mjs';
 import { endOrphans } from './processes.mjs';
+import { holdersOf } from './port-listeners.mjs';
 
 /**
  * Every run leaves a transcript under `_fixtures/rehearsal-logs/`, outside anything a passing run
@@ -281,20 +282,14 @@ export async function takePorts(names, { start, band = PORT_BAND, isFree = portI
 
 /**
  * Who holds `port`, as the system names its listener: `pid <id> <name> <command line>`, or a sentence saying it is not
- * named. Asked only for a refusal, so its cost (a PowerShell on Windows) is paid when something is already wrong, and it
- * is given two minutes: on a fully loaded machine the PowerShell and its two CIM queries can run past thirty seconds and the
- * refusal would name nobody, when naming the holder is the refusal's whole use.
+ * named. Asked only for a refusal, and given two minutes: on a fully loaded machine a read can run past thirty seconds and the
+ * refusal would name nobody, when naming the holder is the refusal's whole use. On Windows `tools/port-listeners.mjs` reads it.
  */
 export function portHolder(port) {
-  const ran = process.platform === 'win32'
-    ? spawnSync('powershell', ['-NoProfile', '-NonInteractive', '-Command',
-      `Get-NetTCPConnection -LocalPort ${port} -State Listen -ErrorAction SilentlyContinue | Select-Object -ExpandProperty OwningProcess -Unique | `
-      + `ForEach-Object { $p = Get-CimInstance Win32_Process -Filter "ProcessId = $_" -ErrorAction SilentlyContinue; "pid $_ $($p.Name) $($p.CommandLine)" }`],
-    { encoding: 'utf8', windowsHide: true, timeout: 120_000 })
-    : spawnSync('lsof', ['-nP', `-iTCP:${port}`, '-sTCP:LISTEN', '-Fpc'], { encoding: 'utf8', timeout: 120_000, windowsHide: true });
+  if (process.platform === 'win32') return holdersOf(port) || 'a process the system did not name';
+  const ran = spawnSync('lsof', ['-nP', `-iTCP:${port}`, '-sTCP:LISTEN', '-Fpc'], { encoding: 'utf8', timeout: 120_000, windowsHide: true });
   const said = String(ran.stdout ?? '').trim();
   if (!said) return 'a process the system did not name';
-  if (process.platform === 'win32') return said.split(/\r?\n/).map((line) => line.trim()).join('; ');
 
   // lsof's fields: `p<pid>` then `c<command>`, a pair per process.
   const holders = [];

@@ -46,7 +46,7 @@ const word = (text) => {
   return ((first?.[1] ?? first?.[2] ?? '').split(/[\\/]/).pop() ?? '');
 };
 
-/** The pids of the git processes among `processes` (`{ pid, exe, command }`, as `parseProcesses` gives them). */
+/** The pids of the git processes among `processes` (`{ pid, exe, command }`, as `namedProcesses` gives them). */
 export function gitProcessIds(processes) {
   return processes.filter((one) => GIT.test(word(one.exe)) || GIT.test(word(one.command))).map((one) => one.pid);
 }

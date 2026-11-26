@@ -181,21 +181,19 @@ test('a harness-locked merged worktree goes, unlocked, only when it is clean, ho
 });
 
 
-test('the processes are read from a CIM query on Windows and ps elsewhere, and one is inside a folder its path or command line names', () => {
-  const cim = JSON.stringify([
-    { ProcessId: 0, ExecutablePath: null, CommandLine: null },
-    { ProcessId: 4120, ExecutablePath: 'C:\\Program Files\\nodejs\\node.exe', CommandLine: '"C:\\Program Files\\nodejs\\node.exe" land.mjs' },
-    { ProcessId: 77, ExecutablePath: 'C:\\Windows\\System32\\svchost.exe', CommandLine: null },
-  ]);
-  assert.deepEqual(tool.parseProcesses(cim, 'win32'), [
+test("the processes are the machine reader's rows, and one is inside a folder its path or command line names", () => {
+  assert.deepEqual(tool.namedProcesses([
+    { pid: 0, path: null, command: '' },
+    { pid: 4120, path: 'C:\\Program Files\\nodejs\\node.exe', command: '"C:\\Program Files\\nodejs\\node.exe" land.mjs' },
+    { pid: 77, path: 'C:\\Windows\\System32\\svchost.exe', command: '' },
+    { pid: 5, path: null, command: 'x' },
+    { pid: 234, path: null, command: 'node /work/x/land.mjs --flag' },
+  ]), [
     { pid: 4120, exe: 'C:\\Program Files\\nodejs\\node.exe', command: '"C:\\Program Files\\nodejs\\node.exe" land.mjs' },
     { pid: 77, exe: 'C:\\Windows\\System32\\svchost.exe', command: 'C:\\Windows\\System32\\svchost.exe' },
+    { pid: 5, exe: '', command: 'x' },
+    { pid: 234, exe: '', command: 'node /work/x/land.mjs --flag' },
   ], 'a process with neither path nor command line names no folder');
-  // PowerShell writes one object, not an array, for a single process, and a console set to UTF-8 may write its preamble.
-  assert.deepEqual(tool.parseProcesses(`﻿${JSON.stringify({ ProcessId: 5, ExecutablePath: null, CommandLine: 'x' })}\r\n`, 'win32'), [{ pid: 5, exe: '', command: 'x' }]);
-  assert.deepEqual(tool.parseProcesses('    1 /sbin/init\n  234 node /work/x/land.mjs --flag\n\n', 'linux'), [
-    { pid: 1, exe: '', command: '/sbin/init' }, { pid: 234, exe: '', command: 'node /work/x/land.mjs --flag' },
-  ]);
 
   const folder = ['D:', 'work', 'repo', '.claude', 'worktrees', 'agent-a'].join('\\');
   const proc = (pid: number, command: string, exe = ''): Proc => ({ pid, exe, command });

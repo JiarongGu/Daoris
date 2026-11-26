@@ -125,7 +125,7 @@ ProgramHome.Named = DaorisHome.Resolve();
 // The paths no entry of the home's table names: a read, routed before the staffing's wiring (naming data/driver.json makes the
 // category's folder), the lease (VerbLeases) and the machine log (whose open prunes old files), since listing changes nothing. A home
 // named nowhere is said as the catch below says it.
-if (args is ["home"])
+if (args is ["home"] or ["home", "proof"])
 {
     if (ProgramHome.Named is not { } listedHome)
     {
@@ -133,7 +133,7 @@ if (args is ["home"])
         return 2;
     }
 
-    var listed = HomePurgeCommand.Run([], listedHome, () => DateTimeOffset.UtcNow, null, null, out var listedSaid);
+    var listed = HomePurgeCommand.Run([.. args[1..]], listedHome, () => DateTimeOffset.UtcNow, null, null, out var listedSaid);
     Console.Out.Write(listedSaid);
     return listed;
 }
@@ -609,7 +609,7 @@ try
     {
         var exit = UpdateCommand.Run(
             updateArgs, DaorisHome.Resolve() ?? throw new DriverException(DaorisHome.Sentence), () => DateTimeOffset.UtcNow, log,
-            Environment.GetEnvironmentVariable(DriverChoicesCommand.SessionVariable), out var updateSaid);
+            Environment.GetEnvironmentVariable(DriverChoicesCommand.SessionVariable), out var updateSaid, proof: HomeProbe.Refused);
         (exit == 2 ? Console.Error : Console.Out).Write(updateSaid);
         return exit;
     }

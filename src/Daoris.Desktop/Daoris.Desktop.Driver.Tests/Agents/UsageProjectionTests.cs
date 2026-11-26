@@ -88,6 +88,39 @@ public sealed class UsageProjectionTests : IDisposable
         Assert.Equal(0.08 / 400_000, UsageProjection.Ratio(readings, turns, "weekly", Now)!.Value, 12);
     }
 
+    // ——— The rate reached: the points of a window an hour that Daoris's sessions reached on the account.
+
+    [Fact]
+    public void The_rate_is_the_fastest_the_readings_rose_in_points_an_hour_over_a_span_beside_a_turn_of_Daoris_s()
+    {
+        var reset = Now.AddDays(2);
+        ReadPoint[] readings =
+        [
+            Read("weekly", 0.10, reset, 10), Read("weekly", 0.16, reset, 8), Read("weekly", 0.18, reset, 6), Read("weekly", 0.30, reset, 4),
+            Read("session", 0.10, Now.AddHours(1), 10), Read("session", 0.90, Now.AddHours(1), 8),
+        ];
+        SpentTurn[] turns = [Turn(9, 1000), Turn(7, 1000), new(Now.AddHours(-5), null, 1)];
+
+        // 10% to 16% in two hours is 3 an hour, 16 to 18 is 1, 18 to 30 is 6.
+        Assert.Equal(6, UsageProjection.Rate(readings, turns, "weekly", Now)!.Value, 9);
+        // A span with no turn of Daoris's is someone else's use: only the first counts.
+        Assert.Equal(3, UsageProjection.Rate(readings, [Turn(9, 1000)], "weekly", Now)!.Value, 9);
+    }
+
+    [Fact]
+    public void No_rate_is_read_from_no_turn_a_span_under_two_hours_a_run_of_one_or_a_window_begun_again()
+    {
+        var reset = Now.AddDays(2);
+        Assert.Null(UsageProjection.Rate([Read("weekly", 0.10, reset, 10), Read("weekly", 0.40, reset, 8)], [], "weekly", Now));
+        Assert.Null(UsageProjection.Rate([Read("weekly", 0.10, reset, 3), Read("weekly", 0.40, reset, 1.5)], [Turn(2, 1000)], "weekly", Now));
+        Assert.Null(UsageProjection.Rate([Read("weekly", 0.10, reset, 3)], [Turn(2, 1000)], "weekly", Now));
+        Assert.Null(UsageProjection.Rate([Read("weekly", 0.10, reset, 10), Read("weekly", 0.10, reset, 8)], [Turn(9, 1000)], "weekly", Now));
+        Assert.Null(UsageProjection.Rate([Read("weekly", 0.10, reset, 10), Read("weekly", 0.11, reset, 8)], [Turn(9, 1000)], "weekly", Now));
+        Assert.Null(UsageProjection.Rate(
+            [Read("weekly", 0.90, reset, 10), Read("weekly", 0.0, reset.AddDays(7), 8)], [Turn(9, 1000)], "weekly", Now));
+        Assert.Null(UsageProjection.Rate([Read("weekly", 0.10, reset, 10), Read("weekly", 0.40, reset, 8)], [Turn(9, 1000, epoch: 2)], "weekly", Now));
+    }
+
     // ——— The projection.
 
     [Fact]

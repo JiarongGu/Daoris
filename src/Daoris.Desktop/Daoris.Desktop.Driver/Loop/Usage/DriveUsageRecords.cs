@@ -95,6 +95,9 @@ internal static class DriveUsageRecords
               a home's history (sessions, quests, asks, runs, notices and the records of work done) moved into
               purged/<UTC stamp>/ beside the install, its configuration kept; --plan lists every path and table it
               would take and changes nothing; --yes refuses while a desktop, a `drive` or the service holds the home.
+          home proof
+              what this build reads of the home as one line of JSON: the agent accounts it lists, the sessions, runs and workflows it
+              reads and each path no entry names; changes nothing. An update runs it on a copy of the home before it swaps in.
           home account-ids --plan | --yes
               each agent account whose id is not the hash form moved once to its hash id with every reference to it;
               --plan lists each move and changes nothing; --yes refuses while Daoris runs.
