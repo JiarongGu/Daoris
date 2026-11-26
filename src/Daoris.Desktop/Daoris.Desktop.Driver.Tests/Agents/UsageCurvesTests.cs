@@ -226,7 +226,7 @@ public sealed class UsageCurvesTests
 
         Assert.Null(LapsingAt(2, Use("smart"), week));
         Assert.NotNull(LapsingAt(room / 35, Use("smart"), week));
-        Assert.NotNull(LapsingAt(0, Use("smart"), week));
+        Assert.Null(LapsingAt(0, Use("smart"), week));
         // Nobody measured one: beyond the last day nothing is claimed.
         Assert.Null(LapsingAt(null, Use("smart"), week));
         Assert.Null(LapsingAt(1, Use("smart"), Seen("weekly", 0.37, TimeSpan.FromDays(5), TimeSpan.FromMinutes(5))));

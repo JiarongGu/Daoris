@@ -119,6 +119,9 @@ public static class UsageProjection
     /// </summary>
     public static readonly TimeSpan RateSpan = TimeSpan.FromHours(2);
 
+    /// <summary>The least rise, as a fraction, a span's rate is read on: two points, so whole-percent rounding at both ends cannot carry it.</summary>
+    public const double LeastRateRise = 0.02;
+
     /// <summary>The least rise, as a fraction, a ratio is read on: five points, so whole-percent rounding cannot carry it.</summary>
     public const double LeastRise = 0.05;
 
@@ -187,7 +190,7 @@ public static class UsageProjection
     /// The fastest a window rose, in points an hour, over a span of at least <see cref="RateSpan"/> inside one reset and one
     /// epoch with a turn of Daoris's ended in it, within <see cref="Horizon"/> of <paramref name="now"/>: the rate its own
     /// sessions reached on the account, which a week's room is spent at (<see cref="UsageCurves.Lapsing"/>). Null where no such span
-    /// exists: absent is never zero, and a rise with no turn of Daoris's in it is someone else's use.
+    /// exists: absent is never zero, a span rising less than <see cref="LeastRateRise"/> is no measure, and a rise with no turn of Daoris's in it is someone else's use.
     /// </summary>
     /// <param name="readings">The account's readings, any window, any order.</param>
     /// <param name="turns">The account's turns, whatever their report's meaning: a turn that ran is Daoris's work, weighed or not.</param>
@@ -215,7 +218,10 @@ public static class UsageProjection
                 var (first, last) = (points[from], points[to]);
                 if (!spent.Any(turn => turn.Ended > first.Seen && turn.Ended <= last.Seen && SameEpoch(turn.Epoch, first.Epoch))) continue;
 
-                var rate = Math.Max(0, last.Used - first.Used) * 100 / (last.Seen - first.Seen).TotalHours;
+                var rise = last.Used - first.Used;
+                if (rise < LeastRateRise - 1e-9) continue;
+
+                var rate = rise * 100 / (last.Seen - first.Seen).TotalHours;
                 if (fastest is null || rate > fastest) fastest = rate;
             }
 

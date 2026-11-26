@@ -227,8 +227,8 @@ public static class AccountRotation
             Window = lapse?.Window.Window,
             Unused = lapse?.Window.Used is { } used ? RotationWords.Whole(1 - used) : null,
             Seen = lapse?.Window.Seen,
-            Rate = lapse is not null && own.Rate is { } rate ? Math.Round(rate, 1) : null,
-            Needs = lapse?.Needs is { } needs && double.IsFinite(needs) ? (int)Math.Round(needs, MidpointRounding.AwayFromZero) : null,
+            Rate = lapse?.Needs is not null && own.Rate is { } rate ? Math.Round(rate, 1) : null,
+            Needs = lapse?.Needs is { } needs ? (int)Math.Round(needs, MidpointRounding.AwayFromZero) : null,
         };
 
         AccountHeld Held(AccountState state) => state.Readiness switch

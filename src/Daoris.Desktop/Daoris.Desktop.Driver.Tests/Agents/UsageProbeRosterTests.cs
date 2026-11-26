@@ -244,11 +244,15 @@ public sealed class UsageProbeRosterTests : IDisposable
 
         Spent("account-2", 1000, minutesAgo: 9 * 60, seq: 1);
 
-        var facts = Roster().Facts("fake", ["account-1", "account-2"], _now);
+        var roster = Roster();
+        var facts = roster.Facts("fake", ["account-1", "account-2"], _now);
+        var candidates = roster.SwitchCandidates("fake", ["account-1", "account-2"]);
 
         // Six points over two hours beside a turn of Daoris's; the other account ran nothing, so no rate is claimed.
         Assert.Equal(3, facts["account-2"].Rate!.Value, 6);
         Assert.Null(facts["account-1"].Rate);
+        Assert.Equal(3, candidates.Single(each => each.Account == "account-2").Rate!.Value, 6);
+        Assert.Null(candidates.Single(each => each.Account == "account-1").Rate);
     }
 
     [Fact]

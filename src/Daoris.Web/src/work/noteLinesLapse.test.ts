@@ -12,7 +12,7 @@ const coded = (code: string, text: string, values: Record<string, unknown> = {})
 describe('a week that lapses by measure', () => {
   it('is worded with its rate and the hours its room takes, in English and 中文', () => {
     const lapses = coded('opening.opened', 'opened on `account-3`: …', {
-      account: 'account-3', why: 'lapses-rate', window: 'weekly', unused: 50, at: '2026-10-03T23:00:00Z', seen: '2026-10-02T11:50:00Z', rate: 1, takes: 46,
+      account: 'account-3', why: 'lapses-rate', window: 'weekly', unused: 50, at: '2026-10-03T23:00:00Z', seen: '2026-10-02T11:50:00Z', rate: 1, needs: 46,
     });
     expect(noteLines(t, { parts: [lapses] }, 'en')[0].text).toBe(
       `Opened on \`account-3\`: its weekly window resets at ${moment('2026-10-03T23:00:00Z', 'en')} with 50% of it unused, `

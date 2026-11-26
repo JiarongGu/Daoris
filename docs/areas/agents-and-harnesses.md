@@ -210,7 +210,7 @@ where a seam, route, verb or fixture is. Which folder owns which job:
     The walk, under `goal` (the default): a near account last, then a week about to lapse first, ahead of any other account's room
     and of the fewest-sessions step (a week lapses by measure: the hours its room under its curve needs at the rate Daoris's own
     sessions reached on the account, `AccountFacts.Rate`, the fastest its week rose over two hours or more beside a turn of
-    Daoris's in the usage ledger, `UsageProjection.Rate`, reach the hours left to its reset, on any day; where no rate is
+    Daoris's in the usage ledger, `UsageProjection.Rate`: a peak, which a span rising under two points does not set and a rate of nothing never is, reach the hours left to its reset, on any day; where no rate is
     measured, nothing is known of how fast its room is spent, and a week within its last day lapses as before, no curve
     holding there, the person's included; the most room per hour to its reset goes first; an unknown or old reading of a
     shorter window holds no account back; the start's line and the agent's page say the rate and the hours its room needs,

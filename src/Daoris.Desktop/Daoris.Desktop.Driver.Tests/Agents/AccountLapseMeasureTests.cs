@@ -39,12 +39,48 @@ public sealed class AccountLapseMeasureTests
     // Within the last day a rate that spends the room in time keeps the order, and one that does not goes first.
     [InlineData("account-1 account-2", "account-1:W2@+5d account-2:W60@+8h,r1", "account-2=10", "account-1 account-2")]
     [InlineData("account-1 account-2", "account-1:W2@+5d account-2:W60@+8h,r1", "account-2=1", "account-2 account-1")]
-    // A rate of nothing reached needs no end of hours.
-    [InlineData("account-1 account-2", "account-1:W2@+5d account-2:W50@+35h,r1", "account-2=0", "account-2 account-1")]
+    // A rate of nothing reached is no rate measured: beyond the last day nothing is claimed.
+    [InlineData("account-1 account-2", "account-1:W2@+5d account-2:W50@+35h,r1", "account-2=0", "account-1 account-2")]
     public void A_week_lapses_by_the_hours_its_room_needs_at_the_rate_reached_against_the_hours_left(
         string scope, string facts, string rates, string order)
     {
         Assert.Equal(order, Order(scope, facts, rates));
+    }
+
+    private static WindowSaid Said(string window, double? used, TimeSpan toReset, TimeSpan ago) =>
+        new(window, used, Now + toReset, Standing: null, Credits: false, Seen: Now - ago, Session: "s0");
+
+    [Theory]
+    // The five-hour window read with no number, newer than the week's reading, which is eight hours old.
+    [InlineData(5, 8)]
+    // Both readings eight hours old.
+    [InlineData(480, 8)]
+    public void An_unknown_shorter_window_and_an_old_reading_hold_the_lapsing_account_back_no_more_than_a_fresh_one(int sessionAgoMinutes, int weekAgoHours)
+    {
+        var facts = AccountRotationWalkTests.Facts("account-1:W2@+5d");
+        facts["account-2"] = new AccountFacts(
+            Running: 1, Rate: 1,
+            Said: new AccountSaid([Said("session", null, TimeSpan.FromHours(3), TimeSpan.FromMinutes(sessionAgoMinutes)), Said("weekly", 0.50, TimeSpan.FromHours(35), TimeSpan.FromHours(weekAgoHours))]));
+        var read = AccountRotationWalkTests.Scope("account-1 account-2");
+
+        Assert.Equal("account-2 account-1", string.Join(' ', AccountRotation.Order(read, StartKind.Driven, [.. read.List], facts, Now)));
+    }
+
+    [Fact]
+    public void A_required_move_goes_where_the_measured_rate_leaves_more_to_lapse()
+    {
+        static AccountSaid Week(double used, int hours) =>
+            new([Said("session", 0.10, TimeSpan.FromHours(1), TimeSpan.FromSeconds(30)), Said("weekly", used, TimeSpan.FromHours(hours), TimeSpan.FromSeconds(30))]);
+        var over = Week(0.97, 84);
+        SwitchCandidate[] candidates =
+        [
+            new("account-2", Week(0.10, 84), Ready: true),
+            new("account-3", Week(0.59, 8), Ready: true, Rate: 1),
+        ];
+
+        Assert.Equal("account-3", Assert.IsType<SwitchChoice.MoveTo>(SwitchDecision.Decide(RotationUse.Default, "account-1", over, candidates, Now, null)).Account);
+        SwitchCandidate[] spent = [candidates[0], candidates[1] with { Rate = 10 }];
+        Assert.Equal("account-2", Assert.IsType<SwitchChoice.MoveTo>(SwitchDecision.Decide(RotationUse.Default, "account-1", over, spent, Now, null)).Account);
     }
 
     [Fact]

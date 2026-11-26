@@ -138,7 +138,7 @@ public sealed class OpeningNoteTests : IDisposable
         Assert.Equal(
             ("its weekly window resets in 35 h with 50% of it unused, read 10 min ago, and at 1% an hour, the rate Daoris's sessions reached on it, its room takes 46 h to spend", OpeningWhy.LapsesAtRate),
             (said.Text, said.Why));
-        Assert.Equal("window=weekly unused=50 at=2026-10-03T23:00:00Z seen=2026-10-02T11:50:00Z rate=1 takes=46", Values(said));
+        Assert.Equal("window=weekly unused=50 at=2026-10-03T23:00:00Z seen=2026-10-02T11:50:00Z rate=1 needs=46", Values(said));
         Assert.Contains(NoteCodes.Opening.All, reason => reason.Code == OpeningWhy.LapsesAtRate);
     }
 

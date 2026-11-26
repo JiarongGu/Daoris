@@ -159,12 +159,12 @@ public static class UsageCurves
     /// <remarks>
     /// <para><b>A week lapses by measure</b> where <paramref name="spend"/>, the points of the week an hour Daoris's sessions
     /// reached on the account (<see cref="UsageProjection.Rate"/>), is known: the hours its room needs at it reach the hours left,
-    /// on any day, a rate of nothing needing no end of hours. Where none is measured the <see cref="LastDay"/> stands in.</para>
+    /// on any day. A rate of nothing is none measured. Where none is the <see cref="LastDay"/> stands in.</para>
     /// <para><b>Only the whole plan's week</b>, <c>weekly</c>: the five-hour window recovers in hours, so its reset never
     /// lapses anything, and a model's own week draws only that model's work, which a start may not be (the walk reads neither).
     /// Credits never count.</para>
     /// <para><b>Nothing that is not known earns any</b> (absent is never zero): a week with no reading or no number; one now or
-    /// past, whose week has already turned over; a reading older than the account's newest window, since the account ran after
+    /// past, whose week has already turned over; a reading older than the account's newest window with a number, since the account ran after
     /// it; and a week read at 0% whose reset a read made up a week on, since one not yet opened lapses nothing. An explicit
     /// zero with its reset said is a week all unused, and earns its whole room.</para>
     /// </remarks>
@@ -173,13 +173,13 @@ public static class UsageCurves
     {
         if (said?.Of(AccountWindows.Weekly) is not { Used: { } used } week) return null;
         var left = week.Reset - now;
-        if (left <= TimeSpan.Zero || week.Seen < said.Seen) return null;
+        if (left <= TimeSpan.Zero || said.Windows.Where(each => each.Used is not null).Max(each => each.Seen) > week.Seen) return null;
         if (ResetMadeUp(week.Window, used, week.Reset, week.Seen)) return null;
         if (Allowed(use, week.Window, week.Reset, now) is not { } curve) return null;
         var room = curve - used * 100;
         if (room <= 0) return null;
 
-        double? needs = spend is { } rate ? (rate > 0 ? room / rate : double.PositiveInfinity) : null;
+        double? needs = spend is > 0 and var rate ? room / rate : null;
         if (needs is { } hours ? hours < left.TotalHours : left > LastDay) return null;
 
         return (week, room, room / Math.Max(left.TotalHours, 1), needs);

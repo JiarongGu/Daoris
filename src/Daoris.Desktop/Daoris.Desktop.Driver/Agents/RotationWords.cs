@@ -452,13 +452,13 @@ public static class RotationWords
     /// </summary>
     private static StepSaid Lapses(AccountFacts own, RotationUse use, DateTimeOffset now) =>
         UsageCurves.Lapsing(use, own.Said, now, own.Rate) is { Window: { Used: { } used } week } lapse
-            ? lapse.Needs is { } needs && own.Rate is { } rate && double.IsFinite(needs)
+            ? lapse.Needs is { } needs && own.Rate is { } rate
                 ? Reason(
                     $"its {week.Window} window resets in {Until(week.Reset - now)} with {Percent(1 - used)} of it unused, read {Age(week.Seen, now)}, "
                     + $"and at {Math.Round(rate, 1).ToString("0.#", CultureInfo.InvariantCulture)}% an hour, the rate Daoris's sessions reached on it, its room takes {Math.Round(needs, MidpointRounding.AwayFromZero)} h to spend",
                     OpeningWhy.LapsesAtRate,
                     ("window", week.Window), ("unused", Whole(1 - used)), ("at", NoteCodes.Moment(week.Reset)), ("seen", NoteCodes.Moment(week.Seen)),
-                    ("rate", Math.Round(rate, 1)), ("takes", (int)Math.Round(needs, MidpointRounding.AwayFromZero)))
+                    ("rate", Math.Round(rate, 1)), ("needs", (int)Math.Round(needs, MidpointRounding.AwayFromZero)))
                 : Reason(
                     $"its {week.Window} window resets in {Until(week.Reset - now)} with {Percent(1 - used)} of it unused, read {Age(week.Seen, now)}",
                     OpeningWhy.Lapses,

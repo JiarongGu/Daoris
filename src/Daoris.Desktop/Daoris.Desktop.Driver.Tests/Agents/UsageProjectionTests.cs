@@ -114,6 +114,8 @@ public sealed class UsageProjectionTests : IDisposable
         Assert.Null(UsageProjection.Rate([Read("weekly", 0.10, reset, 10), Read("weekly", 0.40, reset, 8)], [], "weekly", Now));
         Assert.Null(UsageProjection.Rate([Read("weekly", 0.10, reset, 3), Read("weekly", 0.40, reset, 1.5)], [Turn(2, 1000)], "weekly", Now));
         Assert.Null(UsageProjection.Rate([Read("weekly", 0.10, reset, 3)], [Turn(2, 1000)], "weekly", Now));
+        Assert.Null(UsageProjection.Rate([Read("weekly", 0.10, reset, 10), Read("weekly", 0.10, reset, 8)], [Turn(9, 1000)], "weekly", Now));
+        Assert.Null(UsageProjection.Rate([Read("weekly", 0.10, reset, 10), Read("weekly", 0.11, reset, 8)], [Turn(9, 1000)], "weekly", Now));
         Assert.Null(UsageProjection.Rate(
             [Read("weekly", 0.90, reset, 10), Read("weekly", 0.0, reset.AddDays(7), 8)], [Turn(9, 1000)], "weekly", Now));
         Assert.Null(UsageProjection.Rate([Read("weekly", 0.10, reset, 10), Read("weekly", 0.40, reset, 8)], [Turn(9, 1000, epoch: 2)], "weekly", Now));
