@@ -67,6 +67,7 @@
   "notifications.done.pluginCommand.agent": "{{plugin}} ran {{command}} for a session",
   "notifications.done.pluginCommand.removal": "{{plugin}} ran {{command}} as it was removed",
   "notifications.done.pluginCommand.failed": "{{command}} of {{plugin}} failed",
+  "notifications.done.familyLag": "{{repository}} still pins {{producer}} at an older commit: {{commit}} breaks it, and the wait has passed its limit",
   "notifications.done.signedOut": "{{account}} of {{agent}} was signed out, not by you: sign in on its agent's page",
   "notifications.done.other": "Something ended",
   "notifications.done.ago": "{{age}} ago",
