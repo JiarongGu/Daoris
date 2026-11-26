@@ -187,6 +187,7 @@ internal sealed class BranchReplays(TreeContext context, PassLeftovers leftovers
             : Failure(err.Length > 0 ? err : output));
     }
 
+    // Git would drop a commit the bound's line side has by patch, unseen; LineHolds judges that itself and names each skip.
     internal static string[] ReplayArguments(string onto, string upstream) => ["rebase", "--reapply-cherry-picks", "--onto", onto, upstream];
 
     /// <summary>

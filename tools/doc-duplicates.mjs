@@ -373,7 +373,7 @@ if (isMain(import.meta.url)) {
     const files = folder ? `, ${markdownIn(root, folder.file.slice(0, -'/*.md'.length)).length} decision files each whole` : '';
     console.log(`doc-duplicates: ${records(root).length} append-only records, nothing twice${files}`);
   } else {
-    console.error(`doc-duplicates: ${found.length} finding(s) — what a union merge can leave in a record:`);
+    console.error(`doc-duplicates: ${found.length} finding(s) — what a merge can leave in a record (a line twice, or a backlog row the archive holds done):`);
     for (const { file, fact, key } of found) console.error(`  ${file}: ${fact}: ${key.length > 110 ? key.slice(0, 110) + '…' : key}`);
     process.exit(1);
   }
