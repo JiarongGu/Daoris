@@ -55,9 +55,10 @@ internal sealed class WatchNodes
         // A closure graph arms it too, and its `quest.close` is sent through this loop's service client, the local host's close
         // door. A quest is bound at its take, as its first session opens (Driver's start), never here.
         var nodes = Runtime = new NodeRuntime(new NodeRecordFiles(home), hooks, clock, () => HomeLease.HeldHere(home), service);
-        // What a run's review sends back is said on its work's session as Daoris's words, under their key, at its line's head.
-        nodes.Say = async (session, text, key, ct) =>
-            (await WordsHead.FollowAsync(session, at => service.SayAsync(at, text, null, ct, from: DaorisWords.From, key: key)).ConfigureAwait(false)).Said;
+        // What a run's review or check sends back reaches its work's session through its inbox where this loop runs it, else at its record.
+        nodes.Say = new WorkSay(
+            session => watch.Processes.InboxOf(session), session => new SaidDoor(service, session),
+            (session, text, key, ct) => service.SayAsync(session, text, null, ct, from: DaorisWords.From, key: key)).SayAsync;
 
         // A run's end writes its quests' Done and ends the sessions still waiting on its steps, in one write.
         nodes.Finish = async (end, ct) =>

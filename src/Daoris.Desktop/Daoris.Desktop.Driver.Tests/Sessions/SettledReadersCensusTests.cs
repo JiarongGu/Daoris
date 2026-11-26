@@ -42,6 +42,7 @@ public sealed partial class SettledReadersCensusTests
         ["WordsLeft.cs"] = "a word kept again on the record: kept, with no view to show",
         ["ChatReplacement.cs"] = "a refused start's moved word kept at the head of the record it waits on: kept, nothing read from the answer",
         ["ReopenTelling.cs"] = "Daoris's reopen and go-on words: kept, the mark written",
+        ["WorkSay.cs"] = "a run's word to its work's working session, through its inbox: kept with no word where settled, the answer says only that it is held",
         ["WatchNodes.cs"] = "the integration transport's word about a conflict: kept, the conflict told to the session",
         ["IntegrateRoutes.cs"] = "the owner's *rebase it* of a superseded commit (INTEGRATE1h): kept, the disposition answered only then",
         ["ReviewLandingWorld.cs"] = "the landing's word to a session, said through the landing world: kept",

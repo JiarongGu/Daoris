@@ -41,6 +41,17 @@ public sealed record SayAnswer(bool Kept, string Message)
     /// from a host without the <c>head</c> mark, which never refuses so.
     /// </summary>
     public string? Head { get; init; }
+
+    /// <summary>The words reach a running session at its next step (<see cref="Reaches"/>).</summary>
+    public const string NextStep = "next-step";
+
+    /// <summary>The words are held for a running session's turn's end (<see cref="Reaches"/>).</summary>
+    public const string TurnEnd = "turn-end";
+
+    /// <summary>
+    /// Where a running session's inbox holds the words: <see cref="NextStep"/> or <see cref="TurnEnd"/>. Null where the record's door kept them.
+    /// </summary>
+    public string? Reaches { get; init; }
 }
 
 /// <summary>
