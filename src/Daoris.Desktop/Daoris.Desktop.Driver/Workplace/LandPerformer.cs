@@ -70,9 +70,8 @@ public sealed class LandPerformer(
         var record = LandSessions.Of(start, records);
         if (record is null) return Quiet(start, LandWaits.NoSession);
         var entry = EntryOf(record.Id, record.Quest!, start, record.Tree!);
-        // Owed from here to its end: a quest whose run's landing waits is not started again by the start stage at each look (LandStandings).
-        LandStandings.Wait(home, record.Quest!, Now());
         if (PieceLandings.Refused(record) is { } partner) return Workflow(entry, partner, line: null) ?? Quiet(start, LandWaits.Partner);
+        LandStandings.Wait(home, record.Quest!, Now());
         var (said, choice) = await JudgeAsync(entry, fresh, new Records(fresh), start, ct).ConfigureAwait(false);
         if (said is not null || choice is not null) NodeWaits.Tried(home, start.Unit, start.Node);
         if (choice is null) return said;
@@ -403,7 +402,7 @@ public sealed class LandPerformer(
             Commits = made is null ? null : commits,
         };
 
-        if (entry.Quest.Length > 0 && !LandStandings.Owed(code)) LandStandings.Done(home, entry.Quest);
+        if (entry.Quest.Length > 0 && !LandStandings.IsOwed(code)) LandStandings.Done(home, entry.Quest);
         var line = Words(code, landed);
         var said = Retried(entry, code);
         if (LandTryNotes.Says(code) && said)

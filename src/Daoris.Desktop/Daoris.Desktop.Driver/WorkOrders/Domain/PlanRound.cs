@@ -159,6 +159,10 @@ internal sealed class PlanRound
                         ? considered with { BuildsOn = before }
                         : saying.Joining(considered));
             }
+            else if (quest.Status == "Taken" && LandingSits.Of(quest, Snapshot) is { } landing)
+            {
+                considerations.Add(landing);
+            }
             else if (quest is { Status: "Taken", Awaits: { Length: > 0 } awaits }
                      && !reading.ResumedOnAnswer(quest)
                      && Snapshot.LastRun.TryGetValue(quest.Id, out var prior))

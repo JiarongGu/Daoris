@@ -22,8 +22,6 @@ internal sealed class StartsLook(IStartsWiring wiring) : ILookPass
         var claimed = new List<Consideration>();
         foreach (var start in starts)
         {
-            if (Planner.OwesLanding(wiring.Home, start, wiring.Clock.GetUtcNow())) continue;
-
             if (start is { GoesOn: true, Resumes: { } record })
             {
                 if (!wiring.Runs.TryGoOn(record.Session))

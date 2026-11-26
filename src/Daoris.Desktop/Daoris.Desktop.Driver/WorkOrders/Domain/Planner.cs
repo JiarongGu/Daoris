@@ -47,10 +47,6 @@ public static class Planner
         // The person's reopen of the work it grew from stopped it: carried on once they go on, held until then.
         || StoppedByReopen(last);
 
-    /// <summary>A first start or carry-on of a taken quest whose landing is owed; a start words wait on goes on in its session whatever its landing waits on.</summary>
-    internal static bool OwesLanding(string home, Consideration start, DateTimeOffset now) =>
-        start is { GoesOn: false, Quest: { Status: "Taken" } quest } && LandStandings.Holds(home, quest.Id, now);
-
     /// <summary>Whether <paramref name="last"/> ended past its transient bound (<see cref="LimitResume.EndedTransient"/>).</summary>
     internal static bool EndedTransient(PriorSession last) => LimitResume.EndedTransient(last);
 

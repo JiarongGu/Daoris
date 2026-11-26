@@ -61,18 +61,6 @@ public static class LandWaits
         NoDoor => "no landing door is wired in this loop, so nothing lands it.",
         NoBranch => "the run has no branch to land.",
         NoTip => "its binding names no commit to land.",
-        Partner => "its session's record is a partner's, which lands nothing.",
-        Landed => "its work landed at this tip already.",
-        Away => "its tree's slot is another line's until the tree is brought back.",
-        InUse => "a live session other than the run's own waiting part uses its tree, so nothing lands it meanwhile.",
-        Superseded => "a newer session went on in its tree, which stands for it now.",
-        Held => "its quest is held for the person's yes or an evidence verdict, so it lands once that is given.",
-        Refused => "the run's graph holds it, so nothing lands it until the graph lets it go.",
-        Unchanged => "its last try was refused and neither its tree nor the tip it started at has changed since, so it is not tried again until one does; "
-            + "where the refusal was the line's own state (another landing under way, its branches being brought up to date) it is tried again by itself once that clears.",
-        Waiting => "a second opinion or a review it waits on has not been given yet.",
-        Busy => "another of Daoris's writes holds the repository, so it is tried again by itself once that ends.",
-        Climbed => "another of Daoris's writes has held the repository past the landing's deadline, so the wait climbed the reporting line; it still lands once the repository is free.",
         _ => reason,
     };
 }

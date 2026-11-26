@@ -49,7 +49,9 @@ internal static class LandReading
 
     private static string NotYet(string unit, string? tip) =>
         "nothing was handed on at the bound commit yet"
-        + (tip is not null && LandOutcomes.Of(unit, tip) is { Landed: false, Message.Length: > 0 } refused ? $": its last try was refused: {refused.Message}" : "");
+        + (tip is not null && LandOutcomes.Of(unit, tip) is { Landed: false, Message.Length: > 0 } last
+            ? $": its landing {(last.Refusal is LandingCode.Queued or LandingCode.Held or LandingCode.Unreviewed or LandingCode.Opinion or LandingCode.Busy or LandingCode.CarriedOn ? "waits" : "was refused")}: {last.Message}"
+            : "");
 
     private static string? Waiting(NodeReading reading) =>
         reading.Node.Kind == NodeKinds.Land && reading.Binding.SubjectRevision is { } tip ? LandRetries.Waiting(reading.Unit.Id, tip)?.Holds : null;

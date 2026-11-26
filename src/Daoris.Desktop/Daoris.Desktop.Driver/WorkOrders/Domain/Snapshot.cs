@@ -165,6 +165,9 @@ public sealed record Snapshot(
     /// <summary>The records a run of this machine's loop goes on in (<see cref="RunningSessions.TryGoOn"/>): a start into one begins nothing. Absent is none.</summary>
     public IReadOnlySet<string> GoingOn { get; init; } = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
+    /// <summary>The quests whose submitted work waits at its landing (the landing standings), read once for the look. Absent is none.</summary>
+    public IReadOnlySet<string> OwedLandings { get; init; } = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
     /// <summary>The quests whose last start here could not go: planned after every quest that can, so they never hold its turn. Absent is none.</summary>
     public IReadOnlySet<string> HeldStarts { get; init; } = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 

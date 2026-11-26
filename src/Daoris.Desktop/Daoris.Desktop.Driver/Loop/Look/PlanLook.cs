@@ -19,7 +19,7 @@ internal sealed class PlanLook(ILookStagesWiring wiring) : ILookPass
             snapshot = snapshot with
             {
                 Starting = [.. state.ReservedBefore.Union(wiring.Runs.Reserved)], HeldStarts = wiring.Runs.HeldStarts.Quests, Opinions = wiring.Gate.Sits(snapshot),
-                GoingOn = wiring.Runs.GoingOnNow,
+                GoingOn = wiring.Runs.GoingOnNow, OwedLandings = LandStandings.Owed(wiring.Home, wiring.Clock.GetUtcNow()),
             };
             state.JudgedOpinions = wiring.Gate.Judged();
             // Whether this loop carries Daoris's browser decides whether a local set-up step can be shown here.

@@ -53,6 +53,7 @@ public sealed class LandRetryTests : GraphRunFixture
         Assert.Empty(await FeatureBranchesAsync(root));
         Assert.Equal(LandingCode.Busy, CodeOf(_lines.Last(line => line.Event == "landing.auto")));
         Assert.Equal(LandingCode.Busy, LandOutcomes.Of(start.Unit, start.Tip)?.Refusal);
+        Assert.Contains("q1", LandStandings.Owed(_home, _now));
 
         // The tidy ended: the next look lands it, nothing pressed between.
         await Performer().PerformAsync(start);
@@ -60,6 +61,7 @@ public sealed class LandRetryTests : GraphRunFixture
         Assert.Equal(await HeadAsync(tree), (await GitAsync(root, "rev-parse", PushBranch)).Trim());
         Assert.Equal(LandingCode.Landed, CodeOf(_lines.Last(line => line.Event == "landing.auto")));
         Assert.Null(LandRetries.Waiting(start.Unit, start.Tip));
+        Assert.DoesNotContain("q1", LandStandings.Owed(_home, _now));
     }
 
     [Fact]

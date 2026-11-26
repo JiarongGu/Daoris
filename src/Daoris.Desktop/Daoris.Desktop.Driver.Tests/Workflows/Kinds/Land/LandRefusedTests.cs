@@ -1,133 +1,141 @@
+using Microsoft.Data.Sqlite;
 using Daoris.Driver;
 using static Daoris.Desktop.Driver.Tests.ObservedFixture;
 
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// A refused landing says why in words, waits by itself while the line's own state holds it (another landing under way, its branches being
-/// brought up to date), and holds no start of its session's quest meanwhile.
+/// A refused landing says why in words, waits by itself while the line's own state holds it (another landing under way, its record held),
+/// and holds no start of its session's quest meanwhile, while a session that failed and the person's words still go on.
 /// </summary>
-public sealed class LandRefusedTests
+public sealed class LandRefusedTests : IDisposable
 {
     private static readonly DateTimeOffset Now = new(2026, 11, 26, 2, 0, 0, TimeSpan.Zero);
+    private static readonly DriverConfig Config = DriverConfig.Empty with { Drivable = ["Game"], Cap = 2 };
+    private readonly string _homes = Path.Combine(WorkspaceRoot.Folder, "_fixtures", "land-refused", Guid.NewGuid().ToString("N")[..8]);
 
-    private static Consideration Start(string quest, string status, bool goesOn = false) =>
-        new(new QuestView(quest, "asker", "engine", "title", "body", status), StartVerdict.Start, "start") { GoesOn = goesOn };
+    public void Dispose()
+    {
+        SqliteConnection.ClearAllPools();
+        GitSeed.Discard(_homes);
+    }
 
-    /// <summary>The step of a run whose landing is refused reads the refusal's own sentence, not only that nothing is handed on.</summary>
-    [Fact]
-    public void A_refused_landing_is_said_on_its_step_in_the_words_it_was_refused_with()
+    private static QuestView Submitted(string id = "q1") =>
+        new(id, "Asker", "Game", $"Ask {id}", "Here is why.", "Taken")
+        {
+            Closure = "workflow", Submission = new QuestSubmissionView("desk", 41, null, null),
+        };
+
+    private static PriorSession Cut(string state, bool interrupted = false, bool personSaid = false) =>
+        new("s1", "D:/trees/s1", state, "ended", "Game") { Interrupted = interrupted, Said = personSaid ? [new SaidWordView("w1", "go on", Now, [], false)] : null };
+
+    private static Snapshot Ran(QuestView quest, PriorSession last, params string[] owed) =>
+        new([quest], [new RepoView("Game", true, "D:/fam/Game")], [])
+        {
+            LastRun = new Dictionary<string, PriorSession>(StringComparer.OrdinalIgnoreCase) { [quest.Id] = last },
+            OwedLandings = new HashSet<string>(owed, StringComparer.OrdinalIgnoreCase),
+        };
+
+    /// <summary>The step of a run whose landing is refused reads the refusal's own sentence, as waiting or as refused.</summary>
+    [Theory]
+    [InlineData(LandingCode.Busy, "its landing waits: ")]
+    [InlineData(LandingCode.Queued, "its landing waits: ")]
+    [InlineData(LandingCode.Refused, "its landing was refused: ")]
+    public void A_refused_landing_is_said_on_its_step_in_the_words_it_was_refused_with(string code, string lead)
     {
         var unit = Unit(Grown());
         var bound = new NodeAcceptance("run:r", "t1", Graph, NodeKinds.Land, 1, 1) { Subject = unit.Id };
+        Assert.DoesNotContain("its landing", NodeObserving.Observe(unit, Node(NodeKinds.Land), bound).Said, StringComparison.Ordinal);
 
-        var before = NodeObserving.Observe(unit, Node(NodeKinds.Land), bound);
-        Assert.DoesNotContain("because the line", before.Said, StringComparison.Ordinal);
-
-        LandOutcomes.Kept(Guid.NewGuid().ToString("N"), unit.Id, "t1",
-            new TreeLanding(false, "Nothing was merged: because the line's integration holds `candidate-1`, which it waits for.") { Refusal = LandingCode.Busy });
-        var after = NodeObserving.Observe(unit, Node(NodeKinds.Land), bound);
-
-        Assert.Null(after.Outcome);
-        Assert.Contains("because the line's integration holds `candidate-1`", after.Said, StringComparison.Ordinal);
-        LandOutcomes.Forget(unit.Id, "t1");
-        Assert.DoesNotContain("because the line", NodeObserving.Observe(unit, Node(NodeKinds.Land), bound).Said, StringComparison.Ordinal);
+        var words = IntegrationPresses.Said(new IntegrationAdmission(false, "a request is already open for `feature/x`.") { Refusal = IntegrationRefusals.Open });
+        LandOutcomes.Kept(_homes, unit.Id, "t1", new TreeLanding(false, words) { Refusal = code });
+        try
+        {
+            var after = NodeObserving.Observe(unit, Node(NodeKinds.Land), bound);
+            Assert.Null(after.Outcome);
+            Assert.Contains(lead + words, after.Said, StringComparison.Ordinal);
+        }
+        finally
+        {
+            LandOutcomes.Forget(unit.Id, "t1");
+        }
     }
 
-    /// <summary>A request already open for the branch is another landing under way: the refusal passes, so it is tried again by itself.</summary>
+    /// <summary>A request already open for the branch is refused busy, in words that name the landing it waits for, through the real press.</summary>
     [Fact]
-    public void A_request_open_for_the_branch_is_a_cause_that_passes()
+    public async Task A_press_refused_for_the_open_request_of_its_branch_is_busy_and_tried_again_by_itself()
     {
-        var open = new IntegrationAdmission(false, "a request is already open for `feature/x` at 1234567.") { Refusal = IntegrationRefusals.Open };
-        var gone = new IntegrationAdmission(false, "`feature/x` is the line itself.") { Refusal = IntegrationRefusals.IsLine };
+        var home = Path.Combine(_homes, "home");
+        var open = new IntegrationRequest("r1", "engine", "aurora", "feature/x", "1111111111111111111111111111111111111111", IntegrationRoutes.Merge, "main",
+            IntegrationRequester.Press, new LandingIntegrate().Resolved(), Now) { Epoch = IntegrationEpoch.Of(new LandingIntegrate().Resolved(), null) };
+        Assert.Null(new IntegrationStore(home).Add(open));
 
-        Assert.Equal(LandingCode.Busy, IntegrationPresses.CodeOf(open));
-        Assert.Null(IntegrationPresses.CodeOf(gone));
-        Assert.Contains("tried again", IntegrationPresses.Said(open), StringComparison.Ordinal);
-        Assert.Contains("a request is already open for `feature/x`", IntegrationPresses.Said(open), StringComparison.Ordinal);
-        Assert.DoesNotContain("tried again", IntegrationPresses.Said(gone), StringComparison.Ordinal);
-    }
+        var (merged, said, code, _) = await IntegrationPresses.MergeAsync(
+            home, DriverConfig.Empty, Path.Combine(_homes, "unmade"), "engine", "aurora", "main", "feature/x", "2222222222222222222222222222222222222222", CancellationToken.None);
 
-    /// <summary>A record the integration could not keep (a store another landing holds) is the line's own state, which passes.</summary>
-    [Fact]
-    public void A_record_that_could_not_be_kept_is_a_cause_that_passes_and_names_what_it_waited_for()
-    {
-        var (said, code) = IntegrationPresses.Unkept(new IOException("the store is held"), "main");
-
+        Assert.False(merged);
         Assert.Equal(LandingCode.Busy, code);
-        Assert.Contains("the store is held", said, StringComparison.Ordinal);
-        Assert.Contains("`main`", said, StringComparison.Ordinal);
-        Assert.Contains("tried again", said, StringComparison.Ordinal);
+        Assert.Contains("a request is already open for `feature/x`", said, StringComparison.Ordinal);
+        Assert.Contains("tried again by itself", said, StringComparison.Ordinal);
     }
 
-    /// <summary>A waiting reason is a sentence a person reads, never only its code.</summary>
+    /// <summary>Store contention is the line's own state and passes; any other fault carries no code and is not called a landing under way.</summary>
+    [Fact]
+    public void Only_store_contention_is_busy_and_names_the_candidate_that_holds_it()
+    {
+        var (held, heldCode) = IntegrationPresses.Unkept(new SqliteException("database is locked", 5), "main", "candidate-a1");
+        Assert.Equal(LandingCode.Busy, heldCode);
+        Assert.Contains("candidate candidate-a1", held, StringComparison.Ordinal);
+        Assert.Contains("tried again by itself", held, StringComparison.Ordinal);
+
+        Assert.Equal(LandingCode.Busy, IntegrationPresses.Unkept(new IOException("in use", unchecked((int)0x80070020)), "main").Code);
+
+        var (fault, faultCode) = IntegrationPresses.Unkept(new UnauthorizedAccessException("denied"), "main");
+        Assert.Null(faultCode);
+        Assert.Contains("denied", fault, StringComparison.Ordinal);
+        Assert.DoesNotContain("another write", fault, StringComparison.Ordinal);
+        Assert.Null(IntegrationPresses.Unkept(new SqliteException("disk is full", 13), "main").Code);
+    }
+
+    /// <summary>A submitted quest whose landing is owed starts no session, spending no place; without the standing it carries on as before.</summary>
+    [Fact]
+    public void A_submitted_quest_whose_landing_is_owed_is_planned_as_a_sit_and_spends_no_place()
+    {
+        var quest = Submitted();
+        var cutOff = Cut("stopped", interrupted: true);
+
+        Assert.Equal(StartVerdict.Start, Assert.Single(Planner.Plan(Ran(quest, cutOff), Config)).Verdict);
+
+        var sat = Assert.Single(Planner.Plan(Ran(quest, cutOff, "q1"), Config));
+        Assert.Equal((StartVerdict.RepositoryBusy, SittingFact.LandingOwed), (sat.Verdict, sat.Said?.Code));
+        Assert.Equal(StartVerdict.Start, Assert.Single(Planner.Plan(Ran(Submitted("q2"), cutOff, "q1"), Config)).Verdict);
+    }
+
+    /// <summary>A session that failed, and the person's own words, still go on whatever the landing waits on.</summary>
     [Theory]
-    [InlineData(LandWaits.Unchanged)]
-    [InlineData(LandWaits.Refused)]
-    [InlineData(LandWaits.Waiting)]
-    [InlineData(LandWaits.Held)]
-    [InlineData(LandWaits.Superseded)]
-    [InlineData(LandWaits.Away)]
-    [InlineData(LandWaits.InUse)]
-    [InlineData(LandWaits.Busy)]
-    public void Every_wait_reason_has_words(string reason)
+    [InlineData("failed", false)]
+    [InlineData("completed", true)]
+    public void A_failed_session_and_the_persons_words_still_carry_on_while_the_landing_is_owed(string state, bool personSaid)
     {
-        var sentence = LandWaits.Sentence("r1", "landing", reason);
+        var planned = Assert.Single(Planner.Plan(Ran(Submitted(), Cut(state, personSaid: personSaid), "q1"), Config));
 
-        Assert.DoesNotContain($"({reason}): {reason}", sentence, StringComparison.Ordinal);
-        Assert.True(sentence.Length > $"run r1: `landing` waits ({reason}): ".Length + 20, sentence);
+        Assert.Equal(StartVerdict.Start, planned.Verdict);
     }
 
-    /// <summary>A run whose landing waits is not started again by the start stage at each look: not a first start, not a carry-on.</summary>
+    /// <summary>The standing is set for each look that judges a landing, read once with its clock, and ended by a try that closed or by lapsing unread.</summary>
     [Fact]
-    public void A_quest_whose_runs_landing_waits_is_not_started_again()
+    public void The_standing_is_set_ended_by_a_closing_try_and_lapses_unread()
     {
-        var home = Guid.NewGuid().ToString("N");
-        LandStandings.Wait(home, "q1", Now);
+        LandStandings.Wait(_homes, "q1", Now);
+        LandStandings.Wait(_homes, "q2", Now);
+        Assert.Equal(["q1", "q2"], LandStandings.Owed(_homes, Now).Order());
 
-        Assert.True(Planner.OwesLanding(home, Start("q1", "Taken"), Now));
-        Assert.False(Planner.OwesLanding(home, Start("q2", "Taken"), Now));
-        Assert.False(Planner.OwesLanding(Guid.NewGuid().ToString("N"), Start("q1", "Taken"), Now));
-    }
+        LandStandings.Done(_homes, "q2");
+        Assert.Equal(["q1"], LandStandings.Owed(_homes, Now + LandRetries.Fresh - TimeSpan.FromSeconds(1)));
+        Assert.Empty(LandStandings.Owed(_homes, Now + LandRetries.Fresh));
+        Assert.Empty(LandStandings.Owed(Path.Combine(_homes, "other"), Now));
 
-    /// <summary>Words said to the session go on in it whatever its landing waits on, and a quest not taken starts as before.</summary>
-    [Fact]
-    public void Words_waiting_and_an_open_quest_still_start()
-    {
-        var home = Guid.NewGuid().ToString("N");
-        LandStandings.Wait(home, "q1", Now);
-
-        Assert.False(Planner.OwesLanding(home, Start("q1", "Taken", goesOn: true), Now));
-        Assert.False(Planner.OwesLanding(home, Start("q1", "Open"), Now));
-    }
-
-    /// <summary>The wait ends with the landing, and a wait no look has read again lapses, so a quest started anew is never held by an old one.</summary>
-    [Fact]
-    public void The_wait_ends_with_its_landing_and_lapses_unread()
-    {
-        var home = Guid.NewGuid().ToString("N");
-        LandStandings.Wait(home, "q1", Now);
-        LandStandings.Wait(home, "q2", Now);
-
-        LandStandings.Done(home, "q2");
-
-        Assert.False(Planner.OwesLanding(home, Start("q2", "Taken"), Now));
-        Assert.True(Planner.OwesLanding(home, Start("q1", "Taken"), Now + LandRetries.Fresh - TimeSpan.FromSeconds(1)));
-        Assert.False(Planner.OwesLanding(home, Start("q1", "Taken"), Now + LandRetries.Fresh));
-    }
-
-    /// <summary>The performer marks the standing for every wait and refusal that keeps a landing owed, and clears it at the landing.</summary>
-    [Theory]
-    [InlineData(LandingCode.Busy, true)]
-    [InlineData(LandingCode.Refused, true)]
-    [InlineData(LandingCode.Queued, true)]
-    [InlineData(LandingCode.Unreviewed, true)]
-    [InlineData(LandingCode.Landed, false)]
-    [InlineData(LandingCode.Advanced, false)]
-    [InlineData(LandingCode.Nothing, false)]
-    [InlineData(LandingCode.Already, false)]
-    public void A_try_keeps_the_standing_only_where_the_landing_is_still_owed(string code, bool owed)
-    {
-        Assert.Equal(owed, LandStandings.Owed(code));
+        Assert.All(new[] { LandingCode.Busy, LandingCode.Refused, LandingCode.Queued, LandingCode.Unreviewed }, code => Assert.True(LandStandings.IsOwed(code)));
+        Assert.All(new[] { LandingCode.Landed, LandingCode.Advanced, LandingCode.Nothing, LandingCode.Already }, code => Assert.False(LandStandings.IsOwed(code)));
     }
 }

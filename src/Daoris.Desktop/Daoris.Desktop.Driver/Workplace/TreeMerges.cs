@@ -130,7 +130,7 @@ internal sealed class TreeMerges(TreeContext context)
         if (aheadCode != 0)
         {
             return new(false, $"git cannot compare `{branch}` with `{canonical}` here: {FirstLine(aheadErr)} "
-                + "Fetch it, or set another line with `daoris place line`.");
+                + "Fetch it, or set another line with `daoris place line`.") { Refusal = LandingCode.Busy };
         }
 
         if (string.IsNullOrWhiteSpace(ahead))
@@ -148,7 +148,7 @@ internal sealed class TreeMerges(TreeContext context)
                 $"the repository's own checkout is not clean ({detail}), and merging into somebody's "
                 + "work in flight is exactly what Daoris does not do. Deal with it there, then merge.")
             {
-                Refusal = rootStatus is null ? null : LandingCode.RootDirty,
+                Refusal = rootStatus is null ? LandingCode.Busy : LandingCode.RootDirty,
                 RootStatus = rootStatus,
             };
         }
@@ -160,7 +160,7 @@ internal sealed class TreeMerges(TreeContext context)
         {
             return new(false,
                 $"the repository's checkout is on `{on}`, not {CanonicalLine.Describe(line)}. Daoris does "
-                + $"not switch a branch in a checkout it did not create — put it on `{canonical}`, then merge.");
+                + $"not switch a branch in a checkout it did not create — put it on `{canonical}`, then merge.") { Refusal = LandingCode.Busy };
         }
 
         // The press is carried by the integration transport under `{ owner, none, 1, merge }`.

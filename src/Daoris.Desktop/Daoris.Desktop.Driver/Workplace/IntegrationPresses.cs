@@ -50,7 +50,7 @@ internal static class IntegrationPresses
         }
         catch (Exception error) when (error is IOException or UnauthorizedAccessException or SqliteException)
         {
-            var (said, code) = Unkept(error, line);
+            var (said, code) = Unkept(error, line, StandingCandidate(home, repository, line));
             return (false, said, code, null);
         }
         catch (IntegrationRefusedException error)
@@ -65,8 +65,32 @@ internal static class IntegrationPresses
     internal static string Said(IntegrationAdmission refused) =>
         $"Nothing was merged: {refused.Message}" + (CodeOf(refused) is null ? "" : " It is tried again by itself once that landing ends.");
 
-    /// <summary>A store another landing holds, or its record being written: the line's own state, which passes.</summary>
-    internal static (string Said, string Code) Unkept(Exception error, string line) =>
-        ($"the integration's record could not be kept ({error.Message}), so nothing was merged into `{line}`: another landing of it is under way "
-         + "or its record is being written. It is tried again by itself once that ends.", LandingCode.Busy);
+    /// <summary>
+    /// A record the integration could not keep. Contention on its store (a busy or locked database, a sharing violation) is the line's own state,
+    /// which passes: busy, naming the candidate standing for the line where one does. Any other fault is no state that clears, so it carries no code.
+    /// </summary>
+    internal static (string Said, string? Code) Unkept(Exception error, string line, string? candidate = null) =>
+        Contended(error)
+            ? ($"the integration's record is held by another write ({error.Message})"
+               + (candidate is null ? "" : $", which candidate {candidate} standing for `{line}` holds") + ": it is tried again by itself once that ends.", LandingCode.Busy)
+            : ($"the integration's record could not be kept ({error.Message}), and whether anything was merged into `{line}` is read from the line at the next look.", null);
+
+    private static bool Contended(Exception error) => error switch
+    {
+        SqliteException sqlite => sqlite.SqliteErrorCode is 5 or 6,
+        IOException io => (io.HResult & 0xFFFF) is 32 or 33,
+        _ => false,
+    };
+
+    private static string? StandingCandidate(string home, string repository, string line)
+    {
+        try
+        {
+            return new IntegrationStore(home).StandingFor(repository, line)?.Id;
+        }
+        catch (Exception error) when (error is IOException or UnauthorizedAccessException or SqliteException)
+        {
+            return null;
+        }
+    }
 }
