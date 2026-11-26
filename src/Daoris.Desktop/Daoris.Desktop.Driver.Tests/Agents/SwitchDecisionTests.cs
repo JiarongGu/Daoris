@@ -29,8 +29,59 @@ public sealed class SwitchDecisionTests
     private static readonly AccountSaid Over = Said(0.75);
 
     private static SwitchChoice Decide(
-        AccountSaid? own, IReadOnlyList<SwitchCandidate> candidates, RotationUse? use = null, DateTimeOffset? lastMove = null, bool othersRead = false) =>
-        SwitchDecision.Decide(use ?? Smart, "account-1", own, candidates, Now, lastMove, othersRead);
+        AccountSaid? own, IReadOnlyList<SwitchCandidate> candidates, RotationUse? use = null, DateTimeOffset? lastMove = null, bool othersRead = false,
+        bool accountOff = false) =>
+        SwitchDecision.Decide(use ?? Smart, "account-1", own, candidates, Now, lastMove, othersRead, accountOff);
+
+    [Fact]
+    public void An_account_the_person_switched_off_moves_to_a_ready_account_though_it_is_under_its_curve()
+    {
+        var choice = Decide(Said(0.10), [Ready("account-2", Said(0.55)), Ready("account-3", Said(0.30))], accountOff: true);
+
+        Assert.Equal(new SwitchChoice.MoveOff("account-3"), choice);
+    }
+
+    [Fact]
+    public void An_account_switched_off_that_said_no_number_still_moves()
+    {
+        Assert.Equal(new SwitchChoice.MoveOff("account-3"), Decide(null, [Ready("account-3", Said(0.30))], accountOff: true));
+    }
+
+    [Fact]
+    public void An_account_switched_off_never_moves_to_one_not_ready_and_stays_where_none_is()
+    {
+        var candidates = new[] { new SwitchCandidate("account-2", Said(0.10), Ready: false) };
+
+        Assert.Equal(new SwitchChoice.Stay(SwitchStay.NoneReady), Decide(Said(0.10), candidates, accountOff: true));
+        Assert.Equal(new SwitchChoice.Stay(SwitchStay.NoneReady), Decide(Said(0.10), [], accountOff: true));
+    }
+
+    [Fact]
+    public void An_account_switched_off_prefers_room_under_the_curve_but_takes_an_account_over_it_before_none()
+    {
+        var onlyOver = Decide(Said(0.10), [Ready("account-2", Said(0.80))], accountOff: true);
+        var withRoom = Decide(Said(0.10), [Ready("account-2", Said(0.80)), Ready("account-3", Said(0.50))], accountOff: true);
+
+        Assert.Equal(new SwitchChoice.MoveOff("account-2"), onlyOver);
+        Assert.Equal(new SwitchChoice.MoveOff("account-3"), withRoom);
+    }
+
+    [Fact]
+    public void An_account_switched_off_reads_the_others_said_long_ago_first_and_then_weighs_them_as_they_stand()
+    {
+        var candidates = new[] { Ready("account-2", Said(0.30, secondsAgo: 120)), Ready("account-3", null) };
+
+        Assert.Equal(["account-2", "account-3"], Assert.IsType<SwitchChoice.ReadOthers>(Decide(Said(0.10), candidates, accountOff: true)).Accounts);
+        Assert.Equal(new SwitchChoice.MoveOff("account-2"), Decide(Said(0.10), candidates, othersRead: true, accountOff: true));
+    }
+
+    [Fact]
+    public void An_account_switched_off_is_still_the_scope_s_to_move_and_switch_off_stays()
+    {
+        var choice = Decide(Said(0.10), [Ready("account-3", Said(0.10))], use: Smart with { Switch = "off" }, accountOff: true);
+
+        Assert.Equal(new SwitchChoice.Stay(SwitchStay.Off), choice);
+    }
 
     [Fact]
     public void An_account_over_its_curve_moves_to_the_candidate_with_the_most_room()

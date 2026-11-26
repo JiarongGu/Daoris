@@ -36,6 +36,12 @@ public abstract record SwitchChoice
     /// window with the least room under its curve, its use there (a share, 0 to 1) and the curve's value there now (points).
     /// </summary>
     public sealed record MoveTo(string Account, string Window, double Used, double Curve) : SwitchChoice;
+
+    /// <summary>
+    /// Move the session to <paramref name="Account"/> because the person switched its own account off, whatever it has used:
+    /// the move's reason is <see cref="HandOverWhy.Off"/>, and it names no window or curve.
+    /// </summary>
+    public sealed record MoveOff(string Account) : SwitchChoice;
 }
 
 /// <summary>Why a session stays on its account, by code: the runner's log reads it, no person does.</summary>
@@ -55,6 +61,9 @@ public static class SwitchStay
 
     /// <summary>No ready account of the scope has the margin's room under its curve on every window it said.</summary>
     public const string NoRoom = "no-room";
+
+    /// <summary>The session's account is switched off and no other account of the scope is ready: it stays, and its next resume holds it for the switch.</summary>
+    public const string NoneReady = "none-ready";
 }
 
 /// <summary>
@@ -84,15 +93,17 @@ public static class SwitchDecision
     /// <param name="candidates">The scope's other accounts, in its list's order; the session's own, if handed, is passed over.</param>
     /// <param name="now">The moment the curve and freshness are read at.</param>
     /// <param name="lastMove">When this session last moved by the curve, or null where it never did.</param>
+    /// <param name="accountOff">The person switched the session's own account off (<see cref="AccountSwitch"/>): it is left for a ready account whatever it has used.</param>
     /// <param name="othersRead">
     /// The others were read for this turn's end already: a reading still old (a read floored, or an account busy) is weighed as it
     /// stands rather than read again, so the second ask always decides.
     /// </param>
     public static SwitchChoice Decide(
         RotationUse use, string account, AccountSaid? said, IReadOnlyList<SwitchCandidate> candidates, DateTimeOffset now,
-        DateTimeOffset? lastMove, bool othersRead = false)
+        DateTimeOffset? lastMove, bool othersRead = false, bool accountOff = false)
     {
         if (use.Switch == "off") return new SwitchChoice.Stay(SwitchStay.Off);
+        if (accountOff) return Leave(use, account, candidates, now, othersRead);
         if (UsageCurves.TightestSaid(use, said, now) is not { } tightest) return new SwitchChoice.Stay(SwitchStay.Unmeasured);
         if (tightest.Room >= UsageCurves.SwitchMargin) return new SwitchChoice.Stay(SwitchStay.Room);
 
@@ -125,6 +136,33 @@ public static class SwitchDecision
         return target is null
             ? new SwitchChoice.Stay(SwitchStay.NoRoom)
             : new SwitchChoice.MoveTo(target, tightest.Window.Window, tightest.Window.Used!.Value, tightest.Curve);
+    }
+
+    /// <summary>
+    /// The person's switch on the session's own account: any ready account of the scope will do, the others' stale readings read first as the curve's
+    /// are. One with the margin's room under its curve goes before one without, then the walk's order as a curve move's: the most of a week that would
+    /// lapse per hour, then the most room, the scope's list order breaking a tie. No hold applies: an account switched off does not come back by itself.
+    /// </summary>
+    private static SwitchChoice Leave(RotationUse use, string account, IReadOnlyList<SwitchCandidate> candidates, DateTimeOffset now, bool othersRead)
+    {
+        var ready = candidates.Where(each => each.Account != account && each.Ready).ToList();
+        if (!othersRead && ready.Where(each => Stale(each.Said, now, each.Floor ?? Fresh)).Select(each => each.Account).ToList() is { Count: > 0 } stale)
+        {
+            return new SwitchChoice.ReadOthers(stale);
+        }
+
+        var target = ready
+            .Select(each => (
+                each.Account,
+                Room: UsageCurves.TightestSaid(use, each.Said, now)?.Room,
+                Lapse: (UsageCurves.Lapsing(use, each.Said, now)?.Rate ?? 0) * each.Units,
+                each.Units))
+            .OrderByDescending(each => each.Room >= UsageCurves.SwitchMargin)
+            .ThenByDescending(each => each.Lapse)
+            .ThenByDescending(each => (each.Room ?? double.NegativeInfinity) * each.Units)
+            .Select(each => each.Account)
+            .FirstOrDefault();
+        return target is null ? new SwitchChoice.Stay(SwitchStay.NoneReady) : new SwitchChoice.MoveOff(target);
     }
 
     /// <summary>Whether a reading is older than the candidate's floor, or nothing is said.</summary>

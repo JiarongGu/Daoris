@@ -7,7 +7,7 @@ namespace Daoris.Driver;
 /// The person's switch on an account, on or off: part of the account record every agent shares (<c>accounts.json</c>, beside the
 /// name), read by the one account walk and so the same for Claude Code, Codex and any other harness. An account switched off stays
 /// signed in and is read as before; Daoris starts no session on it and moves none to it (<see cref="AccountReadiness.Off"/>), and a
-/// session already on it goes on to its turn's end and is moved at its next resume by the walk. Written only by the person's press:
+/// session already on it is moved at its turn's end (<see cref="SwitchChoice.MoveOff"/>) or its next resume by the walk. Written only by the person's press:
 /// the window's switch and <c>daoris agent account on|off</c>, as a sign-in is the person's.
 /// </summary>
 /// <remarks>

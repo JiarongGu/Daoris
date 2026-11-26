@@ -252,7 +252,7 @@ describe('an account’s row without a pointer (ACCTUX2)', () => {
 
     const off = screen.getByRole('listitem', { name: 'account-1' });
     // Off is said beside the state its agent last said, never in its place.
-    expect(within(off).getByText('off')).toBeTruthy();
+    expect(within(off).getByText('off, by you')).toBeTruthy();
     expect(within(off).getByText('signed in')).toBeTruthy();
     await userEvent.click(within(off).getByRole('button', { name: 'switch account-1 on' }));
     expect(switched).toEqual([['account-1', false, 'account-1']]);
@@ -262,6 +262,24 @@ describe('an account’s row without a pointer (ACCTUX2)', () => {
     await userEvent.click(within(on).getByRole('button', { name: /More for/ }));
     await userEvent.click(await screen.findByRole('menuitem', { name: 'Switch off' }));
     expect(switched.at(-1)).toEqual(['account-2', true, 'account-2']);
+  });
+
+  it('dims the usage of an account that is off and marks the row, and dims none of an account that is on', () => {
+    render(
+      <ul>
+        <AccountRow name="spare" state={accountState({ login: 'in', read: READ, off: true }, null, true)} menu={[]} usage={{ cells: [SESSION_88], notes: [] }} />
+        <AccountRow name="busy" state={accountState({ login: 'in', read: READ }, null, true)} menu={[]} usage={{ cells: [SESSION_88], notes: [] }} />
+      </ul>,
+    );
+
+    const spare = screen.getByRole('listitem', { name: 'spare' });
+    const busy = screen.getByRole('listitem', { name: 'busy' });
+    expect(within(spare).getByText('off, by you')).toBeTruthy();
+    expect(spare.getAttribute('data-off')).toBe('true');
+    expect(within(spare).getByText('88% used').closest('[data-usage]')!.className).toContain('opacity-60');
+    expect(within(busy).queryByText('off, by you')).toBeNull();
+    expect(busy.getAttribute('data-off')).toBeNull();
+    expect(within(busy).getByText('88% used').closest('[data-usage]')!.className).not.toContain('opacity-60');
   });
 
   /** An off account is read as before: its time still carries the tip that says when it is read. */
@@ -278,7 +296,7 @@ describe('an account’s row without a pointer (ACCTUX2)', () => {
     page([{ name: 'account-1', home: `${HOME}account-1`, login: 'out', read: READ, off: true }]);
 
     const row = screen.getByRole('listitem', { name: 'account-1' });
-    expect(within(row).getByText('off')).toBeTruthy();
+    expect(within(row).getByText('off, by you')).toBeTruthy();
     expect(within(row).getByText('signed out')).toBeTruthy();
     expect(within(row).getByRole('button', { name: 'switch account-1 on' })).toBeTruthy();
     within(row).getByRole('button', { name: /More for/ }).focus();

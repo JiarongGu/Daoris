@@ -271,7 +271,7 @@ internal sealed class DriverHandOvers(LoopContext context, Func<ConversationMove
     {
         var rule = record is { Repository: { } repository } ? HandOverRules.Resolve(_context.Config, repository, record.Workspace).Rule : HandOverRule.Default;
         // Read only for a part a hand-over started: whether a turn of its own ended before the ask.
-        var turnSince = record is not { From: not null } || !HandOverWhy.Known(record.FromWhy) || TurnEndedBefore(record.Session, ask.At);
+        var turnSince = record is not { From: not null } || !HandOverWhy.Handed(record.FromWhy) || TurnEndedBefore(record.Session, ask.At);
         var next = record is null || record.Teammate ? null : await NextAgentAsync(record, ct).ConfigureAwait(false);
         return HandOverAskJudge.Judge(ask, own, record, rule, turnSince, next);
     }

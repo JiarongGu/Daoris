@@ -34,7 +34,10 @@ with the version and date at release.
   ever read; a process of another program at the same path is never touched, and a process started before the record was kept is not named.
 - Each agent account has the person's on/off switch: `daoris agent account off <agent> <account>` (and `on`), or *Switch off* in Agents → the
   agent's page → Accounts. A switched-off account stays signed in and is read as before, shows as off in the window and in `daoris agent list`,
-  and gets no session started on it and none moved to it; a session already on it goes on to its turn's end and is moved at the next. It is
+  and gets no session started on it and none moved to it; a session already on it goes on to its turn's end and is then moved to another
+  ready account of its agent where there is one (a conversation at its turn's end, whatever the account has used, so one idle when you
+  switch the account off is moved at the end of its next turn; a resumed session by the walk). The window
+  says *off, by you* wherever it names the account, dims its usage, and says the next start passes it because it is off. It is
   the same record for Claude Code, Codex and every other agent, kept in `accounts.json` beside the account's name, and only your own press
   writes it (a session's terminal is refused), as a sign-in is yours.
 - A place's Settings shows its risk as an act table (*Acts and who answers*, in English and 中文): per kind of act its class, where the rule comes from, who answers by the cast and the last seven days' passes and asks, `policy.change` locked, and the waits a change would open or release before you save it. `daoris settings risk` prints the same table and `daoris settings risk set <place> <act> none|role|owner` sets a row from your own terminal at the revision it read (an agent's `set` is a proposal; `propose` is gone); `why` names the rule each verdict stood on. The canon's rules 1 and 3 now read the risk policy.

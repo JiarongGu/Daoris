@@ -41,8 +41,16 @@ describe('an account the person switched off', () => {
     expect(nextLine(waits, scope, labelOf)).toBe(
       "None of Daoris's accounts is ready, and none comes ready by itself: the next start waits for you. Switching account-1, account-2 on starts it.",
     );
-    expect(heldLine(waits, labelOf)).toBe('account-1 is switched off; account-2 is switched off.');
+    expect(heldLine(waits, labelOf)).toBe('account-1 is off, by you, so the next start passes it; account-2 is off, by you, so the next start passes it.');
     await i18n.changeLanguage('zh');
     expect(nextLine(waits, scope, labelOf)).toContain('启用 account-1');
+  });
+
+  it('says in the next start’s held line that an account the start passed is passed because it is off, by you', async () => {
+    const passed: NextStart = { account: 'account-2', reason: 'onlyReady', over: null, others: [{ account: 'account-1', hold: 'off' }] };
+
+    expect(heldLine(passed, labelOf)).toBe('account-1 is off, by you, so the next start passes it.');
+    await i18n.changeLanguage('zh');
+    expect(heldLine(passed, labelOf)).toBe('account-1 已被你停用，下一次启动会跳过它。');
   });
 });

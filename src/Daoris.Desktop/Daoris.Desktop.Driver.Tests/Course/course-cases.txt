@@ -190,6 +190,9 @@ G-08 CurveMoveTests.A_conversation_handed_over_for_another_reason_is_not_held =>
 G-09 CurveMoveTests.A_hand_over_waiting_or_being_taken_judges_nothing => Hold why=Stays doors=- repair=None code=-
 G-10 CurveMoveProcessTests.A_conversation_over_its_curve_moves_at_its_turn_s_end_once_and_is_held_after => Move when=TurnEnd where=Pick:account-2(chat/-) how=Brief why=Curve by=Daoris words=-
 G-11 code:Course/Chat/CurveMove.cs:73 => Hold why=Stays doors=- repair=None code=-
+G-12 CurveMoveTests.A_conversation_on_an_account_the_person_switched_off_moves_at_its_turn_s_end_why_off => Move when=TurnEnd where=Pick:account-3(chat/-) how=Brief why=Off by=Daoris words=-
+G-13 CurveMoveTests.A_conversation_on_an_account_the_person_switched_off_moves_at_its_turn_s_end_why_off => Move when=TurnEnd where=Pick:account-3(chat/-) how=Brief why=Off by=Daoris words=-
+G-14 CurveMoveTests.A_conversation_on_a_switched_off_account_with_no_other_ready_stays_and_the_scope_s_switch_off_stops_it => Hold why=SwitchOff doors=- repair=None code=-
 
 ## H a conversation's hand-over, with the consent before an agent's ask
 H-01 HandOverTests.A_conversation_is_handed_over_by_deciding_its_move => Move when=TurnEnd where=Pick@codex-acp:work(chat/-)!kept how=Brief why=Limit by=Person words=-
