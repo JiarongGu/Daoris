@@ -56,7 +56,17 @@ public sealed record PriorityLook(IReadOnlyList<PriorityEvent> Events, PriorityR
     public static PriorityLook None { get; } = new([], PriorityRules.Default, DateTimeOffset.MinValue);
 
     /// <summary>The classes this home keeps, read at <paramref name="now"/>: what every plan over a snapshot carries, the loop's and a fresh one alike.</summary>
-    public static PriorityLook Read(string home, DateTimeOffset now) => new(PriorityBook.Read(home), PriorityRules.Default, now);
+    public static PriorityLook Read(string home, DateTimeOffset now)
+    {
+        var (events, holds) = PriorityBook.Load(home);
+        return new PriorityLook(events, PriorityRules.Default, now) { Holds = holds };
+    }
+
+    /// <summary>The holds set on this machine (<see cref="HoldBook"/>): what a look's queues stand aside by.</summary>
+    public IReadOnlyList<HoldEvent> Holds { get; init; } = [];
+
+    /// <summary>Whether a run's queued items stand aside at this look: its run, else its ask's (<see cref="HoldBook.IsHeld"/>).</summary>
+    public bool IsHeld(string run, string? ask) => HoldBook.IsHeld(Holds, run, ask);
 }
 
 /// <summary>
@@ -82,19 +92,24 @@ public static class PriorityBook
     public static string PathOf(string home) => DaorisHome.Entry(home, HomeEntry.Priority);
 
     /// <summary>Every change kept, in the order made; a file missing or that does not read is none.</summary>
-    public static IReadOnlyList<PriorityEvent> Read(string home)
+    public static IReadOnlyList<PriorityEvent> Read(string home) => Load(home).Events;
+
+    /// <summary>The file's two lists, the classes and the holds (<see cref="HoldBook"/>), which one file keeps so that one lock keeps both.</summary>
+    internal static (IReadOnlyList<PriorityEvent> Events, IReadOnlyList<HoldEvent> Holds) Load(string home)
     {
         try
         {
             using var stream = new FileStream(PathOf(home), FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete);
             using var document = JsonDocument.Parse(stream);
-            return document.RootElement.ValueKind == JsonValueKind.Object && document.RootElement.TryGetProperty("events", out var events) && events.ValueKind == JsonValueKind.Array
-                ? [.. events.EnumerateArray().Select(Parse).OfType<PriorityEvent>()]
-                : [];
+            if (document.RootElement.ValueKind != JsonValueKind.Object) return ([], []);
+            var root = document.RootElement;
+            return (
+                root.TryGetProperty("events", out var events) && events.ValueKind == JsonValueKind.Array ? [.. events.EnumerateArray().Select(Parse).OfType<PriorityEvent>()] : [],
+                root.TryGetProperty("holds", out var holds) && holds.ValueKind == JsonValueKind.Array ? [.. holds.EnumerateArray().Select(HoldBook.Parse).OfType<HoldEvent>()] : []);
         }
         catch (Exception error) when (error is IOException or UnauthorizedAccessException or JsonException)
         {
-            return [];
+            return ([], []);
         }
     }
 
@@ -154,14 +169,14 @@ public static class PriorityBook
         var file = PathOf(home);
         Directory.CreateDirectory(Path.GetDirectoryName(file)!);
         using var held = KeepLock.Take(file);
-        var events = Read(home);
+        var (events, holds) = Load(home);
         if (@class == PriorityClasses.Urgent && Holding(events, change, now) is { Count: var count } holding && count >= rules.UrgentCap)
         {
             var said = string.Join(", ", holding.Select(each => $"{each.Target} #{each.Id} until {Stamp(each.Until!.Value)}"));
             return $"the workspace `{change.Workspace}` holds {count} urgent at once, its cap of {rules.UrgentCap}: {said}. Lower one, or wait for one to end.";
         }
 
-        AtomicFile.WriteText(file, Serialize([.. events, change with { Class = @class, Why = change.Why.Trim() }]));
+        AtomicFile.WriteText(file, Serialize([.. events, change with { Class = @class, Why = change.Why.Trim() }], holds));
         return null;
     }
 
@@ -191,7 +206,7 @@ public static class PriorityBook
             : null;
     }
 
-    private static string Serialize(IReadOnlyList<PriorityEvent> events)
+    internal static string Serialize(IReadOnlyList<PriorityEvent> events, IReadOnlyList<HoldEvent> holds)
     {
         using var buffer = new MemoryStream();
         using (var writer = new Utf8JsonWriter(buffer, new JsonWriterOptions { Indented = true }))
@@ -215,6 +230,13 @@ public static class PriorityBook
             }
 
             writer.WriteEndArray();
+            if (holds.Count > 0)
+            {
+                writer.WriteStartArray("holds");
+                foreach (var each in holds) HoldBook.Write(writer, each);
+                writer.WriteEndArray();
+            }
+
             writer.WriteEndObject();
         }
 
