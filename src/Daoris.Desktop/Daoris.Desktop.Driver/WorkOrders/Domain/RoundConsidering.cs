@@ -267,7 +267,7 @@ internal sealed class RoundConsidering(PlanRound round)
             overlap is null ? $"starting in `{quest.To}`." : $"starting in `{quest.To}`; it {overlap.Said}.", repo.Root, repo.Workspace)
         {
             Overlaps = overlap,
-            Isolate = apart,
+            Isolate = apart ?? (ownTree ? IsolateStep.Resumed : null),
         };
     }
 
