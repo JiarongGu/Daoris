@@ -417,6 +417,7 @@ describe('sittingSentence', () => {
       ['RepositoryBusy', { code: 'treeOpening', quest: 'q7' }, 'Queued behind quest `#q7`, which is starting in the tree `#9a9492` goes back into — one session per tree.', /排在委托 `#q7` 之后：它正在 `#9a9492` 要回到的工作树中启动/],
       ['RepositoryBusy', { code: 'treeThisLook', quest: 'q7' }, 'Queued behind quest `#q7`, which goes into the tree `#9a9492` goes back into at this look — one session per tree.', /这一轮查看中，它会进入 `#9a9492` 要回到的工作树/],
       ['RepositoryBusy', { code: 'landingOwed' }, 'Its submitted work waits at its landing, which is tried again by itself: no session is started for it.', /落地会自行再次进行/],
+      ['RepositoryBusy', { code: 'holdWaiting' }, 'A hold on it or its ask stands its queued start aside: nothing is started or carried on for it until the hold is lifted. What already runs finishes.', /让路，排队中的启动被让到一旁/],
       ['RepositoryBusy', { code: 'place', session: 's1', repository: 'reports' }, 'Session `s1` is working in reports; this starts when its turn ends.', /会话 `s1` 正在 reports 中工作/],
       ['RepositoryBusy', { code: 'place', session: 's1', repository: 'reports', paths: ['a.md'] }, 'Session `s1` holds the checkout of reports with uncommitted paths of its own (`a.md`); this starts once they are committed, discarded, or the person lets others work here.', /会话 `s1` 以自己未提交的路径/],
       ['RepositoryBusy', { code: 'queued', quest: 'q7' }, 'Queued behind quest `#q7` in the receiver\'s repository — oldest first, one at a time.', /排在委托 `#q7` 之后——先到先办/],

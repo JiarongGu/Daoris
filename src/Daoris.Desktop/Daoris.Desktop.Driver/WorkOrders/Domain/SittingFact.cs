@@ -126,6 +126,9 @@ public sealed record SittingFact(string Code)
 
     /// <summary><see cref="StartVerdict.RepositoryBusy"/>: the quest's submitted work waits at its landing, which is not a session's to finish.</summary>
     public const string LandingOwed = "landingOwed";
+
+    /// <summary><see cref="StartVerdict.RepositoryBusy"/>: a hold on the quest or its ask stands its queued start aside until it is lifted.</summary>
+    public const string HoldWaiting = "holdWaiting";
 }
 
 /// <summary>A quest a second opinion sits, with the sentence the look said and its code, so the planner's verdict carries both.</summary>

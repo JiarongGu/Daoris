@@ -419,6 +419,7 @@
   "work.sitting.RepositoryBusy_treeOpening": "Queued behind quest `#{{other}}`, which is starting in the tree `#{{quest}}` goes back into — one session per tree.",
   "work.sitting.RepositoryBusy_treeThisLook": "Queued behind quest `#{{other}}`, which goes into the tree `#{{quest}}` goes back into at this look — one session per tree.",
   "work.sitting.RepositoryBusy_landingOwed": "Its submitted work waits at its landing, which is tried again by itself: no session is started for it.",
+  "work.sitting.RepositoryBusy_holdWaiting": "A hold on it or its ask stands its queued start aside: nothing is started or carried on for it until the hold is lifted. What already runs finishes.",
   "work.sitting.RepositoryBusy_place": "Session `{{session}}` is working in {{to}}; this starts when its turn ends.",
   "work.sitting.RepositoryBusy_placeKept": "Session `{{session}}` holds the checkout of {{to}} with uncommitted paths of its own ({{paths}}); this starts once they are committed, discarded, or the person lets others work here.",
   "work.sitting.RepositoryBusy_apart": "{{cap}} work apart in {{to}} at once; this starts when one of them ends.",
