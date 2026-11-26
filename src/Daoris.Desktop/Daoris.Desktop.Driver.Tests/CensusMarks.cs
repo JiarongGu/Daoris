@@ -28,7 +28,7 @@ internal static class CensusMarks
         "CensusReachTests", "CensusWarmTests", "ChildRecordsCensusTests", "ConfigSeamTests", "ContinuedReadersCensusTests", "ConversationMembersCensusTests",
         "ConversationRunCensusTests", "CourseCensusTests", "DaorisDriverWordsTests", "DeclarationFileCensusTests",
         "DeclarationGitCensusTests", "DeclarationParsesCensusTests",
-        "DeclarationViewsCensusTests", "DelegateKeyStripTests", "DriverChoicesTextTests", "DriverFilesTextTests", "DriverRegistryTextTests",
+        "DeclarationViewsCensusTests", "DelegateKeyStripTests", "DoorGrantsCensusTests", "DriverChoicesTextTests", "DriverFilesTextTests", "DriverRegistryTextTests",
         "DriverWorkflowsTextTests", "EveryChildIsHandedTheToolsTests", "GitBranchesReadTests", "GitCeilingCensusTests",
         "GitLaunchTests", "GitRemotesTests", "GitSeedTests", "HelpRoomSettingsPlacesTests", "HelpRoomTests", "HolderWordCensusTests",
         "LandedBranchWithdrawalTests", "LandingKindCensusTests", "LayerCensusTests",

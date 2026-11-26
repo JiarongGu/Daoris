@@ -1,0 +1,16 @@
+{
+  "doors": [
+    {
+      "id": "dsh",
+      "servers": { "route": "session-new", "flag": null, "names": ["daoris-knowledge"] },
+      "approval": "permission-request",
+      "note": "next-step",
+      "access": {
+        "asking": { "arguments": ["--profile", "acp"], "variables": { "DSH_PERMISSION_MODE": "workspace-write" }, "wire": null },
+        "full": { "arguments": ["--profile", "acp"], "variables": { "DSH_PERMISSION_MODE": "workspace-write" }, "wire": null },
+        "driven": { "arguments": ["--profile", "acp"], "variables": { "DSH_PERMISSION_MODE": "workspace-write" }, "wire": null }
+      },
+      "proof": { "none": "The stand-in model serves Anthropic's Messages and OpenAI's Responses, and dsh's model wire is neither, so no case reads the tools dsh lists yet.", "row": "GRANTSEEN1" }
+    }
+  ]
+}

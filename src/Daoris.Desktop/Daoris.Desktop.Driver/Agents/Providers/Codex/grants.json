@@ -1,0 +1,16 @@
+{
+  "doors": [
+    {
+      "id": "codex-acp",
+      "servers": { "route": "session-new", "flag": null, "names": ["daoris-knowledge"] },
+      "approval": "permission-request",
+      "note": "next-step",
+      "access": {
+        "asking": { "arguments": [], "variables": {}, "wire": "workspace-write" },
+        "full": { "arguments": [], "variables": {}, "wire": "agent-full-access" },
+        "driven": { "arguments": [], "variables": {}, "wire": null }
+      },
+      "proof": { "test": "AcpAdapterDoorProcessTests.Codex_s_adapter_lists_the_tools_of_the_knowledge_server_its_session_is_handed" }
+    }
+  ]
+}

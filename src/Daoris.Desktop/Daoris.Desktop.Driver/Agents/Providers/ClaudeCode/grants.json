@@ -1,0 +1,28 @@
+{
+  "doors": [
+    {
+      "id": "claude-code",
+      "servers": { "route": "config-file", "flag": "--mcp-config", "names": ["daoris-knowledge"] },
+      "approval": "pre-tool-use-hook",
+      "note": "stdin-line",
+      "access": {
+        "asking": { "arguments": ["--system-prompt-snapshot", "off", "-p", "--permission-mode", "default", "--output-format", "stream-json", "--verbose", "--include-partial-messages"], "variables": {}, "wire": null },
+        "full": { "arguments": ["--system-prompt-snapshot", "off", "-p", "--permission-mode", "bypassPermissions", "--output-format", "stream-json", "--verbose", "--include-partial-messages"], "variables": {}, "wire": null },
+        "driven": { "arguments": ["--system-prompt-snapshot", "off", "-p", "--permission-mode", "acceptEdits", "--output-format", "stream-json", "--verbose", "--include-partial-messages"], "variables": {}, "wire": null }
+      },
+      "proof": { "test": "ClaudeResumedToolsProcessTests.The_native_door_s_agent_lists_the_tools_of_the_knowledge_server_it_is_handed" }
+    },
+    {
+      "id": "claude-code-acp",
+      "servers": { "route": "session-new", "flag": null, "names": ["daoris-knowledge"] },
+      "approval": "permission-request",
+      "note": "steer-request",
+      "access": {
+        "asking": { "arguments": [], "variables": {}, "wire": "default" },
+        "full": { "arguments": [], "variables": {}, "wire": "bypassPermissions" },
+        "driven": { "arguments": [], "variables": {}, "wire": null }
+      },
+      "proof": { "test": "AcpAdapterDoorProcessTests.Claude_Code_s_adapter_lists_the_tools_of_the_knowledge_server_its_session_is_handed" }
+    }
+  ]
+}
