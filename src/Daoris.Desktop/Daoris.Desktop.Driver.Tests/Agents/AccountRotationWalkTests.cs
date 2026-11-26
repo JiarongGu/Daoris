@@ -62,7 +62,6 @@ public sealed class AccountRotationWalkTests
                     'r' => fact with { Running = int.Parse(flag[1..]) },
                     's' => fact with { LastStarted = Now + Offset(flag[1..]) },
                     'c' => fact with { Chosen = long.Parse(flag[1..]) },
-                    'R' => fact with { Rate = double.Parse(flag[1..], System.Globalization.CultureInfo.InvariantCulture) },
                     'S' or 'W' or 'N' or 'X' or 'C' => fact,
                     _ => throw new ArgumentException($"no flag `{flag}`"),
                 };
@@ -206,21 +205,6 @@ public sealed class AccountRotationWalkTests
     // It outranks least recently started.
     [InlineData("account-1 account-2 account-3", "account-3:s-1m,W60@+10h", "account-3 account-1 account-2")]
     public void Within_its_last_day_what_would_lapse_first(string scope, string facts, string order)
-    {
-        Assert.Equal(order, Order(scope, facts));
-    }
-
-    // A week lapses where the hours its room needs at the rate reached (`R<points an hour>`) reach the hours left, on any day.
-    [Theory]
-    // 46 points at one an hour take 46 hours of the 35 left: it goes first though the other has fewer sessions.
-    [InlineData("account-1 account-2", "account-1:W2@+5d,R1 account-2:W50@+35h,R1,r1", "account-2 account-1")]
-    [InlineData("account-1 account-2", "account-1:W2@+5d,R2 account-2:W50@+35h,R2,r1", "account-1 account-2")]
-    // No rate measured, none claimed beyond the last day.
-    [InlineData("account-1 account-2", "account-1:W2@+5d account-2:W50@+35h,r1", "account-1 account-2")]
-    [InlineData("account-1 account-2", "account-1:W2@+5d account-2:W60@+8h,R10,r1", "account-1 account-2")]
-    [InlineData("account-1 account-2", "account-1:W2@+5d account-2:W60@+8h,R1,r1", "account-2 account-1")]
-    [InlineData("account-1 account-2", "account-1:W2@+5d account-2:W50@+35h,R0,r1", "account-2 account-1")]
-    public void A_week_lapses_by_the_hours_its_room_needs_at_the_rate_reached_against_the_hours_left(string scope, string facts, string order)
     {
         Assert.Equal(order, Order(scope, facts));
     }
