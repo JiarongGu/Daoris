@@ -229,6 +229,28 @@ public sealed class UsageProbeRosterTests : IDisposable
         Assert.Equal(["fake/account-1"], Asked());
     }
 
+    /// <summary>The walk's facts carry the rate Daoris's own sessions reached on each account, from the usage ledger.</summary>
+    [Fact]
+    public void The_walk_s_facts_carry_the_rate_Daoris_s_sessions_reached_on_the_account_from_its_ledger()
+    {
+        Accounts(_home, "account-1", "account-2");
+        foreach (var (hoursAgo, used) in new[] { (10, 0.10), (8, 0.16) })
+        {
+            var at = _now.AddHours(-hoursAgo);
+            UsageHistory.Kept(
+                _home, new ReadingFrom("fake", "account-2", "fake-door", CodexUsage.Method, 0, at),
+                [new WindowSeen("10080-minute", "weekly", null, 10080, used, 0.01, Start.AddDays(2), UsageHistory.ResetSaid)], at);
+        }
+
+        Spent("account-2", 1000, minutesAgo: 9 * 60, seq: 1);
+
+        var facts = Roster().Facts("fake", ["account-1", "account-2"], _now);
+
+        // Six points over two hours beside a turn of Daoris's; the other account ran nothing, so no rate is claimed.
+        Assert.Equal(3, facts["account-2"].Rate!.Value, 6);
+        Assert.Null(facts["account-1"].Rate);
+    }
+
     [Fact]
     public async Task A_stale_account_is_asked_once_at_its_interval()
     {

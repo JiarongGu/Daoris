@@ -227,6 +227,7 @@ export const OPENING_REASONS: Readonly<Record<string, { key: string; values: rea
   // Only in a line written before: step 4 weighs what would lapse, said by `lapses`.
   lapsing: { key: 'note.opening.why.lapsing', values: ['at'] },
   lapses: { key: 'note.opening.why.lapses', values: ['window', 'unused', 'at', 'seen'] },
+  'lapses-rate': { key: 'note.opening.why.lapses-rate', values: ['window', 'unused', 'at', 'seen', 'rate', 'takes'] },
   'most-room': { key: 'note.opening.why.most-room', values: ['room', 'window'] },
   // The week's pace, written under `switch: off` only.
   behind: { key: 'note.opening.why.behind', values: ['used', 'gone'] },

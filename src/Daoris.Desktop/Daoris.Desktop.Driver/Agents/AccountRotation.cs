@@ -219,14 +219,16 @@ public static class AccountRotation
             _ => NextReason.List,
         };
         // What would lapse, as the start's line says it (Lapses), from the one reading that ranked it.
-        var lapse = reason == NextReason.Lapsing ? UsageCurves.Lapsing(scope.Use, own.Said, now)?.Window : null;
+        var lapse = reason == NextReason.Lapsing ? UsageCurves.Lapsing(scope.Use, own.Said, now, own.Rate) : null;
         return new NextStart(runs, reason, others)
         {
             Over = against,
-            When = lapse?.Reset,
-            Window = lapse?.Window,
-            Unused = lapse?.Used is { } used ? RotationWords.Whole(1 - used) : null,
-            Seen = lapse?.Seen,
+            When = lapse?.Window.Reset,
+            Window = lapse?.Window.Window,
+            Unused = lapse?.Window.Used is { } used ? RotationWords.Whole(1 - used) : null,
+            Seen = lapse?.Window.Seen,
+            Rate = lapse is not null && own.Rate is { } rate ? Math.Round(rate, 1) : null,
+            Needs = lapse?.Needs is { } needs && double.IsFinite(needs) ? (int)Math.Round(needs, MidpointRounding.AwayFromZero) : null,
         };
 
         AccountHeld Held(AccountState state) => state.Readiness switch
@@ -295,7 +297,7 @@ public static class AccountRotation
         if (use.Use != "goal") return (WalkStep.List, 0);
 
         // What would lapse, before room or sessions: another account's room is there tomorrow, this one's is lost at its reset. Room is read in each plan's units.
-        var (lapseX, lapseY) = ((UsageCurves.Lapsing(use, x.Said, now)?.Rate ?? 0) * x.Units, (UsageCurves.Lapsing(use, y.Said, now)?.Rate ?? 0) * y.Units);
+        var (lapseX, lapseY) = ((UsageCurves.Lapsing(use, x.Said, now, x.Rate)?.Rate ?? 0) * x.Units, (UsageCurves.Lapsing(use, y.Said, now, y.Rate)?.Rate ?? 0) * y.Units);
         if (lapseX != lapseY) return (WalkStep.Lapsing, lapseY.CompareTo(lapseX));
 
         // Room before sessions run: a session started near the end of a window meets its limit within minutes. Not under `off`, which ranks by pace.

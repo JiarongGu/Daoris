@@ -133,6 +133,7 @@ public static class NoteCodes
         new(OpeningWhy.Fewest, [], "note.opening.why.fewest"),
         new(OpeningWhy.Lapsing, ["at"], "note.opening.why.lapsing"),
         new(OpeningWhy.Lapses, ["window", "unused", "at", "seen"], "note.opening.why.lapses"),
+        new(OpeningWhy.LapsesAtRate, ["window", "unused", "at", "seen", "rate", "takes"], "note.opening.why.lapses-rate"),
         new(OpeningWhy.MostRoom, ["room", "window"], "note.opening.why.most-room"),
         new(OpeningWhy.Behind, ["used", "gone"], "note.opening.why.behind"),
         new(OpeningWhy.Ahead, ["over", "used", "gone"], "note.opening.why.ahead"),

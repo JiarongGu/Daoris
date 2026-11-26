@@ -215,6 +215,10 @@ describe('what is said', () => {
 
     expect(nextLine(lapses, list, (name) => name))
       .toBe(`The next start takes account-2: its weekly window resets at ${at} with 40% of it unused, as read at ${read}.`);
+    expect(nextLine({ ...lapses, rate: 1, needs: 46 }, list, (name) => name)).toBe(
+      `The next start takes account-2: its weekly window resets at ${at} with 40% of it unused, as read at ${read}, `
+      + 'and at 1% an hour, the rate Daoris\'s sessions reached on it, its room takes 46 h to spend.',
+    );
     expect(nextLine({ ...lapses, window: null, unused: null, seen: null }, list, (name) => name))
       .toBe(`The next start takes account-2: its week resets ${at}, with more of it left to spend before then.`);
 

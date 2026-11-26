@@ -67,6 +67,9 @@ public static class OpeningWhy
     /// <summary>More of its week would lapse at its reset, per hour left: the window, its unused share, its reset and when that reading is seen.</summary>
     public const string Lapses = "lapses";
 
+    /// <summary>More of its week would lapse than its measured rate spends before its reset: <see cref="Lapses"/>' parts, the rate and the hours its room takes.</summary>
+    public const string LapsesAtRate = "lapses-rate";
+
     /// <summary>It has the most room under its curve, on its tightest window.</summary>
     public const string MostRoom = "most-room";
 

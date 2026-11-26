@@ -53,6 +53,7 @@ public sealed class OpeningNoteTests : IDisposable
         { "account-2", WalkStep.Pace, "account-1", "work", "account-1:W95@+4d account-2:W90@+4d", OpeningWhy.OverCurve, "over=account-1 window=weekly used=95 curve=63" },
         // What would lapse: the week that won, how much of it is unused, its reset and when it is read.
         { "account-2", WalkStep.Lapsing, null, "work", "account-2:W60@+20h", OpeningWhy.Lapses, "window=weekly unused=40 at=2026-10-03T08:00:00Z seen=2026-10-02T11:50:00Z" },
+        { "account-2", WalkStep.Lapsing, null, "work", "account-2:W50@+35h,R1", OpeningWhy.LapsesAtRate, "window=weekly unused=50 at=2026-10-03T23:00:00Z seen=2026-10-02T11:50:00Z rate=1 takes=46" },
         { "account-2", WalkStep.LeastRecent, null, "work", "account-2:s-1d", OpeningWhy.LeastRecent, "" },
         { "account-2", WalkStep.LeastRecent, null, "work", "", OpeningWhy.NotStarted, "" },
         { "account-1", WalkStep.List, null, "work", "", OpeningWhy.First, "workspace=work" },
@@ -126,6 +127,19 @@ public sealed class OpeningNoteTests : IDisposable
 
         Assert.Equal((text, OpeningWhy.Lapses), (said.Text, said.Why));
         Assert.Contains(NoteCodes.Opening.All, reason => reason.Code == OpeningWhy.Lapsing);
+    }
+
+    /// <summary>A week that lapses by measure says the rate reached and the hours its room needs at it.</summary>
+    [Fact]
+    public void A_week_that_lapses_by_measure_is_said_by_the_rate_reached_and_the_hours_its_room_needs()
+    {
+        var said = Assert.Single(RotationWords.Steps(new WalkChoice(WalkStep.Lapsing), "claude-code", "account-2", Scope(), "work", null,
+            AccountRotationWalkTests.Facts("account-2:W50@+35h,R1"), StartKind.Driven, Now, TimeZoneInfo.Utc));
+
+        Assert.Equal(
+            ("its weekly window resets in 35 h with 50% of it unused, read 10 min ago, and at 1% an hour, the rate Daoris's sessions reached on it, its room takes 46 h to spend", OpeningWhy.LapsesAtRate),
+            (said.Text, said.Why));
+        Assert.Contains(NoteCodes.Opening.All, reason => reason.Code == OpeningWhy.LapsesAtRate);
     }
 
     [Fact]

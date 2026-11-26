@@ -207,9 +207,14 @@ where a seam, route, verb or fixture is. Which folder owns which job:
     not answered (asked, and timed out or said nothing readable), or never read. The walk ranks by it and the account page shows
     it, with *Sign in* beside a sign-out and an unanswered check. The walk, under every use, takes an account whose check did not
     answer last until a check answers, and the start's opening line says so (`unanswered`, `unanswered-self`). (AUTHPROBE1)
-    The walk, under `goal` (the default): a near account last, then a week about to lapse first (within a week's last day no
-    curve holds, the person's included, so all its remaining room is spendable, and the most per hour to its reset goes first
-    ahead of any other account's room), then most room in the tightest window the provider reported
+    The walk, under `goal` (the default): a near account last, then a week about to lapse first, ahead of any other account's room
+    and of the fewest-sessions step (a week lapses by measure: the hours its room under its curve needs at the rate Daoris's own
+    sessions reached on the account, `AccountFacts.Rate`, the fastest its week rose over two hours or more beside a turn of
+    Daoris's in the usage ledger, `UsageProjection.Rate`, reach the hours left to its reset, on any day; where no rate is
+    measured, nothing is known of how fast its room is spent, and a week within its last day lapses as before, no curve
+    holding there, the person's included; the most room per hour to its reset goes first; an unknown or old reading of a
+    shorter window holds no account back; the start's line and the agent's page say the rate and the hours its room needs,
+    `lapses-rate`, `harness.next.why.lapsesAtRate`) (LAPSEFIRST1), then most room in the tightest window the provider reported
     (rooms within five points tie; no number ranks as no room; not under `switch: off`), then fewest of Daoris's sessions running,
     then most room under the curve, then least recently started, then the order. Every room there is in the plan's own units
     (`AccountFacts.Units`: points times the plan's declared size, one where its agent declares none; the five-point band is of the

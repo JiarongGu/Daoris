@@ -326,6 +326,18 @@ describe('noteLines', () => {
         .toBe(`Opened on \`account-3\`: its week resets first, at ${moment('2026-10-03T08:00:00Z', 'en')}.`);
     });
 
+    /** A week that lapses by measure says the rate Daoris's sessions reached on it and the hours its room takes at it. */
+    it('words a week that lapses by measure with its rate and the hours its room takes, in English and 中文', () => {
+      const lapses = coded('opening.opened', 'opened on `account-3`: …', {
+        account: 'account-3', why: 'lapses-rate', window: 'weekly', unused: 50, at: '2026-10-03T23:00:00Z', seen: '2026-10-02T11:50:00Z', rate: 1, takes: 46,
+      });
+      expect(noteLines(t, { parts: [lapses] }, 'en')[0].text).toBe(
+        `Opened on \`account-3\`: its weekly window resets at ${moment('2026-10-03T23:00:00Z', 'en')} with 50% of it unused, `
+        + `as read at ${moment('2026-10-02T11:50:00Z', 'en')}, and at 1% an hour, the rate Daoris's sessions reached on it, its room takes 46 h to spend.`,
+      );
+      expect(noteLines(zh, { parts: [lapses] }, 'zh')[0].text).toContain('每小时 1%');
+    });
+
     it('words a passed account’s cool-off with its reset and its own reason, and a workspace’s list by name', () => {
       const cooling = coded('opening.opened', 'opened on `account-2`: …', {
         account: 'account-2', why: 'cooling', agent: 'claude-code', over: 'account-1', until: '2026-10-03T18:00:00Z', cooling: 'stated',

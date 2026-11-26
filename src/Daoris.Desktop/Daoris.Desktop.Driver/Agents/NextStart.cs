@@ -24,6 +24,12 @@ public sealed record NextStart(string? Account, NextReason Reason, IReadOnlyList
     /// <summary>Where it is <see cref="NextReason.Lapsing"/>, when the reading that says it is made.</summary>
     public DateTimeOffset? Seen { get; init; }
 
+    /// <summary>Where it is <see cref="NextReason.Lapsing"/> and its rate is measured, the points of the week an hour that Daoris's sessions reached on it.</summary>
+    public double? Rate { get; init; }
+
+    /// <summary>Where it is <see cref="NextReason.Lapsing"/> and its rate is measured, the whole hours its room needs at that rate: more than are left to its reset. Null where the rate is nothing.</summary>
+    public int? Needs { get; init; }
+
     /// <summary>
     /// The other doors onto the agent's accounts whose own-home state differs from the door this answer speaks for (the account's own
     /// door): a plugin's door that starts in its own home where the account's is owed an account, or the reverse. One each, so the

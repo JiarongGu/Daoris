@@ -181,7 +181,15 @@ internal sealed class RosterUsage(HarnessRoster roster)
                 && !HarnessRoster.SaidOut(reads, account)
                 && (offer is not { } asked || AgentOffers.Offers(roster.Home, asked.Agent, asked.Version, account, now).Session.Judge(asked.Model) is null),
             floor,
-            roster.PlanSizeOf(owner, AccountWindows.PlanOf(roster.Home, owner, account))))];
+            roster.PlanSizeOf(owner, AccountWindows.PlanOf(roster.Home, owner, account)),
+            SpendRateOf(owner, account, now)))];
+    }
+
+    /// <summary>The points of the account's week an hour Daoris's sessions reached on it, from the usage history; null where none is measured.</summary>
+    public double? SpendRateOf(string owner, string account, DateTimeOffset now)
+    {
+        var (readings, turns) = Ledger.Of(owner, account, now);
+        return UsageProjection.Rate(readings, turns, AccountWindows.Weekly, now);
     }
 
     /// <summary>

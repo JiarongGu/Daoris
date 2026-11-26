@@ -20,9 +20,10 @@ public static class UsageCurves
     public const int SwitchMargin = 10;
 
     /// <summary>
-    /// How near its reset a week must be for what would lapse there to rank its account first (the walk's step 4): a day holds
-    /// about five five-hour windows, so before an account's last day what it has left can
-    /// still be spent in any order. A constant, not a setting.
+    /// How near its reset a week must be for what would lapse there to rank its account first where no spend rate is measured
+    /// for it (the walk's step 4, <see cref="Lapsing"/>), and from which no curve holds on a longer window (<see cref="Allowed"/>):
+    /// a day holds about five five-hour windows, so before an account's last day what it has left can still be spent in any
+    /// order. A constant, not a setting.
     /// </summary>
     public static readonly TimeSpan LastDay = TimeSpan.FromDays(1);
 
@@ -151,29 +152,36 @@ public static class UsageCurves
     }
 
     /// <summary>
-    /// What would lapse of an account's week at its reset, as the walk's step 4 weighs it: within
-    /// its <see cref="LastDay"/>, the week's room now (<see cref="Allowed"/>) and that room over the hours left to its reset, an
-    /// hour at the least, so a sliver resetting in minutes does not outrank a large room a day off. Null where none is known.
+    /// What would lapse of an account's week at its reset, as the walk's step 4 weighs it: the week's room now
+    /// (<see cref="Allowed"/>) and that room over the hours left to its reset, an hour at the least, so a sliver resetting in
+    /// minutes does not outrank a large room a day off. Null where none is known or none would lapse.
     /// </summary>
     /// <remarks>
+    /// <para><b>A week lapses by measure</b> where <paramref name="spend"/>, the points of the week an hour Daoris's sessions
+    /// reached on the account (<see cref="UsageProjection.Rate"/>), is known: the hours its room needs at it reach the hours left,
+    /// on any day, a rate of nothing needing no end of hours. Where none is measured the <see cref="LastDay"/> stands in.</para>
     /// <para><b>Only the whole plan's week</b>, <c>weekly</c>: the five-hour window recovers in hours, so its reset never
     /// lapses anything, and a model's own week draws only that model's work, which a start may not be (the walk reads neither).
     /// Credits never count.</para>
-    /// <para><b>Nothing that is not known earns any</b> (absent is never zero): a week with no reading or no number; a
-    /// reset carried a week on, which has no reading; one now or past, whose week has already turned over; a reading older
-    /// than the account's newest window, since the account ran after it; and a week read at 0% whose reset a read made up a
-    /// week on, since one not yet opened lapses nothing. An explicit zero with its reset said is a week all unused, and earns
-    /// its whole room.</para>
+    /// <para><b>Nothing that is not known earns any</b> (absent is never zero): a week with no reading or no number; one now or
+    /// past, whose week has already turned over; a reading older than the account's newest window, since the account ran after
+    /// it; and a week read at 0% whose reset a read made up a week on, since one not yet opened lapses nothing. An explicit
+    /// zero with its reset said is a week all unused, and earns its whole room.</para>
     /// </remarks>
-    public static (WindowSaid Window, double Room, double Rate)? Lapsing(RotationUse use, AccountSaid? said, DateTimeOffset now)
+    public static (WindowSaid Window, double Room, double Rate, double? Needs)? Lapsing(
+        RotationUse use, AccountSaid? said, DateTimeOffset now, double? spend = null)
     {
         if (said?.Of(AccountWindows.Weekly) is not { Used: { } used } week) return null;
         var left = week.Reset - now;
-        if (left <= TimeSpan.Zero || left > LastDay || week.Seen < said.Seen) return null;
+        if (left <= TimeSpan.Zero || week.Seen < said.Seen) return null;
         if (ResetMadeUp(week.Window, used, week.Reset, week.Seen)) return null;
         if (Allowed(use, week.Window, week.Reset, now) is not { } curve) return null;
         var room = curve - used * 100;
+        if (room <= 0) return null;
 
-        return room > 0 ? (week, room, room / Math.Max(left.TotalHours, 1)) : null;
+        double? needs = spend is { } rate ? (rate > 0 ? room / rate : double.PositiveInfinity) : null;
+        if (needs is { } hours ? hours < left.TotalHours : left > LastDay) return null;
+
+        return (week, room, room / Math.Max(left.TotalHours, 1), needs);
     }
 }

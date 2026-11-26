@@ -135,6 +135,8 @@ public sealed class AccountsRoutes(DriverLoop loop)
             next.Window,
             next.Unused,
             next.Seen,
+            next.Rate,
+            next.Needs,
             Others = next.Others.Select(held => new { held.Account, Hold = Code(held.Hold.ToString()), held.Until }).ToArray(),
             // The card speaks for the account's own door; each other door that answers differently is said apart.
             Doors = next.Doors.Select(door => new { door.Door, door.StartsInOwnHome }).ToArray(),

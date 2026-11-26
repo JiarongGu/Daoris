@@ -207,6 +207,50 @@ public sealed class UsageCurvesTests
         Assert.True(half.Rate < Lapsing(Use("smart"), Seen("weekly", 0.20, TimeSpan.FromHours(20), TimeSpan.FromMinutes(1)))!.Value.Rate);
     }
 
+    // Where the spend rate is measured, a week lapses when the hours its room needs at it reach the hours left, on any day.
+
+    private static (double Room, double Rate, double? Needs)? LapsingAt(double? rate, RotationUse use, params WindowSaid[] windows) =>
+        UsageCurves.Lapsing(use, new AccountSaid(windows), Now, rate) is { } lapse
+            ? (Math.Round(lapse.Room, 6), Math.Round(lapse.Rate, 6), lapse.Needs is { } needs ? Math.Round(needs, 6) : null)
+            : null;
+
+    [Fact]
+    public void A_week_beyond_its_last_day_lapses_where_its_room_at_the_rate_reached_needs_the_hours_left()
+    {
+        // 2026-11-26: 50% used with 35 hours to its reset; the smart curve allowed 95.8%, 45.8 points of room.
+        var week = Seen("weekly", 0.50, TimeSpan.FromHours(35), TimeSpan.FromMinutes(5));
+        var room = SmartRoom(35, 0.50);
+
+        var slow = LapsingAt(1, Use("smart"), week)!.Value;
+        Assert.Equal((Math.Round(room, 6), Math.Round(room / 35, 6), Math.Round(room, 6)), slow);
+
+        Assert.Null(LapsingAt(2, Use("smart"), week));
+        Assert.NotNull(LapsingAt(room / 35, Use("smart"), week));
+        Assert.NotNull(LapsingAt(0, Use("smart"), week));
+        // Nobody measured one: beyond the last day nothing is claimed.
+        Assert.Null(LapsingAt(null, Use("smart"), week));
+        Assert.Null(LapsingAt(1, Use("smart"), Seen("weekly", 0.37, TimeSpan.FromDays(5), TimeSpan.FromMinutes(5))));
+    }
+
+    [Fact]
+    public void Within_its_last_day_a_rate_that_spends_the_room_in_time_lapses_nothing_and_none_measured_keeps_the_day()
+    {
+        var week = Seen("weekly", 0.60, TimeSpan.FromHours(8), TimeSpan.FromMinutes(5));
+
+        Assert.Null(LapsingAt(10, Use("smart"), week));
+        Assert.NotNull(LapsingAt(1, Use("smart"), week));
+        Assert.Equal(Lapsing(Use("smart"), week)!.Value.Room, LapsingAt(null, Use("smart"), week)!.Value.Room);
+        Assert.Null(LapsingAt(null, Use("smart")));
+    }
+
+    [Fact]
+    public void A_week_a_made_up_reset_or_an_old_reading_lapses_nothing_whatever_its_rate()
+    {
+        Assert.Null(LapsingAt(0, Use("smart"), Seen("weekly", 0.0, TimeSpan.FromDays(7), TimeSpan.FromSeconds(3))));
+        Assert.Null(LapsingAt(0, Use("smart"), Seen("weekly", 0.50, TimeSpan.FromHours(-1), TimeSpan.FromMinutes(5))));
+        Assert.Null(LapsingAt(0, Use("smart"), Seen("weekly", 0.50, TimeSpan.FromHours(10), TimeSpan.FromMinutes(5)), Seen("session", 0.10, TimeSpan.FromHours(2), TimeSpan.FromMinutes(1))));
+    }
+
     [Fact]
     public void A_week_with_no_reading_or_no_number_earns_nothing()
     {
