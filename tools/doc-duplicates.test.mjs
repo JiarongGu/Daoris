@@ -1,9 +1,11 @@
 import assert from 'node:assert/strict';
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
-import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { test } from 'node:test';
+import { fileURLToPath } from 'node:url';
 import { check, resurrected } from './doc-duplicates.mjs';
+
+const SCRATCH = join(fileURLToPath(new URL('..', import.meta.url)), '_fixtures', 'doc-duplicates');
 
 const OPEN = '- [ ] **EXTENDSEAMS1 — each area says how its part takes an addition** (canon, docs; M): the rest.';
 const DONE = '- [x] **EXTENDSEAMS1 — each area says how its part takes an addition** (canon, docs; 2026-11-26): what shipped.';
@@ -28,7 +30,8 @@ test('an open archive line, a done backlog line and a fenced example are no resu
 });
 
 test('check reads the declared backlog and archive and fails the resurrected row, naming both lines', () => {
-  const root = mkdtempSync(join(tmpdir(), 'resurrect-'));
+  mkdirSync(SCRATCH, { recursive: true });
+  const root = mkdtempSync(join(SCRATCH, 'resurrect-'));
   try {
     mkdirSync(join(root, 'docs'));
     writeFileSync(join(root, 'daoris.json'), JSON.stringify({ documents: { backlog: { path: 'ROWS.md' }, archive: 'docs/done.md' } }));
