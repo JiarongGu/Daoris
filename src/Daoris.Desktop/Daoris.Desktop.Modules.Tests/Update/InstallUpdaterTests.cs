@@ -307,6 +307,97 @@ public sealed class InstallUpdaterTests : Bridge
         Assert.False(updater.Draining);
     }
 
+    /// <summary>A close that never took is given up after its bound: the update is refused with the reason, the presses go on, and a new word asks again.</summary>
+    [Fact]
+    public async Task A_close_that_does_not_take_is_given_up_after_its_bound_and_the_asks_go_on()
+    {
+        Stage("b1");
+        using var updater = Updater();
+        await updater.SayAsync(UpdateMode.Now, "terminal");
+        Assert.Equal(UpdateStates.Applying, updater.State.State);
+        Assert.Equal(1, _closed);
+
+        _now = Now.AddMinutes(1);
+        Assert.Equal(UpdateStates.Applying, (await updater.LookAsync()).State);
+        Assert.True(updater.Applying);
+
+        _now = Now + InstallUpdater.CloseBound + TimeSpan.FromSeconds(1);
+        var given = await updater.LookAsync();
+
+        Assert.Equal(UpdateStates.Refused, given.State);
+        Assert.Equal("close", given.Problem?.Code);
+        Assert.Contains("did not close", given.Problem?.Message);
+        Assert.False(updater.Applying);
+        Assert.False(updater.Draining);
+        Assert.Equal("close", Logged("update.refused", "warn").Single()["reason"]!.GetValue<string>());
+        Assert.Equal(UpdateStates.Refused, (await updater.LookAsync()).State);
+        Assert.Equal(1, _relaunched);
+
+        await updater.SayAsync(UpdateMode.Now, "terminal");
+        Assert.Equal(2, _relaunched);
+    }
+
+    /// <summary>The person's word said while the close has not taken ends it at once: *Not now* (<c>--cancel</c>) is read, never held behind the close.</summary>
+    [Fact]
+    public async Task A_word_said_while_the_close_has_not_taken_ends_the_hold_at_once()
+    {
+        Stage("b1");
+        using var updater = Updater();
+        await updater.SayAsync(UpdateMode.Now, "terminal");
+        Assert.True(updater.Applying);
+
+        var waiting = await updater.SayAsync(UpdateMode.NotNow, "terminal");
+
+        Assert.Equal(UpdateStates.Waiting, waiting.State);
+        Assert.False(updater.Applying);
+        Assert.False(updater.Draining);
+        Assert.Equal(1, _relaunched);
+    }
+
+    /// <summary>A close that throws closes nothing and holds nothing: the presses go on and the reason is the update's.</summary>
+    [Fact]
+    public async Task A_close_that_throws_refuses_the_update_and_lets_the_presses_go()
+    {
+        Stage("b1");
+        using var updater = new InstallUpdater(
+            _install, DataHome, _log = new MachineLog(DataHome, "desktop", () => Now), work: () => _work,
+            relaunch: _ => Task.FromResult(true), close: () => throw new InvalidOperationException("no window"), bus: Bus, clock: () => _now, pid: 4242)
+        { ClosingForUpdate = _ => { } };
+
+        var refused = await updater.LookAsync();
+
+        Assert.Equal(UpdateStates.Refused, refused.State);
+        Assert.Equal("close", refused.Problem?.Code);
+        Assert.False(updater.Applying);
+        Assert.False(updater.Draining);
+    }
+
+    /// <summary>A word said while the build is being checked (the proof takes a while) withdraws the update before it closes anything.</summary>
+    [Fact]
+    public async Task A_word_said_while_the_build_is_being_checked_withdraws_the_update_before_it_closes()
+    {
+        Stage("b1");
+        using var updater = new InstallUpdater(
+            _install, DataHome, _log = new MachineLog(DataHome, "desktop", () => Now), work: () => _work,
+            relaunch: _ => { _relaunched++; return Task.FromResult(true); }, close: () => _closed++, bus: Bus, clock: () => _now, pid: 4242)
+        {
+            ClosingForUpdate = _ => { },
+            Proof = (_, _, _) =>
+            {
+                // The person cancels while the proof runs.
+                InstallUpdate.Write(DataHome, new UpdateRequest(UpdateMode.NotNow, "b1", Now.AddSeconds(1)));
+                return null;
+            },
+        };
+
+        var state = await updater.LookAsync();
+
+        Assert.Equal(UpdateStates.Waiting, state.State);
+        Assert.Equal(0, _relaunched);
+        Assert.Equal(0, _closed);
+        Assert.False(updater.Applying);
+    }
+
     [Fact]
     public async Task A_launcher_that_will_not_start_refuses_the_update_and_the_application_stays_open()
     {

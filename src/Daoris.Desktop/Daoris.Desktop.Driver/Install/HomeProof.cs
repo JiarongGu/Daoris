@@ -4,11 +4,11 @@ namespace Daoris.Driver;
 
 /// <summary>
 /// What a build says of a home it starts on: the agent accounts it lists, how many sessions' records and runs' bindings it meets, and
-/// each thing it cannot read or finds amiss (<see cref="Problems"/>, each a sentence): a session's record, a run's binding or a
-/// workflow's file that does not read, a run that binds a workflow the home does not hold, a path no entry names.
+/// each thing it cannot read (<see cref="Problems"/>, each a sentence): a session's record, a run's binding or a
+/// workflow's file that does not read, a run that binds a workflow the home does not hold; and the paths no entry names (<see cref="Strays"/>).
 /// </summary>
 public sealed record HomeProofReport(
-    IReadOnlyDictionary<string, IReadOnlyList<string>> Accounts, int Sessions, int Runs, IReadOnlyList<string> Problems);
+    IReadOnlyDictionary<string, IReadOnlyList<string>> Accounts, int Sessions, int Runs, IReadOnlyList<string> Problems, IReadOnlyList<string> Strays);
 
 /// <summary>The reading of a home a build owes (<see cref="HomeProof.Read"/>): what it names lies above Install, so Workflows installs it.</summary>
 internal interface IHomeProofReading
@@ -46,7 +46,7 @@ public static class HomeProof
             try
             {
                 // A line with the report's fields missing (an error object, a renamed field) is not the report.
-                if (JsonSerializer.Deserialize<HomeProofReport>(line, Options) is { Accounts: not null, Problems: not null } report) return report;
+                if (JsonSerializer.Deserialize<HomeProofReport>(line, Options) is { Accounts: not null, Problems: not null, Strays: not null } report) return report;
             }
             catch (JsonException)
             {

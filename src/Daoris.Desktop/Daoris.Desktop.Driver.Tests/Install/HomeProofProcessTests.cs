@@ -41,23 +41,27 @@ public sealed class HomeProofProcessTests : IDisposable
         var report = HomeProof.Parse(said);
         Assert.NotNull(report);
         Assert.Equal(["acct-a"], report!.Accounts["claude-code"]);
-        Assert.Contains(report.Problems, problem => problem.Contains("data/harnesses", StringComparison.Ordinal));
+        Assert.Contains("data/harnesses", report.Strays);
+        Assert.Empty(report.Problems);
         Assert.Equal(before, Snapshot());
     }
 
     [Fact]
-    public void A_staged_build_that_reads_the_copy_clean_is_not_refused_and_one_that_reads_a_stray_is()
+    public void A_staged_build_that_reads_the_copy_clean_is_not_refused_for_a_stray_it_says_and_is_for_a_record_it_cannot_read_that_the_running_build_reads()
     {
         StageDriver();
 
         Assert.Null(HomeProbe.Refused(_install, Home, "0.0.9"));
 
-        // The install holds an account where the build's table no longer names a place: the staged build's own start says so.
+        File.WriteAllBytes(Path.Combine(_install, "check"), []);
         Directory.CreateDirectory(Path.Combine(_install, "data", "harnesses", "claude-code", "old-acct"));
-        var refusal = HomeProbe.Refused(_install, Home, "0.0.9");
+        Assert.Null(HomeProbe.Refused(_install, Home, "0.0.9"));
+
+        var refusal = HomeProbe.Refused(_install, Home, "0.0.9", (_, copy) =>
+            (0, HomeProof.Say(HomeProof.Read(copy) with { Accounts = new Dictionary<string, IReadOnlyList<string>>() })));
 
         Assert.Equal(HomeProbe.Code, refusal?.Code);
-        Assert.Contains("data/harnesses", refusal?.Sentence);
+        Assert.Contains("claude-code/acct-a", refusal?.Sentence);
         Assert.Contains("keeps running", refusal?.Sentence);
         Assert.False(Directory.Exists(Path.Combine(_install, StagedBuild.Folder, HomeProbe.Scratch))
             && Directory.EnumerateFileSystemEntries(Path.Combine(_install, StagedBuild.Folder, HomeProbe.Scratch)).Any());

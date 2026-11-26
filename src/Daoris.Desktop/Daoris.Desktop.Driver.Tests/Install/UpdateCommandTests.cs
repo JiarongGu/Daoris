@@ -175,6 +175,31 @@ public sealed class UpdateCommandTests : IDisposable
     }
 
     [Fact]
+    public void The_status_of_a_build_asked_for_now_says_a_refusal_and_its_words_instead_of_installed_now()
+    {
+        Stage("b1");
+        Assert.Equal(0, UpdateCommand.Run(["--now"], Home, () => Now, null, null, out _));
+        const string words = "the staged build did not start clean on a copy of this home: run `q1` binds the workflow `ghost`, which the home does not hold. Nothing was replaced and this build keeps running.";
+
+        var refused = UpdateCommand.Run([], Home, () => Now, null, null, out var said, proof: (_, _, _) => (HomeProbe.Code, words));
+
+        Assert.Equal(0, refused);
+        Assert.Contains("refused", said);
+        Assert.Contains(words, said);
+        Assert.DoesNotContain("the desktop closes", said);
+
+        UpdateCommand.Run([], Home, () => Now, null, null, out said, proof: (_, _, _) => null);
+        Assert.Contains("the desktop closes", said);
+        Assert.DoesNotContain("refused", said);
+
+        UpdateCommand.Run(["--cancel"], Home, () => Now, null, null, out _);
+        var asked = 0;
+        UpdateCommand.Run([], Home, () => Now, null, null, out said, proof: (_, _, _) => { asked++; return null; });
+        Assert.Equal(0, asked);
+        Assert.DoesNotContain("refused", said);
+    }
+
+    [Fact]
     public void Not_now_said_of_one_build_reads_as_when_idle_for_the_next()
     {
         Stage("b1");

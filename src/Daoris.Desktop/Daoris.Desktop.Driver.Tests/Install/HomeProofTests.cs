@@ -54,7 +54,30 @@ public sealed class HomeProofTests : IDisposable
         var report = HomeProof.Read(Home);
 
         Assert.DoesNotContain("claude-code", report.Accounts.Keys);
-        Assert.Contains(report.Problems, problem => problem.Contains("data/harnesses", StringComparison.Ordinal));
+        Assert.Contains("data/harnesses", report.Strays);
+    }
+
+    [Fact]
+    public void A_path_no_entry_names_is_said_as_a_stray_and_is_no_problem()
+    {
+        Put("check");
+        Put("data/unnamed/thing.bin", "x");
+
+        var report = HomeProof.Read(Home);
+
+        Assert.Equal(["check", "data/unnamed"], report.Strays);
+        Assert.Empty(report.Problems);
+    }
+
+    [Fact]
+    public void The_paths_a_running_install_writes_are_named_and_so_no_stray()
+    {
+        Put("data/memo/git-objects.json", "{\"V\":2}\n");
+        Put("data/memo/content-proofs.json", "{}");
+        Put("run/sessions/s-1.4242.agent", "{}");
+        Put("run/sessions/s-1.pid", "4242");
+
+        Assert.Empty(HomeProof.Read(Home).Strays);
     }
 
     [Fact]
@@ -86,6 +109,18 @@ public sealed class HomeProofTests : IDisposable
     }
 
     [Fact]
+    public void The_report_keeps_the_fields_an_earlier_updater_reads()
+    {
+        Put("check");
+        var json = System.Text.Json.JsonDocument.Parse(HomeProof.Say(HomeProof.Read(Home))).RootElement;
+
+        Assert.Equal(System.Text.Json.JsonValueKind.Object, json.GetProperty("accounts").ValueKind);
+        Assert.Equal(System.Text.Json.JsonValueKind.Array, json.GetProperty("problems").ValueKind);
+        Assert.Equal(0, json.GetProperty("problems").GetArrayLength());
+        Assert.Equal(1, json.GetProperty("strays").GetArrayLength());
+    }
+
+    [Fact]
     public void A_line_that_is_not_the_report_is_not_read_as_one()
     {
         Assert.Null(HomeProof.Parse("{}"));
@@ -113,6 +148,7 @@ public sealed class HomeProofTests : IDisposable
         Assert.NotNull(back);
         Assert.Equal(report.Accounts["claude-code"], back!.Accounts["claude-code"]);
         Assert.Equal(report.Problems, back.Problems);
+        Assert.Equal(report.Strays, back.Strays);
         Assert.Null(HomeProof.Parse("usage: daoris home ..."));
     }
 
