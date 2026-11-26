@@ -1,5 +1,5 @@
 {
-  "modules": ["cli","platform","doctrine","layout","tools","declaration"],
+  "modules": ["cli","platform","doctrine","layout","tools","declaration","family"],
   "entry": ["cli.ts"],
   "root": {
   },
@@ -46,6 +46,7 @@
     "documents-manifest.test.ts": "layout",
     "split.test.ts": "declaration",
     "proof.test.ts": "declaration",
-    "dryrun.test.ts": "declaration"
+    "dryrun.test.ts": "declaration",
+    "family.test.ts": "family"
   }
 }

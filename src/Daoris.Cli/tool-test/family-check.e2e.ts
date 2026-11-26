@@ -8,7 +8,7 @@ import { commit, git, history } from './support/family-git.ts';
 /**
  * `daoris family check` with no service: the family file in the folder the members' checkouts share,
  * each member's `uses` from its `daoris.json`, each consumer's pins from its `daoris.family.lock`, and each pin read against the
- * producer's checkout by git's own files. Green on game to engine; red on a planted cycle and a planted branch pin.
+ * producer's checkout by git's own files. Green on beta to alpha; red on a planted cycle and a planted branch pin.
  */
 
 function run(cwd: string, ...argv: string[]): { code: number; out: string } {
@@ -19,48 +19,48 @@ function run(cwd: string, ...argv: string[]): { code: number; out: string } {
 
 const manifest = (uses: string[]) => JSON.stringify({ source: 'daoris@0.0.1', packs: [], domain: { summary: 's', owns: [], accepts: [], uses } });
 
-/** engine and game side by side under the family's folder, engine a repository on `main` with two commits; game pins nothing yet. */
-function family(name: string): { fixture: Fixture; engine: string; game: string; first: string; head: string } {
+/** alpha and beta side by side under the family's folder, alpha a repository on `main` with two commits; beta pins nothing yet. */
+function family(name: string): { fixture: Fixture; alpha: string; beta: string; first: string; head: string } {
   const fixture = makeFixture(`family-check/${name}`);
-  fixture.write('daoris.family.json', JSON.stringify({ layers: [['engine'], ['game']] }, null, 2));
-  fixture.write('engine/daoris.json', manifest([]));
-  fixture.write('game/daoris.json', manifest(['engine']));
-  const engine = join(fixture.root, 'engine');
-  const [first, head] = history(engine, 2) as [string, string];
-  return { fixture, engine, game: join(fixture.root, 'game'), first, head };
+  fixture.write('daoris.family.json', JSON.stringify({ layers: [['alpha'], ['beta']] }, null, 2));
+  fixture.write('alpha/daoris.json', manifest([]));
+  fixture.write('beta/daoris.json', manifest(['alpha']));
+  const alpha = join(fixture.root, 'alpha');
+  const [first, head] = history(alpha, 2) as [string, string];
+  return { fixture, alpha, beta: join(fixture.root, 'beta'), first, head };
 }
 
 const pin = (fixture: Fixture, commitOrName: string) =>
-  fixture.write('game/daoris.family.lock', JSON.stringify({ pins: [{ producer: 'engine', commit: commitOrName }] }, null, 2));
+  fixture.write('beta/daoris.family.lock', JSON.stringify({ pins: [{ producer: 'alpha', commit: commitOrName }] }, null, 2));
 
-test('game pinned to a landed engine commit is green, from the consumer\'s checkout', () => {
-  const { fixture, game, first } = family('green');
+test('beta pinned to a landed alpha commit is green, from the consumer\'s checkout', () => {
+  const { fixture, beta, first } = family('green');
   pin(fixture, first);
 
-  const { code, out } = run(game, 'check');
+  const { code, out } = run(beta, 'check');
 
   assert.equal(code, 0, out);
   assert.match(out, /2 members in 2 layers, 1 edge/);
-  assert.match(out, new RegExp(`ok +game → engine at ${first.slice(0, 12)}, on engine's line main`));
+  assert.match(out, new RegExp(`ok +beta → alpha at ${first.slice(0, 12)}, on alpha's line main`));
   fixture.cleanup();
 });
 
 test('a planted cycle is refused with its path', () => {
-  const { fixture, game, first } = family('cycle');
+  const { fixture, beta, first } = family('cycle');
   pin(fixture, first);
-  fixture.write('engine/daoris.json', manifest(['game']));
+  fixture.write('alpha/daoris.json', manifest(['beta']));
 
-  const { code, out } = run(game, 'check');
+  const { code, out } = run(beta, 'check');
 
   assert.equal(code, 1, out);
-  assert.match(out, /refused +a cycle: (engine → game → engine|game → engine → game)/);
-  assert.match(out, /refused +engine → game: engine is in layer 1 and game in layer 2/);
+  assert.match(out, /refused +a cycle: (alpha → beta → alpha|beta → alpha → beta)/);
+  assert.match(out, /refused +alpha → beta: alpha is in layer 1 and beta in layer 2/);
   fixture.cleanup();
 });
 
 test('a planted branch pin is refused, and so is a tag, an abbreviated commit and a moving name', () => {
-  const { fixture, engine, game, first } = family('names');
-  git(engine, 'tag', 'v1', first);
+  const { fixture, alpha, beta, first } = family('names');
+  git(alpha, 'tag', 'v1', first);
   for (const [name, said] of [
     ['main', /the pin `main` is a branch/],
     ['v1', /the pin `v1` is a tag/],
@@ -68,69 +68,69 @@ test('a planted branch pin is refused, and so is a tag, an abbreviated commit an
     ['latest', /the pin `latest` is not a full commit/],
   ] as const) {
     pin(fixture, name);
-    const { code, out } = run(game, 'check');
+    const { code, out } = run(beta, 'check');
     assert.equal(code, 1, `${name}: ${out}`);
     assert.match(out, said, name);
-    assert.match(out, /a pin is one full commit on engine's line/, name);
+    assert.match(out, /a pin is one full commit on alpha's line/, name);
   }
   fixture.cleanup();
 });
 
-test('a pin off the producer\'s line is refused, and a commit engine does not hold is refused as unknown', () => {
-  const { fixture, engine, game } = family('off-line');
-  git(engine, 'switch', '-q', '-c', 'topic');
-  const topic = commit(engine, 'on a branch, never landed');
-  git(engine, 'switch', '-q', 'main');
+test('a pin off the producer\'s line is refused, and a commit alpha does not hold is refused as unknown', () => {
+  const { fixture, alpha, beta } = family('off-line');
+  git(alpha, 'switch', '-q', '-c', 'topic');
+  const topic = commit(alpha, 'on a branch, never landed');
+  git(alpha, 'switch', '-q', 'main');
 
   pin(fixture, topic);
-  const off = run(game, 'check');
+  const off = run(beta, 'check');
   assert.equal(off.code, 1, off.out);
-  assert.match(off.out, new RegExp(`the pin ${topic.slice(0, 12)} is not on engine's line main`));
+  assert.match(off.out, new RegExp(`the pin ${topic.slice(0, 12)} is not on alpha's line main`));
 
   pin(fixture, 'c'.repeat(40));
-  const unknown = run(game, 'check');
+  const unknown = run(beta, 'check');
   assert.equal(unknown.code, 1, unknown.out);
-  assert.match(unknown.out, /engine's checkout holds no commit cccccccccccc/);
+  assert.match(unknown.out, /alpha's checkout holds no commit cccccccccccc/);
   fixture.cleanup();
 });
 
 test('a pin is read through git\'s packs as well as its loose objects', () => {
-  const { fixture, engine, game, first } = family('packed');
-  git(engine, 'gc', '-q');
+  const { fixture, alpha, beta, first } = family('packed');
+  git(alpha, 'gc', '-q');
   pin(fixture, first);
 
-  const { code, out } = run(game, 'check');
+  const { code, out } = run(beta, 'check');
 
   assert.equal(code, 0, out);
-  assert.match(out, new RegExp(`ok +game → engine at ${first.slice(0, 12)}`));
+  assert.match(out, new RegExp(`ok +beta → alpha at ${first.slice(0, 12)}`));
   fixture.cleanup();
 });
 
 test('the line is origin\'s HEAD where the producer\'s checkout is a clone', () => {
-  const { fixture, engine, game, head } = family('clone');
-  git(engine, 'branch', '-q', '-m', 'main', 'trunk');
-  const clone = join(fixture.root, 'engine-clone');
-  git(fixture.root, 'clone', '-q', engine, clone);
+  const { fixture, alpha, beta, head } = family('clone');
+  git(alpha, 'branch', '-q', '-m', 'main', 'trunk');
+  const clone = join(fixture.root, 'alpha-clone');
+  git(fixture.root, 'clone', '-q', alpha, clone);
   git(clone, 'switch', '-q', '-c', 'local-work');
-  fixture.write('daoris.family.json', JSON.stringify({ layers: [['engine-clone'], ['game']] }));
-  fixture.write('engine-clone/daoris.json', manifest([]));
-  fixture.write('game/daoris.json', manifest(['engine-clone']));
-  fixture.write('game/daoris.family.lock', JSON.stringify({ pins: [{ producer: 'engine-clone', commit: head }] }));
+  fixture.write('daoris.family.json', JSON.stringify({ layers: [['alpha-clone'], ['beta']] }));
+  fixture.write('alpha-clone/daoris.json', manifest([]));
+  fixture.write('beta/daoris.json', manifest(['alpha-clone']));
+  fixture.write('beta/daoris.family.lock', JSON.stringify({ pins: [{ producer: 'alpha-clone', commit: head }] }));
 
-  const { code, out } = run(game, 'check');
+  const { code, out } = run(beta, 'check');
 
   assert.equal(code, 0, out);
-  assert.match(out, /on engine-clone's line trunk/);
+  assert.match(out, /on alpha-clone's line trunk/);
   fixture.cleanup();
 });
 
 test('a uses with no pin is warned and the check stays green', () => {
-  const { fixture, game } = family('unpinned');
+  const { fixture, beta } = family('unpinned');
 
-  const { code, out } = run(game, 'check');
+  const { code, out } = run(beta, 'check');
 
   assert.equal(code, 0, out);
-  assert.match(out, /warned +game uses engine and pins no commit of it/);
+  assert.match(out, /warned +beta uses alpha and pins no commit of it/);
   fixture.cleanup();
 });
 
@@ -152,7 +152,7 @@ test('--family names the file from anywhere', () => {
   const { code, out } = run(fixture.root, 'check', '--family', join(fixture.root, 'daoris.family.json'));
 
   assert.equal(code, 0, out);
-  assert.match(out, /ok +game → engine/);
+  assert.match(out, /ok +beta → alpha/);
   fixture.cleanup();
 });
 

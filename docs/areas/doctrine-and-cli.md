@@ -254,7 +254,7 @@ skill, and `co-working` as a pack.
 54. A family is declared by `daoris.family.json` in the folder the members' checkouts share, the parent `repository create` puts a
     workspace's new repositories under, or by the file `--family` names. It is workspace data: no member tracks it and it holds no path.
     It names the members by the registry's names, in `layers` lowest first, and optional `denied` pairs (`consumer`, `producer`, `why`);
-    a name in two layers is a tool error. Each member's checkout is the folder of its name beside the file. With no family file there is
+    a name in two layers is a tool error. A member is a name, never a kind: no format, check or message says what a repository is. Each member's checkout is the folder of its name beside the file. With no family file there is
     no family: the check says so, exit 0. (from D364, D48)
 55. A member's edges are its own `daoris.json` `uses`, read by the registry's rule; a consumer's pins are its own
     `daoris.family.lock`, `{ "pins": [{ "producer", "commit" }] }`, so a pin move is a change to that path alone. No producer lists
