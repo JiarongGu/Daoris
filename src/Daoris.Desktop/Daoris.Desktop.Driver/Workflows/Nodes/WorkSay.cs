@@ -10,8 +10,8 @@ namespace Daoris.Driver;
 /// then (<see cref="SayAnswer.Reaches"/> says which). Said again under the key it is held once.</para>
 ///
 /// <para><b>Any other session</b> is said to at the record's door, which keeps the words for a session that does not run and refuses one that
-/// does as <c>running</c>: a conversation or a session another loop runs. The refusal is the caller's to offer again once the record does not run
-/// (<see cref="NodeTold.Running"/>); an inbox that closed as its session wound up falls to it, so words are never dropped.</para>
+/// does as <c>running</c>: a conversation or a session another loop runs. A check's refusal is offered again once the record does not run
+/// (<see cref="NodeTold.Running"/>); an inbox that closed as its session wound up falls to it, so a check's words are never dropped.</para>
 ///
 /// <para>Where the record went on in its line's head, the words are said there as every say is (<see cref="WordsHead"/>).</para>
 /// </remarks>
@@ -42,7 +42,7 @@ public sealed class WorkSay(
                 return new SayAnswer(true, "held for the session by its inbox")
                 {
                     Word = kept.Said?.Word, Settled = kept.Said?.Settled,
-                    Reaches = kept.Said?.Settled is not null ? null : kept.Reach == DrivenReach.NextStep ? SayAnswer.NextStep : SayAnswer.TurnEnd,
+                    Reaches = kept.Said?.Settled is not null ? null : kept.Reach switch { DrivenReach.NextStep => SayAnswer.NextStep, null => SayAnswer.FirstPrompt, _ => SayAnswer.TurnEnd },
                 };
         }
     }

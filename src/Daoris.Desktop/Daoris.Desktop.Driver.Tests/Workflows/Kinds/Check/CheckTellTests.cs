@@ -147,6 +147,25 @@ public sealed class CheckTellTests
     }
 
     [Fact]
+    public void A_telling_kept_as_running_says_its_words_wait_and_a_session_still_opening_is_said_to_be()
+    {
+        Assert.Equal("its words wait: its session is running where no door here reaches it, and they are told once it stops running.",
+            new WorkflowRunTold(null, NodeTold.Running).Said);
+        Assert.Equal("its words went to session `s1`, which is opening, and are held for its first prompt.",
+            new WorkflowRunTold("s1", null) { Reaches = SayAnswer.FirstPrompt }.Said);
+    }
+
+    [Fact]
+    public async Task A_session_whose_door_is_not_known_yet_is_told_its_words_are_held_for_its_first_prompt()
+    {
+        var inbox = new DrivenInbox(_ => { });
+
+        var answer = await Door(inbox).SayAsync("s1", Words, Key, CancellationToken.None);
+
+        Assert.Equal(SayAnswer.FirstPrompt, answer.Reaches);
+    }
+
+    [Fact]
     public void Where_the_words_reach_a_working_session_is_kept_on_the_run_s_record_and_read_back_by_the_step()
     {
         var at = DateTimeOffset.UnixEpoch;

@@ -418,7 +418,7 @@ internal sealed class NodeRunKeeping(
                 ? SpentChecks.Words(node, code, found, CheckRounds.Reds(record).GetValueOrDefault(node), told.Decided ?? NodeTold.OwnerHeld,
                     told.Decided == NodeTold.RoleHeld ? CastReading.Now(records.Home, workspace, repository)(SpentChecks.HeldOn) : null)
                 : FailedWords(node, code, found);
-            var (session, why, reaches) = await SayWorkAsync(governed, scope, node, attempt, text, told.Why == NodeTold.Running ? [] : said, ct, told.Why == NodeTold.Running)
+            var (session, why, reaches) = await SayWorkAsync(governed, scope, node, attempt, text, said, ct, told.Why == NodeTold.Running)
                 .ConfigureAwait(false);
             if (session is null && why == told.Why) continue;
             var again = told with { Session = session, Why = why, Reaches = reaches, At = clock() };
@@ -454,7 +454,8 @@ internal sealed class NodeRunKeeping(
     {
         var unit = governed.Unit.Id;
         var session = SessionFor(governed, scope, node, attempt);
-        var (told, why, reaches) = await SayAsync(session, scope, node, attempt, text, ct).ConfigureAwait(false);
+        var retried = governed.Declared.GetValueOrDefault(node)?.Kind == NodeKinds.Check;
+        var (told, why, reaches) = await SayAsync(session, scope, node, attempt, text, retried, again, ct).ConfigureAwait(false);
         if (!again || told)
         {
             said.Add(told
@@ -470,6 +471,7 @@ internal sealed class NodeRunKeeping(
     {
         SayAnswer.NextStep => "which is working, at its next step",
         SayAnswer.TurnEnd => "which is working, held for its turn's end",
+        SayAnswer.FirstPrompt => "which is opening, held for its first prompt",
         _ => "as its next turn",
     };
 
@@ -484,19 +486,20 @@ internal sealed class NodeRunKeeping(
                ?? scope.Quest?.Executors.LastOrDefault() ?? scope.Branch?.Executors.LastOrDefault();
     }
 
-    private async Task<(bool Told, string? Why, string? Reaches)> SayAsync(string? session, RunScope scope, string node, int attempt, string text, CancellationToken ct)
+    private async Task<(bool Told, string? Why, string? Reaches)> SayAsync(
+        string? session, RunScope scope, string node, int attempt, string text, bool retried, bool again, CancellationToken ct)
     {
         if (session is null) return (false, NodeTold.NoSession, null);
         if (say() is not { } door) return (false, "this Daoris holds no say door", null);
         try
         {
             var answer = await door(session, text, ChangesKey(scope.Run.Run, node, attempt), ct).ConfigureAwait(false);
-            return answer.Kept ? (true, null, answer.Reaches) : (false, answer.Refusal == "running" ? NodeTold.Running : answer.Message, null);
+            return answer.Kept ? (true, null, answer.Reaches) : (false, retried && answer.Refusal == "running" ? NodeTold.Running : answer.Message, null);
         }
         catch (Exception error) when (!ct.IsCancellationRequested
                                       && error is DriverException or HttpRequestException or System.Text.Json.JsonException or IOException or InvalidOperationException)
         {
-            return (false, error.Message, null);
+            return (false, again ? NodeTold.Running : error.Message, null);
         }
     }
 }

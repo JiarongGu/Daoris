@@ -309,7 +309,7 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     the work's session through `WorkSay`: a session this loop runs working is told through its inbox, as `session say` tells it, as Daoris's
     urgent word under the telling's key, at its next step or held for its turn's end (`SayAnswer.Reaches`, `NodeTold.Reaches`, said by the
     step), and any other session at the record's say door, which refuses a running record, so a session running where no door here reaches it
-    is kept as `NodeTold.Running` and offered the words again once it does not run (`CheckRounds.Untold`); the words are never dropped. A check's
+    is kept as `NodeTold.Running` and offered the words again once it does not run (`CheckRounds.Untold`), so a check's words are never dropped; a review's changes said to such a session are refused as before, and the step says why. A check's
     red goes to the session that made the claimed step it checks (`CheckRounds.MakerSession`: the part whose handback commit it checked, else
     the newest part's), before the newest quest's last executor; a telling that found no session (`NodeTold.NoSession`) or whose session ran where no door
     here reaches it (`NodeTold.Running`), plain or spent, is offered again, once told, as a session serves the work or stops running (`CheckRounds.Untold`), while its red is still the check's newest. A reached

@@ -45,6 +45,9 @@ public sealed record SayAnswer(bool Kept, string Message)
     /// <summary>The words reach a running session at its next step (<see cref="Reaches"/>).</summary>
     public const string NextStep = "next-step";
 
+    /// <summary>The words are held for the first prompt of a session whose door is not known yet (<see cref="Reaches"/>).</summary>
+    public const string FirstPrompt = "first-prompt";
+
     /// <summary>The words are held for a running session's turn's end (<see cref="Reaches"/>).</summary>
     public const string TurnEnd = "turn-end";
 

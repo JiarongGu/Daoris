@@ -22,6 +22,7 @@ public sealed record WorkflowRunTold(string? Session, string? Why)
     {
         { Session: { } session, Spent: true } => $"its rounds back to the work are spent, so {Holds}, and {Went(session)}.",
         { Session: { } session } => $"{Went(session)}.",
+        { Why: NodeTold.Running } => "its words wait: its session is running where no door here reaches it, and they are told once it stops running.",
         { Why: { } why } => $"its words were not told to the work: {why.TrimEnd('.')}.",
         _ => "its words are not told to the work yet.",
     };
@@ -30,6 +31,7 @@ public sealed record WorkflowRunTold(string? Session, string? Why)
     {
         SayAnswer.NextStep => $"its words went to session `{session}`, which was working, and reach it at its next step",
         SayAnswer.TurnEnd => $"its words went to session `{session}`, which was working, and are held for its turn's end",
+        SayAnswer.FirstPrompt => $"its words went to session `{session}`, which is opening, and are held for its first prompt",
         _ => $"its words went to session `{session}` as its next turn",
     };
 
