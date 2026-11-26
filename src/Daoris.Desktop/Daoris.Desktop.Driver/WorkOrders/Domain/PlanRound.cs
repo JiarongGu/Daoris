@@ -65,8 +65,11 @@ internal sealed class PlanRound
             .Where(reading.WrittenTo)
             .DistinctBy(quest => quest.Id, StringComparer.OrdinalIgnoreCase)
             .ToList();
-        foreach (var quest in writtenTo.Concat(Snapshot.Quests.Where(quest => !reading.WrittenTo(quest)))
-                     .OrderBy(quest => Snapshot.HeldStarts.Contains(quest.Id)))
+        var queue = writtenTo.Concat(Snapshot.Quests.Where(quest => !reading.WrittenTo(quest))).ToList();
+        var placed = new Dictionary<string, WalkSlot>(StringComparer.OrdinalIgnoreCase);
+        foreach (var quest in queue) placed.TryAdd(quest.Id, PlaceOf(quest));
+        // The sort is stable, so the order above decides only what the comparator leaves equal; a held start still goes last.
+        foreach (var quest in QueueOrder.Of(queue, each => placed[each.Id].Place).OrderBy(quest => Snapshot.HeldStarts.Contains(quest.Id)))
         {
             // A step whose source the person reopened: withdrawn while open and held while taken, until they go on with it on the
             // new work or abandon it. Before every other reason, a pause and the person's stop included, since neither Resume nor
@@ -181,6 +184,41 @@ internal sealed class PlanRound
             }
         }
 
-        return considerations;
+        return [.. considerations.Select(each => Aged(each, placed))];
     }
+
+    /// <summary>A quest's place in the one order: its class aged at this look, a resume where a session of this machine's ran on it, else a new start, and when it began to wait.</summary>
+    private WalkSlot PlaceOf(QuestView quest)
+    {
+        var look = Snapshot.Priority;
+        var run = QuestRuns.Of(quest, id => Snapshot.Quests.FirstOrDefault(each => string.Equals(each.Id, id, StringComparison.OrdinalIgnoreCase)));
+        var @class = PriorityBook.OfRun(look.Events, run, AskWords.AskOf(quest.From), look.Now).Class;
+        var last = Snapshot.LastRun.GetValueOrDefault(quest.Id);
+        // Its words' earliest moment where its session waits on them, else when the service says the quest last moved; none known
+        // leaves it where the service's order put it and never ages it.
+        var waited = last?.Waiting.Select(word => word.At).Where(at => at > DateTimeOffset.MinValue).Select(at => (DateTimeOffset?)at).Min();
+        var arrived = waited ?? quest.Updated;
+        var aged = QueueOrder.Age(@class, arrived, look.Now, look.Rules);
+        return new WalkSlot(
+            new QueuePlace(aged.Class, last is null ? QueueStage.NewStart : QueueStage.Resume, arrived ?? DateTimeOffset.MinValue), aged.From, look.Rules);
+    }
+
+    /// <summary>A quest ordered by a promoted class says so where it waits or starts, and carries the class it came from.</summary>
+    private static Consideration Aged(Consideration each, Dictionary<string, WalkSlot> placed)
+    {
+        if (each.Verdict is not (StartVerdict.Start or StartVerdict.AtCapacity or StartVerdict.RepositoryBusy)
+            || !placed.TryGetValue(each.Quest.Id, out var at) || at.From is not { } from)
+        {
+            return each;
+        }
+
+        var bound = at.Rules.BoundOf(from)!.Value;
+        return each with
+        {
+            AgedFrom = from,
+            Reason = $"{each.Reason} It is ordered as {at.Place.Class} (aged from {from}: it has waited past {bound.TotalHours:0.##} h).",
+        };
+    }
+
+    private sealed record WalkSlot(QueuePlace Place, string? From, PriorityRules Rules);
 }

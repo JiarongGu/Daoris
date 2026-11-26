@@ -168,6 +168,9 @@ public sealed record Snapshot(
     /// <summary>The quests whose submitted work waits at its landing (the landing standings), read once for the look. Absent is none.</summary>
     public IReadOnlySet<string> OwedLandings { get; init; } = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
+    /// <summary>The classes set on asks and quests, the rules and the look's moment, by which the planner orders its walk (<see cref="QueueOrder"/>).</summary>
+    public PriorityLook Priority { get; init; } = PriorityLook.None;
+
     /// <summary>The quests whose last start here could not go: planned after every quest that can, so they never hold its turn. Absent is none.</summary>
     public IReadOnlySet<string> HeldStarts { get; init; } = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 

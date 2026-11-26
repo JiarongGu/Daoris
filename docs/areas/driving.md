@@ -140,8 +140,16 @@ built, but nothing outside tests makes, takes or ends one; `LinePlaces` answers 
     `daoris priority <ask|quest> <class> --why "…" [--until <time>]` by any actor and kept as an event in the order made in this home
     (`PriorityBook`, `data/priority.json`), a quest's with the run its work is (`QuestRuns`). Urgent carries an end (`--until`, else a
     day) and a workspace holds two at once, one more refused naming those that hold it; a later change of the same ask or quest ends
-    an urgent one rather than masking it, so it never comes back past the cap; the id alone says the class standing and where it comes from. Only the check queue reads it so
-    far (Workflows, review and landing); the planner's starts, the landing line and opinions do not yet.
+    an urgent one rather than masking it, so it never comes back past the cap; the id alone says the class standing and where it comes from. The check queue
+    (Workflows, review and landing) and the planner's starts and resumes read it by the one comparator (`QueueOrder`, PRIORITY1b): the class,
+    then the stage (a landing, a run back at its checks, a resume, first checks, a new start), then first arrival. Each look reads a quest's
+    class (`Snapshot.Priority`, `PriorityBook.OfRun`) and orders the walk of `PlanRound` by it, never copying it into a run; a quest a
+    session of this machine's ran on is a resume, any other a new start, and its arrival is its earliest waiting word, else the service's
+    `updated`, so a resume goes before a new start of its class and a quest with no known arrival keeps the service's order and never ages.
+    Aging is by promotion (`QueueOrder.Age`): a normal item that waited past 2 hours is ordered as high, a low one past 8 hours as normal,
+    keeping its first arrival, never into urgent; its consideration carries `AgedFrom` and its reason says "aged from normal". The bounds
+    are `PriorityRules.AgeNormal` and `AgeLow`, Daoris's defaults until a workspace's setting carries them. A start that came to a hold is
+    still weighed after every quest that can start, whatever its class. The landing line and opinions do not read it yet.
 17. A taken quest whose take is not this machine's sits: nothing carries it on or resumes it here, and the ledger refuses the open
     as `TakenElsewhere`. (D80, D178)
 18. At each start the plugins are asked first, and a hold names the plugin. A start held at spawn (a harness absent or signed out,

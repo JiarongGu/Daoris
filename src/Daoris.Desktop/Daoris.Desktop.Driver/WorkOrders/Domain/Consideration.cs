@@ -43,6 +43,9 @@ public sealed record Consideration(
     /// </summary>
     public ChannelEntry? Channel { get; init; }
 
+    /// <summary>The class a quest is promoted from where its wait passed that class's bound (<see cref="QueueOrder.Age"/>), said in <see cref="Reason"/>; null otherwise.</summary>
+    public string? AgedFrom { get; init; }
+
     /// <summary>For a quest the person's stop holds (<see cref="StartVerdict.Stopped"/>): the session they stopped, which *Try again* names to release it.</summary>
     public PriorSession? HeldBy { get; init; }
 
