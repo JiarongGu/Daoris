@@ -42,6 +42,7 @@
     "data/plugin-approvals.json",
     "data/plugins",
     "data/plugins.json",
+    "data/priority.json",
     "data/proposals",
     "data/reads.json",
     "data/registry-followed.json",

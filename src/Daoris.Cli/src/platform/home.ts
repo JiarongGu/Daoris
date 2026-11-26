@@ -145,6 +145,7 @@ export const HOME_ENTRIES = [
   row('last-build', 'data', 'data/last-build.json'),
   row('terminal-acts', 'data', 'data/terminal-acts.json'),
   row('ux-trail', 'data', 'data/ux-trail'),
+  row('priority', 'data', 'data/priority.json'),
   row('keys', 'profiles', 'profiles/keys.json'),
   row('remotes', 'profiles', 'profiles/remotes.json'),
   row('agent-homes', 'profiles', 'profiles/agents/*/*'),
