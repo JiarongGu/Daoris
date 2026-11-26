@@ -271,18 +271,25 @@ skill, and `co-working` as a pack.
 57. `npm run rehearse:family`'s first section runs it on a copy of the examples (`tools/family-pins.mjs`, run whole by
     `tool-test/family-pins.e2e.ts`): `examples/daoris.family.json` puts engine below game, and the check is green on game pinned to a landed
     engine commit and red on a planted cycle and a planted branch pin. Its gate stage (`tools/family-gates.mjs`, run whole by
-    `tool-test/family-gates.e2e.ts`) runs game's declared gate, `regenerate` then `run`, with the workspace's CLI first on the PATH: green
-    at an engine pin behind engine's line, red with the pin at the line's head, which drops a call game makes. (from D364)
+    `tool-test/family-gates.e2e.ts`) runs game's declared commands itself, `regenerate` then `run` in the driver's order, with the
+    workspace's CLI first on the PATH, not through the driver's gate runner (a driver run of a member's gate is FAMILY1c's rehearsal): green
+    as the example tracks it, pinning nothing; green at an engine pin behind engine's line; red with the pin at the line's head, which drops
+    a call game makes. (from D364)
 58. `family materialize` turns this repository's pins into what its build reads, the one way Daoris supplies; a repository declares it,
     or a command of its own, as its gates' `regenerate`, which the driver runs before each gate and when it prepares a tree, so its gates
-    build against the pin and never the sibling checkout. It reads the lock at its own root (a session's tree reads its own, where a
-    pin move is made), judges each pin as `family check` does (a member producer the repository uses, pinned once, one full commit on
-    its line), and writes the producer's files at the pinned commit into `<into>/<producer>/` (`pinned` by default; `--into` must stand
-    inside the repository by its real path, else exit 2), read from the producer's git store beside the family file, never its working
-    tree. A `.daoris-pin` there names the commit: the same pin is left, a moved one replaces the folder whole, and a folder with none is
-    the repository's own and refused. Any refusal writes nothing, exit 1. A path into a `.git`, out of the folder or not a name on this
-    machine is refused; a link is written as a file holding its target, as git writes one where links are off; a blob's bytes are written
-    as stored, with no line-ending conversion; a submodule is said and not written. With no pin it says so, exit 0. (from D364)
+    build against the pin and never the sibling checkout. It judges the family as `family check` does, this repository read from the
+    folder it runs in (a session's tree reads its own lock, where a pin move is made), and refuses wherever the check refuses; then it
+    writes each of its pins as the producer's files at the pinned commit into `<into>/<producer>/` (`pinned` by default; `--into` must
+    stand inside the repository by its real path and outside any `.git`, else exit 2), read from the producer's git store beside the
+    family file, never its working tree. A `.daoris-pin` there names the commit: a folder with none is the repository's own and refused;
+    the same pin is left only where the folder holds exactly the tree's files, so a build output or a deleted file there makes it written
+    again (a file edited in place is not seen: the folder is materialize's, never a build's). Every object is found before anything is
+    written and each producer is written beside its folder and swapped in, so any refusal writes nothing, exit 1, and a write cut short
+    leaves the old pin. A path into a `.git`, out of the folder or not a name on this machine is refused, on Windows as git refuses it on
+    NTFS (trailing dots and spaces, `git~1`, device names, control characters); a link is written as a file holding its target, as git
+    writes one where links are off; a blob's bytes are written as stored, with no line-ending conversion; a producer whose `.gitattributes`
+    routes files through LFS is warned, its pointers written as they are; a submodule is said and not written. With no pin it says so,
+    exit 0. (from D364)
 
 ## Where a change goes
 

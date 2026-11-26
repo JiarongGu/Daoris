@@ -41,7 +41,7 @@ export function familyGatesStage({ examplesRoot, cliBin, scratch, run, check: sa
 
   const gates = JSON.parse(readFileSync(join(game, 'daoris.gates.json'), 'utf8')).gates;
   const runGates = (commit) => {
-    writeFileSync(join(game, 'daoris.family.lock'), `${JSON.stringify({ pins: [{ producer: 'engine', commit }] }, null, 2)}\n`);
+    if (commit) writeFileSync(join(game, 'daoris.family.lock'), `${JSON.stringify({ pins: [{ producer: 'engine', commit }] }, null, 2)}\n`);
     const ran = [];
     for (const gate of gates) {
       for (const command of [gate.regenerate, gate.run].filter(Boolean)) {
@@ -52,6 +52,8 @@ export function familyGatesStage({ examplesRoot, cliBin, scratch, run, check: sa
     return { code: 0, out: ran.map((step) => step.out).join('\n') };
   };
 
+  const tracked = runGates(null);
+  say('game\'s gate is green as the example tracks it, pinning nothing', tracked.code === 0 && tracked.out.includes('nothing to build against'), tracked.out);
   const pinned = runGates(landed);
   say('game\'s gate is green at an engine pin behind engine\'s line, engine\'s checkout at the head',
     gates.length > 0 && pinned.code === 0 && pinned.out.includes(`game builds against engine at ${landed.slice(0, 12)}`), pinned.out);

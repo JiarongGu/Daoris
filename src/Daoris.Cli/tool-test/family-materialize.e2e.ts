@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
+import { existsSync, readdirSync, readFileSync, rmSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 import { makeFixture, type Fixture } from '../test/_fixture.ts';
 import { runCli } from '../src/cli.ts';
@@ -119,7 +119,70 @@ test('a pin the family check refuses is said and nothing is written', () => {
   pin(fixture, 'beta', 'f'.repeat(40), 'gamma');
   const stranger = run(beta, 'materialize');
   assert.equal(stranger.code, 1, stranger.out);
-  assert.match(stranger.out, /refused +beta pins gamma, which is no member of the family/);
+  assert.match(stranger.out, /refused +beta pins gamma and does not use it/);
+  fixture.cleanup();
+});
+
+test('a pin on an edge the family check refuses (a denied pair, a layer) is refused and nothing is written', () => {
+  const { fixture, beta, first } = family('graph');
+  pin(fixture, 'beta', first);
+  fixture.write('daoris.family.json', JSON.stringify({ layers: [['alpha'], ['beta']], denied: [{ consumer: 'beta', producer: 'alpha', why: 'kept apart' }] }));
+
+  const denied = run(beta, 'materialize');
+  assert.equal(denied.code, 1, denied.out);
+  assert.match(denied.out, /refused +beta → alpha is denied: kept apart/);
+  assert.equal(existsSync(join(beta, 'pinned')), false);
+
+  fixture.write('daoris.family.json', JSON.stringify({ layers: [['beta'], ['alpha']] }));
+  const layer = run(beta, 'materialize');
+  assert.equal(layer.code, 1, layer.out);
+  assert.match(layer.out, /refused +beta → alpha: beta is in layer 1 and alpha in layer 2/);
+  assert.equal(existsSync(join(beta, 'pinned')), false);
+  fixture.cleanup();
+});
+
+test('an object the producer\'s store lacks is a refusal before anything is written, and the folder of the old pin stays', () => {
+  const { fixture, alpha, beta, first, head } = family('missing');
+  pin(fixture, 'beta', head);
+  assert.equal(run(beta, 'materialize').code, 0);
+  const blob = git(alpha, 'rev-parse', `${first}:gone.txt`);
+  rmSync(join(alpha, '.git', 'objects', blob.slice(0, 2), blob.slice(2)), { force: true });
+  pin(fixture, 'beta', first);
+
+  const { code, out } = run(beta, 'materialize');
+
+  assert.equal(code, 1, out);
+  assert.match(out, new RegExp(`refused +alpha at ${first.slice(0, 12)}: gone\\.txt's object is not in alpha's repository`));
+  assert.equal(readFileSync(join(beta, 'pinned/alpha/api.json'), 'utf8'), HEAD_API);
+  assert.equal(JSON.parse(readFileSync(join(beta, 'pinned/alpha/.daoris-pin'), 'utf8')).commit, head);
+  fixture.cleanup();
+});
+
+test('a file that is not the pinned tree\'s, left in the folder at the same pin, makes it written again', () => {
+  const { fixture, beta, first } = family('stray');
+  pin(fixture, 'beta', first);
+  assert.equal(run(beta, 'materialize').code, 0);
+  fixture.write('beta/pinned/alpha/obj/built.bin', 'a build output\n');
+  rmSync(join(beta, 'pinned/alpha/gone.txt'));
+
+  const { code, out } = run(beta, 'materialize');
+
+  assert.equal(code, 0, out);
+  assert.match(out, /wrote +alpha/);
+  assert.equal(existsSync(join(beta, 'pinned/alpha/obj')), false);
+  assert.equal(existsSync(join(beta, 'pinned/alpha/gone.txt')), true);
+  fixture.cleanup();
+});
+
+test('a producer whose attributes route files through LFS is written with a warning that those files are pointers', () => {
+  const { fixture, alpha, beta } = family('lfs');
+  const lfs = commitFiles(alpha, { '.gitattributes': '*.bin filter=lfs diff=lfs merge=lfs -text\n' }, 'lfs');
+  pin(fixture, 'beta', lfs);
+
+  const { code, out } = run(beta, 'materialize');
+
+  assert.equal(code, 0, out);
+  assert.match(out, /warned +alpha at [0-9a-f]{12}: its \.gitattributes routes files through LFS; they are written as their pointers/);
   fixture.cleanup();
 });
 

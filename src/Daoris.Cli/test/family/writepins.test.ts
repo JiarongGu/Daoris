@@ -1,7 +1,8 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { parseTree } from '../../src/family/gitread.ts';
-import { unsafePath } from '../../src/family/writepins.ts';
+import { join, resolve } from 'node:path';
+import { intoRefusal, unsafePath } from '../../src/family/writepins.ts';
 
 /** What `family materialize` reads of a tree and which of its paths it refuses to write, with no git and no disk. */
 
@@ -38,4 +39,22 @@ test('a path out of the producer\'s folder, into a .git or not a name on this ma
     assert.equal(unsafePath(path, 'linux'), false, path);
   }
   for (const path of ['src/deep/run.sh', '.gitignore', '.github/workflows/ci.yml', 'naïve.txt']) assert.equal(unsafePath(path, 'win32'), false, path);
+});
+
+test('on Windows the names git refuses on NTFS are refused: a trailing dot or space, the short name, a device, a control character', () => {
+  for (const path of ['x/.git./config', 'x/.git /config', 'x/.GIT. ./hooks/a', 'GIT~1/config', 'x/git~1/hooks', 'a/../ ', 'a/.. ',
+    'CON', 'nul.txt', 'deep/Aux', 'com1.log', 'LPT9', 'a\u0001b']) {
+    assert.equal(unsafePath(path, 'win32'), true, path);
+  }
+  for (const path of ['x/.git./config', 'GIT~1/config', 'CON', 'nul.txt']) assert.equal(unsafePath(path, 'linux'), false, path);
+  for (const path of ['console.txt', 'nullable', 'com10', 'git~10/x', '.gitkeep']) assert.equal(unsafePath(path, 'win32'), false, path);
+});
+
+test('--into is refused out of the repository by segment, and into a .git; a folder whose name starts with two dots is inside', () => {
+  const root = resolve('/repo');
+  assert.equal(intoRefusal(root, join(root, '..cache')), null);
+  assert.equal(intoRefusal(root, join(root, 'build', 'deps')), null);
+  for (const into of [root, join(root, '..'), join(root, '..', 'elsewhere'), join(root, '.git', 'x'), join(root, 'a', '.GIT')]) {
+    assert.notEqual(intoRefusal(root, into), null, into);
+  }
 });

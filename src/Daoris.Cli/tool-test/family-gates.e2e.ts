@@ -40,6 +40,6 @@ test('the gate stage is green on the tracked examples: game\'s gate passes at it
   });
 
   assert.deepEqual(said.filter((step) => !step.ok).map((step) => `${step.label}\n${step.detail}`), []);
-  assert.equal(said.length, 3);
+  assert.equal(said.length, 4);
   rmSync(scratch, { recursive: true, force: true });
 });

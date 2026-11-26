@@ -22,6 +22,8 @@ export interface Repository {
   /** A commit's files, folders walked, in the tree's order; null where it holds no such commit. A blob's bytes, or null. */
   filesOf(commit: string): TreeFile[] | null;
   blob(id: string): Buffer | null;
+  /** Whether the store holds an object, read from no object's content. */
+  has(id: string): boolean;
   /** True where the history is cut (a shallow clone), so a commit not reached may still be on the line. */
   readonly shallow: boolean;
   /** How many hex digits a full id has here: 40, or 64 in a SHA-256 repository. */
@@ -176,6 +178,10 @@ class FileRepository implements Repository {
     return object?.type === 'blob' ? object.data : null;
   }
 
+  has(id: string): boolean {
+    return this.stores.some((store) => store.has(id.toLowerCase()));
+  }
+
   /** A ref's loose file: per-worktree refs from the tree's own folder, every other from the common one. */
   private loose(name: string): string | null {
     const own = name === 'HEAD' || name.startsWith('refs/worktree/') || name.startsWith('refs/bisect/');
@@ -251,6 +257,10 @@ class ObjectStore {
       if (offset !== null) return pack.readAt(offset, readAnywhere);
     }
     return null;
+  }
+
+  has(id: string): boolean {
+    return existsSync(join(this.dir, id.slice(0, 2), id.slice(2))) || this.allPacks().some((pack) => pack.offsetOf(id) !== null);
   }
 
   private allPacks(): Pack[] {
