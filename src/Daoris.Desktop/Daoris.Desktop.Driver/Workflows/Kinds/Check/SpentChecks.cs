@@ -61,11 +61,11 @@ internal static class SpentChecks
     /// the session is not told again; one at the exit stays there. At the final exit the pass is journaled and its notice handed up once,
     /// only once kept (<paramref name="noticed"/>).
     /// </summary>
-    /// <param name="tell">Tells the work's session the words: the session told, or why none is.</param>
+    /// <param name="tell">Tells the work's session the words: the session told and where the words reach it, or why none is.</param>
     /// <returns>Whether the decision is kept; a refused write keeps neither, and both are tried again at the next look.</returns>
     public static async Task<bool> SettleAsync(
         NodeRecordFiles records, string unit, string run, string node, int attempt, int reds, string? code, string? found, DriverConfig? config, string? workspace,
-        string? repository, DateTimeOffset now, Func<string, Task<(string? Session, string? Why)>> tell, List<string> said, List<LookLine> noticed,
+        string? repository, DateTimeOffset now, Func<string, Task<(string? Session, string? Why, string? Reaches)>> tell, List<string> said, List<LookLine> noticed,
         NodeDeclaration? check = null)
     {
         var verdict = Verdict(config, workspace, repository, check);
@@ -77,8 +77,8 @@ internal static class SpentChecks
         var holder = decided == NodeTold.RoleHeld ? CastReading.Now(records.Home, workspace, repository)(HeldOn) : null;
         var first = record?.Told.FirstOrDefault(each => each.Node == node)?.At;
         // Told already, by an older build that kept no decision or under the decision judged again now: decided now, never told twice.
-        var (session, why) = before is not null ? (before.Session, before.Why) : await tell(Words(node, code, found, reds, decided, holder)).ConfigureAwait(false);
-        var told = (before ?? new NodeTold(node, attempt, session, why, now)) with { Spent = true, Decided = decided, Role = decided == NodeTold.RoleHeld ? HeldOn : null };
+        var (session, why, reaches) = before is not null ? (before.Session, before.Why, before.Reaches) : await tell(Words(node, code, found, reds, decided, holder)).ConfigureAwait(false);
+        var told = (before ?? new NodeTold(node, attempt, session, why, now) { Reaches = reaches }) with { Spent = true, Decided = decided, Role = decided == NodeTold.RoleHeld ? HeldOn : null };
         var (refused, _) = records.Edit(unit, kept => (kept with { Told = [.. kept.Told.Where(each => each.Node != node || each.Attempt != attempt).TakeLast(NodeRecord.ToldKept - 1), told] }, true));
         var key = $"{records.Home}|{unit}/{node}#{attempt}";
         if (refused is not null)

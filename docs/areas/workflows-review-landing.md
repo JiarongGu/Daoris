@@ -304,11 +304,15 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     ended or a refused write loses none, and one kept, or dismissed, is never written again, across a restart too: the memory of both the
     announcement and the notice is the home's (`News.ClaimStanding`, the `standing:` keys of `news_said`, outliving the one-week horizon and
     forgotten by `News.Forget` only for an exit this process saw stand and stop standing, never for a reading taken before the runtime loaded its steps). A step at the exit is one row: its wait says so (`PersonWait.Exit`), so
-    the session's `left` row is not made beside the step's own (the flags `exit` and `ended` pass the groups route and `GroupsStateSlice`'s allow-list). Each telling of the work what a step sent back is kept on the run's record (`NodeTold`: the session told, or why none was), and a
-    failed check's step says where its words went from it (`WorkflowRunTold`), never that they went where none was told. A check's
+    the session's `left` row is not made beside the step's own (the flags `exit` and `ended` pass the groups route and `GroupsStateSlice`'s allow-list). Each telling of the work what a step sent back is kept on the run's record (`NodeTold`: the session told and, for one that was working, where the words reach it, or why none was), and a
+    failed check's step says where its words went from it (`WorkflowRunTold`), never that they went where none was told. The words reach
+    the work's session through `WorkSay`: a session this loop runs working is told through its inbox, as `session say` tells it, as Daoris's
+    urgent word under the telling's key, at its next step or held for its turn's end (`SayAnswer.Reaches`, `NodeTold.Reaches`, said by the
+    step), and any other session at the record's say door, which refuses a running record, so a session running where no door here reaches it
+    is kept as `NodeTold.Running` and offered the words again once it does not run (`CheckRounds.Untold`), so a check's words are never dropped; a review's changes said to such a session are refused as before, and the step says why. A check's
     red goes to the session that made the claimed step it checks (`CheckRounds.MakerSession`: the part whose handback commit it checked, else
-    the newest part's), before the newest quest's last executor; a telling that found no session (`NodeTold.NoSession`), plain or spent, is
-    offered again, once, as a session serves the work (`CheckRounds.Untold`), while its red is still the check's newest. A reached
+    the newest part's), before the newest quest's last executor; a telling that found no session (`NodeTold.NoSession`) or whose session ran where no door
+    here reaches it (`NodeTold.Running`), plain or spent, is offered again, once told, as a session serves the work or stops running (`CheckRounds.Untold`), while its red is still the check's newest. A reached
     command's words name each red class first, with the lines its log failed it on within the excerpt's bounds, then the classes run, the
     flakes and main's reds (`ReachedVerdict.Told`), each list cut at `ReachedVerdict.RedIds` ids with an *and N more* tail, the header and
     the failure lines alike; a class is matched as a whole token in the log (never inside a longer name, never an empty one), a passing line

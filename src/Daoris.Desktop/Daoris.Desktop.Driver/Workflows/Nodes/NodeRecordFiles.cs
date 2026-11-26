@@ -324,6 +324,7 @@ public sealed class NodeRecordFiles(string home, Func<bool>? holdsLease = null)
                 if (told.Spent) writer.WriteBoolean("spent", true);
                 if (told.Decided is { } decided) writer.WriteString("decided", decided);
                 if (told.Role is { } role) writer.WriteString("role", role);
+                if (told.Reaches is { } reaches) writer.WriteString("reaches", reaches);
                 writer.WriteString("at", Moments.Write(told.At));
                 writer.WriteEndObject();
             }
@@ -630,7 +631,7 @@ public sealed class NodeRecordFiles(string home, Func<bool>? holdsLease = null)
                     tellingsRead.Add(new NodeTold(node, number, Text(each, "session"), Text(each, "why"), at)
                     {
                         Spent = each.TryGetProperty("spent", out var spent) && spent.ValueKind == JsonValueKind.True,
-                        Decided = Text(each, "decided"), Role = Text(each, "role"),
+                        Decided = Text(each, "decided"), Role = Text(each, "role"), Reaches = Text(each, "reaches"),
                     });
                 }
             }

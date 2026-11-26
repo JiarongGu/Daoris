@@ -200,6 +200,88 @@ public sealed class CheckStartTests : NodeRunFixture
         Assert.Single(_told);
     }
 
+    [Fact]
+    public async Task A_check_failing_while_its_session_works_is_told_through_its_inbox_and_the_run_keeps_where_the_words_reach_it()
+    {
+        BoundTo(Graph());
+        var runtime = Started();
+        runtime.Say = (session, text, _, _) =>
+        {
+            _told.Add((session, text));
+            return Task.FromResult(new SayAnswer(true, "held") { Reaches = SayAnswer.NextStep });
+        };
+        _sessions = [Working()];
+        Submitted(Tip1);
+        await PassesAsync(runtime);
+        var first = Assert.Single(_checks.Sent);
+        _now = _now.AddMinutes(1);
+        _checks.Answers.Add(first.Call.Invocation);
+        _checks.Answer = attempt => CheckExecution.AnswerOf(Verify(VerifyVerdicts.Failed, attempt));
+        await PassesAsync(runtime);
+
+        Assert.Equal(Session, Assert.Single(_told).Session);
+        var kept = Files.Read(RunUnit)!.ToldOf("check", 1)!;
+        Assert.Equal((Session, null, SayAnswer.NextStep), (kept.Session, kept.Why, kept.Reaches));
+        Assert.Equal("its words went to session `s-work`, which was working, and reach it at its next step.", WorkflowRunTold.Of(Files.Read(RunUnit), "check", 1).Said);
+    }
+
+    [Fact]
+    public async Task A_check_failing_while_its_session_works_is_told_through_the_real_inbox_as_the_driver_wires_it_and_the_pass_says_so()
+    {
+        BoundTo(Graph());
+        var runtime = Started();
+        var record = new Daoris.Driver.Tests.StandInSaid();
+        var inbox = new DrivenInbox(_ => { });
+        inbox.Attach(interrupt: null);
+        runtime.Say = new WorkSay(_ => inbox, _ => record, (_, _, _, _) => Task.FromResult(new SayAnswer(false, "running") { Refusal = "running" })).SayAsync;
+        _sessions = [Working()];
+        Submitted(Tip1);
+        await PassesAsync(runtime);
+        var first = Assert.Single(_checks.Sent);
+        _now = _now.AddMinutes(1);
+        _checks.Answers.Add(first.Call.Invocation);
+        _checks.Answer = attempt => CheckExecution.AnswerOf(Verify(VerifyVerdicts.Failed, attempt));
+        await PassesAsync(runtime);
+
+        Assert.Contains("`check` failed", Assert.Single(record.Said).Text);
+        Assert.Contains("`check` failed", inbox.NextOrClose()?.Held?.Text);
+        var kept = Files.Read(RunUnit)!.ToldOf("check", 1)!;
+        Assert.Equal((Session, SayAnswer.TurnEnd), (kept.Session, kept.Reaches));
+    }
+
+    [Fact]
+    public async Task A_telling_refused_because_its_session_runs_where_no_door_here_reaches_is_offered_again_until_it_is_told()
+    {
+        BoundTo(Graph());
+        var runtime = Started();
+        var running = true;
+        runtime.Say = (session, text, _, _) =>
+        {
+            if (running) return Task.FromResult(new SayAnswer(false, "running") { Refusal = "running" });
+            _told.Add((session, text));
+            return Task.FromResult(new SayAnswer(true, "kept"));
+        };
+        _sessions = [Working()];
+        Submitted(Tip1);
+        await PassesAsync(runtime);
+        var first = Assert.Single(_checks.Sent);
+        _now = _now.AddMinutes(1);
+        _checks.Answers.Add(first.Call.Invocation);
+        _checks.Answer = attempt => CheckExecution.AnswerOf(Verify(VerifyVerdicts.Failed, attempt));
+        await PassesAsync(runtime);
+
+        Assert.Empty(_told);
+        Assert.Equal((null, NodeTold.Running), (Files.Read(RunUnit)!.ToldOf("check", 1)!.Session, Files.Read(RunUnit)!.ToldOf("check", 1)!.Why));
+
+        running = false;
+        var said = new List<string>();
+        for (var pass = 0; pass < 6; pass++) said.AddRange((await runtime.PassAsync(RunsLook(), CancellationToken.None)).Said);
+
+        Assert.Single(said, line => line.Contains($"session {Session} is told what `check` sent back", StringComparison.Ordinal));
+        Assert.Equal(Session, Assert.Single(_told).Session);
+        Assert.Equal((Session, null), (Files.Read(RunUnit)!.ToldOf("check", 1)!.Session, Files.Read(RunUnit)!.ToldOf("check", 1)!.Why));
+    }
+
     private static VerifyResult Verify(string verdict, NodeAttempt attempt) =>
         new(attempt.Call.Invocation, Tip1, verdict, "why", [new VerifyGate("suite", "fail", 3)]) { Failed = "suite" };
 }
