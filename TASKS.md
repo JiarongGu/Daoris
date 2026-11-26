@@ -105,7 +105,21 @@ Gap patterns (the owner, 2026-11-16: a discrepancy found is a pattern; each row 
   the install (0.0.33 = 843daa7f50, 12 driven sessions, drive D 98% used) looks ran a median ~20 s and up to 548 s, `~tidy.queue`,
   `~nodes.queue` and `~start` costing thousands of seconds a day, the opinion gate stalling on `node.begun` and `run.bound` until
   the watchdog's give-ups, a landed run held at *What the line holds* 3.5 h and published quests taken 11 minutes late. Find the
-  causes, fix each proved one in structure, and say what is left.
+  causes, fix each proved one in structure, and say what is left. Found, from the day's `watch.looked` lines and the store read
+  only: git's places (`GitScheduler.Bound`, 4) were full, about 19,400 asks from 00:00 to 02:40Z with a plain `rev-parse` taking
+  5 s, the waits by caller Ask Daoris's facts 38,170 s (4,372 asks, 138 `help.sweep` judgements cut at their two-minute bound and
+  asked again at the next wake), the look 19,743 s, unnamed callers 14,033 s, the tidy 9,340 s (its one pass held 4,086 s and
+  queued 10,367 s), the doors 6,471 s (6,189 asks, a person's, ahead of the background), the gate 3,216 s and the openings
+  1,694 s. The gate judged every owed opinion at each run's every node begun, one of a repository at a time: its `handled` for
+  `node.begun` averaged 2,525 s that day (231 s two days before), and 62 of its 141 stalls were those; the watchdog's give-ups
+  are shadow (`applied: false`) and hold nothing. Fixed: a node begun judges its run's owed opinions alone (`NodeBegunReach`,
+  5b94ccbf41). The landed run's hold was its re-made tree with nothing of its own waiting at `content.holds` for the tidy's end
+  judgement (`held` by `empty` at 01:03:40Z), read by a node pass at 02:35:35Z, when it went on by itself: the queue, not a rule
+  of its own. Left: Ask Daoris's facts cut at their bound are asked again at every wake (a back-off after a cut); a start retried
+  at every look on a quest whose work landed and stays taken (561 retry lines; its held reason reaches only the look's report,
+  so not proved here); and a landing that merged a replay of a session branch (made in one second onto the line, one copy with
+  another patch id) while the branch keeps its own commits (its reflog shows no rewrite), so the run's land step reads a commit
+  the line lacks by patch: inferred, maybe ROWRESURRECT1's cause.
 
 - [ ] **ADMITDYNAMIC1 — the machine's room for Daoris's heavy work is measured, never a number: what is left** (driver, tools, web; M; the person, 2026-11-25; D362; after OWNERRESERVE1): built: a gate's need learned from its whole runs (the job's peak memory and cores, `LearnedNeeds`, `RunMeter`), the person's share measured by the desktop's admissions with headroom from its swings (`PersonMeasure`), admission by what is free now (`RoomJudge` inside `CheckAdmission.Judge`, for checks and gated lines), a limit that halves on memory, processor or test-timeout pressure and grows back (`RoomPressure`), a fair share per project (a repository) and agent, a bound per kind, `reserve` the floor, the row's why (`RoomWhy`), and the merge tool keeping the same room (`memory.mjs`). Left: (a) `daoris gate run -- <command>` and a session's own builds take only the machine's places, not the room's judgement, and a terminal's `daoris gate run` takes no sample of the person's share (it reads the desktop's), so with no desktop check asking the share goes stale to the margin alone; (b) a repository's `loads` declaration (`max`, `perAgent`, `share`) is not read from `daoris.gates.json`, so `KindRule.Default` stands, and no environment host asks `CheckAdmission.Judge` with kind `environment` or `gpu` yet: the first is SHAREDENV1's (D361) real process host, which owns what an environment shares; (c) a run's peak is learned only where it runs in a Windows job; (d) "project" is a repository, not a workspace (D362 point 6), and a workspace of several repositories holds a seat for each; (e) learned cores are shown and steer the limit only through saturation.
 
