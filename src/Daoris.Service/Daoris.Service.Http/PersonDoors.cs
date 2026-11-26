@@ -243,6 +243,7 @@ public static class PersonDoors
         // The driver's own (11 and the set-up's session form), the second opinion's two posts, and a
         // closure graph's bind and close.
         new("POST", "/api/quests/{id}/evidence", DoorClass.Driver, "a done's evidence"),
+        new("POST", "/api/quests/{id}/revise", DoorClass.Driver, "a request quest's words moved to the commit a landing names"),
         SetUp,
         // The graph is the workspace's and its close runs under the unit's lock, which only the driver holds.
         new("POST", "/api/quests/{id}/close", DoorClass.Driver, "a graph's close of its quests"),
