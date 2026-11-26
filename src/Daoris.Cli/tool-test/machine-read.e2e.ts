@@ -6,13 +6,15 @@ import { mkdtempSync, readFileSync, realpathSync, rmSync, writeFileSync } from '
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { freeMemory, processStartOf, readProcesses } from '../../../tools/machine-read.mjs';
-import { startedFrom } from '../../../tools/processes.mjs';
 
 // test-map: the machine reader, built and run on this machine: the table, the memory and the programs a read starts
 // reaches: tool-e2e — the reader is a real .NET program, started for each read
 
 const REPO = join(dirname(fileURLToPath(import.meta.url)), '..', '..', '..');
 const win = process.platform === 'win32';
+const { startedFrom } = await import(
+  // @ts-expect-error — untyped workspace tooling
+  '../../../tools/processes.mjs') as { startedFrom: (exe: string) => { pid: number }[] };
 
 test('the reader answers the table with this process in it, and the memory the platform reports', { skip: !win, timeout: 300_000 }, () => {
   const rows = readProcesses();
