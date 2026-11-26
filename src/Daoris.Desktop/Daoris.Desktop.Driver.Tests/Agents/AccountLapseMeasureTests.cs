@@ -9,9 +9,10 @@ namespace Daoris.Desktop.Driver.Tests;
 /// </summary>
 public sealed class AccountLapseMeasureTests
 {
-    private static string Order(string scope, string facts, string rates)
+    private static readonly DateTimeOffset Now = AccountRotationWalkTests.Now;
+
+    internal static Dictionary<string, AccountFacts> Rated(string facts, string rates)
     {
-        var read = AccountRotationWalkTests.Scope(scope);
         var measured = AccountRotationWalkTests.Facts(facts);
         foreach (var rate in rates.Split(' ', StringSplitOptions.RemoveEmptyEntries))
         {
@@ -19,7 +20,13 @@ public sealed class AccountLapseMeasureTests
             measured[name] = measured[name] with { Rate = double.Parse(points, System.Globalization.CultureInfo.InvariantCulture) };
         }
 
-        return string.Join(' ', AccountRotation.Order(read, StartKind.Driven, [.. read.List], measured, AccountRotationWalkTests.Now));
+        return measured;
+    }
+
+    private static string Order(string scope, string facts, string rates)
+    {
+        var read = AccountRotationWalkTests.Scope(scope);
+        return string.Join(' ', AccountRotation.Order(read, StartKind.Driven, [.. read.List], Rated(facts, rates), Now));
     }
 
     [Theory]
@@ -38,5 +45,23 @@ public sealed class AccountLapseMeasureTests
         string scope, string facts, string rates, string order)
     {
         Assert.Equal(order, Order(scope, facts, rates));
+    }
+
+    [Fact]
+    public void The_next_start_says_the_rate_reached_and_the_hours_the_room_needs_against_the_hours_left()
+    {
+        var read = AccountRotationWalkTests.Scope("account-1 account-2");
+        var known = Rated("account-1:W2@+5d account-2:W50@+35h,r1", "account-1=1 account-2=1");
+        var tried = AccountRotation.Order(read, StartKind.Driven, [.. read.List], known, Now)
+            .Select(name => new AccountState(name, AccountReadiness.Ready)).ToList();
+
+        var next = AccountRotation.Next(read, StartKind.Driven, tried, [.. read.List], known, Now);
+
+        Assert.Equal(("account-2", NextReason.Lapsing), (next.Account, next.Reason));
+        Assert.Equal(Now.AddHours(35), next.When);
+        Assert.Equal(50, next.Unused);
+        // 46 points of room at one an hour is 46 hours, where 35 are left.
+        Assert.Equal(1.0, next.Rate);
+        Assert.Equal(46, next.Needs);
     }
 }

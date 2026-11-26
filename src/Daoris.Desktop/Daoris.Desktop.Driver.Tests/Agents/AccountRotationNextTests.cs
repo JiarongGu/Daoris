@@ -162,20 +162,6 @@ public sealed class AccountRotationNextTests
     }
 
     [Fact]
-    public void A_week_that_lapses_by_measure_says_the_hours_its_room_needs_at_the_rate_reached_against_the_hours_left()
-    {
-        // The 2026-11-26 readings: 50% of a week with 35 hours left, at one point an hour reached.
-        var next = Next("account-1 account-2", "account-1:W2@+5d,R1 account-2:W50@+35h,R1,r1");
-
-        Assert.Equal(("account-2", NextReason.Lapsing), (next.Account, next.Reason));
-        Assert.Equal(Now.AddHours(35), next.When);
-        Assert.Equal(50, next.Unused);
-        // 46 points of room at one an hour is 46 hours, where 35 are left.
-        Assert.Equal(1.0, next.Rate);
-        Assert.Equal(46, next.Needs);
-    }
-
-    [Fact]
     public void A_week_that_lapses_with_no_rate_measured_says_no_rate()
     {
         var next = Next("account-1 account-2 account-3", "account-3:W97@+12h");
