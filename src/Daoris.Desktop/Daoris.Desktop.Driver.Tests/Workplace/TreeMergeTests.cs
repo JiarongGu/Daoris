@@ -98,6 +98,7 @@ public sealed class TreeMergeTests : IDisposable
         // It names both lines, so the person knows what to put it back to.
         Assert.Contains("somebody-elses-branch", merged.Message);
         Assert.Contains("does not switch a branch", merged.Message);
+        Assert.Equal(LandingCode.Busy, merged.Refusal);
     }
 
     /// <summary>Uncommitted work in the SESSION tree would not travel, and "merged" would be a lie.</summary>

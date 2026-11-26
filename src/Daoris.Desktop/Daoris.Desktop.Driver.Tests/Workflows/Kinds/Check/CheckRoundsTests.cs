@@ -98,6 +98,7 @@ public sealed class CheckRoundsTests
         Assert.Equal([(check, 2, true)], CheckRounds.Untold(With(new NodeTold(check, 2, null, NodeTold.NoSession, Asked) { Spent = true }), declared));
         Assert.Empty(CheckRounds.Untold(With(new NodeTold(check, 1, null, NodeTold.NoSession, Asked)), declared));
         Assert.Empty(CheckRounds.Untold(With(new NodeTold(check, 2, null, "the say door refused", Asked)), declared));
+        Assert.Equal([(check, 2, false)], CheckRounds.Untold(With(new NodeTold(check, 2, null, NodeTold.Running, Asked)), declared));
         Assert.Empty(CheckRounds.Untold(With(new NodeTold(check, 2, "s1", null, Asked)), declared));
         Assert.Empty(CheckRounds.Untold(With(new NodeTold(check, 2, null, NodeTold.NoSession, Asked), new NodeTold(check, 2, "s1", null, Asked.AddMinutes(1))), declared));
         Assert.Empty(CheckRounds.Untold(With(new NodeTold("review", 2, null, NodeTold.NoSession, Asked)), declared));

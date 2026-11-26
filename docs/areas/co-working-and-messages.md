@@ -188,6 +188,16 @@ agent's part (the sender marks, the wait counted once, a line's channel, the ste
     works its rows itself. A serving record is told none. (from D203)
 39. A lead that hands rows to its lanes commits, then finishes naming them, or waits on exactly one for its answer. A chat says
     what it published and never waits. (from D203)
+39b. A family's fan-out: on the lease's loop, the `family` look pass (`FamilyLook`, `FamilyFanout`) reads each `daoris.family.json`
+    beside registered checkouts (reading no quest where none stands), and for each edge (a member using a producer of a lower layer, not denied) whose consumer's
+    `daoris.family.lock` as its own line holds it pins other than the producer's line tip, asks one pin-move quest, from the producer to the consumer, under the
+    request key `family.<producer>.<consumer>/pin/<n>` (`PinMoves`): published at the next generation where none is open or taken, else its
+    title and body moved to the new commit (`ReviseQuestWords`, which moves only a request-keyed quest, open or taken); a declined one settles
+    the commit it asked, and a done one settles nothing, since only the pin says a move landed. Nothing is written into a consumer. A pin-move quest its session declines is red: the pin stays, one break quest
+    (`…/break/<n>`) goes from the consumer to the producer with the decline's reason as the failing case, and the edge's hold-back is read
+    from its quests and the consumer's pin, aged from its first red and ended by a pin at the held commit or the line's tip, however it moved. Past the edge's `lag` bound (`edges` of the
+    family file, `3d` or `12h`) one `family-lag` notice reaches *Done and failed*; an edge with no bound tells no one. No word of it names
+    a kind of repository. (from D364)
 
 **Brainstorms and meetings**
 
@@ -291,8 +301,9 @@ agent's part (the sender marks, the wait counted once, a line's channel, the ste
 
 **Tests that pin it.** Driver: `ExchangesTests`, `ChannelReachTests`, `ChannelCommandTests`, `AnswersAlone*Tests`, the
 `Helper*Tests`, `Partner*Tests` and `Piece*Tests` (some in the git half), `RoutingStandingTests`, the `AtWork*Tests`,
-`Brainstorm*Tests`, `Meeting*Tests`, `StewardCommandTests`, `ChannelMemberVerbTests`. Service: the `Channel*Tests`,
-`SendersTests`, `SolicitedAnswersTests`, `QuestExchangeTests`, the desks' tests, `McpChannelToolTests`, `ToolClassesTests`.
+`Brainstorm*Tests`, `Meeting*Tests`, `StewardCommandTests`, `ChannelMemberVerbTests`, `PinMovesTests`, `FamilyDeclarationTests`,
+`FamilyFanoutTests`, `FamilyNoticesTests`. Service: the `Channel*Tests`,
+`SendersTests`, `SolicitedAnswersTests`, `QuestExchangeTests`, `QuestReviseWordsTests`, the desks' tests, `McpChannelToolTests`, `ToolClassesTests`.
 Modules: `AttentionStateSliceTests`, `StewardDeskTests`, `DriverModuleChannelTests`, `ChannelJoinPipeTests`. Web: beside each
 part under `Web/work/`, `Web/asks/` and `Web/notifications/`.
 

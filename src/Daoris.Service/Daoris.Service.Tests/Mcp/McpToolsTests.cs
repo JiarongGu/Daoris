@@ -261,7 +261,7 @@ public sealed class McpToolsTests : McpToolsFixture
         var session = (await new SessionLedger(_quests, sessions, _service, asks)
             .OpenIntakeAsync(ask.Id, "stub", room, DateTimeOffset.UtcNow)).Session!;
         var tools = new QuestTools(_quests, exchange, Circle(room, ask.Workspace), desk, new IntakeScope(ask.Id, session.Id));
-        const string Unchecked = "Published with no requirement: its run's holds step will wait on the person's word";
+        const string Unchecked = "Published with no requirement: nothing checks its done against what was asked";
 
         var bare = await tools.PublishQuestAsync("intake", "Owner", "Build the report", "Reached through the bridge.", shortTitle: "Report");
 

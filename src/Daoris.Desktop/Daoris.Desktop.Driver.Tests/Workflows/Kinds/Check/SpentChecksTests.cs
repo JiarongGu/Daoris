@@ -57,7 +57,7 @@ public sealed class SpentChecksTests : NodeRunFixture
             RunHome.Repository, _now, text =>
             {
                 told?.Add(text);
-                return Task.FromResult<(string?, string?)>(("s1", null));
+                return Task.FromResult<(string?, string?, string?)>(("s1", null, null));
             }, said, noticed ?? []);
 
     private static string Story(LookLine line)
@@ -340,9 +340,9 @@ public sealed class SpentChecksTests : NodeRunFixture
         var noticed = new List<LookLine>();
 
         Assert.False(await SpentChecks.SettleAsync(unleased, RunUnit, RunId, "check", 3, 3, null, null, Config(Seed), "default", RunHome.Repository, _now,
-            text => { told.Add(text); return Task.FromResult<(string?, string?)>(("s1", null)); }, said, noticed));
+            text => { told.Add(text); return Task.FromResult<(string?, string?, string?)>(("s1", null, null)); }, said, noticed));
         Assert.False(await SpentChecks.SettleAsync(unleased, RunUnit, RunId, "check", 3, 3, null, null, Config(Seed), "default", RunHome.Repository, _now,
-            text => { told.Add(text); return Task.FromResult<(string?, string?)>(("s1", null)); }, said, noticed));
+            text => { told.Add(text); return Task.FromResult<(string?, string?, string?)>(("s1", null, null)); }, said, noticed));
 
         Assert.Null(Files.Read(RunUnit)!.ToldOf("check", 3));
         Assert.Single(said, line => line.Contains("could not be kept", StringComparison.Ordinal));

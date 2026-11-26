@@ -123,6 +123,9 @@ public sealed record SittingFact(string Code)
 
     /// <summary><see cref="StartVerdict.Unclosed"/>: <see cref="Session"/> ended and left the quest taken, and nothing here carries it on.</summary>
     public const string Unclosed = "unclosed";
+
+    /// <summary><see cref="StartVerdict.RepositoryBusy"/>: the quest's submitted work waits at its landing, which is not a session's to finish.</summary>
+    public const string LandingOwed = "landingOwed";
 }
 
 /// <summary>A quest a second opinion sits, with the sentence the look said and its code, so the planner's verdict carries both.</summary>

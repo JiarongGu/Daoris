@@ -58,7 +58,7 @@ public sealed partial class ContinuedReadersCensusTests
         ],
         ["WatchNodes.cs"] =
         [
-            (How.Follows, "the workflow runtime's word to the work about a review's changes (DECIDE1c): said at the head under the changes' key"),
+            (How.NotOn, "the workflow runtime's word to the work about a review's changes or a failed check (DECIDE1c, CHECKTELL1): said through WorkSay, whose own WordsHead.FollowAsync walks to the head under the changes' key, trying the head's inbox before this record say"),
             (How.NotOn, "a run's `resolve` ask to the newest session in its tree (PROCSTEPS1d): the resolver watches that record for the ask's key and its turn, so refused `continued` the ask is untold and the tree put back, never said to a head whose turn it does not watch"),
             (How.Follows, "the integration transport's word to a session about its line's conflict (INTEGRATE1g): said at the head under the integration's key"),
         ],
@@ -136,6 +136,7 @@ public sealed partial class ContinuedReadersCensusTests
         ["ChatWords.cs"] = "the turns' head answered as ChatSaid.Head, with no reach and no word",
         ["SessionSay.cs"] = "the headless door: the inbox's head is where the request is said again",
         ["SessionWords.cs"] = "the inbox's and the turns' head is where the shell says the word again, through its whole judge",
+        ["WorkSay.cs"] = "a run's word to its work's working session, through its inbox: a keep answered `continued` is said again at the head, through its inbox where this loop runs it, else its record, as the reopen's is",
         ["ReopenTelling.cs"] = "the running session's inbox answered `continued`: the reopen's words are said at the head through the reopen's doors",
         ["QuietWord.cs"] = "the watcher's word to a quiet session or about a long call: a record that went on is told nothing, as a closed inbox is, and a quiet episode is forgotten",
         ["CompactWord.cs"] = "Daoris's word after a compaction: a record that went on is told nothing, as a closed inbox is, and the episode is forgotten",

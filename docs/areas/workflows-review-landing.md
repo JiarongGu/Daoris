@@ -304,11 +304,15 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     ended or a refused write loses none, and one kept, or dismissed, is never written again, across a restart too: the memory of both the
     announcement and the notice is the home's (`News.ClaimStanding`, the `standing:` keys of `news_said`, outliving the one-week horizon and
     forgotten by `News.Forget` only for an exit this process saw stand and stop standing, never for a reading taken before the runtime loaded its steps). A step at the exit is one row: its wait says so (`PersonWait.Exit`), so
-    the session's `left` row is not made beside the step's own (the flags `exit` and `ended` pass the groups route and `GroupsStateSlice`'s allow-list). Each telling of the work what a step sent back is kept on the run's record (`NodeTold`: the session told, or why none was), and a
-    failed check's step says where its words went from it (`WorkflowRunTold`), never that they went where none was told. A check's
+    the session's `left` row is not made beside the step's own (the flags `exit` and `ended` pass the groups route and `GroupsStateSlice`'s allow-list). Each telling of the work what a step sent back is kept on the run's record (`NodeTold`: the session told and, for one that was working, where the words reach it, or why none was), and a
+    failed check's step says where its words went from it (`WorkflowRunTold`), never that they went where none was told. The words reach
+    the work's session through `WorkSay`: a session this loop runs working is told through its inbox, as `session say` tells it, as Daoris's
+    urgent word under the telling's key, at its next step or held for its turn's end (`SayAnswer.Reaches`, `NodeTold.Reaches`, said by the
+    step), and any other session at the record's say door, which refuses a running record, so a session running where no door here reaches it
+    is kept as `NodeTold.Running` and offered the words again once it does not run (`CheckRounds.Untold`), so a check's words are never dropped; a review's changes said to such a session are refused as before, and the step says why. A check's
     red goes to the session that made the claimed step it checks (`CheckRounds.MakerSession`: the part whose handback commit it checked, else
-    the newest part's), before the newest quest's last executor; a telling that found no session (`NodeTold.NoSession`), plain or spent, is
-    offered again, once, as a session serves the work (`CheckRounds.Untold`), while its red is still the check's newest. A reached
+    the newest part's), before the newest quest's last executor; a telling that found no session (`NodeTold.NoSession`) or whose session ran where no door
+    here reaches it (`NodeTold.Running`), plain or spent, is offered again, once told, as a session serves the work or stops running (`CheckRounds.Untold`), while its red is still the check's newest. A reached
     command's words name each red class first, with the lines its log failed it on within the excerpt's bounds, then the classes run, the
     flakes and main's reds (`ReachedVerdict.Told`), each list cut at `ReachedVerdict.RedIds` ids with an *and N more* tail, the header and
     the failure lines alike; a class is matched as a whole token in the log (never inside a longer name, never an empty one), a passing line
@@ -652,7 +656,9 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     already landed moves on to the chain's next quest's commits after that quest's Accept (rule 17); a part a newer session superseded closes once as `superseded`, its end naming the session that stands for it; a push and a plugin's `pull-request` step after it are bound at the moved tip and performed again (`ReLandingPullRequestTests`); and
     each `landing.auto` line names the run whose `land` tried it. A live session on the tree holds the `land` back, but never the run's
     own part waiting on its step (`awaiting-step`, `LandTreeUse`), which waits on that landing; a look at which the `land` starts or says
-    nothing writes a coded `landing.waits` line naming why, once per change of reason (`LandWaits`). Where the line holds every commit by content or as the same change, `content.holds` and `land` reach it
+    nothing writes a coded `landing.waits` line naming why, once per change of reason (`LandWaits`); a run's step says the
+    words of its last try (`LandReading`), and a taken quest whose submitted work waits at its landing (`LandStandings`) is planned as a sit (`LandingSits`),
+    so no session is started for it and no place under the cap is spent; a failed session and the person's words go on as before. Where the line holds every commit by content or as the same change, `content.holds` and `land` reach it
     without replay, saying the proof (`LineHolds`); where the line moved and a replay settled a file as it stood (the backlog's archive), so no patch
     of the branch is the line's, the line's own content proof (`ContentHolds.HeldByContentAsync`, the line's forms only) reads that merging the branch in adds
     nothing and the commits are left out as the replay finds them (`LeftOutWhy.Empty`), so `land` and a run's end read it landed (`LineHolding`, STARTQUEUE1). Where the tip no longer reads, an unbound step takes the commit its session
@@ -724,7 +730,8 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     next generation, and readers take the newest. (D215, D227)
 34. A landing refused for work the session can clear carries the session on and keeps the Accept. A landing refused for a cause
     that passes (`busy`: another of Daoris's writes held the checkout when its branch came to be written, as the look's tidy, an update
-    or another landing does, or its delivery or its tree's landing hold was taken) keeps the Accept too and is never asked again: it is
+    or another landing does, or its delivery or its tree's landing hold was taken, or a refusal read from the line and not the work's tree: a request already open for the branch, the integration's
+    store under contention, the checkout on another branch, `IntegrationPresses.CodeOf`, `Unkept`, `TreeMerges`) keeps the Accept too and is never asked again: it is
     tried at the first look the checkout is free, through the same delivery key, so it lands once. Each such wait has a deadline
     (`LandRetries.Deadline`), judged at a look that finds the checkout still held and at each refusal again, so a cause no look reads (a
     delivery or a landing hold taken here) climbs too; past it the wait climbs the reporting line above the landing

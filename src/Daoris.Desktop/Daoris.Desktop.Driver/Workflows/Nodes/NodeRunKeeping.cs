@@ -418,9 +418,10 @@ internal sealed class NodeRunKeeping(
                 ? SpentChecks.Words(node, code, found, CheckRounds.Reds(record).GetValueOrDefault(node), told.Decided ?? NodeTold.OwnerHeld,
                     told.Decided == NodeTold.RoleHeld ? CastReading.Now(records.Home, workspace, repository)(SpentChecks.HeldOn) : null)
                 : FailedWords(node, code, found);
-            var (session, why) = await SayWorkAsync(governed, scope, node, attempt, text, said, ct).ConfigureAwait(false);
+            var (session, why, reaches) = await SayWorkAsync(governed, scope, node, attempt, text, said, ct, told.Why == NodeTold.Running)
+                .ConfigureAwait(false);
             if (session is null && why == told.Why) continue;
-            var again = told with { Session = session, Why = why, At = clock() };
+            var again = told with { Session = session, Why = why, Reaches = reaches, At = clock() };
             records.Edit(governed.Unit.Id, kept => (kept with { Told = [.. kept.Told.Where(each => each != told).TakeLast(NodeRecord.ToldKept - 1), again] }, true));
         }
     }
@@ -442,24 +443,37 @@ internal sealed class NodeRunKeeping(
     /// </summary>
     private async Task TellWorkAsync(GovernedUnit governed, RunScope scope, string node, int attempt, string text, List<string> said, CancellationToken ct)
     {
-        var (session, why) = await SayWorkAsync(governed, scope, node, attempt, text, said, ct).ConfigureAwait(false);
-        var kept = new NodeTold(node, attempt, session, why, clock());
+        var (session, why, reaches) = await SayWorkAsync(governed, scope, node, attempt, text, said, ct).ConfigureAwait(false);
+        var kept = new NodeTold(node, attempt, session, why, clock()) { Reaches = reaches };
         records.Edit(governed.Unit.Id, record => (record with { Told = [.. record.Told.TakeLast(NodeRecord.ToldKept - 1), kept] }, true));
     }
 
-    /// <summary>The run's work told <paramref name="text"/> under its key, said in the pass's words: the session told, or why none is.</summary>
-    private async Task<(string? Session, string? Why)> SayWorkAsync(
-        GovernedUnit governed, RunScope scope, string node, int attempt, string text, List<string> said, CancellationToken ct)
+    /// <summary>The run's work told <paramref name="text"/> under its key, said in the pass's words; <paramref name="again"/> offers a running session's refused words again, saying nothing while it still runs.</summary>
+    private async Task<(string? Session, string? Why, string? Reaches)> SayWorkAsync(
+        GovernedUnit governed, RunScope scope, string node, int attempt, string text, List<string> said, CancellationToken ct, bool again = false)
     {
         var unit = governed.Unit.Id;
         var session = SessionFor(governed, scope, node, attempt);
-        var (told, why) = await SayAsync(session, scope, node, attempt, text, ct).ConfigureAwait(false);
-        said.Add(told
-            ? $"work  {unit}: session {session} is told what `{node}` sent back, as its next turn."
-            : session is null ? $"work  {unit}: nobody is told what `{node}` sent back: {why}; the words stay on its record."
-            : $"work  {unit}: session {session} was not told what `{node}` sent back: {why}");
-        return told ? (session, null) : (null, why);
+        var retried = governed.Declared.GetValueOrDefault(node)?.Kind == NodeKinds.Check;
+        var (told, why, reaches) = await SayAsync(session, scope, node, attempt, text, retried, again, ct).ConfigureAwait(false);
+        if (!again || told)
+        {
+            said.Add(told
+                ? $"work  {unit}: session {session} is told what `{node}` sent back, {Reached(reaches)}."
+                : session is null ? $"work  {unit}: nobody is told what `{node}` sent back: {why}; the words stay on its record."
+                : $"work  {unit}: session {session} was not told what `{node}` sent back: {why}");
+        }
+
+        return told ? (session, null, reaches) : (null, why, null);
     }
+
+    private static string Reached(string? reaches) => reaches switch
+    {
+        SayAnswer.NextStep => "which is working, at its next step",
+        SayAnswer.TurnEnd => "which is working, held for its turn's end",
+        SayAnswer.FirstPrompt => "which is opening, held for its first prompt",
+        _ => "as its next turn",
+    };
 
     /// <summary>The part the person's changes name is told, by the session that made it; a check's red, the session that made the work it checks; else the newest part's.</summary>
     private string? SessionFor(GovernedUnit governed, RunScope scope, string node, int attempt)
@@ -472,19 +486,20 @@ internal sealed class NodeRunKeeping(
                ?? scope.Quest?.Executors.LastOrDefault() ?? scope.Branch?.Executors.LastOrDefault();
     }
 
-    private async Task<(bool Told, string? Why)> SayAsync(string? session, RunScope scope, string node, int attempt, string text, CancellationToken ct)
+    private async Task<(bool Told, string? Why, string? Reaches)> SayAsync(
+        string? session, RunScope scope, string node, int attempt, string text, bool retried, bool again, CancellationToken ct)
     {
-        if (session is null) return (false, NodeTold.NoSession);
-        if (say() is not { } door) return (false, "this Daoris holds no say door");
+        if (session is null) return (false, NodeTold.NoSession, null);
+        if (say() is not { } door) return (false, "this Daoris holds no say door", null);
         try
         {
             var answer = await door(session, text, ChangesKey(scope.Run.Run, node, attempt), ct).ConfigureAwait(false);
-            return answer.Kept ? (true, null) : (false, answer.Message);
+            return answer.Kept ? (true, null, answer.Reaches) : (false, retried && answer.Refusal == "running" ? NodeTold.Running : answer.Message, null);
         }
         catch (Exception error) when (!ct.IsCancellationRequested
                                       && error is DriverException or HttpRequestException or System.Text.Json.JsonException or IOException or InvalidOperationException)
         {
-            return (false, error.Message);
+            return (false, again ? NodeTold.Running : error.Message, null);
         }
     }
 }

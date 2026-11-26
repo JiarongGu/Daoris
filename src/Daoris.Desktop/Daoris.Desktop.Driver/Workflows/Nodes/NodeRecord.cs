@@ -409,6 +409,12 @@ public sealed record NodeTold(string Node, int Attempt, string? Session, string?
     /// <summary>Why a telling that had no session to go to is kept as; the one reason a later session offers it again.</summary>
     public const string NoSession = "no session of its work is known here";
 
+    /// <summary>Why a telling is kept as when its session runs where no door of this loop's reaches it and the record refused the words; the other reason a later look offers them again.</summary>
+    public const string Running = "its session is running and no door here reaches it";
+
+    /// <summary>Where a running session's inbox holds the words (<see cref="SayAnswer.Reaches"/>); null where its record kept them.</summary>
+    public string? Reaches { get; init; }
+
     /// <summary>Whether it is a check's red past its rounds' bound, which takes no way back.</summary>
     public bool Spent { get; init; }
 

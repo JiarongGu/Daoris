@@ -67,6 +67,7 @@
   "notifications.done.pluginCommand.agent": "插件 {{plugin}} 为一个会话运行了 {{command}}",
   "notifications.done.pluginCommand.removal": "插件 {{plugin}} 在被移除时运行了 {{command}}",
   "notifications.done.pluginCommand.failed": "插件 {{plugin}} 的 {{command}} 失败了",
+  "notifications.done.familyLag": "{{repository}} 仍固定在 {{producer}} 的较早提交：{{commit}} 使它出错，等待已超出期限",
   "notifications.done.signedOut": "{{agent}} 的 {{account}} 退出了登录，不是你操作的：请在它的智能体页面上登录",
   "notifications.done.other": "有事项已结束",
   "notifications.done.ago": "{{age}}前",

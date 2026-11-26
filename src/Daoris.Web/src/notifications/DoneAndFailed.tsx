@@ -48,6 +48,9 @@ export function noticeWords(notice: Notice, t: TFunction): string {
     if (notice.state === 'failed') return t('notifications.done.pluginCommand.failed', words);
     return t(notice.route === 'removal' ? 'notifications.done.pluginCommand.removal' : 'notifications.done.pluginCommand.agent', words);
   }
+  if (notice.kind === 'family-lag') {
+    return t('notifications.done.familyLag', { repository: notice.repository ?? '', producer: notice.act ?? '', commit: notice.code ?? '' });
+  }
   if (notice.kind === 'signed-out') {
     return t('notifications.done.signedOut', { account: notice.act ?? notice.code ?? '', agent: notice.route ?? '' });
   }
@@ -126,7 +129,7 @@ function NoticeRow({ notice, onRead, onOpen, onDismiss, now }: {
   const noButtons = useRef<HTMLElement>(null);
   useShownOnce(!notice.read, row, noButtons, () => onRead([notice.id]));
   const failed = notice.kind === 'expired' || notice.kind === 'closed' || notice.kind === 'lost' || notice.kind === 'look'
-    || notice.state === 'failed';
+    || notice.kind === 'family-lag' || notice.state === 'failed';
   const opens = onOpen && (notice.session || runOfNotice(notice)) ? () => {
     if (!notice.read) onRead([notice.id]);
     onOpen(notice);

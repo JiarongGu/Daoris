@@ -51,6 +51,8 @@ public sealed class QuestRoutes(HostWiring host) : IRouteModule
         routes.Map<ReopenQuest, QuestActionResponse>(ReopenAsync);
         routes.Map<ContinueQuest, QuestActionResponse>(async (request, http, ct) =>
             await StateAsync(http, await Service.Exchange.ContinueAsync(request.Id, DateTimeOffset.UtcNow, ct), ct));
+        routes.Map<ReviseQuestWords, QuestActionResponse>(async (request, http, ct) =>
+            await StateAsync(http, await Service.Exchange.ReviseWordsAsync(request.Id, request.Title, request.Body, DateTimeOffset.UtcNow, ct), ct));
         routes.Map<ForwardConflict, QuestActionResponse>(ForwardAsync);
         routes.Map<PostQuestEvidence, QuestActionResponse>(EvidenceAsync);
     }

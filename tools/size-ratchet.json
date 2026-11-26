@@ -71,7 +71,7 @@
   "src/Daoris.Service/Daoris.Service.Http.Tests/LocalHostTests.cs": 167739,
   "src/Daoris.Service/Daoris.Service.Tests/Asks/HistoryDeskTests.cs": 46620,
   "src/Daoris.Service/Daoris.Service.Tests/Knowledge/IndexEntriesTests.cs": 51361,
-  "src/Daoris.Service/Daoris.Service.Tests/Mcp/McpToolsTests.cs": 47592,
+  "src/Daoris.Service/Daoris.Service.Tests/Mcp/McpToolsTests.cs": 47587,
   "src/Daoris.Service/Daoris.Service.Tests/Quests/QuestClosureTests.cs": 44993,
   "src/Daoris.Service/Daoris.Service.Tests/Remote/QuestReopenSyncTests.cs": 62097,
   "src/Daoris.Service/Daoris.Service.Tests/Remote/QuestSyncTests.cs": 102169,
