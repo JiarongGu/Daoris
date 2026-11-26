@@ -21,11 +21,22 @@ export interface DeniedPair {
   why?: string;
 }
 
+/** An edge's lag bound, a count of days or hours (`3d`, `12h`): the age of a held-back pin past which the driver tells the person. */
+export interface EdgeLag {
+  consumer: string;
+  producer: string;
+  lag: string;
+}
+
 export interface FamilyFile {
   /** The members, by layer, lowest first: a member uses only members of a lower layer. */
   layers: string[][];
   denied: DeniedPair[];
+  /** Each edge's lag bound, for the edges that declare one; the check judges none of it. */
+  edges?: EdgeLag[];
 }
+
+const LAG = /^[1-9][0-9]*[dh]$/;
 
 /** One producer's commit, as a consumer pins it. */
 export interface Pin {
@@ -77,7 +88,7 @@ function parse(text: string, where: string): Json {
 export function readFamily(text: string, where: string): FamilyFile {
   const json = parse(text, where);
   const shape = `${where} holds \`layers\`, a list of layers lowest first, each a list of member names, and optionally \`denied\`, `
-    + 'a list of `{ "consumer", "producer", "why" }`';
+    + 'a list of `{ "consumer", "producer", "why" }`, and `edges`, a list of `{ "consumer", "producer", "lag" }` whose lag is a count of days or hours, `3d` or `12h`';
   if (!isObject(json) || !Array.isArray(json.layers) || json.layers.length === 0
     || !json.layers.every((layer) => Array.isArray(layer) && layer.length > 0 && layer.every(isName))) {
     throw new DaorisError(shape);
@@ -85,6 +96,11 @@ export function readFamily(text: string, where: string): FamilyFile {
   const denied = json.denied ?? [];
   if (!Array.isArray(denied) || !denied.every((pair) => isObject(pair) && isName(pair.consumer) && isName(pair.producer)
     && (pair.why === undefined || typeof pair.why === 'string'))) {
+    throw new DaorisError(shape);
+  }
+  const edges = json.edges ?? [];
+  if (!Array.isArray(edges) || !edges.every((edge) => isObject(edge) && isName(edge.consumer) && isName(edge.producer)
+    && typeof edge.lag === 'string' && LAG.test(edge.lag))) {
     throw new DaorisError(shape);
   }
   const layers = (json.layers as string[][]).map((layer) => layer.map((name) => name.trim()));
@@ -98,6 +114,7 @@ export function readFamily(text: string, where: string): FamilyFile {
     denied: (denied as Record<string, string>[]).map((pair) => ({
       consumer: pair.consumer!.trim(), producer: pair.producer!.trim(), ...(pair.why ? { why: pair.why } : {}),
     })),
+    edges: (edges as Record<string, string>[]).map((edge) => ({ consumer: edge.consumer!.trim(), producer: edge.producer!.trim(), lag: edge.lag! })),
   };
 }
 

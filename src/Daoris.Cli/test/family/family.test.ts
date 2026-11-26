@@ -27,8 +27,18 @@ test('a family file names its layers lowest first and its denied pairs; its memb
   assert.deepEqual(family.denied, [{ consumer: 'beta', producer: 'epsilon', why: 'a pair the family file keeps apart' }]);
 });
 
+test('a family file may bound each edge\'s lag in days or hours, which the driver tells the person past', () => {
+  const family = readFamily(JSON.stringify({
+    layers: [['alpha'], ['beta']],
+    edges: [{ consumer: 'beta', producer: 'alpha', lag: '3d' }, { consumer: 'beta', producer: 'alpha', lag: '12h' }],
+  }), 'daoris.family.json');
+
+  assert.deepEqual(family.edges, [{ consumer: 'beta', producer: 'alpha', lag: '3d' }, { consumer: 'beta', producer: 'alpha', lag: '12h' }]);
+  assert.deepEqual(readFamily(JSON.stringify({ layers: [['alpha']] }), 'daoris.family.json').edges, []);
+});
+
 test('a family file of the wrong shape is a tool error naming the file, never a family read as empty', () => {
-  for (const text of ['[]', '{}', '{"layers": "alpha"}', '{"layers": [["alpha"], "beta"]}', '{"layers": [["alpha"]], "denied": [{"consumer": "x"}]}', 'not json']) {
+  for (const text of ['[]', '{}', '{"layers": "alpha"}', '{"layers": [["alpha"], "beta"]}', '{"layers": [["alpha"]], "denied": [{"consumer": "x"}]}', '{"layers": [["alpha"]], "edges": [{"consumer": "x", "producer": "y", "lag": "soon"}]}', '{"layers": [["alpha"]], "edges": [{"consumer": "x", "producer": "y"}]}', 'not json']) {
     const error = captureError(() => readFamily(text, 'daoris.family.json'));
     assert.equal(error.exitCode, 2, text);
     assert.match(error.message, /daoris\.family\.json/, text);
