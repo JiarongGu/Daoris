@@ -15,7 +15,7 @@ internal sealed class TogetherWatch(string home, Func<DateTimeOffset> now, Func<
 
     private static readonly HashSet<string> HandOvers = new(StringComparer.Ordinal)
     {
-        HandOverWhy.Press, HandOverWhy.Near, HandOverWhy.Limit, HandOverWhy.Agent, HandOverWhy.Curve,
+        HandOverWhy.Press, HandOverWhy.Near, HandOverWhy.Limit, HandOverWhy.Agent, HandOverWhy.Curve, HandOverWhy.Off,
     };
 
     /// <summary>Each operation as this look left it; none where none is kept.</summary>

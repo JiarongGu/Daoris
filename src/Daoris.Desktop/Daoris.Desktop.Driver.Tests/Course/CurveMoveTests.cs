@@ -201,6 +201,56 @@ public sealed class CurveMoveTests : IDisposable
         Assert.False(kept.Stands, $"the move stands at {kept.PhaseWord}");
     }
 
+    /// <summary>
+    /// 🔴 A conversation on an account the person switched off moves at its turn's end to another ready account of its agent,
+    /// though it is far under its curve, why `off`, asked by `daoris`; the new record continues the old, and the store's move says `off`.
+    /// </summary>
+    [Fact]
+    public async Task A_conversation_on_an_account_the_person_switched_off_moves_at_its_turn_s_end_why_off()
+    {
+        Said("account-1", 0.10);
+        Said("account-2", 0.55);
+        Said("account-3", 0.30);
+        Assert.True(AccountSwitch.Set(_home, "talk", ["account-1", "account-2", "account-3"], "account-1", off: true));
+        var ledger = Ledger();
+        var roster = Roster();
+        using var runner = Runner(ledger, roster);
+        using var client = ledger.Client();
+        var decided = Deciding(runner);
+
+        var choice = await JudgeAsync(runner);
+
+        Assert.Equal(new SwitchChoice.MoveOff("account-3"), choice);
+        var course = Assert.IsType<LineCourse.Move>(Assert.Single(decided).Answer);
+        Assert.Equal(
+            (CourseWhen.TurnEnd, CourseHow.Brief, CourseFromWhy.Off, CourseFromBy.Daoris),
+            (course.When, course.How, course.Why, course.By));
+        Assert.Equal(new CourseWhere(CourseAccountSource.Pick, "chat", null, "account-3"), course.Where);
+        Assert.Equal(2, ledger.Count);
+        var moved = (await client.RecordAsync("c2"))!;
+        Assert.Equal(("talk", "account-3"), (moved.Adapter, moved.Profile));
+        Assert.Equal(("c0nv0001", "off", "daoris"), (moved.From, moved.FromWhy, moved.FromBy));
+        var kept = Assert.Single(new MoveStore(_home, () => StoreSettled.Yes, _ => true, "run-probe", StoreProcess.Shell).Of("c0nv0001"));
+        Assert.Equal(("off", "daoris", "conversation", "brief", "account-3"), (kept.Why, kept.By, kept.Executor, kept.How, kept.Account));
+    }
+
+    /// <summary>A switched-off account with no other ready account stays where it is, says nothing and makes no record; the scope's `off` still stops it.</summary>
+    [Fact]
+    public async Task A_conversation_on_a_switched_off_account_with_no_other_ready_stays_and_the_scope_s_switch_off_stops_it()
+    {
+        AccountCooling.Cool(_home, new CoolingEntry("talk", "account-2", _now.AddHours(2), Stated: true, "weekly", _now, Session: null), _now);
+        AccountCooling.Cool(_home, new CoolingEntry("talk", "account-3", _now.AddHours(2), Stated: true, "weekly", _now, Session: null), _now);
+        Assert.True(AccountSwitch.Set(_home, "talk", ["account-1", "account-2", "account-3"], "account-1", off: true));
+        var ledger = Ledger();
+        using var runner = Runner(ledger, Roster());
+
+        Assert.Equal(new SwitchChoice.Stay(SwitchStay.NoneReady), await JudgeAsync(runner));
+        Assert.Equal(1, ledger.Count);
+
+        new HarnessSettings().WithRotation("talk", ["account-1", "account-2", "account-3"]).WithUse("talk", new UseChange(Switch: "off")).Save(Settings);
+        Assert.Equal(new SwitchChoice.Stay(SwitchStay.Off), await JudgeAsync(runner));
+    }
+
     /// <summary>The conversation's record asking <paramref name="model"/> of its entry, and the composer's change kept where one is given.</summary>
     private static void Asking(ChatLedger ledger, string model, string? changed = null) =>
         ledger.Edit("c0nv0001", record =>

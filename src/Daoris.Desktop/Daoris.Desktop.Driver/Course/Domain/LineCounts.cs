@@ -74,7 +74,7 @@ public static class LineCounts
     public const string NoRecord = "no-record";
 
     /// <summary>The reasons a part is handed on by another agent's name; a carry-on, a resume, a retry and a policy's move are not hand-overs.</summary>
-    private static readonly string[] HandedWhy = [HandOverWhy.Press, HandOverWhy.Near, HandOverWhy.Limit, HandOverWhy.Agent, HandOverWhy.Curve];
+    private static readonly string[] HandedWhy = [HandOverWhy.Press, HandOverWhy.Near, HandOverWhy.Limit, HandOverWhy.Agent, HandOverWhy.Curve, HandOverWhy.Off];
 
     /// <summary>Every count of the line <paramref name="session"/> is on.</summary>
     public static IReadOnlyList<LineCount> Of(string session, LineEvidence evidence)

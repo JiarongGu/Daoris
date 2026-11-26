@@ -249,6 +249,9 @@ public enum CourseFromWhy
     /// <summary>Daoris moved it by the person's switching setting.</summary>
     Curve,
 
+    /// <summary>Daoris moved it because the person switched its account off.</summary>
+    Off,
+
     /// <summary>Its own conversation is proven lost, so it goes on in a new part.</summary>
     Resume,
 
@@ -298,6 +301,7 @@ public static class CourseFrom
         HandOverWhy.Limit => CourseFromWhy.Limit,
         HandOverWhy.Agent => CourseFromWhy.Agent,
         HandOverWhy.Curve => CourseFromWhy.Curve,
+        HandOverWhy.Off => CourseFromWhy.Off,
         HandOverWhy.Resume => CourseFromWhy.Resume,
         HandOverWhy.CarryOn => CourseFromWhy.CarryOn,
         HandOverWhy.Retry => CourseFromWhy.Retry,
@@ -317,6 +321,7 @@ public static class CourseFrom
         CourseFromWhy.Limit => HandOverWhy.Limit,
         CourseFromWhy.Agent => HandOverWhy.Agent,
         CourseFromWhy.Curve => HandOverWhy.Curve,
+        CourseFromWhy.Off => HandOverWhy.Off,
         CourseFromWhy.Resume => HandOverWhy.Resume,
         CourseFromWhy.CarryOn => HandOverWhy.CarryOn,
         CourseFromWhy.Retry => HandOverWhy.Retry,

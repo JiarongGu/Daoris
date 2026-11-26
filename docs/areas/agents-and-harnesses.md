@@ -194,9 +194,13 @@ where a seam, route, verb or fixture is. Which folder owns which job:
     resume is chosen onto it while another account is ready, and a pick of it is refused, never moved. A session already on it goes on to
     its turn's end; the next resume reads its own account off and moves it by the walk (the line that switches), or holds it for the
     switch where no other account is ready or the line does not move: it never waits for a reset it has not got. A running
-    conversation's turn-end move (`CurveMove`) moves by the account's curve and a running session is never moved *to* an off account
-    (`SwitchCandidates` reads `Before`), but it does not yet read its own account's switch: that conversation stays until its next
-    resume (ACCOUNTSWITCH1). Only the person's press
+    conversation's turn-end move (`CurveMove`) moves by the account's curve, and reads its own account's switch too: at its turn's end
+    a conversation on an off account moves to another ready account of its agent whatever it has used (`SwitchChoice.MoveOff`, the
+    candidates the curve's, one with the margin's room first), its record's reason `off` (`HandOverWhy.Off`, its line *its account was
+    switched off*), asked by Daoris, never under a scope whose switch is `off` and staying where no other account is ready; a running
+    session is never moved *to* an off account (`SwitchCandidates` reads `Before`). The window names an off account *off, by you*
+    wherever it names one (the roster's namer, the row's pill with its usage dimmed), and the next start's held line says it is passed
+    because it is off. Only the person's press
     writes it, as a sign-in is theirs: the window and the terminal on their own, a session's terminal refused.
 28. The person's own sign-in is outside the set: Daoris never signs it in or out, asks it anything or starts work in it. On the
     agent's page it is the list's last row; *Ways in* says each way in by what it gives, and one not installed says what to do.

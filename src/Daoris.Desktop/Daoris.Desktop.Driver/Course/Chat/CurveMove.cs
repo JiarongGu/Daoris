@@ -108,6 +108,9 @@ internal sealed class CurveMove(IExecutorWiring wiring) : IExecutor
         // Its last move by the curve is when its record began, where it continues another by the curve.
         var lastMove = prior.FromWhy == HandOverWhy.Curve ? prior.Created : null;
 
+        // The person's switch on its own account: read each judgement, since only the person's press writes it.
+        var accountOff = AccountOff(_context.Harnesses.Home, owner, account);
+
         // Each candidate judged by its offer reading for the model the record asks, the composer's kept
         // change's where one is, so the move never takes an account that does not offer the conversation's model.
         var model = prior.ModelOn(agent);
@@ -133,10 +136,12 @@ internal sealed class CurveMove(IExecutorWiring wiring) : IExecutor
                     prior.State, Role: prior.Actor ?? "chat", Choice: prior.Choice, Adapter: adapter, Profile: account, Conversation: true,
                     AskDaoris: false, Session: sessionId),
                 CourseBoundary.BetweenTurns,
-                Rules: new CourseRules(SwitchAdmits: Admits(scope.Use), CurveAccount: (choice as SwitchChoice.MoveTo)?.Account)),
+                Rules: new CourseRules(
+                    SwitchAdmits: Admits(scope.Use), CurveAccount: (choice as SwitchChoice.MoveTo)?.Account, OffAccount: (choice as SwitchChoice.MoveOff)?.Account)),
             CourseTrigger.TurnEnd);
         Decided?.Invoke(sessionId, course);
-        if (course is not LineCourse.Move { Where.Account: { } to } || choice is not SwitchChoice.MoveTo move) return choice;
+        if (course is not LineCourse.Move { Where.Account: { } to } || choice is not (SwitchChoice.MoveTo or SwitchChoice.MoveOff)) return choice;
+        var why = choice is SwitchChoice.MoveOff ? HandOverWhy.Off : HandOverWhy.Curve;
 
         // What the hand-over's own ask judged before it kept a move (no such session, a conversation that went on, an account not the agent's,
         // a tree gone): refused here the same way, quietly, before anything is decided.
@@ -146,12 +151,16 @@ internal sealed class CurveMove(IExecutorWiring wiring) : IExecutor
         // The move is decided in the store.
         // A record a move still stands for, the one it left or the one whose open made it, takes no move now; a store that will not take the
         // decision moves nothing, and the next turn's end judges again.
-        var begun = await Moves.BeginAsync(Decision(sessionId, to), ct).ConfigureAwait(false);
+        var begun = await Moves.BeginAsync(Decision(sessionId, to, why), ct).ConfigureAwait(false);
         if (begun.Move is not { } record) return choice;
 
         // Taken now, the turns held while it is; where a word started a turn meanwhile, the move closes and the next turn's end judges again.
-        var asked = new HandOverRequest(agent, to, HandOverWhy.Curve, HandOverBy.Daoris, DateTimeOffset.UtcNow);
-        await _handOver.TakeAsync(sessionId, asked, move, record, config, onEnded, ct).ConfigureAwait(false);
+        // The curve's move says the window and the curve in its two lines; the account's switch has none, so its lines are the hand-over's,
+        // its reason `off`.
+        var asked = new HandOverRequest(agent, to, why, HandOverBy.Daoris, DateTimeOffset.UtcNow);
+        _ = choice is SwitchChoice.MoveTo move
+            ? await _handOver.TakeAsync(sessionId, asked, move, record, config, onEnded, ct).ConfigureAwait(false)
+            : await _handOver.TakeRuledAsync(sessionId, asked, record, config, onEnded, ct).ConfigureAwait(false);
         return choice;
 
         SwitchChoice Decide(bool othersRead)
@@ -159,7 +168,7 @@ internal sealed class CurveMove(IExecutorWiring wiring) : IExecutor
             var now = _context.Harnesses.Clock();
             return SwitchDecision.Decide(
                 scope.Use, account, SaidOf(owner, account, now), _context.Harnesses.SwitchCandidates(owner, scope.List, offer), now, lastMove,
-                othersRead);
+                othersRead, accountOff);
         }
     }
 
@@ -173,8 +182,21 @@ internal sealed class CurveMove(IExecutorWiring wiring) : IExecutor
     /// The move as the course decided it: a conversation's, by the brief, for the curve, asked by Daoris, on the
     /// account the decision named; the agent is the conversation's own, so none is named.
     /// </summary>
-    private static MoveDecision Decision(string sessionId, string account) =>
-        new(sessionId, MoveExecutors.Conversation, MoveHows.Brief, HandOverWhy.Curve, HandOverBy.Daoris) { Account = account, RecipeWhy = HandOverWhy.Curve };
+    private static MoveDecision Decision(string sessionId, string account, string why) =>
+        new(sessionId, MoveExecutors.Conversation, MoveHows.Brief, why, HandOverBy.Daoris) { Account = account, RecipeWhy = why };
+
+    /// <summary>Whether the person switched the conversation's account off; false for a file that does not read, so a judgement never fails on it.</summary>
+    private static bool AccountOff(string home, string owner, string account)
+    {
+        try
+        {
+            return AccountSwitch.IsOff(home, owner, account);
+        }
+        catch (Exception error) when (error is IOException or UnauthorizedAccessException)
+        {
+            return false;
+        }
+    }
 
     /// <summary>What the conversation's own account last said of its windows: its frames, or a read; null for nothing.</summary>
     private AccountSaid? SaidOf(string owner, string account, DateTimeOffset now)

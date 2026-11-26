@@ -412,7 +412,7 @@ public sealed class WordsNotesTests
 
     /// <summary>
     /// Why a conversation is handed over is a family of its own, each reason declared once; the two lines carry facts
-    /// only. `curve` is a reason a record continues another by, and one the box takes.
+    /// only. `curve` is one the box takes.
     /// Every continuation names its link, so `resume`, `carry-on` and
     /// `retry` are reasons a record continues another by, worded as every reason is, and no box takes them: the box's check stays on
     /// the five a hand-over is asked for. `not-offered`, a replacement of a record its agent refused at the
@@ -426,7 +426,7 @@ public sealed class WordsNotesTests
             .Select(field => (string)field.GetRawConstantValue()!)
             .Order(StringComparer.Ordinal)
             .ToList();
-        Assert.Equal(["agent", "budget", "carry-on", "curve", "failed", "limit", "near", "not-offered", "press", "quiet", "resume", "retry", "transient"], reasons);
+        Assert.Equal(["agent", "budget", "carry-on", "curve", "failed", "limit", "near", "not-offered", "off", "press", "quiet", "resume", "retry", "transient"], reasons);
         Assert.Equal(reasons, NoteCodes.Handed.All.Select(reason => reason.Code).Order(StringComparer.Ordinal));
         Assert.Equal(["agent", "curve", "limit", "near", "press"], reasons.Where(HandOverWhy.Known));
         Assert.All(reasons, why => Assert.True(HandOverWhy.Continues(why), $"`{why}` is no reason a record continues another by"));

@@ -54,7 +54,7 @@ public sealed class CourseVocabularyTests
             Enum.GetNames<CourseDoor>());
         Assert.Equal(["Teammate", "Intake", "StoodDown", "Superseded", "StandingMove"], Enum.GetNames<CourseNeverWhy>());
         Assert.Equal(
-            ["Press", "Near", "Limit", "Agent", "Curve", "Resume", "CarryOn", "Retry", "NotOffered", "Transient", "Failed", "Quiet", "Budget"],
+            ["Press", "Near", "Limit", "Agent", "Curve", "Off", "Resume", "CarryOn", "Retry", "NotOffered", "Transient", "Failed", "Quiet", "Budget"],
             Enum.GetNames<CourseFromWhy>());
         Assert.Equal(["Person", "Daoris", "Agent"], Enum.GetNames<CourseFromBy>());
     }
@@ -93,7 +93,7 @@ public sealed class CourseVocabularyTests
     public void The_from_enum_is_todays_reasons_and_authors_one_to_one()
     {
         var reasons = Constants(typeof(HandOverWhy));
-        Assert.Equal(13, reasons.Count);
+        Assert.Equal(14, reasons.Count);
         Assert.Equal(reasons.Count, Enum.GetValues<CourseFromWhy>().Length);
         foreach (var code in reasons)
         {
