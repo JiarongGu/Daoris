@@ -19,7 +19,7 @@ export const HEAVY_RUNNER = 'tools/heavy-run.mjs';
 /** What every line the run says begins with, so a monitor that reads the log or the output finds it. */
 export const HEAVY_PREFIX = 'heavy tier:';
 
-export type HeavyState = 'running' | 'green' | 'red' | 'error' | 'superseded';
+export type HeavyState = 'running' | 'green' | 'red' | 'error' | 'superseded' | 'skipped';
 
 /** One run's record, `running` at the landing and settled at its end; `handedTo`, `handed`, `took` and `from` say a handover (`heavy-stack.ts`). */
 export type HeavyRun = {
@@ -91,6 +91,11 @@ export function startAfterLanding(home: string, candidate: { tip: string; base: 
     { commit: candidate.tip, base: candidate.base, branches: candidate.members.map((each) => each.branch), log: `local/scratch/heavy-${candidate.tip.slice(0, 7)}.log` },
     { start: (args, file) => startDetached(home, args, file), append: (record) => appendHeavy(home, record), now: () => new Date().toISOString() },
   ).lines, ...startWatch(candidate.tip, { start: (args, file) => startDetached(home, args, file) })];
+}
+
+export function skipHeavy(run: HeavyRun, said: string, now: string): { run: HeavyRun; lines: string[] } {
+  const where = `${sha(run.commit)} (${run.branches.join(', ')})`;
+  return { run: { ...run, state: 'skipped', ended: now, note: said }, lines: [`${HEAVY_PREFIX} SKIPPED ${where}: ${said}`] };
 }
 
 /**

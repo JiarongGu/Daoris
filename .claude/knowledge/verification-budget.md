@@ -1,7 +1,7 @@
 ---
 name: verification-budget
-applies_when: verifying a task in this repository (a builder's checks before hand-back, a run's check, a merge's gates for one branch), reaching for `--full`, or changing a gate, the lane table or what a merge runs
-enforces: one task's verification takes under ten minutes of wall time, scoped to what its paths reach, the heavy tier after the landing; a full run needs a reason the tools check against the change; an overrun is said with where its time went and filed
+applies_when: verifying a task in this repository (a builder's checks before hand-back, a run's check, a merge's gates for one branch), reviewing a change (a second opinion, a wide or close review), reaching for `--full`, or changing a gate, the lane table or what a merge runs
+enforces: one task's verification takes under ten minutes of wall time, scoped to what its paths reach, the heavy tier after a landing that bears a reason; a full run needs a reason the tools check against the change, a reviewer asks for none the rule gives no reason for; an overrun is said with where its time went and filed
 ---
 
 # Verification budget — this workspace verifies a task in under ten minutes
@@ -23,7 +23,7 @@ longer than its change's reach is a scope defect, not a cost of safety; a budget
   (`local/verify-overruns.jsonl`, a fixed file in the checkout, no setting) and the full run's reasons (`fullRunReasons`): the
   declared wide paths (the gates and the test tools, dependency files and lockfiles, build files, the shared contracts, what is
   tracked and the helpers every rehearsal imports), a reach of the declared share or more, and the runs that are a reason by
-  their kind (the run after a landing, a release). The lane table's every-gate rule reads the same wide paths, its one source,
+  their kind (the CI beside after a landing, a release; the heavy tier is judged by the landing's change, below). The lane table's every-gate rule reads the same wide paths, its one source,
   apart from the budget: a budget missing or mistyped never drops them, and a `verifyBudget` declared without them fails at
   load. So a change to a wide path reaches every gate by intent: the shared contracts (`src/Daoris.Contracts/**`) run all of
   them, as the gates file and the lockfiles do.
@@ -47,6 +47,19 @@ longer than its change's reach is a scope defect, not a cost of safety; a budget
   `verification` in its merge record: budget, wall time, the scope the change calls for and a full run's reason, and what
   ran (`ran: full | reach`). The finding's cause is read from what ran: a full run says its reason; a scoped run means the
   scope was too big for the change, or the change was code-wide and should have said so.
+
+- **The heavy tier follows a landing that bears a reason, never every landing** (HEAVYBATCH1). "The run after a landing" is a reason
+  for the CI beside and a release by their kind, not for the heavy tier: its runner (`tools/heavy-run.mjs`) judges each landing by the
+  paths it changed against the same `fullRunReasons` (a declared wide path, the declared reach share), and a landing with neither
+  settles `skipped` and queues nothing, no admission place and no tree. A reasoned landing's tier waits until no landing has come for
+  20 minutes (2 hours from the oldest landing at most), a newer reasoned landing carrying the waiting one's range, then runs only the classes the reasoned landings' own
+  changes reach, as the admission's existing background run, taken only while no task's check waits, no group started while one
+  does. A release, a reason by its kind, asks the tier by hand (`tools/heavy-run.mjs … --now`).
+- **Every reviewer reads this rule, and none asks past it.** A second opinion, a wide or close review and a session's own review
+  of a change judge its verification by this rule: the opinion's instruction carries the repository's declared rule and a red
+  check's words repeat it. A full or end-to-end run is asked for only where the change bears one of the reasons above; for a
+  change that bears none, a reviewer does not ask for one and does not count its absence as a finding (the heavy tier runs after
+  the landing, as declared). A gap in what the change's own tests cover is still a finding.
 
 Until a supervisor actor holds this rule (WORKSPACERULES1), the merge tool (`tools/merge/verification.ts`) and the reached
 checks keep it. Changing the rule is a change to its declaration, never to a call site.
