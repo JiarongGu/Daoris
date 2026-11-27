@@ -499,7 +499,12 @@ built, but nothing outside tests makes, takes or ends one; `LinePlaces` answers 
 ### States and the end
 
 36. A session record moves forward only: `Queued`, `Starting`, `Working`, `AwaitingPerson` or `AwaitingStep`, then `Completed`,
-    `Declined`, `StoodDown`, `Failed` or `Stopped`. Every live state may be stopped by the person, at *Stop…* and `session stop <id>` (one
+    `Declined`, `StoodDown`, `Failed` or `Stopped`. Each create and move also appends its witnessed fact to the session's journal in the
+    service's store, in the same transaction (`SessionJournal`: its kind, the door and the caller's site or note code as its witness, the
+    application's generation, the step and attempt a `waits.step` names, the time; `SessionFactCensusTests` holds no state write without
+    one), and the fold of the journal (`SessionFold`: working with a live lease, waiting on a named holder, needs you on an open question or
+    a breach, ended with its outcome; a lease of a process older than this start's generation is void) is read in shadow beside the stored
+    status (`POST /api/session-life/fold`, each difference said once as `session.fold-differs`); nothing acts on it yet (D368). Every live state may be stopped by the person, at *Stop…* and `session stop <id>` (one
     implementation, `SessionsEnding.StopAsync`; `SessionStopCensusTests` holds every state the page counts active): a process here
     stopped, a start or a working record nothing here runs ended as an orphan, a parked one stopped unanswered, and one awaiting its
     run's step stopped with that run (D316, `RunWaitStops`): every step of the run a stop reaches is stopped through the run's node door

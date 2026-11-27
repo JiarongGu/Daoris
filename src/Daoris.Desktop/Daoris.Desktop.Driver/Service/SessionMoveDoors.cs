@@ -1,3 +1,4 @@
+using System.Runtime.CompilerServices;
 using System.Text;
 using System.Text.Json;
 using Daoris.Contracts.Sessions;
@@ -50,7 +51,8 @@ public sealed class SessionMoveDoors
     public async Task<string> AdvanceAsync(
         string id, string state, string? note = null, string? evidence = null, string? transcript = null,
         CancellationToken ct = default, bool interrupted = false, bool limit = false, IReadOnlyList<NotePart>? parts = null,
-        string? expected = null, bool unbindAsk = false, IReadOnlyList<string>? expect = null)
+        string? expected = null, bool unbindAsk = false, IReadOnlyList<string>? expect = null,
+        [CallerMemberName] string caller = "", [CallerFilePath] string file = "")
     {
         var turns = Ending.Contains(state) ? await TurnLinesForAsync(id, ct).ConfigureAwait(false) : null;
         // A move out of a running state reads its turn's end in its place; the ledger writes the mark only out of a running state.
@@ -66,7 +68,8 @@ public sealed class SessionMoveDoors
                     [.. pair.Value.Select(line => new MemoryTurnLine(line.Seq, line.Started, line.Ended, line.Model))], []),
                 StringComparer.Ordinal),
             holdsPlace is null ? null : [.. holdsPlace],
-            spent is { } told ? new TurnSpentRequest(told.Input, told.Output) : null);
+            spent is { } told ? new TurnSpentRequest(told.Input, told.Output) : null,
+            Site(caller, file));
 
         var sent = await _service.SendAsync(request, ct).ConfigureAwait(false);
 
@@ -101,12 +104,19 @@ public sealed class SessionMoveDoors
         }
     }
 
+    /// <summary>The witness a move's fact names: the caller's file by name alone, never the build machine's path, and its member.</summary>
+    internal static string Site(string caller, string file)
+    {
+        var name = Path.GetFileNameWithoutExtension(file.Replace('\\', '/').Split('/')[^1]);
+        return name.Length == 0 ? caller : caller.Length == 0 ? name : $"{name}.{caller}";
+    }
+
     /// <summary>Move a session's record with a composed note: its English and its parts together.</summary>
     public Task<string> AdvanceAsync(
         string id, string state, Noted noted, string? evidence = null, string? transcript = null,
         CancellationToken ct = default, bool interrupted = false, bool limit = false, string? expected = null,
-        IReadOnlyList<string>? expect = null) =>
-        AdvanceAsync(id, state, noted.Note, evidence, transcript, ct, interrupted, limit, noted.Parts, expected, expect: expect);
+        IReadOnlyList<string>? expect = null, [CallerMemberName] string caller = "", [CallerFilePath] string file = "") =>
+        AdvanceAsync(id, state, noted.Note, evidence, transcript, ct, interrupted, limit, noted.Parts, expected, expect: expect, caller: caller, file: file);
 
     /// <summary>
     /// An intake refused its choice at the open: one write ends its record <paramref name="conclusion"/>
