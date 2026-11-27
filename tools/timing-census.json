@@ -32,10 +32,6 @@
       "count": 2,
       "why": "a bench at scale: a session's opening, alone and four at once, must stay inside its budget over a real repository; the operation's own time is the behaviour, run alone as a Process test"
     },
-    "src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Workplace/DownloadClearingTests.cs": {
-      "count": 1,
-      "why": "the claim is that a pin is not made to wait out the lock a clearing holds, a wait of real time inside the settings store's lock that no seam moves; without it the pin would pass after the wait"
-    },
     "src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Workplace/RefWatchProcessTests.cs": {
       "count": 1,
       "why": "the claim is the watch's own debounce, a bound of the product measured in a Process test beside real git; the time is said in the output line, and no seam moves the watcher's clock"
@@ -51,6 +47,10 @@
     "src/Daoris.Desktop/Daoris.Desktop.Modules.Tests/Loop/UsageStateSliceTests.cs": {
       "count": 1,
       "why": "the claim is a wake against the slice's fifteen-second period: a push that came only with the period proves no wake, and the slice's period is set by the loop, with no seam the test can move"
+    },
+    "src/Daoris.Service/Daoris.Service.Http.Tests/ChangeStreamProcessTests.cs": {
+      "count": 3,
+      "why": "the claim is a wake against the host's thirty-second wait: the answer names the same family whether the write woke the wait or the wait ran out, so only its time tells them apart, and the host is a real process with no clock to move; the margin is the code's own bound against a wake in milliseconds (the journal case needs no clock: the older reader is still pending after the journal reader is answered)"
     },
     "src/Daoris.Service/Daoris.Service.Tests/Sessions/SaidSettledMeasureTests.cs": {
       "count": 1,

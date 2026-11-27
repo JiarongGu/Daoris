@@ -1,4 +1,3 @@
-using System.Diagnostics;
 using Daoris.Ports.Processes;
 
 namespace Daoris.Adapters.Machine.Tests;

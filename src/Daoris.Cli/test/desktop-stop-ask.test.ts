@@ -11,12 +11,14 @@ test('a stop asked of the shell by the tool leaves its ask in the home, for the 
   const root = scratchFolder('daoris-stop-ask');
   const before = Date.now();
   assert.equal(askStop(root, [4242], { DAORIS_SESSION_ID: '76cdd5db' }), true);
+  const after = Date.now();
 
   const asked = JSON.parse(readText(homeEntry(root, 'stop-ask')));
   assert.deepEqual(asked.pids, [4242]);
   assert.equal(asked.by, 'desktop-tool');
   assert.equal(asked.session, '76cdd5db');
-  assert.ok(Date.parse(asked.at) >= before - 1000, 'the ask is stamped when it was made, not before the call');
+  const at = Date.parse(asked.at);
+  assert.ok(at >= before - 1000 && at <= after + 1000, 'the ask is stamped when it was made, between the call\'s start and end');
 
   // No home, or no process, leaves nothing; an id that is no session's is not carried.
   assert.equal(askStop(undefined, [4242], {}), false);

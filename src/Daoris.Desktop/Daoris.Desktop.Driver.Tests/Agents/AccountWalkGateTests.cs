@@ -1,4 +1,3 @@
-using System.Diagnostics;
 using Daoris.Driver;
 
 namespace Daoris.Desktop.Driver.Tests;
@@ -255,10 +254,11 @@ public sealed class AccountWalkGateTests : IDisposable
         });
 
         var selection = await roster.SelectAsync("fake", Config, null, chosen: "account-1").WaitAsync(Poll.Patience);
+        var waited = letGo;
         await letting;
 
         Assert.Equal(("account-1", true), (selection.Profile, selection.Allowed));
-        Assert.True(letGo, "the start did not wait out the question in flight");
+        Assert.True(waited, "the start did not wait out the question in flight");
         Assert.True(roster.Busy("fake", "account-1"));
     }
 

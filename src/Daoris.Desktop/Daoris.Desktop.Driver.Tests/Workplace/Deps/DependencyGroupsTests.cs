@@ -1,4 +1,3 @@
-using System.Diagnostics;
 using Daoris.Driver;
 using static Daoris.Desktop.Driver.Tests.GitFixture;
 

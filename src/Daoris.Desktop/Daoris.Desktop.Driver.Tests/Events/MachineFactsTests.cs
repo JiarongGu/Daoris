@@ -1,4 +1,3 @@
-using System.Diagnostics;
 using Daoris.Driver;
 
 namespace Daoris.Desktop.Driver.Tests;

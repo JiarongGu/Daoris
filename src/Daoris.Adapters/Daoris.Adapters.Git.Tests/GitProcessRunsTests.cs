@@ -1,4 +1,3 @@
-using System.Diagnostics;
 using Daoris.Adapters.Machine;
 using Daoris.Ports.Git;
 
