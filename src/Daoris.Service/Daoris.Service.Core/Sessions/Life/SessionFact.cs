@@ -73,20 +73,23 @@ public sealed record SessionFact(string Session, SessionFactKind Kind, string Wi
     /// <see cref="CheckHolder"/>; a wait whose note names neither names no holder, which the fold reads as a breach. The caller's reason
     /// is its note's code only where <paramref name="noted"/>: a move that writes no note keeps the record's, an earlier move's reason.
     /// </summary>
-    public static SessionFact OfMove(Session moved, string witness, long generation, bool noted = true)
+    public static SessionFact OfMove(Session moved, string witness, long generation, bool noted = true) =>
+        OfStatus(moved.Id, moved.State, moved.Updated, moved.NoteParts, noted ? Witnessed(witness, moved.NoteParts) : witness, generation);
+
+    /// <summary>
+    /// The fact a stored status says, as written at <paramref name="at"/> by <paramref name="witness"/>: what <see cref="OfMove"/>
+    /// appends, and what the baseline (<see cref="SessionBaseline"/>) folds for a record older than its journal.
+    /// </summary>
+    public static SessionFact OfStatus(
+        string session, SessionState state, DateTimeOffset at, string? noteParts, string witness, long generation) => state switch
     {
-        var at = moved.Updated;
-        var named = noted ? Witnessed(witness, moved.NoteParts) : witness;
-        return moved.State switch
-        {
-            SessionState.Queued => new(moved.Id, SessionFactKind.Opened, named, generation, at) { Holder = StartHolder },
-            SessionState.Starting => new(moved.Id, SessionFactKind.Starting, named, generation, at) { Holder = StartHolder },
-            SessionState.Working => new(moved.Id, SessionFactKind.TurnBegan, named, generation, at),
-            SessionState.AwaitingPerson => new(moved.Id, SessionFactKind.QuestionOpened, named, generation, at),
-            SessionState.AwaitingStep => StepWait(moved.Id, named, generation, at, moved.NoteParts),
-            _ => new(moved.Id, SessionFactKind.Ended, named, generation, at) { Outcome = OutcomeOf(moved.State) },
-        };
-    }
+        SessionState.Queued => new(session, SessionFactKind.Opened, witness, generation, at) { Holder = StartHolder },
+        SessionState.Starting => new(session, SessionFactKind.Starting, witness, generation, at) { Holder = StartHolder },
+        SessionState.Working => new(session, SessionFactKind.TurnBegan, witness, generation, at),
+        SessionState.AwaitingPerson => new(session, SessionFactKind.QuestionOpened, witness, generation, at),
+        SessionState.AwaitingStep => StepWait(session, witness, generation, at, noteParts),
+        _ => new(session, SessionFactKind.Ended, witness, generation, at) { Outcome = OutcomeOf(state) },
+    };
 
     /// <summary>The outcome an ended stored state names; null for a live one.</summary>
     public static SessionOutcome? OutcomeOf(SessionState state) => state switch

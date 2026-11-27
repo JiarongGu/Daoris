@@ -114,6 +114,8 @@ if (args is ["keys", .. var keyArgs])
     return await KeysConsole.RunAsync(keyArgs, options);
 }
 
+if (args is ["session-life", .. var lifeArgs]) return await SessionLifeConsole.RunAsync(lifeArgs, database);
+
 // The machine log: this host's start and stop, the framework's warnings and errors, every
 // exception nothing caught, what a request's route threw, and each request that failed or ran
 // slow — by route and status, never its query or body. In a file of its own beside the desktop's; with no

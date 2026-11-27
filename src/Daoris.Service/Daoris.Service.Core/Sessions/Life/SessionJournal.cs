@@ -84,8 +84,8 @@ public sealed class SessionJournal
         _db.RunAsync<IReadOnlyDictionary<string, IReadOnlyList<SessionFact>>>(async () =>
         {
             await using var command = _db.Command();
-            command.CommandText = """
-                SELECT session, kind, witness, generation, holder, step, attempt, outcome, at, position FROM session_facts
+            command.CommandText = $"""
+                SELECT {FactColumns} FROM session_facts
                 WHERE session IN (SELECT value FROM json_each($sessions)) ORDER BY position
                 """;
             command.Parameters.AddWithValue("$sessions", System.Text.Json.JsonSerializer.Serialize(sessions.Distinct(StringComparer.Ordinal)));
@@ -116,7 +116,10 @@ public sealed class SessionJournal
             return found;
         }, ct);
 
-    /// <summary>The facts a query's rows hold (the columns of <see cref="OfManyAsync"/>), by session; a row of a kind this build does not know is left out.</summary>
+    /// <summary>The columns <see cref="ReadAsync"/> reads, in its order.</summary>
+    internal const string FactColumns = "session, kind, witness, generation, holder, step, attempt, outcome, at, position";
+
+    /// <summary>The facts a query's rows hold (<see cref="FactColumns"/>), by session; a row of a kind this build does not know is left out.</summary>
     internal static async Task<IReadOnlyDictionary<string, IReadOnlyList<SessionFact>>> ReadAsync(SqliteCommand command, CancellationToken ct)
     {
         var journals = new Dictionary<string, List<SessionFact>>(StringComparer.Ordinal);
