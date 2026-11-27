@@ -318,7 +318,7 @@ Each type is in a file of its name; `docs/index/README.md` says where a seam, ve
     The same walk's places are weighed (`HomeWeights.Read`): each over its entry's size in `HomeBudgets` (a named one, else its category's;
     the census holds every entry to a bound), the largest files and the files of 1 MB or more that identical bytes hold twice (hashed only
     where sizes match; the names of one file record, as a tree's linked dependencies are, count once) are said at a start (`home.over`,
-    `home.duplicate`, `home.largest`) and in Disk space (`weight`, counted in the background and kept an hour, null until the first
+    `home.duplicate`, `home.largest`) and in Disk space (`weight`, counted at a start and again in the background, kept an hour, null until the first
     count ends). (from HOMEORPHAN1, HOMESIZE1, FIX-LOG 2026-11-20)
 
 | Kind | History (moved or emptied) | Configuration (stays) |

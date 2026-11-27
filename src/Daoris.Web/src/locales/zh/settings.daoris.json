@@ -423,7 +423,7 @@
   "settings.daoris.space.strays.hint": "Daoris 文件夹中没有任何条目认领的路径，因此无人读取，也不会被清理。请自行移动或删除；`daoris home` 也会列出它们。",
   "settings.daoris.space.strays.partial": "此处的大小只统计了一部分：遍历已到上限。",
   "settings.daoris.space.weight.over.label": "超出预算",
-  "settings.daoris.space.weight.over.hint": "Daoris 文件夹中超过其条目预算的位置。机器日志也会记录它们。",
+  "settings.daoris.space.weight.over.hint": "Daoris 文件夹中超过其条目预算的位置，按文件的每个名称计算：多个树中链接的同一依赖文件在磁盘上只占一份。机器日志也会记录它们。",
   "settings.daoris.space.weight.over.of": "{{bytes}}，预算 {{budget}}",
   "settings.daoris.space.weight.largest.label": "最大的文件",
   "settings.daoris.space.weight.duplicates.label": "相同的文件",

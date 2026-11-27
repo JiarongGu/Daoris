@@ -53,7 +53,7 @@ public sealed class DependencyLinkedPlacementTests : IDisposable
     }
 
     [Fact]
-    public void A_clean_of_one_tree_leaves_the_entry_and_the_other_trees_whole_and_a_placement_restores_the_mark()
+    public void A_removal_of_one_tree_and_an_eviction_leave_every_other_name_read_only_and_count_only_the_last_name_freed()
     {
         Sealed();
         var one = Path.Combine(_scratch, "one");
@@ -62,17 +62,22 @@ public sealed class DependencyLinkedPlacementTests : IDisposable
         Directory.CreateDirectory(two);
         Assert.NotNull(DependencyStore.Place(Home, "key", one, "deps", CancellationToken.None));
         Assert.NotNull(DependencyStore.Place(Home, "key", two, "deps", CancellationToken.None));
+        var twos = Path.Combine(two, "deps", "pkg", "index.js");
 
-        // What the tree's removal does to a read-only file: clears the mark on the record, then unlinks the name.
-        TreeSetAside.DeleteNeverFollowing(Path.Combine(one, "deps"));
+        var freed = TreeSetAside.DeleteNeverFollowing(Path.Combine(one, "deps"));
 
         Assert.False(Directory.Exists(Path.Combine(one, "deps")));
         Assert.Equal("module.exports = 1;\n", File.ReadAllText(StoreFile("pkg/index.js")));
-        Assert.Equal("module.exports = 1;\n", File.ReadAllText(Path.Combine(two, "deps", "pkg", "index.js")));
-        var three = Path.Combine(_scratch, "three");
-        Directory.CreateDirectory(three);
-        Assert.NotNull(DependencyStore.Place(Home, "key", three, "deps", CancellationToken.None));
-        Assert.True(File.GetAttributes(StoreFile("pkg/index.js")).HasFlag(FileAttributes.ReadOnly), "the next placement makes the entry's file read-only again");
+        Assert.Equal("module.exports = 1;\n", File.ReadAllText(twos));
+        Assert.True(File.GetAttributes(twos).HasFlag(FileAttributes.ReadOnly), "a removal unlinks one name and never clears the record's mark");
+        Assert.True(File.GetAttributes(StoreFile("pkg/index.js")).HasFlag(FileAttributes.ReadOnly));
+        Assert.Equal("last".Length, freed);
+
+        Assert.True(DependencyStore.Evict(Home, "key"));
+        Assert.True(File.GetAttributes(twos).HasFlag(FileAttributes.ReadOnly), "an eviction leaves the trees' names marked");
+        Assert.Equal("module.exports = 1;\n", File.ReadAllText(twos));
+
+        Assert.Equal("module.exports = 1;\n".Length + "last".Length, TreeSetAside.DeleteNeverFollowing(Path.Combine(two, "deps")));
     }
 
     [Fact]

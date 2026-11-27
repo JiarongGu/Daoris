@@ -391,7 +391,7 @@ public static class SystemSpace
         ["largest"] = new JsonArray([.. weight.Largest.Select(each => (JsonNode)new JsonObject { ["path"] = each.Path, ["bytes"] = each.Bytes })]),
         ["duplicates"] = new JsonArray([.. weight.Duplicates.Select(each => (JsonNode)new JsonObject
         {
-            ["bytes"] = each.Bytes, ["wasted"] = each.Wasted, ["paths"] = new JsonArray([.. each.Paths.Select(path => (JsonNode)JsonValue.Create(path)!)]),
+            ["bytes"] = each.Bytes, ["copies"] = each.Copies, ["wasted"] = each.Wasted, ["paths"] = new JsonArray([.. each.Paths.Select(path => (JsonNode)JsonValue.Create(path)!)]),
         })]),
         ["partial"] = weight.Partial is not null,
     };

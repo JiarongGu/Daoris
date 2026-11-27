@@ -318,7 +318,7 @@ export const SPACE_WEIGHT: SystemSpace = {
   weight: {
     over: [{ path: 'work/trees/games/Daoris/s-aaaa1111', entry: 'trees', bytes: 5 * GB, budget: 4 * GB }],
     largest: [{ path: 'data/knowledge.db', bytes: 2 * GB }],
-    duplicates: [{ bytes: 2 * 1024 ** 2, wasted: 2 * 1024 ** 2, paths: ['work/trees/games/Daoris/s-aaaa1111/esbuild.exe', 'work/trees/games/Daoris/s-bbbb2222/esbuild.exe'] }],
+    duplicates: [{ bytes: 2 * 1024 ** 2, copies: 2, wasted: 2 * 1024 ** 2, paths: ['work/trees/games/Daoris/s-aaaa1111/esbuild.exe', 'work/trees/games/Daoris/s-bbbb2222/esbuild.exe'] }],
     partial: false,
   },
 };

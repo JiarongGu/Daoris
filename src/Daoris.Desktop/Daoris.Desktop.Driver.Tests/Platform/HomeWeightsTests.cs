@@ -106,7 +106,7 @@ public sealed class HomeWeightsTests : IDisposable
         var reading = new HomeWeightReading(
             [new HomeOver("work/trees/games/Daoris/s-aaaa1111", "trees", 900, 500)],
             [new HomeBigFile("data/knowledge.db", 5000)],
-            [new HomeDuplicates(1000, ["a/lib.dll", "b/lib.dll"])],
+            [new HomeDuplicates(1000, 2, ["a/lib.dll", "b/lib.dll"])],
             Partial: null);
         var now = new DateTimeOffset(2026, 11, 27, 0, 0, 0, TimeSpan.Zero);
 
@@ -118,5 +118,30 @@ public sealed class HomeWeightsTests : IDisposable
         Assert.Equal(1000, weight["duplicates"]![0]!["wasted"]!.GetValue<long>());
         Assert.False(weight["partial"]!.GetValue<bool>());
         Assert.Null(counting);
+    }
+
+    [Fact]
+    public void A_group_cut_to_its_first_paths_still_says_every_copy_and_what_they_cost()
+    {
+        for (var tree = 0; tree < 12; tree++) Put($"work/trees/games/Daoris/s-{tree:x4}aaaa/lib.dll", Bytes(1000, 7));
+
+        var group = Assert.Single(Read().Duplicates);
+
+        Assert.Equal(10, group.Paths.Count);
+        Assert.Equal(12, group.Copies);
+        Assert.Equal(11 * 1000L, group.Wasted);
+    }
+
+    [Fact]
+    public void One_file_record_under_many_names_is_listed_once_among_the_largest()
+    {
+        var one = Put("work/trees/games/Daoris/s-aaaa1111/lib.dll", Bytes(5000, 7));
+        var beside = Put("work/trees/games/Daoris/s-bbbb2222/keep.txt", Bytes(1, 1));
+        Assert.True(FileLinks.Make(Path.Combine(Path.GetDirectoryName(beside)!, "lib.dll"), one));
+        Put("data/sessions/other.bin", Bytes(2000, 2));
+
+        var reading = Read();
+
+        Assert.Equal([5000L, 2000L], reading.Largest.Select(each => each.Bytes));
     }
 }

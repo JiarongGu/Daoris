@@ -169,7 +169,7 @@ export type SpaceAllowance = { gb: number | null; default: boolean; bytes: numbe
 export type SpaceWeight = {
   over: { path: string; entry: string; bytes: number; budget: number }[];
   largest: { path: string; bytes: number }[];
-  duplicates: { bytes: number; wasted: number; paths: string[] }[];
+  duplicates: { bytes: number; copies: number; wasted: number; paths: string[] }[];
   partial: boolean;
 };
 

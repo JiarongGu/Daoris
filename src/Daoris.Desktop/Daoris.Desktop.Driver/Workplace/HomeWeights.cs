@@ -8,11 +8,11 @@ public sealed record HomeOver(string Path, string Entry, long Bytes, long Budget
 /// <summary>One of the largest files of the home.</summary>
 public sealed record HomeBigFile(string Path, long Bytes);
 
-/// <summary>Identical files held more than once: each copy's bytes, and every path holding one (a name of a record already listed is not another).</summary>
-public sealed record HomeDuplicates(long Bytes, IReadOnlyList<string> Paths)
+/// <summary>Identical files held more than once: each copy's bytes, how many copies, and the first paths holding one (a name of a record already listed is not another).</summary>
+public sealed record HomeDuplicates(long Bytes, int Copies, IReadOnlyList<string> Paths)
 {
     /// <summary>What the copies beyond the first cost.</summary>
-    public long Wasted => Bytes * (Paths.Count - 1);
+    public long Wasted => Bytes * (Copies - 1);
 }
 
 /// <summary>What <see cref="HomeWeights.Read"/> found, and why it is short where its walk stopped early.</summary>
@@ -116,9 +116,16 @@ public static class HomeWeights
             }, _ => { });
         }
 
-        var largest = files
-            .OrderByDescending(each => each.Bytes).ThenBy(each => each.Path, StringComparer.Ordinal)
-            .Take(top).Select(each => new HomeBigFile(each.Path, each.Bytes)).ToList();
+        var records = new HashSet<string>(StringComparer.Ordinal);
+        var largest = new List<HomeBigFile>();
+        foreach (var each in files.OrderByDescending(file => file.Bytes).ThenBy(file => file.Path, StringComparer.Ordinal))
+        {
+            if (largest.Count >= top) break;
+            // One record under many names is listed once, under its first.
+            if (FileLinks.IdentityOf(each.Full) is { } record && !records.Add(record)) continue;
+            largest.Add(new HomeBigFile(each.Path, each.Bytes));
+        }
+
         var stopped = walk.Stopped;
         var duplicates = Duplicates(files, top, budget.Time - clock.Elapsed, ref stopped);
         return new HomeWeightReading(over, largest, duplicates, walked.Partial ?? stopped);
@@ -159,7 +166,7 @@ public static class HomeWeights
                 }
             }
 
-            groups.AddRange(byHash.Values.Where(paths => paths.Count > 1).Select(paths => new HomeDuplicates(same.Key, paths)));
+            groups.AddRange(byHash.Values.Where(paths => paths.Count > 1).Select(paths => new HomeDuplicates(same.Key, paths.Count, paths)));
         }
 
         return [.. groups.OrderByDescending(each => each.Wasted).ThenBy(each => each.Paths[0], StringComparer.Ordinal).Take(top)
@@ -202,22 +209,26 @@ public static class HomeWeights
     }
 
     /// <summary>
-    /// Says in the machine log what a reading found: a warning for each place over budget, for each group of identical files and for
-    /// each of the largest files, and one line of how many; nothing where none is. Never throws.
+    /// Counts the home once at a start, keeps the reading for <see cref="Cached"/> (so the first Disk space view walks no more), and says
+    /// in the machine log what it found: a warning for each place over budget, one for the identical files (how many groups, what they cost
+    /// and the first group's paths) and one for the five largest files; nothing where none is. Never throws.
     /// </summary>
-    public static void Say(string home, MachineLog log)
+    public static void Say(string home, MachineLog log, DateTimeOffset now)
     {
         try
         {
             var reading = Read(home);
+            lock (Kept) Kept[Path.GetFullPath(home)] = (now, reading);
             foreach (var each in reading.Over)
             {
                 log.Warn("home.over", ("path", each.Path), ("entry", each.Entry), ("bytes", each.Bytes), ("budget", each.Budget));
             }
 
-            foreach (var each in reading.Duplicates)
+            if (reading.Duplicates.Count > 0)
             {
-                log.Warn("home.duplicate", ("bytes", each.Bytes), ("wasted", each.Wasted), ("copies", each.Paths.Count), ("paths", string.Join(" | ", each.Paths)));
+                var first = reading.Duplicates[0];
+                log.Warn("home.duplicates", ("groups", reading.Duplicates.Count), ("wasted", reading.Duplicates.Sum(each => each.Wasted)),
+                    ("firstBytes", first.Bytes), ("firstCopies", first.Copies), ("firstPaths", string.Join(" | ", first.Paths.Take(5))));
             }
 
             foreach (var each in reading.Largest.Take(5))
