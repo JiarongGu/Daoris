@@ -1,6 +1,6 @@
 namespace Daoris.Driver;
 
-/// <summary>The check broker as the loop holds it: each look starts its next check beside the look, so a session's turn has ended while its check waits; verdicts reach the asker as Daoris's word.</summary>
+/// <summary>The check broker as the loop holds it: each look starts the broker beside the look where it is not running, and it starts every due check to wait its turn for the machine's one admission, so a session's turn has ended while its check waits; verdicts reach the asker as Daoris's word.</summary>
 /// <remarks>
 /// A session that asks <c>check_run</c> ends its turn waiting on it, <see cref="EndNoteCodes.WaitsCheck"/> (<see cref="WaitsOnOwnCheckAsync"/>);
 /// a check ends reached, failed or stopped, and a stopped one is a verdict too.
@@ -10,7 +10,7 @@ internal sealed class DriverChecks
     private readonly LoopContext _context;
     private readonly DriverHelpers _helpers;
     private readonly CheckBroker _broker;
-    private readonly Dictionary<string, string?> _folders = new(StringComparer.Ordinal);
+    private readonly Dictionary<string, string?> _quests = new(StringComparer.Ordinal);
     private readonly object _gate = new();
     private readonly CancellationTokenSource _closing = new();
     private Task _running = Task.CompletedTask;
@@ -19,10 +19,20 @@ internal sealed class DriverChecks
     {
         _context = context;
         _helpers = helpers;
-        _broker = new CheckBroker(context.Home, session =>
+        _broker = new CheckBroker(context.Home, FolderOfAsync)
         {
-            lock (_gate) return _folders.GetValueOrDefault(session);
-        });
+            QuestOf = session =>
+            {
+                lock (_gate) return _quests.GetValueOrDefault(session);
+            },
+            Settled = state =>
+            {
+                if (state.State == CheckStates.Errored)
+                {
+                    _context.Said.Retry("check", $"check `{state.Id}` could not be run by Daoris ({state.Error}); it is asked again in {CheckBroker.RetryAfter.TotalMinutes:0} minute.");
+                }
+            },
+        };
     }
 
     /// <summary>
@@ -36,19 +46,14 @@ internal sealed class DriverChecks
         return Exchanges.AsksPersonNothing(Exchanges.Of(await _helpers.OwnLookAsync(session, since, ct).ConfigureAwait(false), session), session);
     }
 
-    /// <summary>One look: the asks' trees read, the next check started beside the look where none runs, the finished verdicts handed.</summary>
+    /// <summary>One look: the sessions' quests read, the broker started where it is not running, the finished verdicts handed.</summary>
     internal async Task LookAsync(CancellationToken ct)
     {
         var files = new CheckFiles(_context.Home);
         var asks = files.Asks();
         if (asks.Count == 0) return;
 
-        foreach (var session in asks.Where(ask => !CheckStates.Finished(files.ReadState(ask.Id)?.State ?? CheckStates.Queued)).Select(ask => ask.Session).Distinct(StringComparer.Ordinal))
-        {
-            var tree = (await _context.Service.RecordAsync(session, ct).ConfigureAwait(false))?.Tree;
-            lock (_gate) _folders[session] = tree is { Length: > 0 } ? new LinePlaces(_context.Home).Of(tree).Folder : null;
-        }
-
+        await ReadQuestsAsync(ct).ConfigureAwait(false);
         lock (_gate)
         {
             if (_running.IsCompleted) _running = Task.Run(RunAllAsync, CancellationToken.None);
@@ -57,18 +62,43 @@ internal sealed class DriverChecks
         await CheckHanding.HandAsync(files, SayAsync, ct).ConfigureAwait(false);
     }
 
+    /// <summary>The tree a session holds, read from its record as the broker starts its check; null where it holds none on this machine.</summary>
+    private async Task<string?> FolderOfAsync(string session, CancellationToken ct)
+    {
+        try
+        {
+            var tree = (await _context.Service.RecordAsync(session, ct).ConfigureAwait(false))?.Tree;
+            return tree is { Length: > 0 } ? new LinePlaces(_context.Home).Of(tree).Folder : null;
+        }
+        catch (Exception error) when (error is HttpRequestException or DriverException or System.Text.Json.JsonException)
+        {
+            return null;
+        }
+    }
+
+    /// <summary>The quest each session serves, which orders its checks by the quest's class; a record that cannot be read leaves the classes it held.</summary>
+    private async Task ReadQuestsAsync(CancellationToken ct)
+    {
+        try
+        {
+            var records = await _context.Service.SessionRecordsAsync(ct).ConfigureAwait(false);
+            lock (_gate)
+            {
+                foreach (var record in records) _quests[record.Id] = record.Quest;
+            }
+        }
+        catch (Exception error) when (error is HttpRequestException or DriverException or System.Text.Json.JsonException)
+        {
+            // The checks keep the classes last read, normal where none is read.
+        }
+    }
+
     private async Task RunAllAsync()
     {
         try
         {
             using var asking = GitAskers.Is(GitAskers.Check);
-            while (await _broker.RunNextAsync(_closing.Token).ConfigureAwait(false) is { } state)
-            {
-                if (state.State == CheckStates.Errored)
-                {
-                    _context.Said.Retry("check", $"check `{state.Id}` could not be run by Daoris ({state.Error}); it is asked again in {CheckQueue.RetryAfter.TotalMinutes:0} minute.");
-                }
-            }
+            await _broker.RunAsync(_closing.Token).ConfigureAwait(false);
         }
         catch (Exception error) when (error is IOException or UnauthorizedAccessException or DriverException or OperationCanceledException)
         {

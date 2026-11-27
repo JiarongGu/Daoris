@@ -540,10 +540,18 @@ built, but nothing outside tests makes, takes or ends one; `LinePlaces` answers 
 40a. A session that asks the check broker (`check_run`, a file under the home's `checks` folder, run as the heavy run
     `daoris gate run` makes) and ends its turn on it with no question to the person waits as `awaiting-step` on that check
     (`StepWait.Check`, its note `waits.check`), holding its tree; the verdict (reached, failed or stopped, a red's log tail)
-    is Daoris's word under the key `check/<id>`, which wakes it in the same conversation, so the wait spends no tokens. The broker runs one
-    check at a time on this machine, the oldest ask first. One broker
-    seat per home (`checks/broker.lock`, held while a check runs) keeps a second Daoris process from queuing again a run the first
-    holds; every check log is opened in `CheckFiles` only, shared with its reader. A check Daoris could not run (its log, its
+    is Daoris's word under the key `check/<id>`, which wakes it in the same conversation, so the wait spends no tokens. The broker has no
+    queue and no limit of its own (CHECKSLOTS1, D362, D365): it starts every due ask at once as a heavy run in its session's tree, and each
+    waits its turn for the machine's one admission (`CheckAdmission`) in the one order (`AdmissionOrder`): its quest's class
+    (`PriorityBook.OfRun`, read at each look), then its arrival; the run whose turn it is asks the admission, so the next freed slot goes
+    to the first of the order and nothing running is cut. How many run at once is the admission's alone: memory against each run's learned
+    need, the limit pressure has left, `checks`, the machine's places. A refusal every run behind would meet (every slot runs, the
+    admission's lock) holds the rest; a run's own (memory, its repository's slots) lets the next try, as the executor's pass does
+    (`CheckAdmission.EndsPass`). An ask waiting is `queued` with what it waits for in its state (`wait`, `CheckWait.Sentence`) and `running` once its slots are
+    held; a command of the asker's own takes no repository slot and waits first come for the machine's places until ADMITDYNAMIC1 joins
+    it to the room. One broker
+    seat per home (`checks/broker.lock`, held while the broker has asks to look over) keeps a second Daoris process from starting again a run the first
+    holds; a run cut off by the driver's end before its slots is `queued` again, never a verdict; every check log is opened in `CheckFiles` only, shared with its reader. A check Daoris could not run (its log, its
     process, a missing tree or a wrapper's tool-error exit) ends `errored`, held on the check with its error, said in the run's log as `look.said` and never to
     the session, and asked again after a minute; only a gate that ran is a verdict said to the session. The check log includes the gate's standard output and error before the wrapper's verdict. Every verdict is said to the
     session that asked, whatever its quest's state: Daoris asks no check of its own, so no verdict is owed to the person. An ask Daoris wrote

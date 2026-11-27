@@ -934,7 +934,7 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     order sent. A run held waiting (`HoldBook`, read at each pass with the classes) leaves the pass, its row saying who held it, and keeps its place in the queue; checks running are never cut. The executor tries its due attempts in that order, a pass ending at the first refused because every slot runs or the
     admission's lock is held, the checks behind it told the same wait, so a slot freed while a pass goes on is never taken by one behind
     it; a check refused for memory, the reserve or its repository's slots is its own, and the next is tried. Each takes a slot only as its
-    own admission allows, so an urgent quest's check takes the next freed slot and nothing running is cut. A session's `run-heavy`, the
+    own admission allows, so an urgent quest's check takes the next freed slot and nothing running is cut. A session's `check_run` (the broker, driving rule 40a) waits in the same order beside the executor's (`AdmissionOrder`: its quest's class, then its arrival, the same pass rule `CheckAdmission.EndsPass`) and is admitted by the same judgement, so checks of either door run side by side as the room admits. A session's `run-heavy`, the
     integration's gated lines and the machine's places (`MachineAdmission`) still wait first come. `["reached"]` in a list still names a gate called so. (D192, D293) A declaration's `reached` entry (`run` with `{base}`, `cwd`, `clock`, and
     `outcome`, the marker of the last line the runner prints, JSON of `ran`, `replayed`, `flaked`, `mainRed`, `red`) replaces the
     gates for a check whose run has a base (its batch's base, else its line's branch): the runner runs in the verification tree

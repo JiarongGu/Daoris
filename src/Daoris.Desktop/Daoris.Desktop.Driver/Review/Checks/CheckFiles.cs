@@ -132,6 +132,7 @@ public sealed class CheckFiles(string home)
                 Tip = Text(element, "tip"),
                 Handed = Text(element, "handed"),
                 Error = Text(element, "error"),
+                Wait = Text(element, "wait"),
             };
         }
     }
@@ -147,6 +148,7 @@ public sealed class CheckFiles(string home)
         if (state.Tip is not null) writer.WriteString("tip", state.Tip);
         if (state.Handed is not null) writer.WriteString("handed", state.Handed);
         if (state.Error is not null) writer.WriteString("error", state.Error);
+        if (state.Wait is not null) writer.WriteString("wait", state.Wait);
         writer.WriteEndObject();
     });
 

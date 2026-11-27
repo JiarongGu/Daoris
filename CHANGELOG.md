@@ -5,6 +5,11 @@ with the version and date at release.
 
 ## Unreleased
 
+- A session's `check_run` no longer waits in a queue of its own that runs one check at a time. Every due check starts at once and
+  waits its turn for the machine's one measured admission, in the same order as every other check (its quest's class, then when it was
+  asked), so as many run at once as the free memory, the limit and the machine's places admit, and an urgent quest's check takes the
+  next freed slot. A waiting check's state says what it waits for, and a check cut off by Daoris closing before it ran is asked again,
+  never handed back as stopped.
 - An update is no longer refused for a path the home's table lacks. The table now names the memo folder (`data/memo`) and a session's
   start record (`run/sessions/*.agent`), a path still unnamed is said (the start's log, `daoris home`, the proof's `strays`) and never
   refuses, and a build is refused for a finding only where it would break the new build: an unreadable record or binding, a missing
