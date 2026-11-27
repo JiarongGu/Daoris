@@ -30,7 +30,7 @@ public static class CheckStates
 /// <param name="Exit">The heavy run's exit code, where it ran.</param>
 /// <param name="Tail">The end of the run's log, bounded, for a red the asker reads.</param>
 /// <param name="Tip">The commit of the asker's tree when the run began: the inputs the verdict is for.</param>
-/// <param name="Ran">The required hand-back commands a no-command check ran, in order; null otherwise, and in any state an older build wrote.</param>
+/// <param name="Ran">The required hand-back commands a no-command check began, in order, a red's last the one it failed at; null otherwise, and in any state an older build wrote.</param>
 /// <param name="Handed">The word that carried the verdict to the asker; null until it is said.</param>
 public sealed record CheckState(string Id, string State, DateTimeOffset At)
 {

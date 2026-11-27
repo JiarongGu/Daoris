@@ -83,6 +83,7 @@ public sealed class CheckPlanTests : IDisposable
             if (ask.Line is not null)
             {
                 commandTurn = world.Turn;
+                world.Admitted!();
                 whileCommandRuns = files.ReadState("a1")?.State;
                 await gateRan.Task;
                 return 0;
@@ -116,6 +117,7 @@ public sealed class CheckPlanTests : IDisposable
 
         Assert.Equal((CheckStates.Failed, 1), (state.State, state.Exit));
         Assert.Equal(["npm run verify:checks"], ran.Select(each => each.Line));
+        Assert.Contains("failed at `npm run verify:checks` (exit 1).", CheckWaits.Words(Ask("a1"), state));
     }
 
     [Fact]
@@ -302,12 +304,52 @@ public sealed class CheckPlanTests : IDisposable
     }
 
     [Fact]
-    public void A_required_command_is_run_as_written_so_a_shell_operator_in_it_is_the_shells()
+    public async Task A_required_command_whose_folder_is_no_folder_of_the_tree_is_refused_naming_the_gate_and_nothing_runs()
     {
-        var ask = new HeavyRunAsk(null) { Line = "npm run a && npm run b" };
+        Declare("""
+            { "name": "cli", "run": "npm run verify:checks", "handback": true },
+            { "name": "web", "run": "npm test", "cwd": "gone", "handback": true }
+            """);
+        new CheckFiles(_home).WriteAsk(Ask("a1"));
+        var ran = new List<Ran>();
 
-        Assert.Equal("npm run a && npm run b", ask.Line);
-        Assert.Null(HeavyRun.Read(["--gate", "x"], out _)!.Line);
-        Assert.Null(HeavyRun.Read(["--", "echo", "a"], out _)!.Line);
+        var state = await RunOneAsync(Broker(ran));
+
+        Assert.Equal(CheckStates.Refused, state.State);
+        Assert.Contains("`web`", state.Error);
+        Assert.Contains("`gone`", state.Error);
+        Assert.Empty(ran);
+    }
+
+    [Theory]
+    [InlineData(false, CheckStates.Queued)]
+    [InlineData(true, CheckStates.Stopped)]
+    public async Task A_check_cut_while_its_handback_command_waits_for_admission_is_queued_again_and_one_cut_after_it_is_stopped(bool admitted, string after)
+    {
+        Declare("""{ "name": "cli", "run": "npm run verify:checks", "handback": true }""");
+        var files = new CheckFiles(_home);
+        files.WriteAsk(Ask("a1"));
+        using var end = new CancellationTokenSource();
+        var settled = new List<CheckState>();
+        var broker = new CheckBroker(_home, (_, _) => Task.FromResult<string?>(_tree), async (_, world, _, ct) =>
+        {
+            if (admitted) world.Admitted!();
+            var cut = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+            await using (ct.Register(() => cut.TrySetResult()))
+            {
+                await end.CancelAsync();
+                await cut.Task;
+            }
+
+            return 1;
+        })
+        {
+            Settled = settled.Add,
+        };
+
+        await broker.RunAsync(end.Token);
+
+        Assert.Equal(after, files.ReadState("a1")!.State);
+        Assert.Equal(admitted, settled.Count == 1);
     }
 }

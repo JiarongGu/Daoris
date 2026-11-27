@@ -398,6 +398,7 @@ public static class HeavyRun
             return 1;
         }
 
+        world.Admitted?.Invoke();
         using (hold)
         {
             var job = Job(OperatingSystem.IsWindows() ? $"Local\\daoris-heavy-{Guid.NewGuid():N}" : null);

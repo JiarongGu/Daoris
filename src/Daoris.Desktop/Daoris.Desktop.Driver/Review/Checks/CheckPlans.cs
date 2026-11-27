@@ -27,6 +27,13 @@ internal static class CheckPlans
                 + "declare a `handback` command for it that names its base, or ask `check_run` for a command of your own as its `command`.");
         }
 
+        if (handback.FirstOrDefault(gate => gate.Cwd is { } cwd && !Directory.Exists(Path.Combine(folder, cwd))) is { } nowhere)
+        {
+            return new CheckPlan([], false,
+                $"the required hand-back gate `{nowhere.Name}` runs in `{nowhere.Cwd}`, which is no folder of your tree: correct its `cwd` in "
+                + $"{DeclarationNames.Gates}, or ask `check_run` for a command of your own as its `command`.");
+        }
+
         if (handback.Count > 0) return new CheckPlan(handback, false, null);
 
         var marks = HeavyGates.Marks(folder);

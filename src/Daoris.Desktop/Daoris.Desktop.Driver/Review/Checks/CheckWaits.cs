@@ -24,7 +24,7 @@ public static class CheckWaits
         {
             CheckStates.Reached => $"{who} {what} in your tree and it reached.",
             CheckStates.Stopped => $"{who} {what} in your tree and the run was stopped before it ended.",
-            _ => $"{who} {what} in your tree and it failed" + (state.Exit is { } exit ? $" (exit {exit})." : "."),
+            _ => $"{who} {what} in your tree and it failed" + (state.Ran is [.., var last] ? $" at `{last}`" : "") + (state.Exit is { } exit ? $" (exit {exit})." : "."),
         };
         return state.State == CheckStates.Reached || state.Tail is not { Length: > 0 } tail
             ? head
