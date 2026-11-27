@@ -395,8 +395,10 @@ import { fullReplayOf, replaySummary, sweptBy } from './merge-branch/full-set.mj
 import { reachLines, reachStatus } from './merge-branch/reach-report.mjs';
 import { againWhy, reportBreaches, runOne, settleMerge, verdictExtras, withBase } from './merge/flow.ts';
 import { briefGates, briefText, failsFast, markOfJudgement, markOfProbe, writeBrief } from './merge/red-brief.ts';
-import { MAIN_TREE, PREFLIGHT_BOUND_MINUTES, planLines, preflightFacts, preflightRun } from './merge/preflight.ts';
-import { fastPlan, scopedKind } from './merge/fast-plan.ts';
+import { MAIN_TREE } from './merge/preflight.ts';
+import { preflightVerb as preflightVerbOf } from './merge/preflight-verb.ts';
+import { scopedKind } from './merge/fast-plan.ts';
+import { firstGates, keepRun } from './merge/preflight-record.ts';
 import {
   flakeDecision, nodeTestDecision, nodeTestDirs, nodeTestRerunCommand, ownOutput, rerunCommand, short, testClass, testSummary, timedDecision, timedRerunCommand,
 } from './merge-branch/test-output.mjs';
@@ -5415,36 +5417,10 @@ function mainMarker(root, dir) {
   };
 }
 
-/** `--preflight [--base <ref>] [--bound <minutes>]`: the merge's fast plan for this worktree's branch, run here within its bound. */
-async function preflightVerb(root, options) {
-  const started = Date.now();
-  const facts = preflightFacts(root, options.base ?? MAIN, git);
-  for (const line of facts.lines) console.log(line);
-  const home = verdictsHome(root);
-  const plan = readPlan(root);
-  const choice = scopedChoice(home, root, { plan, base: facts.from, tip: facts.tip });
-  const set = fastPlan(choice.set, (name) => scopedKind(plan.find((gate) => gate.name === name)));
-  const dir = join(root, SCRATCH, `merge-${slug(facts.branch)}`);
-  clearLogs(dir);
-  const { gates } = scopedGates(home, root, plan, { ...choice, set }, dir);
-  const bound = options.bound ?? PREFLIGHT_BOUND_MINUTES;
-  const run = preflightRun({ branch: facts.branch, gates: gates.map((gate) => gate.name), set, boundMinutes: bound, started, holders: () => holdersSentence(START_HOME) });
-  for (const line of planLines(set, bound)) console.log(line);
-  const unhook = stopOnInterrupt(run.trees);
-  run.start();
-  let results;
-  try {
-    const hooks = run.hooks(machineAdmission(process.env, { home: START_HOME, patience: `the preflight gives up at its bound of ${bound} min` }));
-    results = await runRecorded(root, gates, dir, { keepGoing: true, oneAtATime: options.oneAtATime, branch: facts.branch, kind: 'preflight', byMemory: true, base: facts.from, changed: choice.changed, ...hooks });
-  } finally {
-    run.stop();
-    unhook();
-  }
-  const { lines, code, failed } = run.summary(results);
-  if (failed.length) await briefRed(root, failed, { dirs: [dir], title: `Red brief: the preflight of ${facts.branch}`, ran: `${count(failed.length, 'gate')} of ${results.length} failed on ${facts.branch} at ${facts.tip.slice(0, 7)}, judged against ${facts.base} at ${facts.baseTip.slice(0, 7)}.`, mark: mainMarker(root, dir) });
-  for (const line of lines) console.log(line);
-  return code;
-}
+/** `--preflight`: the verb is `merge/preflight-verb.ts`, handed what only this script holds. */
+const preflightVerb = (root, options) => preflightVerbOf(root, options, {
+  scopedChoice, scopedGates, runRecorded, briefRed, mainMarker, machineAdmission, stopOnInterrupt, clearLogs, holdersSentence, contentTree, startHome: START_HOME,
+});
 
 /** The open known red a failure's signature matches, with its expiry and where it is last seen (§5.2), or null. */
 function knownFor(home, failure) {

@@ -110,8 +110,12 @@ export function preflightRun({
   holders?: () => string | null; timers?: Timers; trees?: StepTrees;
 }) {
   const states = new Map<string, { at: At; since: number }>(gates.map((name) => [name, { at: 'queued', since: now() }]));
+  const waited = new Map<string, number>();
   const mark = (name: string, at: At) => {
-    if (states.has(name)) states.set(name, { at, since: now() });
+    const before = states.get(name);
+    if (!before) return;
+    if (before.at === 'admission' || before.at === 'starting') waited.set(name, (waited.get(name) ?? 0) + now() - before.since);
+    states.set(name, { at, since: now() });
   };
   const at = (wanted: At) => [...states].filter(([, state]) => state.at === wanted);
   const spans = (wanted: At) => at(wanted).map(([name, state]) => `${name} (${minutes(now() - state.since)})`).join(', ');
@@ -145,6 +149,7 @@ export function preflightRun({
   return {
     trees,
     line,
+    waits: (): Record<string, number> => Object.fromEntries(waited),
     hooks(admission: Admission | null) {
       const watched = admission && {
         ...admission,

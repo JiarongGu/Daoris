@@ -45,6 +45,8 @@
   "verifyBudget": {
     "_why": "This workspace's own rule (D349, VERIFY10), not a product rule and not canon: one task's verification (a builder's checks, a run's check, a merge's gates for one branch) takes under budgetMinutes of wall time, scoped to what its paths reach, the heavy tier after the landing. A full run needs a reason the tools check against the change: a path of widePaths (the gates and the test tools, the dependency files and lockfiles, the build files, the shared contracts, and what is tracked, its line endings and the file and git helpers every rehearsal imports: the lane table's every-gate rule reads this list, its one source, apart from the budget, and fails at load where it is missing), a reach of reachShare or more of what the run could leave out (the gates the lane table can skip at a merge, not those every merge runs or no rule names; the census's classes in the reached run), or a run whose kind is one (the run after a landing, a release). A verification past the budget is said in its summary with where its time went and filed in overruns, which the steward reads.",
     "budgetMinutes": 10,
+    "preflightFirst": ["censuses", "test-map", "code-map", "layers"],
+    "preflightFirstWhy": "A preflight (merge-branch --preflight, which Daoris runs itself when a session says done) starts these gates first, in this order: what a census holds a change to is judged before any test round, since a census red was the commonest hand-back failure.",
     "fullRunReasons": {
       "widePaths": [
         "daoris.gates.json", "daoris.lanes.json", "tools/test-sets.mjs", "tools/test-map.mjs", "tools/test-map/**",
