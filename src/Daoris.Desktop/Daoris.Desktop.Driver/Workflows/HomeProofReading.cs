@@ -11,24 +11,41 @@ internal sealed class HomeProofReading : IHomeProofReading
     public HomeProofReport Read(string home)
     {
         var problems = new List<string>();
-        var accounts = new SortedDictionary<string, IReadOnlyList<string>>(StringComparer.Ordinal);
-        foreach (var agent in HarnessAccountFolders.AgentFolders(home))
-        {
-            if (HarnessAccountFolders.Profiles(home, agent) is { Count: > 0 } found) accounts[agent] = found;
-        }
-
+        var accounts = Accounts(home);
         var sessions = Sessions(home, problems);
         var runs = Runs(home, problems);
         var strays = HomeStrays.Read(home).Paths.Select(stray => stray.Path).ToList();
         return new(accounts, sessions, runs, problems, strays);
     }
 
+    public IReadOnlyDictionary<string, IReadOnlyList<string>> Accounts(string home)
+    {
+        var accounts = new SortedDictionary<string, IReadOnlyList<string>>(StringComparer.Ordinal);
+        foreach (var agent in HarnessAccountFolders.AgentFolders(home))
+        {
+            if (HarnessAccountFolders.Profiles(home, agent) is { Count: > 0 } found) accounts[agent] = found;
+        }
+
+        return accounts;
+    }
+
+    public IReadOnlyList<string> Reads { get; } =
+    [
+        HomeEntry.AgentHomes.New[..HomeEntry.AgentHomes.New.LastIndexOf('/')],
+        HomeEntry.Sessions.New + "/*" + SessionRecord,
+        HomeEntry.DesktopDb.New,
+        HomeEntry.Workflows.New + "/*.json",
+        HomeEntry.Workflows.New + "/" + WorkplaceRunFiles.Runs + "/*.json",
+    ];
+
+    private const string SessionRecord = ".events.jsonl";
+
     private static int Sessions(string home, List<string> problems)
     {
         var folder = DaorisHome.Entry(home, HomeEntry.Sessions);
         if (!Directory.Exists(folder)) return 0;
         var events = new SessionEvents(folder);
-        const string suffix = ".events.jsonl";
+        const string suffix = SessionRecord;
         var count = 0;
         foreach (var path in Directory.GetFiles(folder, "*" + suffix).Order(StringComparer.Ordinal))
         {
