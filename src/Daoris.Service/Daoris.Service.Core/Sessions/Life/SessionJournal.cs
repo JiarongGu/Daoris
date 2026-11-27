@@ -58,8 +58,8 @@ public sealed class SessionJournal
             await using var command = _db.Command();
             command.CommandText = """
                 INSERT INTO session_facts (session, kind, witness, generation, holder, step, attempt, outcome, at)
-                VALUES ($session, $kind, $witness, $generation, $holder, $step, $attempt, $outcome, $at)
-                RETURNING position
+                VALUES ($session, $kind, $witness, $generation, $holder, $step, $attempt, $outcome, $at);
+                SELECT last_insert_rowid();
                 """;
             command.Parameters.AddWithValue("$session", fact.Session);
             command.Parameters.AddWithValue("$kind", fact.Kind.ToString());
