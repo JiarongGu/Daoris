@@ -123,16 +123,41 @@ public sealed class HomeProbeTests : IDisposable
     }
 
     [Fact]
-    public void A_problem_that_names_the_copy_s_path_is_the_homes_problem_all_the_same()
+    public void A_problem_that_names_the_copy_s_path_in_another_form_is_the_same_problem()
     {
-        var copy = Path.Combine(_install, "update", "staged", "probe", "ab12", "data");
+        var copy = Path.Combine(_install, "update", "probe", "ab12", "data");
+        var relative = Path.GetRelativePath(Environment.CurrentDirectory, copy);
 
         var novel = HomeProbe.Novel(
-            [$"workflow `a` does not read: cannot open {copy}{Path.DirectorySeparatorChar}a.json", $"session `s-2` does not read: {copy}", "run `q1` binds `ghost`"],
-            [$"workflow `a` does not read: cannot open {Home}{Path.DirectorySeparatorChar}a.json", $"session `s-2` does not read: {Home}"],
-            copy, Home);
+            [$"workflow `a` does not read: cannot open {copy.ToUpperInvariant()}{Path.DirectorySeparatorChar}a.json", "run `q1` binds `ghost`"],
+            [$"workflow `a` does not read: cannot open {copy}{Path.DirectorySeparatorChar}a.json"],
+            relative);
 
         Assert.Equal(["run `q1` binds `ghost`"], novel);
+    }
+
+    [Fact]
+    public void A_home_whose_check_seat_a_running_check_holds_is_copied_and_not_refused()
+    {
+        Account("claude-code", "acct-a");
+        Put("data/checks/broker.lock");
+
+        using (new FileStream(Path.Combine(Home, "checks", "broker.lock"), FileMode.Open, FileAccess.ReadWrite, FileShare.None))
+        {
+            Assert.Null(HomeProbe.Refused(_install, Home, "0.0.9", SameReader));
+        }
+    }
+
+    [Fact]
+    public void A_problem_only_the_copy_shows_is_read_alike_by_both_builds_and_no_refusal()
+    {
+        // Held from every reader: the copy stands it in, and the running build reads that stand-in as the staged build does.
+        Put("data/workflows/held.json", "{}");
+
+        using (new FileStream(Path.Combine(Home, "workflows", "held.json"), FileMode.Open, FileAccess.ReadWrite, FileShare.None))
+        {
+            Assert.Null(HomeProbe.Refused(_install, Home, "0.0.9", SameReader));
+        }
     }
 
     [Fact]

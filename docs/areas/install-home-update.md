@@ -234,16 +234,21 @@ Each type is in a file of its name; `docs/index/README.md` says where a seam, ve
     (from D139, D232, D233)
 47. The launcher writes no log. The next start says the outcome once (`update.installed`, `update.rolled-back`,
     `update.refused`), and every state carries `last` from the journal. Log lines name things and count them, never a path or
-    a command line. (from D94, D139)
+    a command line. The application's `update.refused` carries its sentence on one line, the install's and the home's paths said as
+    `<install>` and `<home>` (`UpdateRefusalWords`), so a refusal reads again from the log alone. (from D94, D139, HOMEPROBECOPY1)
 47a. A staged build starts clean on a copy of the home before it is swapped in (`HomeProbe`, the last of `UpdateRefusal.Of`'s checks, asked at the
-    close by the application's `InstallUpdater.Proof` and by `daoris update --now`, so both answer one sentence). The running build reads the home
+    close by the application's `InstallUpdater.Proof` and by `daoris update --now`, so both answer one sentence). The running build copies the home
+    into `update/probe/<id>/` (`HomeCopy`: the home's own folder to five levels with each file as it is, a file over 64 MB as an empty one and a
+    folder at the fifth level empty, since deeper lies a place's content, a check's work tree and its dependencies, never a record a start reads;
+    every other folder of the Daoris folder as names to five levels, empty, with no link followed; the source is read and never written). The
+    home is in use while it is copied, so a file its holder lets no one read (the check broker's seat while a check waits or runs, a build's
+    output) is an empty stand-in, one gone by the time it is read is left out, a read-only or hard-linked file is copied as its content with no
+    mark, and only the copy's own writes fail it. The running build then reads the copy
     (`HomeProof.Read`, over Workflows' `HomeProofReading` installed into Install's port: the agent accounts it lists, the sessions' records and runs' bindings it meets, each workflow's file and the runs that bind a
-    workflow the home does not hold, which are its `problems`, and the paths no entry names, its `strays`), copies it into `update/probe/<id>/` (the home's own folder whole, a file over 64 MB
-    as an empty one; every other folder of the Daoris folder as names to five levels, empty, with no link followed; the source is read and never
-    written), and has the staged build's own driver read the copy (`daoris home proof`, one line of JSON; routed before the lease and the machine log,
-    so it writes nothing). The swap is refused with `home` unless every account the running build lists is still listed and the staged build's report
-    holds no problem the running build does not report of the home too (`HomeProbe.Novel`: what the running build reads as broken breaks
-    nothing the staged one starts on); a build that gives no readable report (no driver, no such verb, past two minutes, a line without the report's fields) is refused as one that found the home amiss,
+    workflow the home does not hold, which are its `problems`, and the paths no entry names, its `strays`), and has the staged build's own driver read the same copy (`daoris home proof`, one line of JSON; routed before the lease and the machine log,
+    so it writes nothing). The swap is refused with `home` unless every account the running build lists of the copy is still listed and the staged build's report
+    holds no problem the running build does not report of the copy too (`HomeProbe.Novel`: both read one copy, so a stand-in or a name-only folder is read
+    alike and what differs is the builds); a build that gives no readable report (no driver, no such verb, past two minutes, a line without the report's fields) is refused as one that found the home amiss,
     a build older than the verb too, whichever way the version runs: waving through the unread build would let past the one the proof exists for. A path no entry
     names is said, never refused: the report lists it apart (`strays`), the start's log and `daoris home` list it, and the accounts a
     stray place hides are still caught by the account comparison (HOMEPROOF2, the row HOMEORPHAN1 first read it as a problem); the report's `accounts` and
@@ -252,7 +257,10 @@ Each type is in a file of its name; `docs/index/README.md` says where a seam, ve
     (its workflow not saved or unread) are records the product writes and are none. The proof runs off the caller's thread, since *Update now*'s SET would otherwise freeze the
     window for the copy and the staged build's reading; each folder outside the home's own is named in the copy within a budget of its own.
     A refusal closes nothing, this build keeps running and the sentence says why; it is kept as rule 40's is. The copy is removed when the proof ends,
-    and one whose proof no longer runs (a mark file beside it, held open by the proof) by the next. (from UPGRADEPROOF1, FIX-LOG 2026-11-20)
+    and one whose proof no longer runs (a mark file beside it, held open by the proof) by the next, a read-only mark in it cleared first. The probe
+    that judges an update is the running build's: 0.0.39's copies the home's own folder whole and fails on the first file it cannot read, so an
+    install running it is updated at a moment no check waits or runs (`HomeProbeAt0039`, a test copy of it, proves a newer build passes it then).
+    (from UPGRADEPROOF1, HOMEPROBECOPY1, FIX-LOG 2026-11-20)
 48. A build that confirms and fails later is not rolled back. A launcher refuses a `build.json` schema it does not read. (from D139)
 48a. Daoris publishes its own releases: GitHub releases of its public repository, each carrying `Daoris-<version>-win-x64.zip`, one staged build
     (the launcher, `app/`, `INSTALLED.md`, `build.json`), and `Daoris-<version>-win-x64.zip.sha256` beside it. `desktop-release.yml` makes them and runs only
@@ -339,8 +347,8 @@ Each type is in a file of its name; `docs/index/README.md` says where a seam, ve
   them. **When to update:** `Mod/Update/InstallUpdater.cs`, over the loop's work (`Mod/Loop/DriverLoop.cs`, `Work`), its plugin
   steps in flight counted by `Drv/Workflows/Nodes/PluginStepsInFlight.cs` through `NodeRuntime`. **The request:**
   `Drv/Install/InstallUpdate.cs`.
-- **A refusal to go back:** `Drv/Workflows/InstallRollback.cs`. **The proof on a copy of the home:** `Drv/Install/HomeProbe.cs` (the copy and the
-  comparison), `HomeProof.cs` (the report and its words) and `Workflows/HomeProofReading.cs` (what a build reads of a home: a new thing a start must still read goes here), the verb `home proof` in
+- **A refusal to go back:** `Drv/Workflows/InstallRollback.cs`. **The proof on a copy of the home:** `Drv/Install/HomeProbe.cs` (the
+  comparison), `HomeCopy.cs` (the copy and its removal), `UpdateRefusalWords.cs` (a refusal's logged sentence), `HomeProof.cs` (the report and its words) and `Workflows/HomeProofReading.cs` (what a build reads of a home: a new thing a start must still read goes here), the verb `home proof` in
   `HomePurgeCommand`.
 - **A changed stored shape:** the shape, its writer, its reader and its tests in one change, with no reader of the old shape
   left (rule 51).

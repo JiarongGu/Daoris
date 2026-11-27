@@ -590,7 +590,7 @@ public sealed class InstallUpdater(
             _drainSince = null;
         }
 
-        log.Warn("update.refused", ("build", staged?.Id), ("reason", problem.Code));
+        log.Warn("update.refused", ("build", staged?.Id), ("reason", problem.Code), ("sentence", UpdateRefusalWords.Logged(problem.Message, install, home)));
         return Publish(new UpdateState(UpdateStates.Refused, staged, mode, 0, 0, problem, Outcome(), Last()));
     }
 

@@ -287,6 +287,7 @@ public sealed class InstallUpdaterTests : Bridge
         await updater.LookAsync();
         var line = Logged("update.refused", "warn").Single();
         Assert.Equal("hash", line["reason"]!.GetValue<string>());
+        Assert.Equal(UpdateRefusalWords.Logged(refused.Problem!.Message, _install, DataHome), line["sentence"]?.GetValue<string>());
     }
 
     /// <summary>
