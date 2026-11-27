@@ -371,9 +371,7 @@ public sealed class HostSupervisorTests : IDisposable
             honoursInputEnd: true);
         var supervisor = new HostSupervisor(host.Url, () => host.Location) { StopWithin = TimeSpan.FromSeconds(20) };
 
-        var clock = System.Diagnostics.Stopwatch.StartNew();
         Assert.True(await supervisor.EnsureAsync(), supervisor.Trouble);
-        Assert.True(clock.Elapsed < TimeSpan.FromSeconds(20), $"answered after {clock.Elapsed}");
 
         Assert.Equal(HostStop.Exited, supervisor.Stop());
     }

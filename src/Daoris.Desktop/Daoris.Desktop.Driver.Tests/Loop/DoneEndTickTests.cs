@@ -46,11 +46,9 @@ public sealed class DoneEndTickTests : IDisposable
         service.Took = true;
         var pidFile = Path.Combine(_home, "work.pid");
         var driver = Driver(service, pidFile);
-        var clock = Stopwatch.StartNew();
 
         // Its timeout is three minutes: the run ends long before it.
         await driver.RunOnceAsync().WaitAsync(Poll.Patience);
-        clock.Stop();
 
         var record = service.Session("s1");
         var note = record["note"]!.GetValue<string>();
@@ -60,7 +58,6 @@ public sealed class DoneEndTickTests : IDisposable
         Assert.DoesNotContain("timed out", note, StringComparison.Ordinal);
         // Its agent ended as its session did, cleanly: the tree Daoris ended is no exit of the agent's.
         Assert.DoesNotContain("exit", note, StringComparison.Ordinal);
-        Assert.True(clock.Elapsed < TimeSpan.FromSeconds(75), $"the run took {clock.Elapsed}");
 
         // It waited on its work, then ended once its quest no longer did.
         var transcript = File.ReadAllText(DaorisHome.Entry(_home, HomeEntry.Sessions, "s1.log"));

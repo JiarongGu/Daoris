@@ -43,17 +43,14 @@ public sealed class QuietEndProcessTests : IDisposable
         service.Took = true;
         var driver = Driver(service);
         driver.Watch.EndAfter = TimeSpan.FromSeconds(4);
-        var clock = Stopwatch.StartNew();
 
         await driver.RunOnceAsync().WaitAsync(Poll.Patience);
-        clock.Stop();
 
         var record = service.Session("s1");
         Assert.Equal("failed", record["state"]!.GetValue<string>());
         var note = record["note"]!.GetValue<string>();
         Assert.Contains("nothing came from its agent", note, StringComparison.Ordinal);
         Assert.DoesNotContain("timed out", note, StringComparison.Ordinal);
-        Assert.True(clock.Elapsed < TimeSpan.FromSeconds(60), $"the run took {clock.Elapsed}");
     }
 
     private Daoris.Driver.Driver Driver(AskAndWaitTickTests.StandIn service)

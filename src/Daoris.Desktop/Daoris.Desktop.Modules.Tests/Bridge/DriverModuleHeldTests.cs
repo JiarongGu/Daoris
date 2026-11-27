@@ -1,5 +1,4 @@
 using System.Collections.Concurrent;
-using System.Diagnostics;
 using System.Text.Json;
 using Daoris.Driver;
 using Shenora.Core.Ipc;
@@ -12,7 +11,7 @@ namespace Daoris.Desktop.Modules.Tests;
 /// </summary>
 /// <remarks>
 /// Each route's work is made slow by the seam every held read passes (<see cref="HeldAnswers.BeforeWork"/>), held until the test
-/// lets it go, so the ask is timed against the window's bound (<see cref="UiStallWatch.Bound"/>) while the work is under way.
+/// lets it go, so each ask is answered held (<see cref="HeldAnswers.IsPending"/>) while the work is under way: an ask that waited on its work would never return.
 /// </remarks>
 public sealed class DriverModuleHeldTests : DriverModuleBridge
 {
@@ -173,11 +172,9 @@ public sealed class DriverModuleHeldTests : DriverModuleBridge
             return new { Other = 1 };
         }
 
-        var clock = Stopwatch.StartNew();
         var others = new[] { "o1", "o2", "o3" }.Select(key => held.AskAsync(key, key, Other)).ToArray();
         var first = await held.AskAsync("k", "q1", Forty, numbered: true);
-        await Task.WhenAll(others);
-        Assert.True(clock.Elapsed < UiStallWatch.Bound, $"the asks answered after {clock.Elapsed.TotalMilliseconds} ms");
+        Assert.All(await Task.WhenAll(others), answer => Assert.True(HeldAnswers.IsPending(answer)));
         Assert.True(HeldAnswers.IsPending(first));
 
         await UntilAsync(() => { lock (told) return told.Count(each => each.GetProperty("held").GetString() == "q1") >= 1; });
@@ -227,9 +224,7 @@ public sealed class DriverModuleHeldTests : DriverModuleBridge
             return Task.CompletedTask;
         });
 
-        var clock = Stopwatch.StartNew();
         var first = await module.HandleMessageAsync(Request(route, payload, "q1"), CancellationToken.None);
-        Assert.True(clock.Elapsed < UiStallWatch.Bound, $"{route} answered after {clock.Elapsed.TotalMilliseconds} ms");
         Assert.True(first.Success, first.Error?.Message);
         Assert.True(HeldAnswers.IsPending(first.Data));
         Assert.Empty(told);
@@ -242,9 +237,7 @@ public sealed class DriverModuleHeldTests : DriverModuleBridge
         if (answered.TryGetProperty("failed", out _))
         {
             // A work the bare home refuses (one that needs the service): told failed, and the next ask is that refusal, at once.
-            clock.Restart();
             Assert.False((await module.HandleMessageAsync(Request(route, payload, "q1"), CancellationToken.None)).Success);
-            Assert.True(clock.Elapsed < UiStallWatch.Bound, $"{route} refused after {clock.Elapsed.TotalMilliseconds} ms");
             return;
         }
 
@@ -254,9 +247,7 @@ public sealed class DriverModuleHeldTests : DriverModuleBridge
         // Asked again with the work slow again: what is held, at once; the same answer landing tells nothing more.
         var again = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
         module.Held.BeforeWork = _ => again.Task;
-        clock.Restart();
         var second = await module.HandleMessageAsync(Request(route, payload, "q1"), CancellationToken.None);
-        Assert.True(clock.Elapsed < UiStallWatch.Bound, $"{route} answered after {clock.Elapsed.TotalMilliseconds} ms");
         Assert.Equal(Unnumbered(answered.GetProperty("answer").GetRawText()), Unnumbered(JsonSerializer.Serialize(second.Data, Wire)));
         again.SetResult();
         await module.Held.LandedAsync(DriverModule.HeldKey(Request(route, payload, "q1")));

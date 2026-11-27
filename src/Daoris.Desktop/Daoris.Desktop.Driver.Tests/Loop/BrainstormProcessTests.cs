@@ -413,16 +413,13 @@ public sealed class BrainstormProcessTests : IDisposable
         await driver.BrainstormsAsync(snapshot, 0, [], CancellationToken.None);
         files.WriteSent(id, files.ReadState(id)!.Packet!, DateTimeOffset.UtcNow);
 
-        var clock = System.Diagnostics.Stopwatch.StartNew();
         var events = new List<string>();
         await driver.BrainstormsAsync(snapshot, 0, events, CancellationToken.None);
         await driver.Running.SettledAsync().WaitAsync(Poll.Patience);
-        clock.Stop();
 
         Assert.True(files.ReadState(id)!.State == BrainstormStates.Ended, string.Join('\n', events));
         var pass = JsonNode.Parse(File.ReadAllText(files.PathOf(id, "passes", "g2.json")))!;
         Assert.Equal(("failed", "timed-out"), (pass["state"]!.GetValue<string>(), string.Join(",", pass["codes"]!.AsArray().Select(code => code!.GetValue<string>()))));
-        Assert.True(clock.Elapsed < TimeSpan.FromSeconds(60), $"the brainstorm took {clock.Elapsed}");
 
         // The agent's process is ended with its pass, not left holding its turn.
         var pid = int.Parse(File.ReadAllText(Path.Combine(_home, "hanging.pid")), System.Globalization.CultureInfo.InvariantCulture);

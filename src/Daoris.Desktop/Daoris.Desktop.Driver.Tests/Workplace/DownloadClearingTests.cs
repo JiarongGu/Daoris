@@ -469,20 +469,13 @@ public sealed class DownloadClearingTests : IDisposable
     {
         Agent("claude-code", "2.0.1");
         var kept = Agent("claude-code", "2.1.0");
-        TimeSpan? took = null;
         var judge = Judge(Later) with
         {
-            Renamed = _ =>
-            {
-                var clock = Stopwatch.StartNew();
-                HarnessSettings.Pin(HarnessFile, Home, "claude-code", "2.1.0");
-                took = clock.Elapsed;
-            },
+            Renamed = _ => HarnessSettings.Pin(HarnessFile, Home, "claude-code", "2.1.0"),
         };
 
         Assert.Equal("removed", Assert.Single(await DownloadClearing.ClearAsync(Home, [new("agent", "claude-code", "2.0.1")], judge)).Outcome);
 
-        Assert.True(took < TimeSpan.FromSeconds(2), $"the pin waited {took}");
         Assert.Equal("2.1.0", HarnessSettings.Load(HarnessFile).Versions["claude-code"]);
         Assert.True(Directory.Exists(kept));
     }

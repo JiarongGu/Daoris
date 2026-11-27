@@ -196,7 +196,8 @@ agent's part (the sender marks, the wait counted once, a line's channel, the ste
     the commit it asked, and a done one settles nothing, since only the pin says a move landed. Nothing is written into a consumer. A pin-move quest its session declines is red: the pin stays, one break quest
     (`…/break/<n>`) goes from the consumer to the producer with the decline's reason as the failing case, and the edge's hold-back is read
     from its quests and the consumer's pin, aged from its first red and ended by a pin at the held commit or the line's tip, however it moved. Past the edge's `lag` bound (`edges` of the
-    family file, `3d` or `12h`) one `family-lag` notice reaches *Done and failed*; an edge with no bound tells no one. No word of it names
+    family file, `3d` or `12h`) one `family-lag` notice reaches *Done and failed*; an edge with no bound tells no one. An edge whose producer's line stands at the commit an open ask's consumer part carries its pin at (workflows-review-landing 39c) is
+    asked no quest while that ask is younger than the edge's `lag` bound; a newer landing, and an older ask, are asked. No word of it names
     a kind of repository. (from D364)
 
 **Brainstorms and meetings**
@@ -302,7 +303,7 @@ agent's part (the sender marks, the wait counted once, a line's channel, the ste
 **Tests that pin it.** Driver: `ExchangesTests`, `ChannelReachTests`, `ChannelCommandTests`, `AnswersAlone*Tests`, the
 `Helper*Tests`, `Partner*Tests` and `Piece*Tests` (some in the git half), `RoutingStandingTests`, the `AtWork*Tests`,
 `Brainstorm*Tests`, `Meeting*Tests`, `StewardCommandTests`, `ChannelMemberVerbTests`, `PinMovesTests`, `FamilyDeclarationTests`,
-`FamilyFanoutTests`, `FamilyNoticesTests`. Service: the `Channel*Tests`,
+`FamilyFanoutTests`, `FamilyNoticesTests`, `AskPinsTests`, `AskPinsGitTests`. Service: the `Channel*Tests`,
 `SendersTests`, `SolicitedAnswersTests`, `QuestExchangeTests`, `QuestReviseWordsTests`, the desks' tests, `McpChannelToolTests`, `ToolClassesTests`.
 Modules: `AttentionStateSliceTests`, `StewardDeskTests`, `DriverModuleChannelTests`, `ChannelJoinPipeTests`. Web: beside each
 part under `Web/work/`, `Web/asks/` and `Web/notifications/`.

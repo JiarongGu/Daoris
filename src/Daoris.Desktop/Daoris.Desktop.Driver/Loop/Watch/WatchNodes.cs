@@ -359,10 +359,11 @@ internal sealed class WatchNodes
         // Why the work's attribution is not read travels with the units, so a run's branch is never
         // handed to Current on a link the outage dropped.
         var asks = await AskRunReads.ReadAsync(home, roots, DriverConfig.Load(DriverConfig.ResolvePath(home)), token).ConfigureAwait(false);
+        var parts = await PartsReports.ReadAsync(new IntegrationStore(home), new ServiceTrainPlans(service), token, asks.Asks).ConfigureAwait(false);
         return new NodeUnitsRead(units, roots)
         {
             Tips = await QuestClosing.TipsAsync(units, roots, token).ConfigureAwait(false), Unread = unlinked, AskBranches = asks.Branches,
-            Parts = await PartsReports.ReadAsync(new IntegrationStore(home), new ServiceTrainPlans(service), token, asks.Asks).ConfigureAwait(false),
+            Parts = await AskPinning.WithWaitsAsync(registry, parts, asks.Runs, new AskPinDoors(), token).ConfigureAwait(false),
         };
     }
 

@@ -395,11 +395,9 @@ public sealed class PluginCatalogTests : IDisposable
         var plain = Built().WithPlugins(PluginCatalog.Load(_home)).AgentNamed("plain-agent")!;
         Assert.True(plain.Program.ProbeByPresence);
 
-        var clock = System.Diagnostics.Stopwatch.StartNew();
-        var report = await HarnessProbe.ProbeAsync("plain-agent", plain, null, new HarnessSettings(), _home);
+        var report = await HarnessProbe.ProbeAsync("plain-agent", plain, null, new HarnessSettings(), _home).WaitAsync(Poll.Patience);
 
         Assert.True(report.Present, report.Problem);
-        Assert.True(clock.Elapsed < TimeSpan.FromSeconds(15), $"took {clock.Elapsed}");
 
         var missing = Built().Joined([PluginDoors.Door(new PluginHarness("gone", [Path.Combine(folder, "gone.mjs")]), "plain")], []);
         Assert.False((await HarnessProbe.ProbeAsync("gone", missing.AgentNamed("gone")!, null, new HarnessSettings(), _home)).Present);

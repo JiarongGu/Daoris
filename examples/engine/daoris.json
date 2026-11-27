@@ -1,6 +1,6 @@
 {
   "source": "daoris@0.0.1",
-  "packs": [],
+  "packs": ["family"],
   "target": ".claude",
   "coreBudget": {
     "words": 4500,
