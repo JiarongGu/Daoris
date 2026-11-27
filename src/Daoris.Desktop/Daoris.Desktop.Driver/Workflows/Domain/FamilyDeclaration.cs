@@ -134,7 +134,7 @@ public static partial class FamilyLag
     private static partial System.Text.RegularExpressions.Regex Shape();
 }
 
-/// <summary>A consumer's <c>daoris.family.lock</c> as the driver reads it: the commit it pins of each producer.</summary>
+/// <summary>A consumer's <c>daoris.family.lock</c> as the driver reads and writes it: the commit it pins of each producer.</summary>
 public static class FamilyLock
 {
     /// <summary>The consumer's lock file's name at its root.</summary>
@@ -143,17 +143,26 @@ public static class FamilyLock
     /// <summary>The commit pinned of each producer, by the producer's name in lower case; null where the file is not a lock.</summary>
     public static IReadOnlyDictionary<string, string>? Read(string text)
     {
+        if (Entries(text) is not { } entries) return null;
+        var pins = new Dictionary<string, string>(StringComparer.Ordinal);
+        foreach (var (producer, commit) in entries) pins.TryAdd(producer.ToLowerInvariant(), commit);
+        return pins;
+    }
+
+    /// <summary>Each pin in the order the file writes it, the producer's name as written; null where the file is not a lock.</summary>
+    public static IReadOnlyList<(string Producer, string Commit)>? Entries(string text)
+    {
         try
         {
             using var document = JsonDocument.Parse(text);
             if (document.RootElement.ValueKind != JsonValueKind.Object || !document.RootElement.TryGetProperty("pins", out var listed) || listed.ValueKind != JsonValueKind.Array) return null;
-            var pins = new Dictionary<string, string>(StringComparer.Ordinal);
+            var pins = new List<(string, string)>();
             foreach (var pin in listed.EnumerateArray())
             {
                 if (pin.ValueKind != JsonValueKind.Object || !pin.TryGetProperty("producer", out var producer) || !pin.TryGetProperty("commit", out var commit)
                     || producer.ValueKind != JsonValueKind.String || commit.ValueKind != JsonValueKind.String
                     || string.IsNullOrWhiteSpace(producer.GetString()) || string.IsNullOrWhiteSpace(commit.GetString())) return null;
-                pins.TryAdd(producer.GetString()!.Trim().ToLowerInvariant(), commit.GetString()!.Trim());
+                pins.Add((producer.GetString()!.Trim(), commit.GetString()!.Trim()));
             }
 
             return pins;
@@ -162,5 +171,32 @@ public static class FamilyLock
         {
             return null;
         }
+    }
+
+    /// <summary>The lock's text with <paramref name="producer"/> pinned at <paramref name="commit"/>, in the shape the doctrine tool writes it.</summary>
+    public static string With(IReadOnlyList<(string Producer, string Commit)> pins, string producer, string commit)
+    {
+        var next = pins.ToList();
+        var at = next.FindIndex(pin => string.Equals(pin.Producer, producer, StringComparison.OrdinalIgnoreCase));
+        if (at < 0) next.Add((producer, commit));
+        else next[at] = (next[at].Producer, commit);
+        using var stream = new MemoryStream();
+        using (var writer = new Utf8JsonWriter(stream, new JsonWriterOptions { Indented = true, NewLine = "\n" }))
+        {
+            writer.WriteStartObject();
+            writer.WriteStartArray("pins");
+            foreach (var (name, pinned) in next)
+            {
+                writer.WriteStartObject();
+                writer.WriteString("producer", name);
+                writer.WriteString("commit", pinned);
+                writer.WriteEndObject();
+            }
+
+            writer.WriteEndArray();
+            writer.WriteEndObject();
+        }
+
+        return System.Text.Encoding.UTF8.GetString(stream.ToArray()) + "\n";
     }
 }

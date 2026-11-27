@@ -117,7 +117,12 @@ public sealed class InstallUpdater(
     private DateTimeOffset? _drainSince;
     private bool _deferred;
     private bool _applying;
+    private UpdateRequest? _applyingAsked;
+    private DateTimeOffset? _closingSince;
     private Task? _loop;
+
+    /// <summary>How long the application waits for its own close: the launcher waits three minutes, so one not taken by then is not coming.</summary>
+    public static readonly TimeSpan CloseBound = TimeSpan.FromMinutes(5);
 
     /// <summary>How often the loop looks when nothing pokes it.</summary>
     public TimeSpan Pace { get; init; } = TimeSpan.FromSeconds(2);
@@ -232,12 +237,27 @@ public sealed class InstallUpdater(
     {
         if (install is null) return Publish(new UpdateState(UpdateStates.None, null, null, 0, 0, null, Outcome(), Last()));
 
+        bool holding;
+        DateTimeOffset? closingSince;
+        UpdateRequest? appliedFor;
         lock (_gate)
         {
-            // Still here after asking: the close did not take. Once the launcher, finding this application running, has
-            // moved the build aside, there is nothing left to drain for, and starts are held no longer.
-            if (_applying && StagedBuild.IsStaged(install)) return _state;
-            _applying = false;
+            holding = _applying && StagedBuild.IsStaged(install);
+            closingSince = _closingSince;
+            appliedFor = _applyingAsked;
+        }
+
+        if (holding)
+        {
+            // Still here after asking: the close did not take. Held no longer once the launcher has moved the build aside, the person
+            // says another word, or the close has had its bound.
+            if (InstallUpdate.Read(home) is { } word && word != appliedFor) lock (_gate) _applying = false;
+            else if (closingSince is { } closing && Now - closing >= CloseBound) return GivenUp(closing, appliedFor);
+            else return State;
+        }
+        else
+        {
+            lock (_gate) _applying = false;
         }
 
         // The build a finished swap left behind: the launcher cannot delete its own running launcher inside it.
@@ -444,6 +464,18 @@ public sealed class InstallUpdater(
         _poke.Dispose();
     }
 
+    /// <summary>The close did not come within <see cref="CloseBound"/>: the presses go on, and the update is refused for it.</summary>
+    private UpdateState GivenUp(DateTimeOffset closingSince, UpdateRequest? asked)
+    {
+        var manifest = StagedBuild.Read(install!, out var unread);
+        var id = manifest?.Id ?? $"unread:{unread?.Code}";
+        var staged = manifest is null ? null : new UpdateBuild(manifest.Id, manifest.Version, manifest.Commit, manifest.At);
+        lock (_gate) _applying = false;
+        var minutes = (int)Math.Round((Now - closingSince).TotalMinutes);
+        return Refuse(id, staged, null, null, new UpdateProblem(
+            "close", $"the application did not close for the update within {minutes} minutes, so it stays open and nothing was replaced."));
+    }
+
     private async Task<UpdateState> ApplyAsync(string id, UpdateBuild? staged, string mode, UpdateRequest? asked, UpdateWork now, string by)
     {
         lock (_gate)
@@ -452,6 +484,8 @@ public sealed class InstallUpdater(
             if (_applying) return _state;
             // The presses are held from here (Applying), before the build is checked and the work read again.
             _applying = true;
+            _applyingAsked = asked;
+            _closingSince = null;
         }
 
         UpdateProblem? refused = null;
@@ -480,6 +514,13 @@ public sealed class InstallUpdater(
         {
             lock (_gate) _applying = false;
             return Refuse(id, staged, mode, asked, refused);
+        }
+
+        // The check takes a while: a word said meanwhile is the person's latest, so this close is withdrawn.
+        if (InstallUpdate.Read(home) is { } said && said != asked)
+        {
+            lock (_gate) _applying = false;
+            return await LookAsync().ConfigureAwait(false);
         }
 
         double waited;
@@ -523,8 +564,19 @@ public sealed class InstallUpdater(
         // Said and done with: a word that outlived its build would hold for the next one (InstallUpdate.ModeFor).
         InstallUpdate.Clear(home);
         log.StopBecause(StopReasons.Update, ("build", id), ("by", by));
-        ClosingForUpdate?.Invoke(id);
-        close();
+        lock (_gate) _closingSince = Now;
+        try
+        {
+            ClosingForUpdate?.Invoke(id);
+            close();
+        }
+        catch (Exception error) when (error is IOException or UnauthorizedAccessException or InvalidOperationException or ObjectDisposedException)
+        {
+            // A close that threw closes nothing: the presses go on, said as a build refused for it.
+            lock (_gate) _applying = false;
+            return Refuse(id, staged, mode, null, new UpdateProblem("close", "the application could not close for the update, so it stays open and nothing was replaced."));
+        }
+
         return applying;
     }
 

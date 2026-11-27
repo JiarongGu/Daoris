@@ -1,0 +1,5 @@
+{
+  "name": "family",
+  "apiVersion": 1,
+  "description": "A product of several repositories: each consumer pins one landed commit of each producer, a pin move is a change of its own, and shared code moves in three changes. Take it where this repository uses, or is used by, another of the same product."
+}

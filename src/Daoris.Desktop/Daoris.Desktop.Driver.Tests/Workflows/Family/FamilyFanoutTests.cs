@@ -81,6 +81,33 @@ public sealed class FamilyFanoutTests : IDisposable
     }
 
     [Fact]
+    public async Task A_commit_an_open_asks_consumer_part_lands_with_its_pin_is_asked_of_no_quest_and_a_newer_one_is()
+    {
+        var registry = Family(pin: A);
+        var carried = new Dictionary<PinEdge, (string Commit, DateTimeOffset Since)> { [new PinEdge("web", "core")] = (B, T0) };
+        Func<PinEdge, (string Commit, DateTimeOffset Since)?> open = edge => carried.TryGetValue(edge, out var each) ? each : null;
+
+        await FamilyFanout.RunAsync(registry, [], _doors, Tips(B), Locks, T0.AddDays(1), default, open);
+        Assert.Empty(_doors.Published);
+
+        await FamilyFanout.RunAsync(registry, [], _doors, Tips(C), Locks, T0.AddDays(1), default, open);
+        Assert.Contains(C, Assert.Single(_doors.Published).Body);
+    }
+
+    [Fact]
+    public async Task An_open_ask_that_carries_the_move_past_the_edges_lag_bound_no_longer_holds_its_quest_back()
+    {
+        var registry = Family(pin: A);
+        (string Commit, DateTimeOffset Since)? open = (B, T0);
+
+        await FamilyFanout.RunAsync(registry, [], _doors, Tips(B), Locks, T0.AddDays(3), default, _ => open);
+        Assert.Empty(_doors.Published);
+
+        await FamilyFanout.RunAsync(registry, [], _doors, Tips(B), Locks, T0.AddDays(3).AddHours(1), default, _ => open);
+        Assert.Contains(B, Assert.Single(_doors.Published).Body);
+    }
+
+    [Fact]
     public async Task A_second_landing_retargets_that_quest_and_opens_no_other()
     {
         var registry = Family(pin: A);

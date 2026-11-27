@@ -58,7 +58,7 @@ internal static class ContentProofMemo
     /// <summary>Forgets what a process kept of <paramref name="home"/>, so the next ask reads the file: the tests' restart.</summary>
     internal static void Restart(string home) => Homes.TryRemove(System.IO.Path.GetFullPath(home), out _);
 
-    private static Kept Of(string home) => Homes.GetOrAdd(System.IO.Path.GetFullPath(home), full => new Kept(System.IO.Path.Combine(full, "memo", "content-proofs.json")));
+    private static Kept Of(string home) => Homes.GetOrAdd(System.IO.Path.GetFullPath(home), full => new Kept(DaorisHome.Entry(full, HomeEntry.Memo, "content-proofs.json")));
 
     private sealed class Kept
     {

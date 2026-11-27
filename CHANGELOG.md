@@ -5,6 +5,13 @@ with the version and date at release.
 
 ## Unreleased
 
+- An update is no longer refused for a path the home's table lacks. The table now names the memo folder (`data/memo`) and a session's
+  start record (`run/sessions/*.agent`), a path still unnamed is said (the start's log, `daoris home`, the proof's `strays`) and never
+  refuses, and a build is refused for a finding only where it would break the new build: an unreadable record or binding, a missing
+  bound workflow, an account the new build no longer lists, and not one the running build reports of the home too. `daoris update` of a
+  build asked for now says a refusal and its words; a close that does not take within five minutes is given up, and a cancel said
+  meanwhile is read at once, so the desktop takes asks again instead of answering "Daoris is updating".
+- An ask across repositories of one family lands its consumer part with the pin moved: once the consumer's own parts are on its ask branch and a repository it uses, which the ask gave a part, has landed, the consumer's branch takes its pin of that repository as a commit of its own, naming the commit that part landed on its line, before the ask's check and review; the ask's `parts` step says it waits for the pin, and a family's pin-move quest is no longer asked for a commit an open ask is landing.
 - An ask or a quest can be given a class, urgent, high, normal or low, with `daoris priority <ask|quest> <class> --why "…"`, an urgent
   one with an end (`--until`, else a day) and at most two in a workspace at once; each change is kept on this machine with its why and
   who set it, and the id alone says the class standing. Checks waiting for the machine's check slots now go by their quest's class

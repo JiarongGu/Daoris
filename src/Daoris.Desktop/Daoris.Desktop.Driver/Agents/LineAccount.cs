@@ -352,7 +352,7 @@ public static class LineAccount
     private static LineAnswer Beyond(LineOwn own, NextHold held, bool notOffered, LineAsk ask, Func<LineAsk, HarnessSelection> walk)
     {
         var walked = walk(ask);
-        if (walked.Allowed) return new LineAnswer.Elsewhere(walked, held, notOffered, Passed: ask.Named);
+        if (walked.Allowed) return new LineAnswer.Elsewhere(walked, held, notOffered, Passed: ask.Named, Switched: held == NextHold.Off);
 
         return walked.Cooling is { } soonest
             ? new LineAnswer.Wait(soonest, [soonest], ResetSet.Walk, held, walked, NotOffered: notOffered)

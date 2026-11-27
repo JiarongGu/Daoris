@@ -1,7 +1,7 @@
 {
   "version": 1,
   "canonVersion": "0.0.1",
-  "canonDigest": "dfb53d758349eb57a734384a0d667c624ef86b57895dca1fc6880a5697e2a8a2",
+  "canonDigest": "be71acf5817e2d95ae0cb87cda42f1ec7dc577995d217ddefe7658e3415012cc",
   "source": "daoris@0.0.1",
   "entries": [
     {
@@ -136,6 +136,14 @@
       "target": "rules/every-session.md",
       "canonVersion": "0.0.1",
       "sha256": "0d4f35cd59261504d0ba811d21287b428460c8c82d3e61784ba22ea5cd38bcd6",
+      "in": "AGENTS.md"
+    },
+    {
+      "pack": "family",
+      "source": "packs/family/rules/family-pins.md",
+      "target": "rules/family-pins.md",
+      "canonVersion": "0.0.1",
+      "sha256": "41495468cae17663c935bb5d83c76d90a8fab51e3c51bb5c2c3e71d75d58def9",
       "in": "AGENTS.md"
     },
     {
