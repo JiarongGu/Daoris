@@ -17,7 +17,7 @@ public sealed class OlderStoreTests : IDisposable
 
     public void Dispose()
     {
-        SqliteConnection.ClearAllPools();
+        SqlitePools.Release(Database);
         if (Directory.Exists(_root)) Directory.Delete(_root, recursive: true);
     }
 
@@ -41,7 +41,7 @@ public sealed class OlderStoreTests : IDisposable
         Assert.Contains("sessions.door", refused.Missing);
         Assert.Contains(Database, refused.Message);
         Assert.Contains("purge the home's history or start a fresh home", refused.Message);
-        SqliteConnection.ClearAllPools();
+        SqlitePools.Release(Database);
         Assert.Equal(before, await File.ReadAllBytesAsync(Database));
     }
 
