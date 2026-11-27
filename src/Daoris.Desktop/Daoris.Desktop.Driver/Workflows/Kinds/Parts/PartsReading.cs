@@ -13,10 +13,10 @@ public sealed record PartsReport(string Ask, int Revision, IReadOnlyList<string>
     public IReadOnlyDictionary<string, IReadOnlyList<PartWait>> Waits { get; init; } = new Dictionary<string, IReadOnlyList<PartWait>>();
 
     /// <summary>The producers each repository's part of the ask still waits on for its pin (<see cref="AskPinning.WaitsAsync"/>): a consumer lands with its pin moved.</summary>
-    public IReadOnlyDictionary<string, IReadOnlyList<string>> PinWaits { get; init; } = new Dictionary<string, IReadOnlyList<string>>();
+    public IReadOnlyDictionary<string, IReadOnlyList<PinWait>> PinWaits { get; init; } = new Dictionary<string, IReadOnlyList<PinWait>>();
 
     /// <summary>The producers the repository this report is for waits on for its pin, as <see cref="For"/> reads them from <see cref="PinWaits"/>.</summary>
-    public IReadOnlyList<string> PinsWaiting { get; init; } = [];
+    public IReadOnlyList<PinWait> PinsWaiting { get; init; } = [];
 
     /// <summary>One repository's delivery waits for its parts, and for any the plan gives to none, which land nowhere yet, and for its pins.</summary>
     public PartsReport For(string repository) =>
@@ -73,6 +73,13 @@ public static class PartsReading
     /// <summary>Where the integration's record is named in a reach's evidence.</summary>
     public const string Record = "integration";
 
+    private static string PinWords(PinWait wait) => wait.State switch
+    {
+        AskPinStates.Waiting => $"waits for the ask's part in {wait.Producer} to land on its line, to pin its commit",
+        AskPinStates.Unreadable => $"cannot move its pin of {wait.Producer}: its lock on the ask's branch is not a lock a pin can be moved in, so a person fixes it",
+        _ => $"waits for its pin of {wait.Producer} to be moved to the commit the ask's part there landed on its line",
+    };
+
     public static NodeObservation Observe(NodeReading reading)
     {
         if (NodeObserving.NotBound(reading) is { } refused) return refused;
@@ -86,7 +93,7 @@ public static class PartsReading
 
         if (report.PinsWaiting.Count > 0)
         {
-            return NodeObserving.Seen(reading, null, $"waits for its pin of {string.Join(", ", report.PinsWaiting)} to name the commit the ask's part there landed on its line");
+            return NodeObserving.Seen(reading, null, string.Join("; ", report.PinsWaiting.Select(PinWords)));
         }
 
         return NodeObserving.Seen(reading, NodeStates.Reached, $"every part of ask #{report.Ask}'s plan (revision {report.Revision}) landed on its branch") with

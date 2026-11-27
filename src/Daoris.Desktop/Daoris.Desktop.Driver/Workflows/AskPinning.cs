@@ -1,5 +1,8 @@
 namespace Daoris.Driver;
 
+/// <summary>What one look's pinning did: the lines it said, and the commit each edge's open ask carries its pin at with the time that ask began.</summary>
+public sealed record AskPinRound(IReadOnlyList<string> Said, IReadOnlyDictionary<PinEdge, (string Commit, DateTimeOffset Since)> Carried);
+
 /// <summary>
 /// An ask across repositories lands its consumer part with the pin moved to the commit the producer's part landed. Once every part the ask gives
 /// a consumer's repository is on its ask branch, and a producer the plan gives a part has landed on its line, the consumer's ask branch takes the pin
@@ -8,42 +11,28 @@ namespace Daoris.Driver;
 /// </summary>
 public static class AskPinning
 {
-    /// <summary>The pins moved onto the ask branches of the open runs whose own parts are all landed: the lines the move said.</summary>
-    public static async Task<IReadOnlyList<string>> RunAsync(
+    /// <summary>The pins moved onto the ask branches of the open runs whose own parts are all landed, and what each open run carries; each run's pins are read once.</summary>
+    public static async Task<AskPinRound> RunAsync(
         IReadOnlyList<RepoView> registry, IReadOnlyDictionary<string, PartsReport> reports, IEnumerable<AskRunOf> runs, IAskPinDoors doors, CancellationToken ct)
     {
         var said = new List<string>();
+        var carried = new Dictionary<PinEdge, (string Commit, DateTimeOffset Since)>();
         foreach (var run in runs)
         {
-            if (!reports.TryGetValue(run.Ask, out var report) || !report.For(run.Repository).Reached) continue;
+            if (!reports.TryGetValue(run.Ask, out var report)) continue;
             var row = registry.FirstOrDefault(each => each.Root is { Length: > 0 } && FamilyFanout.Same(each.Repository, run.Repository));
             if (row is null) continue;
+            var reached = report.For(run.Repository).Reached;
             foreach (var pin in await AskPins.ReadAsync(registry, run.Repository, run.Ask, report.Repositories.Values, doors, ct).ConfigureAwait(false))
             {
-                if (pin.State != AskPinStates.Owed) continue;
+                if (pin.Landed is not null && (!carried.TryGetValue(pin.Edge, out var held) || run.Since < held.Since)) carried[pin.Edge] = (pin.Landed, run.Since);
+                if (!reached || pin.State != AskPinStates.Owed) continue;
                 var moved = await doors.WriteAsync(row, run.Ask, pin.Edge.Producer, pin.Landed!, ct).ConfigureAwait(false);
                 said.Add($"family  ask #{run.Ask}: {moved.Said}");
             }
         }
 
-        return said;
-    }
-
-    /// <summary>The commit each open run's consumer part lands its pin at, by edge: what the producer's part landed as, whether or not it is pinned yet.</summary>
-    public static async Task<IReadOnlyDictionary<PinEdge, string>> CarriedAsync(
-        IReadOnlyList<RepoView> registry, IReadOnlyDictionary<string, PartsReport> reports, IEnumerable<AskRunOf> runs, IAskPinDoors doors, CancellationToken ct)
-    {
-        var carried = new Dictionary<PinEdge, string>();
-        foreach (var run in runs)
-        {
-            if (!reports.TryGetValue(run.Ask, out var report)) continue;
-            foreach (var pin in await AskPins.ReadAsync(registry, run.Repository, run.Ask, report.Repositories.Values, doors, ct).ConfigureAwait(false))
-            {
-                if (pin.Landed is not null) carried[pin.Edge] = pin.Landed;
-            }
-        }
-
-        return carried;
+        return new AskPinRound(said, carried);
     }
 
     /// <summary>The reports with the pins each ask's runs still wait on set, for the runs' <c>parts</c> to read; unchanged where no family stands or no run waits.</summary>
@@ -55,21 +44,21 @@ public static class AskPinning
         return reports.ToDictionary(each => each.Key, each => waits.TryGetValue(each.Key, out var held) ? each.Value with { PinWaits = held } : each.Value, StringComparer.Ordinal);
     }
 
-    /// <summary>The producers each open run's repository still waits on for its pin, by ask and then repository, for the run's <c>parts</c> to say.</summary>
-    public static async Task<IReadOnlyDictionary<string, IReadOnlyDictionary<string, IReadOnlyList<string>>>> WaitsAsync(
+    /// <summary>The pins each open run's repository still waits on, with why, by ask and then repository, for the run's <c>parts</c> to say.</summary>
+    public static async Task<IReadOnlyDictionary<string, IReadOnlyDictionary<string, IReadOnlyList<PinWait>>>> WaitsAsync(
         IReadOnlyList<RepoView> registry, IReadOnlyDictionary<string, PartsReport> reports, IEnumerable<AskRunOf> runs, IAskPinDoors doors, CancellationToken ct)
     {
-        var waits = new Dictionary<string, Dictionary<string, IReadOnlyList<string>>>(StringComparer.Ordinal);
+        var waits = new Dictionary<string, Dictionary<string, IReadOnlyList<PinWait>>>(StringComparer.Ordinal);
         foreach (var run in runs)
         {
             if (!reports.TryGetValue(run.Ask, out var report)) continue;
             var holding = (await AskPins.ReadAsync(registry, run.Repository, run.Ask, report.Repositories.Values, doors, ct).ConfigureAwait(false))
-                .Where(pin => pin.Holds).Select(pin => pin.Edge.Producer).ToList();
+                .Where(pin => pin.Holds).Select(pin => new PinWait(pin.Edge.Producer, pin.State)).ToList();
             if (holding.Count == 0) continue;
-            if (!waits.TryGetValue(run.Ask, out var ofAsk)) waits[run.Ask] = ofAsk = new Dictionary<string, IReadOnlyList<string>>(StringComparer.OrdinalIgnoreCase);
+            if (!waits.TryGetValue(run.Ask, out var ofAsk)) waits[run.Ask] = ofAsk = new Dictionary<string, IReadOnlyList<PinWait>>(StringComparer.OrdinalIgnoreCase);
             ofAsk[run.Repository] = holding;
         }
 
-        return waits.ToDictionary(each => each.Key, each => (IReadOnlyDictionary<string, IReadOnlyList<string>>)each.Value, StringComparer.Ordinal);
+        return waits.ToDictionary(each => each.Key, each => (IReadOnlyDictionary<string, IReadOnlyList<PinWait>>)each.Value, StringComparer.Ordinal);
     }
 }

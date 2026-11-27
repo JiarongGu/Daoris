@@ -1,7 +1,7 @@
 namespace Daoris.Driver;
 
-/// <summary>The ask run of a repository an ask's plan gives a part to: its ask and its repository.</summary>
-public sealed record AskRunOf(string Ask, string Repository);
+/// <summary>A pin the consumer's part of an ask still waits on: the producer, and why.</summary>
+public sealed record PinWait(string Producer, AskPinStates State);
 
 /// <summary>Where a consumer's pin of a producer stands for one ask.</summary>
 public enum AskPinStates

@@ -54,9 +54,9 @@ public static class TrainPins
         var (made, tree, treeErr) = await WorkingTree.GitAsync(root, ["mktree", "-z"], string.Join('\0', entries) + "\0", ct).ConfigureAwait(false);
         if (made != 0) return new(TrainPinKinds.Unread, $"git could not make the tree of the pin ({ContentHolds.Said(treeErr)}): it is asked again at the next look.");
 
-        var words = $"Move the pin of {producer} to {Short(commit)}\n\nThe commit {commit} is where {producer}'s part of this ask landed on its line.";
+        var words = $"chore(pin): move the pin of {producer} to {Short(commit)}\n\nThe commit {commit} is where {producer}'s part of this ask landed on its line.";
         var (committed, moved, commitErr) = await WorkingTree.GitAsync(
-            root, ["-c", "user.name=Daoris", "-c", "user.email=daoris@localhost", "commit-tree", tree.Trim(), "-p", tip, "-m", words], ct).ConfigureAwait(false);
+            root, ["-c", "user.name=Daoris", "-c", "user.email=daoris@localhost", "-c", "commit.gpgsign=false", "commit-tree", tree.Trim(), "-p", tip, "-m", words], ct).ConfigureAwait(false);
         if (committed != 0) return new(TrainPinKinds.Unread, $"git could not commit the pin ({ContentHolds.Said(commitErr)}): it is asked again at the next look.");
 
         var (updated, _, updateErr) = await WorkingTree.GitAsync(root, ["update-ref", $"refs/heads/{line}", moved.Trim(), tip], ct).ConfigureAwait(false);

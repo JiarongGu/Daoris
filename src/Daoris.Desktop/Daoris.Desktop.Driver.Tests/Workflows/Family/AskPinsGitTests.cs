@@ -73,6 +73,30 @@ public sealed class AskPinsGitTests : LandedFixture
     }
 
     [Fact]
+    public async Task A_landing_the_integration_line_makes_later_keeps_the_commit_too_and_a_second_never_moves_it()
+    {
+        var (engine, _, registry) = await FamilyAsync();
+        var tip = await AskBranchAsync(engine, "part.txt");
+        var store = new IntegrationStore(Home, () => StoreSettled.Yes);
+        var trees = DaorisHome.Entry(Home, HomeEntry.Trees);
+        store.Add(new IntegrationRequest(
+            "r-ask", "engine", "default", Branch, tip, IntegrationRoutes.Node, "main", IntegrationRequester.NodeStart,
+            new LandingIntegrate(Batch: 1, Gates: LandingIntegrate.NoGates).Resolved(), new DateTimeOffset(2026, 11, 26, 9, 0, 0, TimeSpan.Zero))
+        {
+            Proof = new IntegrationProof(AcceptedBy.Person),
+        });
+        Assert.Null(await Doors.LandedAsync(registry[0], Ask, default));
+
+        var replayed = await new IntegrationReplays(store, trees).RunAsync(new IntegrationReplayAsk("engine", "default", engine, "main") { Config = DriverConfig.Empty });
+        await new IntegrationPromotes(store, trees).RunAsync(replayed.Claim!, new IntegrationPromoteAsk("engine", "default", engine, "main", DriverConfig.Empty, Home));
+
+        var landed = await HeadAsync(engine, "main");
+        Assert.Equal(landed, await Doors.LandedAsync(registry[0], Ask, default));
+        Assert.False(await TrainRefs.KeepLandedAsync(engine, Ask, tip, default));
+        Assert.Equal(landed, await Doors.LandedAsync(registry[0], Ask, default));
+    }
+
+    [Fact]
     public async Task A_pin_is_a_commit_of_its_own_on_the_consumers_ask_branch_made_from_objects_alone()
     {
         var (_, game, _) = await FamilyAsync();
@@ -142,13 +166,13 @@ public sealed class AskPinsGitTests : LandedFixture
         var runs = new[] { new AskRunOf(Ask, "engine"), new AskRunOf(Ask, "game") };
 
         // Before the producer's part lands, the consumer's pin waits and nothing is written.
-        Assert.Empty(await AskPinning.RunAsync(registry, report, runs, Doors, default));
+        Assert.Empty((await AskPinning.RunAsync(registry, report, runs, Doors, default)).Said);
         Assert.Equal(AskPinStates.Waiting, Assert.Single(await AskPins.ReadAsync(registry, "game", Ask, ["engine", "game"], Doors, default)).State);
 
         await landing.PerformAsync(Start("engine", engineTip));
         var landed = await HeadAsync(engine, "main");
-        Assert.Single(await AskPinning.RunAsync(registry, report, runs, Doors, default));
-        Assert.Empty(await AskPinning.RunAsync(registry, report, runs, Doors, default));
+        Assert.Single((await AskPinning.RunAsync(registry, report, runs, Doors, default)).Said);
+        Assert.Empty((await AskPinning.RunAsync(registry, report, runs, Doors, default)).Said);
         Assert.Equal(AskPinStates.Pinned, Assert.Single(await AskPins.ReadAsync(registry, "game", Ask, ["engine", "game"], Doors, default)).State);
 
         var gameTip = await HeadAsync(game, Branch);

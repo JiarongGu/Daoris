@@ -20,7 +20,7 @@ public static class FamilyFanout
     public static async Task<FamilyRound> RunAsync(
         IReadOnlyList<RepoView> registry, IReadOnlyList<QuestView> quests, IFamilyDoors doors,
         Func<RepoView, CancellationToken, Task<string?>> lineTip, Func<RepoView, CancellationToken, Task<LockText>> lockAt,
-        DateTimeOffset now, CancellationToken ct, Func<PinEdge, string?>? carried = null)
+        DateTimeOffset now, CancellationToken ct, Func<PinEdge, (string Commit, DateTimeOffset Since)?>? carried = null)
     {
         var said = new List<string>();
         var told = new List<FamilyHold>();
@@ -37,7 +37,8 @@ public static class FamilyFanout
                 foreach (var (edge, row) in consumers)
                 {
                     var pinned = PinIn(await lockAt(row!, ct).ConfigureAwait(false), producer.Repository);
-                    var onItsWay = tip is not null && string.Equals(carried?.Invoke(edge), tip, StringComparison.OrdinalIgnoreCase);
+                    var onItsWay = tip is not null && carried?.Invoke(edge) is { } open && string.Equals(open.Commit, tip, StringComparison.OrdinalIgnoreCase)
+                        && (family.LagOf(edge) is not { } bound || now - open.Since <= bound);
                     if (tip is not null && !onItsWay && pinned.Readable && PinMoves.Plan(edge, pinned.Commit, tip, quests) is { } act)
                     {
                         said.Add(await ActAsync(act, doors, ct).ConfigureAwait(false));

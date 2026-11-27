@@ -3,6 +3,11 @@ namespace Daoris.Driver;
 /// <summary>An ask's branch against its repository's line (null where none is set or guessed) and the commit they share, which its review compares from.</summary>
 public sealed record AskBranchRead(string Ask, string? Line, string? Base);
 
+public sealed record AskRunOf(string Ask, string Repository)
+{
+    public DateTimeOffset Since { get; init; }
+}
+
 /// <summary>Each open ask run's branch read by run, and the ask of every open run, whose plan a part's run reads its waits and joint checks from.</summary>
 public sealed record AskRunsRead(IReadOnlyDictionary<string, AskBranchRead> Branches, IReadOnlyList<string> Asks)
 {
@@ -38,7 +43,7 @@ public static class AskRunReads
             var ask = binding.Ask;
             var askRun = AskRunKey.Is(binding);
             if (askRun || GraphRun.Names(binding)) asks.Add(ask);
-            if (askRun) runs.Add(new AskRunOf(ask, binding.Repository));
+            if (askRun) runs.Add(new AskRunOf(ask, binding.Repository) { Since = binding.At });
             if (!askRun || !roots.TryGetValue(binding.Repository, out var root)) continue;
             var line = (await CanonicalLine.ResolveAsync(root, binding.Repository, binding.Workspace, config, ct).ConfigureAwait(false)).Branch;
             var shared = line is null

@@ -11,6 +11,7 @@ public sealed class AskPinsTests : IDisposable
 {
     private static readonly string A = new('a', 40);
     private static readonly string B = new('b', 40);
+    private static readonly DateTimeOffset T0 = new(2026, 11, 26, 9, 0, 0, TimeSpan.Zero);
     private static readonly string PinOfB = $$"""{ "pins": [{ "producer": "core", "commit": "{{B}}" }] }""";
 
     private readonly string _folder = Path.Combine(WorkspaceRoot.Folder, "_fixtures", "ask-pins", Guid.NewGuid().ToString("N")[..8]);
@@ -146,11 +147,11 @@ public sealed class AskPinsTests : IDisposable
 
         var early = await AskPinning.RunAsync(registry, Reports(landed: ["p1"]), runs, _doors, default);
         Assert.Empty(_doors.Written);
-        Assert.Empty(early);
+        Assert.Empty(early.Said);
 
         var done = await AskPinning.RunAsync(registry, Reports(landed: ["p1", "p2"]), runs, _doors, default);
         Assert.Equal([("web", "core", B)], _doors.Written);
-        Assert.Contains("pinned core", Assert.Single(done));
+        Assert.Contains("pinned core", Assert.Single(done.Said));
     }
 
     [Fact]
@@ -175,12 +176,12 @@ public sealed class AskPinsTests : IDisposable
         var registry = Family();
         var runs = new[] { new AskRunOf("a1", "web") };
 
-        Assert.Empty(await AskPinning.CarriedAsync(registry, Reports(landed: []), runs, _doors, default));
+        Assert.Empty((await AskPinning.RunAsync(registry, Reports(landed: []), runs, _doors, default)).Carried);
 
         _doors.Landed["core"] = B;
-        var carried = await AskPinning.CarriedAsync(registry, Reports(landed: []), runs, _doors, default);
+        var carried = (await AskPinning.RunAsync(registry, Reports(landed: []), [new AskRunOf("a1", "web") { Since = T0 }], _doors, default)).Carried;
 
-        Assert.Equal(B, carried[new PinEdge("web", "core")]);
+        Assert.Equal((B, T0), carried[new PinEdge("web", "core")]);
     }
 
     [Fact]
@@ -203,10 +204,14 @@ public sealed class AskPinsTests : IDisposable
         var waiting = await ReadAsync();
         Assert.Null(waiting.Outcome);
         Assert.Contains("core", waiting.Said);
+        Assert.Contains("to land", waiting.Said);
 
         _doors.Landed["core"] = B;
         Assert.Null((await ReadAsync()).Outcome);
-        Assert.Contains("pin", (await ReadAsync()).Said);
+        Assert.Contains("moved", (await ReadAsync()).Said);
+
+        _doors.Locks["web"] = new LockText(true, "not a lock");
+        Assert.Contains("not a lock", (await ReadAsync()).Said);
 
         _doors.Locks["web"] = new LockText(true, PinOfB);
         Assert.Equal(NodeStates.Reached, (await ReadAsync()).Outcome);

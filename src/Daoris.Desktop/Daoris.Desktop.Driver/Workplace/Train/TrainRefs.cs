@@ -19,11 +19,11 @@ public static class TrainRefs
         return kept == 0;
     }
 
-    /// <summary>The ref an ask's landing on its repository's line is kept on, beside the batches and not among them.</summary>
+    /// <summary>The ref an ask's landing on its repository's line is kept on, beside the batches and not among them; made once and never moved, as a batch's is.</summary>
     public static string LandedRef(string ask) => $"refs/daoris/landed/{ask.TrimStart('#')}";
 
     public static async Task<bool> KeepLandedAsync(string root, string ask, string commit, CancellationToken ct) =>
-        (await WorkingTree.GitAsync(root, ["update-ref", LandedRef(ask), commit], ct).ConfigureAwait(false)).Code == 0;
+        (await WorkingTree.GitAsync(root, ["update-ref", LandedRef(ask), commit, new string('0', commit.Length)], ct).ConfigureAwait(false)).Code == 0;
 
     public static Task<string?> LandedAsync(string root, string ask, CancellationToken ct) => MachinePorts.Repository.CommitOfAsync(root, LandedRef(ask), ct);
 }

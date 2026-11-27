@@ -29,11 +29,6 @@ public sealed class AskLanding(string home, Func<DateTimeOffset> clock)
         var (merged, refused, refusal, _) = await IntegrationPresses.MergeAsync(
             home, config, root, binding.Repository, binding.Workspace, line, name, start.Tip, ct, delivered: true, automatic: !start.Reviewed).ConfigureAwait(false);
         if (!merged) return Kept(start, refusal ?? LandingCode.Refused, refused!);
-        if (await MachinePorts.Repository.CommitOfAsync(root, $"refs/heads/{line}", ct).ConfigureAwait(false) is { } landed)
-        {
-            await TrainRefs.KeepLandedAsync(root, binding.Ask!, landed, ct).ConfigureAwait(false);
-        }
-
         RegistryFollowing.Moved(home, binding.Repository, clock());
         return Kept(start, LandingCode.Landed, $"merged `{name}` into `{line}`.", landed: true);
     }

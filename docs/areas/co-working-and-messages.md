@@ -197,7 +197,7 @@ agent's part (the sender marks, the wait counted once, a line's channel, the ste
     (`…/break/<n>`) goes from the consumer to the producer with the decline's reason as the failing case, and the edge's hold-back is read
     from its quests and the consumer's pin, aged from its first red and ended by a pin at the held commit or the line's tip, however it moved. Past the edge's `lag` bound (`edges` of the
     family file, `3d` or `12h`) one `family-lag` notice reaches *Done and failed*; an edge with no bound tells no one. An edge whose producer's line stands at the commit an open ask's consumer part carries its pin at (workflows-review-landing 39c) is
-    asked no quest; a newer landing is. No word of it names
+    asked no quest while that ask is younger than the edge's `lag` bound; a newer landing, and an older ask, are asked. No word of it names
     a kind of repository. (from D364)
 
 **Brainstorms and meetings**
