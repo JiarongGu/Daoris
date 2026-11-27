@@ -1,8 +1,8 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { mkdirSync, mkdtempSync, realpathSync, rmSync, writeFileSync } from 'node:fs';
-import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { git } from './support/merge-branch-kit.ts';
 
 // test-map: strings name paths as data
@@ -13,7 +13,7 @@ const tool = (name: string) => import(new URL('../../../tools/' + name, import.m
 test('the landing is judged on the paths its range changed, and a batch is reached over the ranges alone', async () => {
   const { judgeIn } = await tool('heavy-run.mjs');
   const { pathsOfRanges } = await tool('reached-checks.mjs');
-  const dir = realpathSync(mkdtempSync(join(tmpdir(), 'heavy-judge-')));
+  const dir = realpathSync(mkdtempSync(join(fileURLToPath(new URL('../../../_fixtures', import.meta.url)), 'heavy-judge-')));
   const commitFile = (path: string, text: string) => {
     mkdirSync(join(dir, dirname(path)), { recursive: true });
     writeFileSync(join(dir, path), text);
