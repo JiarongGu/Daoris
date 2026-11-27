@@ -81,8 +81,8 @@ public sealed class HomeWeightsTests : IDisposable
     public void A_file_linked_under_two_names_is_one_copy_and_no_duplicate()
     {
         var one = Put("work/trees/games/Daoris/s-aaaa1111/lib.dll", Bytes(1000, 7));
-        var two = Path.Combine(_home, "work", "trees", "games", "Daoris", "s-bbbb2222", "lib.dll");
-        Directory.CreateDirectory(Path.GetDirectoryName(two)!);
+        var beside = Put("work/trees/games/Daoris/s-bbbb2222/keep.txt", Bytes(1, 1));
+        var two = Path.Combine(Path.GetDirectoryName(beside)!, "lib.dll");
         Assert.True(FileLinks.Make(two, one), "the platform makes a hard link");
 
         Assert.Empty(Read().Duplicates);
