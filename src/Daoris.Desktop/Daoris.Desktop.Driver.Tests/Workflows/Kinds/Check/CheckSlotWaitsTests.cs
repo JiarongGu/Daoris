@@ -56,6 +56,21 @@ public sealed class CheckSlotWaitsTests
     }
 
     [Fact]
+    public void A_memory_wait_says_how_many_checks_still_starting_its_number_counts_and_leaves_out_a_basis_it_was_not_given()
+    {
+        var counted = new CheckWait(CheckWait.Memory, new Dictionary<string, string> { ["free"] = "22.6", ["need"] = "31.3", ["source"] = "learned", ["starting"] = "2" });
+        var kept = new CheckWait(CheckWait.Memory, new Dictionary<string, string> { ["free"] = "4.1", ["need"] = "8" });
+
+        var said = CheckSlotWaits.Of(Graph, Sent("i-mine"), new VerifyLook([Theirs], [Waiter("mine", "i-mine", 1, counted)]))["check"];
+        Assert.Equal("2", said.Values["starting"]);
+        Assert.Equal("Waits for memory: 22.6 GB free, the next check needs 31.3 GB (learned) with 2 still starting; 1 of 1 in its queue.", CheckSlotWaits.Said(said));
+
+        var bare = CheckSlotWaits.Of(Graph, Sent("i-mine"), new VerifyLook([Theirs], [Waiter("mine", "i-mine", 1, kept)]))["check"];
+        Assert.DoesNotContain("basis", bare.Values.Keys);
+        Assert.Equal("Waits for memory: 4.1 GB free, the next check needs 8 GB; 1 of 1 in its queue.", CheckSlotWaits.Said(bare));
+    }
+
+    [Fact]
     public void A_check_waiting_for_the_reserve_reads_the_memory_free_needed_and_kept_for_the_person()
     {
         var reserve = new CheckWait(CheckWait.Reserve, new Dictionary<string, string> { ["free"] = "24.0", ["need"] = "8", ["source"] = "declared", ["reserve"] = "21" });

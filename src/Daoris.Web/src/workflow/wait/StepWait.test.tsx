@@ -34,6 +34,9 @@ describe('a step\'s wait', () => {
     const repository = { code: 'slot-repository', values: { repository: 'Daoris', position: '1', of: '2' } };
     expect(waitSaid(t, 'check', full)).toBe('Waits for a check slot: 2 of 2 run; 2 of 3 in its queue.');
     expect(waitSaid(t, 'check', memory)).toBe('Waits for memory: 4.1 GB free, the next check needs 6 GB (learned); 1 of 1 in its queue.');
+    expect(waitSaid(t, 'check', { code: 'slot-memory', values: { free: '22.6', need: '31.3', basis: 'learned', starting: '2', position: '1', of: '1' } }))
+      .toBe('Waits for memory: 22.6 GB free, the next check needs 31.3 GB (learned) with 2 still starting; 1 of 1 in its queue.');
+    expect(waitSaid(t, 'check', { code: 'slot-memory', values: { free: '4.1', need: '8', position: '1', of: '1' } })).toBe('Waits for memory: 4.1 GB free, the next check needs 8 GB; 1 of 1 in its queue.');
     expect(waitSaid(t, 'check', repository)).toBe('Waits for `Daoris`\'s heavy-run slots, each held by another of its heavy runs; 1 of 2 in its queue.');
     expect(waitSaid(t, 'check', { code: 'slot-reserve', values: { free: '24.0', need: '8', basis: 'declared', reserve: '21', position: '1', of: '1' } }))
       .toBe('Waits for the reserve kept for your own work: 24.0 GB free, the next check needs 8 GB (declared) and 21 GB stays free; 1 of 1 in its queue.');
@@ -41,6 +44,7 @@ describe('a step\'s wait', () => {
     expect(waitSaid(t, 'check', { code: 'slot-queued', values: { position: '1', of: '2' } })).toBe('Waits for a check slot: 1 of 2 in its queue.');
     await i18n.changeLanguage('zh');
     expect(waitSaid(t, 'check', memory, 'zh')).toContain('4.1 GB');
+    expect(waitSaid(t, 'check', { code: 'slot-memory', values: { free: '22.6', need: '31.3', basis: 'learned', starting: '2', position: '1', of: '1' } }, 'zh')).toContain('2');
     expect(waitSaid(t, 'check', repository, 'zh')).toContain('`Daoris`');
     for (const wait of [full, memory]) expect(waitSaid(t, 'check', wait, 'zh')).not.toMatch(/[A-Za-z]{4}/);
   });
