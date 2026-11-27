@@ -46,7 +46,7 @@ export const RUN_REASONS: Readonly<Record<RunKind, FullReason>> = Object.freeze(
 
 const strings = (value: unknown): string[] => (Array.isArray(value) ? value.filter((each): each is string => typeof each === 'string' && each.length > 0) : []);
 
-type Declared = { budgetMinutes?: unknown; fullRunReasons?: { widePaths?: unknown; reachShare?: unknown; runs?: unknown } };
+type Declared = { budgetMinutes?: unknown; preflightFirst?: unknown; fullRunReasons?: { widePaths?: unknown; reachShare?: unknown; runs?: unknown } };
 
 /** A gates file's `verifyBudget` as written, or undefined where it sets none (or is not JSON). */
 function declaredOf(gatesText: string): Declared | undefined {
@@ -72,6 +72,13 @@ export function declaredWidePaths(gatesText: string): readonly string[] {
     throw new Error(`${GATES_FILE} declares a verifyBudget with no fullRunReasons.widePaths (a list of paths): the lane table's every-gate rule reads them (D349)`);
   }
   return Object.freeze(paths);
+}
+
+export const preflightFirstOf = (gatesText: string): readonly string[] => Object.freeze(strings(declaredOf(gatesText)?.preflightFirst));
+
+export function readPreflightFirst(root: string): readonly string[] {
+  const file = join(root, GATES_FILE);
+  return existsSync(file) ? preflightFirstOf(readFileSync(file, 'utf8')) : Object.freeze([]);
 }
 
 /** The wide paths of the repository at `root`, none where its gates file is missing or sets no rule. */

@@ -1,10 +1,10 @@
 import { test } from 'vitest';
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { fixtureFolder } from './fixture-home.ts';
 import { readReceipts, receiptsFolder } from './receipts.ts';
-import { changesOf, checkRunOf, firstGates, keepRun, receiptOf, summaryInputOf, type Git } from './preflight-record.ts';
+import { changesOf, checkRunOf, keepRun, receiptOf, summaryInputOf, type Git } from './preflight-record.ts';
 
 const queued = 3000;
 const result = (name: string, verdict: string, over: Record<string, unknown> = {}) => ({ gate: { name, run: `run ${name}` }, verdict, ms: 2000, note: '', ...over });
@@ -28,13 +28,6 @@ test('the run keeps the kept gates as replayed passes, the results with their wa
   assert.equal(run.gates[2]?.command, 'dotnet run map --check');
   assert.equal(run.trigger, 'done');
   assert.equal(run.kind, 'preflight');
-});
-
-test('the censuses named first run first, so a census red is seen before any other gate runs', () => {
-  const gates = ['reached', 'cli', 'censuses'].map((name) => ({ name, run: name }));
-  assert.deepEqual(firstGates(gates, JSON.stringify({ verifyBudget: { preflightFirst: ['censuses'] } })).map((gate) => gate.name), ['censuses', 'reached', 'cli']);
-  assert.deepEqual(firstGates(gates, JSON.stringify({})).map((gate) => gate.name), ['reached', 'cli', 'censuses']);
-  assert.deepEqual(firstGates(gates, 'not json').map((gate) => gate.name), ['reached', 'cli', 'censuses'], 'a declaration that does not read leaves the order');
 });
 
 test('the changes are read from git\'s numstat, a binary file counting no lines', () => {
@@ -89,6 +82,26 @@ test('a preflight keeps its run: the receipts under the tree in the home, the me
     assert.deepEqual(kept.summary.judgement.map((each) => each.kind).sort(), ['deferred', 'failed']);
     assert.equal(JSON.parse(readFileSync(join(dir, 'scratch', 'summary.json'), 'utf8')).tip, 'tip');
     assert.ok(kept.lines.some((line) => line.startsWith('Verified: 2 passed, 1 failed')));
+  } finally {
+    remove();
+  }
+});
+
+test('a run that cannot keep its receipts still returns its summary and says so: a tree unread keeps none, a folder that will not take them is one line', () => {
+  const { dir, remove } = fixtureFolder('keep-run-fails');
+  try {
+    const git: Git = (_cwd, args) => (args.includes('diff') ? { status: 0, out: '4\t1\ttools/a.ts\n' } : { status: 128, out: '' });
+    const base = {
+      root: dir, checkout: dir, home: dir, scratch: join(dir, 'scratch'), git, id: 'r', trigger: 'agent', branch: 'b', base: 'x', tip: 't', baseTip: 'm',
+      startedAt: 1, now: () => 2, results: [result('a', 'PASS')], waits: {}, plan: [{ name: 'a', run: 'run a' }], set: { run: [{ name: 'a', why: '' }], kept: [], deferred: [] },
+    };
+    const none = keepRun({ ...base, tree: null });
+    assert.ok(none.lines.some((line) => /receipts not kept: the tip's tree could not be read/.test(line)));
+    assert.equal(existsSync(join(dir, 'data', 'checks', 'receipts')), false);
+    writeFileSync(join(dir, 'data'), 'a file, not a folder');
+    const blocked = keepRun({ ...base, tree: 'T' });
+    assert.ok(blocked.lines.some((line) => /^receipts not kept: /.test(line)));
+    assert.equal(blocked.summary.verified.passed, 1);
   } finally {
     remove();
   }

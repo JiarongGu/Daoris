@@ -398,7 +398,6 @@ import { briefGates, briefText, failsFast, markOfJudgement, markOfProbe, writeBr
 import { MAIN_TREE } from './merge/preflight.ts';
 import { preflightVerb as preflightVerbOf } from './merge/preflight-verb.ts';
 import { scopedKind } from './merge/fast-plan.ts';
-import { firstGates, keepRun } from './merge/preflight-record.ts';
 import {
   flakeDecision, nodeTestDecision, nodeTestDirs, nodeTestRerunCommand, ownOutput, rerunCommand, short, testClass, testSummary, timedDecision, timedRerunCommand,
 } from './merge-branch/test-output.mjs';
@@ -5419,7 +5418,7 @@ function mainMarker(root, dir) {
 
 /** `--preflight`: the verb is `merge/preflight-verb.ts`, handed what only this script holds. */
 const preflightVerb = (root, options) => preflightVerbOf(root, options, {
-  scopedChoice, scopedGates, runRecorded, briefRed, mainMarker, machineAdmission, stopOnInterrupt, clearLogs, holdersSentence, contentTree, startHome: START_HOME,
+  scopedChoice, scopedGates, runRecorded, briefRed, mainMarker, machineAdmission, stopOnInterrupt, clearLogs, holdersSentence, startHome: START_HOME,
 });
 
 /** The open known red a failure's signature matches, with its expiry and where it is last seen (§5.2), or null. */

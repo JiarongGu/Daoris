@@ -82,3 +82,16 @@ test('the text names the three parts in order and says each replayed unit; the r
   assert.ok(lines.some((line) => /tools: 2 files/.test(line)));
   assert.equal(JSON.parse(JSON.stringify(summary)).schema, 1);
 });
+
+test('rules are told apart by their section, so a second list that starts at 1 again never stands for the first', () => {
+  const doc = (rule5: string, contradiction5: string) => `# Area\n\n## Its rules\n\n4. Four.\n5. ${rule5}\n\n## Contradictions\n\n4. Other four.\n5. ${contradiction5}\n`;
+  const found = rulesOf('docs/areas/x.md', doc('Five.', 'Other five.'), doc('Five, rewritten.', 'Other five.'));
+  assert.deepEqual(found.map((each) => [each.section, each.rule, each.change]), [['Its rules', '5', 'rewritten']]);
+  const removed = rulesOf('docs/areas/x.md', doc('Five.', 'Other five.'), '# Area\n\n## Its rules\n\n4. Four.\n\n## Contradictions\n\n4. Other four.\n5. Other five.\n');
+  assert.deepEqual(removed.map((each) => [each.section, each.rule, each.change]), [['Its rules', '5', 'removed']]);
+});
+
+test('the summary counts the failed and the missing as the done refusal does, from the required units alone', () => {
+  const said = buildSummary(input({ receipts: [pass('censuses'), pass('stray', { verdict: 'fail' }), pass('reached', { verdict: 'ended' })] }));
+  assert.deepEqual([said.verified.failed, said.verified.missing.map((each) => each.unit)], [0, ['reached']]);
+});

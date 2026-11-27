@@ -4,7 +4,7 @@
  * is an agent's word. Its readers are the same record: the second opinion reads it instead of finding the change again, the window's
  * Outputs panel draws it, and the landing record keeps it.
  */
-import type { GateReceipt, Required } from './receipts.ts';
+import { coverage, type GateReceipt, type Required } from './receipts.ts';
 
 export type Change = { path: string; added: number; removed: number };
 export type Module = { id: string; path: string };
@@ -17,7 +17,7 @@ export type SummaryInput = {
   receipts: GateReceipt[]; required: Required[]; deferred: Deferred[];
 };
 
-export type RuleChange = { area: string; rule: string; change: 'added' | 'removed' | 'rewritten'; heading: string };
+export type RuleChange = { area: string; section: string; rule: string; change: 'added' | 'removed' | 'rewritten'; heading: string };
 export type Judgement = { kind: 'decision' | 'rule' | 'deferred' | 'failed' | 'unverified'; what: string };
 
 export type RunSummary = {
@@ -42,35 +42,38 @@ const compare = (a: string, b: string): number => {
   return na === nb ? a.localeCompare(b) : na - nb;
 };
 
-/** A document's numbered rules by number, each with the lines that run on under it, up to the next rule or heading. */
-function rulesIn(text: string | null): Map<string, { heading: string; body: string }> {
-  const found = new Map<string, { heading: string; lines: string[] }>();
+/** A document's numbered rules by section and number, each with the lines that run on under it, up to the next rule or heading: a list that starts at 1 again under another heading is another set. */
+function rulesIn(text: string | null): Map<string, { section: string; rule: string; heading: string; body: string }> {
+  const found = new Map<string, { section: string; rule: string; heading: string; lines: string[] }>();
+  let section = '';
   let current: { heading: string; lines: string[] } | null = null;
   for (const line of (text ?? '').split(/\r?\n/)) {
     const rule = RULE.exec(line);
+    const title = /^#{1,6}\s+(.*)$/.exec(line);
     if (rule) {
       current = { heading: (rule[2] ?? '').slice(0, 80), lines: [line] };
-      found.set(rule[1] as string, current);
-    } else if (/^#/.test(line)) {
+      found.set(`${section}|${rule[1]}`, { section, rule: rule[1] as string, ...current });
+    } else if (title) {
+      section = (title[1] ?? '').trim();
       current = null;
     } else if (current) {
       current.lines.push(line);
     }
   }
-  return new Map([...found].map(([id, each]) => [id, { heading: each.heading, body: each.lines.join('\n').trim() }]));
+  return new Map([...found].map(([key, each]) => [key, { section: each.section, rule: each.rule, heading: each.heading, body: each.lines.join('\n').trim() }]));
 }
 
 /** The rules of a document that were added, removed or rewritten, in rule order: a sentence the change made false is found here, not remembered. */
 export function rulesOf(path: string, before: string | null, after: string | null): RuleChange[] {
   const [was, is] = [rulesIn(before), rulesIn(after)];
   const out: RuleChange[] = [];
-  for (const [rule, now] of is) {
-    const then = was.get(rule);
-    if (!then) out.push({ area: path, rule, change: 'added', heading: now.heading });
-    else if (then.body !== now.body) out.push({ area: path, rule, change: 'rewritten', heading: now.heading });
+  for (const [key, now] of is) {
+    const then = was.get(key);
+    if (!then) out.push({ area: path, section: now.section, rule: now.rule, change: 'added', heading: now.heading });
+    else if (then.body !== now.body) out.push({ area: path, section: now.section, rule: now.rule, change: 'rewritten', heading: now.heading });
   }
-  for (const [rule, then] of was) if (!is.has(rule)) out.push({ area: path, rule, change: 'removed', heading: then.heading });
-  return out.sort((a, b) => compare(a.rule, b.rule));
+  for (const [key, then] of was) if (!is.has(key)) out.push({ area: path, section: then.section, rule: then.rule, change: 'removed', heading: then.heading });
+  return out.sort((a, b) => a.section.localeCompare(b.section) || compare(a.rule, b.rule));
 }
 
 /** The module a path belongs to: the one whose path is its longest prefix. */
@@ -93,12 +96,12 @@ export function buildSummary(input: SummaryInput): RunSummary {
     by.set(module.id, entry);
   }
   const rules = input.areas.flatMap((area) => rulesOf(area.path, area.before, area.after));
-  const covered = new Map(input.receipts.map((each) => [each.unit, each]));
-  const missing = input.required.filter((each) => !covered.has(each.unit) || covered.get(each.unit)?.verdict === 'ended');
-  const failed = input.receipts.filter((each) => each.verdict === 'fail');
+  const seen = coverage(input.required, input.receipts);
+  const missing = seen.missing;
+  const failed = input.receipts.filter((each) => seen.failed.some((unit) => unit.unit === each.unit));
   const judgement: Judgement[] = [
     ...input.changes.filter((each) => each.path.startsWith('docs/decisions/')).map((each) => ({ kind: 'decision' as const, what: `${each.path}: a choice that rejected an alternative; read it` })),
-    ...rules.map((each) => ({ kind: 'rule' as const, what: `${each.area} rule ${each.rule} ${each.change}: ${each.heading}` })),
+    ...rules.map((each) => ({ kind: 'rule' as const, what: `${each.area} ${each.section ? `(${each.section}) ` : ''}rule ${each.rule} ${each.change}: ${each.heading}` })),
     ...input.deferred.map((each) => ({ kind: 'deferred' as const, what: `${each.name}: ${each.why}` })),
     ...failed.map((each) => ({ kind: 'failed' as const, what: `${each.unit}: \`${each.command}\` failed${each.note ? `: ${each.note}` : ''}` })),
     ...missing.map((each) => ({ kind: 'unverified' as const, what: `${each.unit}: \`${each.command}\` has no pass at this tip` })),
@@ -130,7 +133,7 @@ export function summaryLines(summary: RunSummary): string[] {
   const lines = [`Changed: ${changed.files} files, +${changed.added} −${changed.removed}, ${summary.tip.slice(0, 7)} against ${summary.base.slice(0, 7)}`];
   for (const each of changed.modules) lines.push(`  ${each.id}: ${each.files} file${each.files === 1 ? '' : 's'}, +${each.added} −${each.removed}`);
   if (changed.unplaced.length) lines.push(`  in no module: ${changed.unplaced.join(', ')}`);
-  for (const each of changed.rules) lines.push(`  ${each.area} rule ${each.rule} ${each.change}: ${each.heading}`);
+  for (const each of changed.rules) lines.push(`  ${each.area} ${each.section ? `(${each.section}) ` : ''}rule ${each.rule} ${each.change}: ${each.heading}`);
   lines.push(`Verified: ${verified.passed} passed, ${verified.failed} failed, ${verified.missing.length} without a receipt`);
   for (const each of verified.units) lines.push(`  ${each.unit}: ${each.verdict}${each.replayed ? ', replayed from a standing pass' : ` (${minutes(each.ms)})`}${each.note ? `: ${each.note}` : ''}`);
   lines.push(summary.judgement.length ? `Left for judgement: ${summary.judgement.length}` : 'Left for judgement: nothing');

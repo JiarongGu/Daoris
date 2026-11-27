@@ -3,7 +3,6 @@
  * censuses the declaration names first, its run kept as receipts and a summary record. What only the merge tool's script holds (its
  * gate runner, brief, admission and interrupt) is handed in.
  */
-import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { fastPlan, scopedKind } from './fast-plan.ts';
 import { count } from './format.ts';
@@ -12,7 +11,9 @@ import { verdictsHome } from './home.ts';
 import { SCRATCH } from './paths.ts';
 import { readPlan, slug } from './plan.ts';
 import { PREFLIGHT_BOUND_MINUTES, planLines, preflightFacts, preflightRun } from './preflight.ts';
-import { firstGates, keepRun } from './preflight-record.ts';
+import { keepRun } from './preflight-record.ts';
+import { censusFirst } from './receipts.ts';
+import { readPreflightFirst } from './verification.ts';
 
 /* eslint-disable @typescript-eslint/no-explicit-any -- the merge tool's script is untyped */
 export type PreflightDeps = {
@@ -25,8 +26,13 @@ export type PreflightDeps = {
   stopOnInterrupt: (trees: any) => () => void;
   clearLogs: (dir: string) => void;
   holdersSentence: (home: string | null) => string | null;
-  contentTree: (root: string) => string;
   startHome: string | null;
+};
+
+/** The tree the tip commits, which a receipt is keyed by: the preflight judges the committed tip, and refuses a tree with changes. */
+const tipTree = (root: string, tip: string): string | null => {
+  const read = git(root, ['--no-optional-locks', 'rev-parse', `${tip}^{tree}`], { allowFail: true });
+  return read.status === 0 && read.out.trim() ? read.out.trim() : null;
 };
 
 export async function preflightVerb(root: string, options: { base?: string | null; bound?: number; oneAtATime?: boolean }, deps: PreflightDeps): Promise<number> {
@@ -39,8 +45,7 @@ export async function preflightVerb(root: string, options: { base?: string | nul
   const set = fastPlan(choice.set, (name) => scopedKind(plan.find((gate: { name: string }) => gate.name === name)!));
   const dir = join(root, SCRATCH, `merge-${slug(facts.branch)}`);
   deps.clearLogs(dir);
-  const declaration = join(root, 'daoris.gates.json');
-  const gates = firstGates(deps.scopedGates(home, root, plan, { ...choice, set }, dir).gates, existsSync(declaration) ? readFileSync(declaration, 'utf8') : null);
+  const gates = censusFirst(deps.scopedGates(home, root, plan, { ...choice, set }, dir).gates, readPreflightFirst(root));
   const bound = options.bound ?? PREFLIGHT_BOUND_MINUTES;
   const run = preflightRun({ branch: facts.branch, gates: gates.map((gate) => gate.name), set, boundMinutes: bound, started, holders: () => deps.holdersSentence(deps.startHome) });
   for (const line of planLines(set, bound)) console.log(line);
@@ -57,7 +62,7 @@ export async function preflightVerb(root: string, options: { base?: string | nul
   const { lines, code, failed } = run.summary(results);
   const kept = keepRun({
     root, checkout: home, home: deps.startHome, scratch: dir, git, id: `${facts.tip.slice(0, 12)}-${started}`, trigger: process.env.DAORIS_PREFLIGHT_TRIGGER || 'agent',
-    branch: facts.branch, base: facts.from, baseTip: facts.baseTip, tip: facts.tip, tree: deps.contentTree(root), startedAt: started, now: Date.now, results, waits: run.waits(), plan, set,
+    branch: facts.branch, base: facts.from, baseTip: facts.baseTip, tip: facts.tip, tree: tipTree(root, facts.tip), startedAt: started, now: Date.now, results, waits: run.waits(), plan, set,
   });
   for (const line of kept.lines) console.log(line);
   if (failed.length) {

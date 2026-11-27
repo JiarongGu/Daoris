@@ -5,7 +5,7 @@
 import { mkdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { writeAtomic } from '../fsx.mjs';
-import { censusFirst, receiptsFolder, writeRun, type CheckRun, type GateReceipt, type ReceiptVerdict, type Required } from './receipts.ts';
+import { receiptsFolder, writeRun, type CheckRun, type GateReceipt, type ReceiptVerdict, type Required } from './receipts.ts';
 import { buildSummary, summaryLines, type AreaDocument, type Change, type Deferred, type Module, type RunSummary, type SummaryInput } from './run-summary.ts';
 import type { ScopedSet } from './fast-plan.ts';
 
@@ -33,16 +33,6 @@ export function checkRunOf({ id, trigger, branch, tip, tree, base, startedAt, wa
   const ran = results.map((result) => receiptOf(result, { at, waitMs: waits[result.gate.name] ?? 0 }));
   const replayed = kept.map((each): GateReceipt => ({ unit: each.name, command: each.run ?? each.name, verdict: 'pass', ms: 0, waitMs: 0, replayed: true, at, note: each.why }));
   return { schema: 1, id, kind: 'preflight', trigger, branch, tip, tree, base, startedAt, wallMs, gates: [...ran, ...replayed] };
-}
-
-/** The gates with the declaration's `verifyBudget.preflightFirst` names first; a declaration that does not read leaves the order. */
-export function firstGates<T extends { name: string }>(gates: T[], declaration: string | null): T[] {
-  try {
-    const first = (JSON.parse(declaration ?? '{}') as { verifyBudget?: { preflightFirst?: unknown } }).verifyBudget?.preflightFirst;
-    return censusFirst(gates, Array.isArray(first) ? first.filter((each): each is string => typeof each === 'string') : []);
-  } catch {
-    return gates;
-  }
 }
 
 /** The files changed from `base` to `tip` with their lines; a binary file counts none, and a diff git cannot make reads as no change. */
@@ -81,25 +71,41 @@ export function summaryInputOf({ root, branch, base, tip, git, receipts, require
   return { branch, tip, base, changes, modules: modulesAt(root, git, tip), areas, receipts, required, deferred };
 }
 
+/** The run's receipts written under its tree: the line saying they were not kept, null where they were. A record that cannot be kept never ends the run it describes. */
+function keepReceipts(home: string | null, checkout: string, run: CheckRun, tree: string | null): string | null {
+  if (!tree) return "receipts not kept: the tip's tree could not be read, and receipts are keyed by it";
+  try {
+    writeRun(receiptsFolder(home, checkout), run);
+    return null;
+  } catch (error) {
+    return `receipts not kept: ${(error as Error).message.split('\n')[0]}`;
+  }
+}
+
 /**
  * A preflight's run kept: its receipts and measure in the home (the main checkout's `local/` where there is none, so every worktree of the repository shares it), and its summary record
  * beside the brief as `summary.json`. Answers the record, the summary and the summary's lines for the run to say.
  */
 export function keepRun({ root, checkout, home, scratch, git, id, trigger, branch, base, baseTip, tip, tree, startedAt, now, results, waits, plan, set }: {
   root: string; checkout: string; home: string | null; scratch: string; git: Git; id: string; trigger: string; branch: string; base: string; baseTip: string; tip: string;
-  tree: string; startedAt: number; now: () => number; results: Result[]; waits: Record<string, number>; plan: { name: string; run: string }[]; set: ScopedSet;
+  tree: string | null; startedAt: number; now: () => number; results: Result[]; waits: Record<string, number>; plan: { name: string; run: string }[]; set: ScopedSet;
 }): { run: CheckRun; summary: RunSummary; lines: string[] } {
   const at = new Date(now()).toISOString();
   const commandOf = (name: string): string => plan.find((gate) => gate.name === name)?.run ?? name;
   const run = checkRunOf({
-    id, trigger, branch, tip, tree, base: baseTip, startedAt: new Date(startedAt).toISOString(), wallMs: now() - startedAt, at, results, waits,
+    id, trigger, branch, tip, tree: tree ?? '', base: baseTip, startedAt: new Date(startedAt).toISOString(), wallMs: now() - startedAt, at, results, waits,
     kept: set.kept.map((each) => ({ ...each, run: commandOf(each.name) })),
   });
-  writeRun(receiptsFolder(home, checkout), run);
+  const unkept = keepReceipts(home, checkout, run, tree);
   const required = [...set.run, ...set.kept].map((each) => ({ unit: each.name, command: commandOf(each.name) }));
   const summary = buildSummary(summaryInputOf({ root, branch, base, tip, git, receipts: run.gates, required, deferred: set.deferred }));
-  mkdirSync(scratch, { recursive: true });
-  writeAtomic(join(scratch, 'summary.json'), `${JSON.stringify(summary, null, 1)}
-`);
-  return { run, summary, lines: summaryLines(summary) };
+  const lines = summaryLines(summary);
+  try {
+    mkdirSync(scratch, { recursive: true });
+    writeAtomic(join(scratch, 'summary.json'), `${JSON.stringify(summary, null, 1)}\n`);
+  } catch (error) {
+    lines.push(`summary.json not written: ${(error as Error).message}`);
+  }
+  if (unkept) lines.push(unkept);
+  return { run, summary, lines };
 }
