@@ -5,6 +5,10 @@ with the version and date at release.
 
 ## Unreleased
 
+- A session's state is also folded from its journal of witnessed facts, beside the stored status and acting on nothing yet: each start
+  of Daoris begins a generation, a process that outlived a restart holds no lease, and a row of the session list (the window's and
+  `daoris session list`, its `--json` too) says what the fold reads where it differs, its state, holder and since. The service host's
+  `session-life baseline` reads a store, read only, for its live sessions, the stuck ones and the fold's differences.
 - A session's `check_run` no longer waits in a queue of its own that runs one check at a time. Every due check starts at once and
   waits its turn for the machine's one measured admission, in the same order as every other check (its quest's class, then when it was
   asked), so as many run at once as the free memory, the limit and the machine's places admit, and an urgent quest's check takes the
