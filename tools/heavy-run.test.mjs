@@ -4,7 +4,7 @@ import { mkdirSync, readFileSync, rmSync } from 'node:fs';
 import { join } from 'node:path';
 import { setTimeout as delay } from 'node:timers/promises';
 import { readFindings } from './ci-background.mjs';
-import { admitLanding, runTier, settleInto } from './heavy-run.mjs';
+import { admitLanding, runTier, settleCarried, settleInto } from './heavy-run.mjs';
 import { HEAVY_PENDING, readPending } from './merge/heavy-batch.ts';
 import { askTiers } from './desktop-publish/tier-evidence.mjs';
 import { PassedClasses, splitByReuse, unitId } from './merge/class-reuse.ts';
@@ -285,6 +285,36 @@ test('a tier runs its check over the ranges it carries, its own and those a tier
     const newer = runTier({ ...landing('heavy-b', 'c2', 'c1'), ranges: [{ base: 'c1', commit: 'c2' }] }, tierSeams(dir, m, 2, { check }));
     await Promise.all([older, newer]);
     assert.deepEqual(seen.at(-1), { commit: 'c2', ranges: [{ base: 'c0', commit: 'c1' }, { base: 'c1', commit: 'c2' }] });
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test('a batch settles a carried tier left running by a killed waiter, and leaves a settled one alone', () => {
+  const dir = join('_fixtures', 'heavy-run-carried-test');
+  rmSync(dir, { recursive: true, force: true });
+  mkdirSync(join(dir, 'local'), { recursive: true });
+  try {
+    appendHeavy(dir, { ...running, id: 'heavy-dead' });
+    appendHeavy(dir, { ...running, id: 'heavy-done', state: 'skipped' });
+    settleCarried(dir, { id: 'heavy-b', commit: 'c9', carried: [{ id: 'heavy-dead' }, { id: 'heavy-done' }] }, '2026-11-28T10:00:00.000Z');
+    const runs = Object.fromEntries(readHeavy(dir).map((run) => [run.id, run]));
+    assert.equal(runs['heavy-dead'].state, 'superseded');
+    assert.deepEqual(runs['heavy-dead'].handedTo, { id: 'heavy-b', commit: 'c9' });
+    assert.equal(runs['heavy-done'].state, 'skipped');
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test('the by-hand heavy run a stage asks for starts from the last green run, so it reaches the landings skipped since', () => {
+  const dir = join('_fixtures', 'heavy-run-byhand-test');
+  rmSync(dir, { recursive: true, force: true });
+  mkdirSync(join(dir, 'local'), { recursive: true });
+  try {
+    appendHeavy(dir, { ...running, id: 'heavy-old', state: 'green', commit: 'aaaaaaa1111111', at: '2026-11-20T10:00:00.000Z' });
+    appendHeavy(dir, { ...running, id: 'heavy-skip', state: 'skipped', commit: 'bbbbbbb2222222', at: '2026-11-21T10:00:00.000Z' });
+    assert.match(askTiers(dir, { home: dir, commit: 'ccccccc3333333' }).remedy.command, /--base aaaaaaa1111111 --now$/);
   } finally {
     rmSync(dir, { recursive: true, force: true });
   }

@@ -1,7 +1,7 @@
 import { mkdirSync, rmSync } from 'node:fs';
 import { join } from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
-import { HEAVY_QUIET_MS, bump, changePending, enlist, judgeLanding, look, rangesOf, readPending, type Landing, type Pending } from './heavy-batch.ts';
+import { HEAVY_MAX_WAIT_MS, HEAVY_QUIET_MS, bump, changePending, enlist, judgeLanding, look, rangesOf, readPending, type Landing, type Pending } from './heavy-batch.ts';
 import { verifyBudgetOf } from './verification.ts';
 
 // test-map: strings name paths as data — the gates file declares the wide paths the judgement reads
@@ -81,6 +81,14 @@ describe('landings are batched: one tier starts once none has come for the pause
   it('never moves the pause back for a landing seen late', () => {
     const first = enlist(null, landing(1, 10)).pending;
     expect(bump(first, at(5))?.last).toBe(at(10));
+  });
+
+  it('starts the batch at its ceiling though landings keep coming less than the pause apart', () => {
+    let pending: Pending | null = enlist(null, landing(1, 0)).pending;
+    for (let minute = 10; minute < 130; minute += 10) pending = bump(pending, at(minute));
+    expect(look(pending, 'heavy-1', Date.parse(at(129)), HEAVY_QUIET_MS).role).toBe('start');
+    expect(look(pending, 'heavy-1', Date.parse(at(119)), HEAVY_QUIET_MS).role).toBe('wait');
+    expect(HEAVY_MAX_WAIT_MS).toBe(120 * 60_000);
   });
 
   it('says gone where the waiting tier finds nothing pending, so it settles an error rather than run unrecorded', () => {

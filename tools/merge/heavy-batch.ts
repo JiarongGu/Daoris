@@ -14,13 +14,15 @@ export const HEAVY_PENDING = 'local/heavy-pending.json';
 /** How long no landing may have come before the batch's tier starts. */
 export const HEAVY_QUIET_MS = 20 * 60_000;
 /** How often a waiting tier looks again. */
+/** The longest a reasoned landing's tier waits, from the oldest landing in its batch, however steadily landings keep coming. */
+export const HEAVY_MAX_WAIT_MS = 2 * 60 * 60_000;
 export const HEAVY_QUIET_POLL_MS = 30_000;
 
 /** One landing's change: the main tip before it and the commit it landed. */
 export type Range = { base: string; commit: string };
 export type Carried = { id: string; commit: string; branches: string[] };
 /** The batch waiting: the newest reasoned landing's run, the oldest base, every branch, the ranges, the tiers it carries, when a landing last came. */
-export type Pending = { id: string; commit: string; base: string; branches: string[]; last: string; ranges: Range[]; carried: Carried[] };
+export type Pending = { id: string; commit: string; base: string; branches: string[]; first: string; last: string; ranges: Range[]; carried: Carried[] };
 export type Landing = { id: string; commit: string; base: string; branches: string[]; at: string };
 
 /** Whether a landing queues a heavy tier, and why, as the line says it. */
@@ -49,6 +51,7 @@ export function enlist(before: Pending | null, landing: Landing): { pending: Pen
   return {
     pending: {
       id: landing.id, commit: landing.commit, base: before?.base ?? landing.base, branches,
+      first: before?.first ?? landing.at,
       last: before && Date.parse(before.last) > Date.parse(landing.at) ? before.last : landing.at,
       ranges: [...(before?.ranges ?? []).filter((each) => each.commit !== own.commit), own],
       carried: [...(before?.carried ?? []), ...(superseded ? [superseded] : [])],
@@ -71,11 +74,11 @@ export type Look = {
   batch?: Pending;
 };
 
-/** One look of the tier `me` at the batch: it starts once no landing has come for `quietMs`, taking the batch out of the file. */
-export function look(before: Pending | null, me: string, now: number, quietMs: number): Look {
+/** One look of the tier `me` at the batch: it starts once no landing has come for `quietMs`, or the oldest has waited `maxWaitMs`, taking the batch out of the file. */
+export function look(before: Pending | null, me: string, now: number, quietMs: number, maxWaitMs: number = HEAVY_MAX_WAIT_MS): Look {
   if (!before) return { pending: null, role: 'gone' };
   if (before.id !== me) return { pending: before, role: 'superseded', by: { id: before.id, commit: before.commit, branches: before.branches } };
-  if (now - Date.parse(before.last) < quietMs) return { pending: before, role: 'wait' };
+  if (now - Date.parse(before.last) < quietMs && now - Date.parse(before.first) < maxWaitMs) return { pending: before, role: 'wait' };
   return { pending: null, role: 'start', batch: before };
 }
 
@@ -88,7 +91,7 @@ export function readPending(file: string): Pending | null {
   try {
     const parsed = JSON.parse(readFileSync(file, 'utf8')) as Partial<Pending> | null;
     if (!parsed || typeof parsed.id !== 'string' || typeof parsed.commit !== 'string' || typeof parsed.base !== 'string' || typeof parsed.last !== 'string') return null;
-    return { id: parsed.id, commit: parsed.commit, base: parsed.base, last: parsed.last, branches: parsed.branches ?? [], ranges: parsed.ranges ?? [], carried: parsed.carried ?? [] };
+    return { id: parsed.id, commit: parsed.commit, base: parsed.base, first: parsed.first ?? parsed.last, last: parsed.last, branches: parsed.branches ?? [], ranges: parsed.ranges ?? [], carried: parsed.carried ?? [] };
   } catch {
     return null;
   }

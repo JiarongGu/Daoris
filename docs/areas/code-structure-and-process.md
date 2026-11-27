@@ -194,7 +194,7 @@ finishes first and the whole set runs once.
     change it landed (`merge/heavy-batch.ts`, `admitLanding` in `heavy-run.mjs`, D349's note of 2026-11-27): the run after a landing is
     no reason by its kind, so a landing whose paths bear none of a full run's reasons (a declared wide path, the declared reach share)
     settles `skipped` (a `SKIPPED` line; a stage reads it as no pass) and queues nothing heavy, takes no place and no tree. A reasoned
-    landing joins `local/heavy-pending.json` and its tier starts once no landing, reasoned or not, has come for 20 minutes; a newer
+    landing joins `local/heavy-pending.json` and its tier starts once no landing, reasoned or not, has come for 20 minutes (2 hours from the oldest landing at most); a newer
     reasoned one carries the waiting one's range (it settles `superseded`). The tier runs every class the reasoned landings' own
     changes reach (`reached-checks --ranges`, never the main line's whole run between them),
     each dependency class included (`reached-checks --tier heavy` leaves none to the night), through that tier

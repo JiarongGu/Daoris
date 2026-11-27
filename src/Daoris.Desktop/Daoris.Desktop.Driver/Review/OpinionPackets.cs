@@ -149,20 +149,22 @@ public static class OpinionPackets
     /// </summary>
     public static OpinionVerification? VerificationIn(string tree)
     {
-        var file = Path.Combine(tree, DeclarationNames.Gates);
-        if (!File.Exists(file)) return null;
+        var named = Inside(tree, Declared(tree).GetValueOrDefault("gates")) ?? Inside(tree, DeclarationNames.Gates);
+        if (named is null || !File.Exists(Path.Combine(tree, named))) return null;
+        var file = Path.Combine(tree, named);
         try
         {
             using var document = JsonDocument.Parse(File.ReadAllText(file));
             if (document.RootElement.ValueKind != JsonValueKind.Object
                 || !document.RootElement.TryGetProperty("verifyBudget", out var rule) || rule.ValueKind != JsonValueKind.Object
-                || !rule.TryGetProperty("budgetMinutes", out var budget) || !budget.TryGetDouble(out var minutes) || minutes <= 0)
+                || !rule.TryGetProperty("budgetMinutes", out var budget) || budget.ValueKind != JsonValueKind.Number || !budget.TryGetDouble(out var minutes) || minutes <= 0)
             {
                 return null;
             }
 
             var wide = new List<string>();
             var share = 100;
+            var release = false;
             if (rule.TryGetProperty("fullRunReasons", out var reasons) && reasons.ValueKind == JsonValueKind.Object)
             {
                 if (reasons.TryGetProperty("widePaths", out var paths) && paths.ValueKind == JsonValueKind.Array)
@@ -170,15 +172,18 @@ public static class OpinionPackets
                     wide.AddRange(paths.EnumerateArray().Where(path => path.ValueKind == JsonValueKind.String).Select(path => path.GetString()!).Where(path => path.Length > 0));
                 }
 
-                if (reasons.TryGetProperty("reachShare", out var reach) && reach.TryGetDouble(out var fraction) && fraction is > 0 and <= 1)
+                if (reasons.TryGetProperty("reachShare", out var reach) && reach.ValueKind == JsonValueKind.Number && reach.TryGetDouble(out var fraction) && fraction is > 0 and <= 1)
                 {
                     share = (int)Math.Round(fraction * 100);
                 }
+
+                release = reasons.TryGetProperty("runs", out var runs) && runs.ValueKind == JsonValueKind.Array
+                    && runs.EnumerateArray().Any(run => run.ValueKind == JsonValueKind.String && run.GetString() == "release");
             }
 
-            return new OpinionVerification((int)Math.Round(minutes), wide, share);
+            return new OpinionVerification((int)Math.Round(minutes), wide, share, release);
         }
-        catch (Exception error) when (error is JsonException or IOException or UnauthorizedAccessException)
+        catch (Exception error) when (error is JsonException or IOException or UnauthorizedAccessException or InvalidOperationException)
         {
             return null;
         }

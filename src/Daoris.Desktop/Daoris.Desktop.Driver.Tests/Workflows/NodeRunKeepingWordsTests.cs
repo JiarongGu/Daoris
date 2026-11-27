@@ -16,7 +16,7 @@ public sealed class NodeRunKeepingWordsTests
     }
 
     private const string FailedWordsRule =
-        "It is checked again on what you changed, scoped to its reach: ask for no full or end-to-end run unless the repository's own verification rule gives this change a reason for one.";
+        "Where the repository's own verification rule scopes its checks, the next one runs on what you changed: ask for no full or end-to-end run that rule gives this change no reason for.";
 
     [Fact]
     public void A_red_check_tells_the_work_it_is_checked_again_on_what_changed_and_that_a_full_run_needs_the_rules_reason()

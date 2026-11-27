@@ -51,7 +51,8 @@ export function askTiers(repoRoot, { home = repoRoot, commit = null } = {}) {
   const short = sha.slice(0, 7);
   const mine = heavyRuns(home).filter((run) => sha.startsWith(run.commit) || run.commit.startsWith(sha))
     .sort((a, b) => String(a.at).localeCompare(String(b.at))).at(-1);
-  const byHand = `node tools/heavy-run.mjs --id heavy-${short}-by-hand --commit ${sha} --base ${sha}~1 --now`;
+  const lastGreen = heavyRuns(home).filter((run) => run.state === 'green' && !sha.startsWith(run.commit)).sort((a, b) => String(a.at).localeCompare(String(b.at))).at(-1);
+  const byHand = `node tools/heavy-run.mjs --id heavy-${short}-by-hand --commit ${sha} --base ${lastGreen?.commit ?? `${sha}~1`} --now`;
   if (!mine) {
     return {
       code: 1,

@@ -153,6 +153,20 @@ public sealed class OpinionPacketTests : IDisposable
         Assert.Equal(10, rule.BudgetMinutes);
         Assert.Equal(["daoris.gates.json", "src/Contracts/**"], rule.WidePaths);
         Assert.Equal(50, rule.ReachPercent);
+        Assert.True(rule.Release);
+    }
+
+    [Fact]
+    public void A_mistyped_value_in_the_rule_hands_none_and_the_gates_file_is_read_from_the_declared_path()
+    {
+        Write("daoris.gates.json", """{ "verifyBudget": { "budgetMinutes": "10" } }""");
+        Assert.Null(OpinionPackets.VerificationIn(_tree));
+        Write("daoris.gates.json", """{ "verifyBudget": { "budgetMinutes": 10, "fullRunReasons": { "reachShare": "half" } } }""");
+        Assert.Equal(100, OpinionPackets.VerificationIn(_tree)!.ReachPercent);
+
+        Write("tools/gates.json", Gates);
+        Write("daoris.json", """{ "documents": { "gates": "tools/gates.json" } }""");
+        Assert.Equal(10, OpinionPackets.VerificationIn(_tree)!.BudgetMinutes);
     }
 
     [Fact]
@@ -178,6 +192,8 @@ public sealed class OpinionPacketTests : IDisposable
         Assert.Contains("50% or more", text);
         Assert.Contains("do not ask for a full or end-to-end run", text);
         Assert.Contains("do not count the absence of one as a finding", text);
+        Assert.DoesNotContain("after landing", text);
+        Assert.Contains("or a release", text);
 
         Assert.DoesNotContain("The verification this repository sets", OpinionInstruction.Compose(new OpinionPacket(OpinionRules.Landing, candidate)));
     }

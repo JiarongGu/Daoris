@@ -52,8 +52,8 @@ longer than its change's reach is a scope defect, not a cost of safety; a budget
   for the CI beside and a release by their kind, not for the heavy tier: its runner (`tools/heavy-run.mjs`) judges each landing by the
   paths it changed against the same `fullRunReasons` (a declared wide path, the declared reach share), and a landing with neither
   settles `skipped` and queues nothing, no admission place and no tree. A reasoned landing's tier waits until no landing has come for
-  20 minutes, a newer reasoned landing carrying the waiting one's range, then runs only the classes the reasoned landings' own
-  changes reach, as a background run: the low class of D365, taken only while no task's check waits, no group started while one
+  20 minutes (2 hours from the oldest landing at most), a newer reasoned landing carrying the waiting one's range, then runs only the classes the reasoned landings' own
+  changes reach, as the admission's existing background run, taken only while no task's check waits, no group started while one
   does. A release, a reason by its kind, asks the tier by hand (`tools/heavy-run.mjs … --now`).
 - **Every reviewer reads this rule, and none asks past it.** A second opinion, a wide or close review and a session's own review
   of a change judge its verification by this rule: the opinion's instruction carries the repository's declared rule and a red

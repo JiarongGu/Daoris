@@ -33,12 +33,12 @@ public sealed record OpinionRulesRead(IReadOnlyList<string> Doctrine, string? De
 /// for no run the rule gives no reason for: a task's budget in minutes, the paths whose change is a reason for a full run, and the
 /// share of its test classes a change must reach to be one.
 /// </summary>
-public sealed record OpinionVerification(int BudgetMinutes, IReadOnlyList<string> WidePaths, int ReachPercent)
+public sealed record OpinionVerification(int BudgetMinutes, IReadOnlyList<string> WidePaths, int ReachPercent, bool Release = false)
 {
     public bool Equals(OpinionVerification? other) =>
-        other is not null && BudgetMinutes == other.BudgetMinutes && WidePaths.SequenceEqual(other.WidePaths) && ReachPercent == other.ReachPercent;
+        other is not null && BudgetMinutes == other.BudgetMinutes && WidePaths.SequenceEqual(other.WidePaths) && ReachPercent == other.ReachPercent && Release == other.Release;
 
-    public override int GetHashCode() => HashCode.Combine(BudgetMinutes, WidePaths.Count, ReachPercent);
+    public override int GetHashCode() => HashCode.Combine(BudgetMinutes, WidePaths.Count, ReachPercent, Release);
 }
 
 /// <summary>

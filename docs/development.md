@@ -613,10 +613,10 @@ The queue's admission is the machine's: it does not read `local/admission.json`,
 change the landing made, never by the run's kind: `tools/heavy-run.mjs` reads the landing's paths against `daoris.gates.json`'s
 `verifyBudget` (a declared wide path, or a reach of the declared share of the census's classes), and a landing with none settles
 `skipped` and queues nothing, takes no admission place and no tree (a release, which is a reason by its kind, asks the tier by
-hand: `heavy-run.mjs … --now`, which tier-evidence names). A reasoned landing's tier waits until no landing has come for 20
-minutes (`local/heavy-pending.json`, `tools/merge/heavy-batch.ts`); a newer reasoned landing carries the waiting one, so one tier
-runs the batch on the newest tip, over only what the reasoned landings changed. It runs as a background run in the machine's
-admission, the low class of D365: it takes a place only while no blocking run, a task's check among them, waits, and starts no group
+hand: `heavy-run.mjs … --now`, which tier-evidence names, from the last green heavy run). A reasoned landing's tier waits until no landing has come for 20
+minutes, and no later than 2 hours after the oldest landing of the batch (`local/heavy-pending.json`, `tools/merge/heavy-batch.ts`); a
+newer reasoned landing carries the waiting one, so one tier runs the batch on the newest reasoned landing's commit, over only what
+the reasoned landings changed. A landing with no reason leaves its heavy classes to the CI beside and the nightly alone. It runs as the machine admission's existing background kind (unchanged here): it takes a place only while no blocking run, a task's check among them, waits, and starts no group
 while one does; a group in flight is not cut. A repository with no `verifyBudget` keeps the tier after every landing.
 
 **One heavy tier at a time** (HEAVYSTACK1). The heavy tier after a landing (`tools/heavy-run.mjs`) holds the heavy tree alone,

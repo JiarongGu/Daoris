@@ -220,7 +220,7 @@ public static class OpinionInstruction
     private static void Verification(StringBuilder text, OpinionVerification rule)
     {
         text.Append("\n## The verification this repository sets\n\n")
-            .Append($"This repository keeps one task's verification to {rule.BudgetMinutes} minutes of wall time, scoped to what the change's paths reach, with its heavier checks run after landing. ")
+            .Append($"This repository keeps one task's verification to {rule.BudgetMinutes} minutes of wall time, scoped to what the change's paths reach. ")
             .Append("A full or end-to-end run is taken only for a reason the change bears: ");
         var reasons = new List<string>();
         if (rule.WidePaths.Count > 0)
@@ -230,10 +230,10 @@ public static class OpinionInstruction
         }
 
         reasons.Add($"a change that reaches {rule.ReachPercent}% or more of its test classes");
-        reasons.Add("a release");
-        text.Append(string.Join(", ", reasons.Take(reasons.Count - 1))).Append(" or ").Append(reasons[^1]).Append(". ")
-            .Append("Judge the work by that: where the change bears none of them, do not ask for a full or end-to-end run, and do not count the absence of one as a finding; ")
-            .Append("the repository runs those after landing, as it declares. A gap in what the change's own tests cover is still a finding.\n");
+        if (rule.Release) reasons.Add("a release");
+        text.Append(reasons.Count == 1 ? reasons[0] : string.Join(", ", reasons.Take(reasons.Count - 1)) + " or " + reasons[^1]).Append(". ")
+            .Append("Judge the work by that: where the change bears none of them, do not ask for a full or end-to-end run, and do not count the absence of one as a finding. ")
+            .Append("A gap in what the change's own tests cover is still a finding.\n");
     }
 
     private static void May(StringBuilder text, bool verify) =>

@@ -29,7 +29,7 @@ import { isMain, writeAtomic } from './fsx.mjs';
 import { readFindings, writeFindings, fileSighting } from './ci-background.mjs';
 import { processAlive } from './machine-admission.mjs';
 import { startBackground } from './merge/background.ts';
-import { HEAVY_PREFIX, HEAVY_TREE, appendHeavy, settleHeavy, skipHeavy } from './merge/heavy-after.ts';
+import { HEAVY_PREFIX, HEAVY_TREE, appendHeavy, readHeavy, settleHeavy, skipHeavy } from './merge/heavy-after.ts';
 import { HEAVY_PENDING, HEAVY_QUIET_MS, HEAVY_QUIET_POLL_MS, bump, changePending, enlist, judgeLanding, look as lookPending, rangesOf } from './merge/heavy-batch.ts';
 import { readVerifyBudget } from './merge/verification.ts';
 import { readHalt } from './merge/heavy-halt.ts';
@@ -136,6 +136,15 @@ async function reachOfPaths(checkout, paths) {
   const world = await keyContextOf(checkout);
   const units = world.map.units;
   return { reached: units.filter((unit) => paths.some((path) => world.context.reaches(unit, path))).length, of: units.length, what: 'classes' };
+}
+
+/** Each tier a starting batch carries that is still `running` (a killed waiter settles nowhere else) settled `superseded` by the batch. */
+export function settleCarried(checkout, batch, now = new Date().toISOString()) {
+  const open = new Map(readHeavy(checkout).filter((run) => run.state === 'running').map((run) => [run.id, run]));
+  for (const each of batch.carried ?? []) {
+    const run = open.get(each.id);
+    if (run) appendHeavy(checkout, { ...run, state: 'superseded', ended: now, handedTo: { id: batch.id, commit: batch.commit }, note: `superseded by ${batch.id}: its range is carried there` });
+  }
 }
 
 export const judgeIn = (checkout) => async ({ base, commit }) => {
@@ -295,6 +304,7 @@ async function main(argv) {
   const admitted = argv.includes('--now') ? { outcome: 'start', batch: null } : await admitLanding(landed, { checkout: home, judge: judgeIn(home), settle });
   if (admitted.outcome !== 'start') return admitted.run.state === 'skipped' ? 0 : 1;
   const batch = admitted.batch;
+  if (batch) settleCarried(home, batch);
   const input = batch
     ? { ...landed, id: batch.id, commit: batch.commit, base: batch.base, branches: batch.branches, ranges: rangesOf(batch), carried: batch.carried }
     : landed;
