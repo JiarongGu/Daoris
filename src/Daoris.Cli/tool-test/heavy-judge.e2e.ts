@@ -3,14 +3,16 @@ import assert from 'node:assert/strict';
 import { mkdirSync, mkdtempSync, realpathSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
-import { judgeIn } from '../../../tools/heavy-run.mjs';
-import { pathsOfRanges } from '../../../tools/reached-checks.mjs';
 import { git } from './support/merge-branch-kit.ts';
 
 // test-map: strings name paths as data
 // reaches: tool-e2e — the judgement and the ranges read a real git repository
 
+const tool = (name: string) => import(new URL('../../../tools/' + name, import.meta.url).href);
+
 test('the landing is judged on the paths its range changed, and a batch is reached over the ranges alone', async () => {
+  const { judgeIn } = await tool('heavy-run.mjs');
+  const { pathsOfRanges } = await tool('reached-checks.mjs');
   const dir = realpathSync(mkdtempSync(join(tmpdir(), 'heavy-judge-')));
   const commitFile = (path: string, text: string) => {
     mkdirSync(join(dir, dirname(path)), { recursive: true });
