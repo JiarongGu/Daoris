@@ -83,7 +83,7 @@ internal sealed class SessionAdvances(QuestStore quests, SessionStore sessions, 
         string id, string state, string? note, string? evidence, string? transcript,
         DateTimeOffset now, CancellationToken ct = default, bool interrupted = false, bool limit = false, string? noteParts = null,
         string? expected = null, bool unbindAsk = false, IReadOnlyCollection<string>? expect = null,
-        IReadOnlyDictionary<string, MemoryTurns>? turns = null, IReadOnlyList<string>? holdsPlace = null)
+        IReadOnlyDictionary<string, MemoryTurns>? turns = null, IReadOnlyList<string>? holdsPlace = null, string? witness = null)
     {
         var target = Parse(state);
         if (target is null or SessionState.Queued)
@@ -204,7 +204,7 @@ internal sealed class SessionAdvances(QuestStore quests, SessionStore sessions, 
             // A session that parks again asks anew: the answer it went on with is not this park's.
             var moved = await sessions.SetStateAsync(
                     id, target.Value, note, evidence, transcript, now, inside, interrupted, limit,
-                    clearSaid: target == SessionState.AwaitingPerson, noteParts: noteParts)
+                    clearSaid: target == SessionState.AwaitingPerson, noteParts: noteParts, witness: witness ?? "advance")
                 .ConfigureAwait(false);
 
             // A running state holds the place by itself, so its mark goes; the move out of one writes the paths it keeps, or none.
@@ -324,7 +324,7 @@ internal sealed class SessionAdvances(QuestStore quests, SessionStore sessions, 
 
         var (went, parts) = WentOnNote(session, note, noteParts, now);
         var moved = await sessions
-            .SetStateAsync(id, SessionState.Working, went, evidence, transcript, now, inside, forgive: true, noteParts: parts)
+            .SetStateAsync(id, SessionState.Working, went, evidence, transcript, now, inside, forgive: true, noteParts: parts, witness: "go-on")
             .ConfigureAwait(false);
         await holders.MarkPlaceAsync(id, null, inside).ConfigureAwait(false);
         moved = await SessionTurnKeep.WentOnAsync(sessions, moved! with { HoldsPlace = null }, SessionTurns.WentOn(session, now), inside).ConfigureAwait(false);
@@ -388,7 +388,8 @@ internal sealed class SessionAdvances(QuestStore quests, SessionStore sessions, 
 
         // Nothing waits on it (refused above), and this move never clears a word kept meanwhile, as a park's own end would.
         var moved = await sessions
-            .SetStateAsync(id, SessionState.AwaitingPerson, note, evidence: null, transcript: null, now, inside, clearSaid: false, noteParts: noteParts)
+            .SetStateAsync(id, SessionState.AwaitingPerson, note, evidence: null, transcript: null, now, inside, clearSaid: false, noteParts: noteParts,
+                witness: "helper-park")
             .ConfigureAwait(false);
         return new SessionAdvanceOutcome(
             SessionAdvanceRefusal.None,

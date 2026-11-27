@@ -468,7 +468,7 @@ if (mode == ServiceMode.Shared)
 // Each domain's routes, declared in Daoris.Contracts and mapped by its module (Routes/), found by reflection.
 var wiring = new HostWiring(
     composed, mode, hostRun, homeId, personKey, personGate, confirmations, changes, hostWorkspace, options.RepositoryRoot,
-    app.Lifetime.ApplicationStopping);
+    app.Lifetime.ApplicationStopping) { Log = log };
 RouteModules.MapAll(app, wiring);
 
 log.Info("app.started",

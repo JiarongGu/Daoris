@@ -93,7 +93,7 @@ internal sealed class SessionOpening(
                 .CreateAsync(
                     null, AskDesk.SenderOf(ask.Id), adapter, now, ask.Workspace, SessionKind.Chat,
                     doorVersion, profile, holding, baseCommit: null, inside, ask: ask.Id,
-                    entryOrigin: SessionEntries.AskOrigin(ask.Id), entryPart: "intake", actor: actor)
+                    entryOrigin: SessionEntries.AskOrigin(ask.Id), entryPart: "intake", actor: actor, witness: "intake-open")
                 .ConfigureAwait(false);
             await asks!.RecordIntakeAsync(ask.Id, session.Id, now, inside).ConfigureAwait(false);
 
@@ -156,7 +156,7 @@ internal sealed class SessionOpening(
             var session = await sessions
                 .CreateAsync(
                     null, SessionLedger.HelpRepository, adapter, now, circle, SessionKind.Chat,
-                    doorVersion, profile, holding, baseCommit: null, inside, ownEntry: true, helpMode: running, actor: actor)
+                    doorVersion, profile, holding, baseCommit: null, inside, ownEntry: true, helpMode: running, actor: actor, witness: "help-open")
                 .ConfigureAwait(false);
 
             return new SessionOpenOutcome(
@@ -245,7 +245,7 @@ internal sealed class SessionOpening(
                 .CreateAsync(
                     null, known.Repository, adapter, now, known.InWorkspace, SessionKind.Chat,
                     doorVersion, profile, holding, baseCommit, inside, from: from, fromWhy: fromWhy, fromBy: fromBy,
-                    entryOrigin: continuedOrigin, ownEntry: continuedOrigin is null, actor: actor)
+                    entryOrigin: continuedOrigin, ownEntry: continuedOrigin is null, actor: actor, witness: "chat-open")
                 .ConfigureAwait(false);
 
             return new SessionOpenOutcome(
@@ -481,7 +481,7 @@ internal sealed class SessionOpening(
                 .CreateAsync(
                     quest.Id, quest.To, adapter, now, quest.Workspace, SessionKind.Driven,
                     doorVersion, profile, holding, baseCommit, inside, from: from, fromWhy: fromWhy, fromBy: fromBy,
-                    entryOrigin: origin, access: setup, actor: actor, node: node, attempt: attempt)
+                    entryOrigin: origin, access: setup, actor: actor, node: node, attempt: attempt, witness: "quest-open")
                 .ConfigureAwait(false);
 
             return new SessionOpenOutcome(

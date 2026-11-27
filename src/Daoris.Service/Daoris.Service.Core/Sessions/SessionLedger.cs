@@ -234,18 +234,19 @@ public sealed class SessionLedger(
         string id, string state, string? note, string? evidence, string? transcript,
         DateTimeOffset now, CancellationToken ct = default, bool interrupted = false, bool limit = false, string? noteParts = null,
         string? expected = null, bool unbindAsk = false, IReadOnlyCollection<string>? expect = null,
-        IReadOnlyDictionary<string, MemoryTurns>? turns = null, IReadOnlyList<string>? holdsPlace = null, TurnSpent? spent = null) =>
+        IReadOnlyDictionary<string, MemoryTurns>? turns = null, IReadOnlyList<string>? holdsPlace = null, TurnSpent? spent = null,
+        string? witness = null) =>
         spent is null
-            ? advances.AdvanceAsync(id, state, note, evidence, transcript, now, ct, interrupted, limit, noteParts, expected, unbindAsk, expect, turns, holdsPlace)
-            : AdvanceSpentAsync(id, state, note, evidence, transcript, now, ct, interrupted, limit, noteParts, expected, unbindAsk, expect, turns, holdsPlace, spent);
+            ? advances.AdvanceAsync(id, state, note, evidence, transcript, now, ct, interrupted, limit, noteParts, expected, unbindAsk, expect, turns, holdsPlace, witness)
+            : AdvanceSpentAsync(id, state, note, evidence, transcript, now, ct, interrupted, limit, noteParts, expected, unbindAsk, expect, turns, holdsPlace, spent, witness);
 
     // A move out of a running turn hands what the door reported over the record's turns so far; it lands on the turn that move ends.
     private async Task<SessionAdvanceOutcome> AdvanceSpentAsync(
         string id, string state, string? note, string? evidence, string? transcript, DateTimeOffset now, CancellationToken ct, bool interrupted,
         bool limit, string? noteParts, string? expected, bool unbindAsk, IReadOnlyCollection<string>? expect,
-        IReadOnlyDictionary<string, MemoryTurns>? turns, IReadOnlyList<string>? holdsPlace, TurnSpent spent)
+        IReadOnlyDictionary<string, MemoryTurns>? turns, IReadOnlyList<string>? holdsPlace, TurnSpent spent, string? witness)
     {
-        var outcome = await advances.AdvanceAsync(id, state, note, evidence, transcript, now, ct, interrupted, limit, noteParts, expected, unbindAsk, expect, turns, holdsPlace)
+        var outcome = await advances.AdvanceAsync(id, state, note, evidence, transcript, now, ct, interrupted, limit, noteParts, expected, unbindAsk, expect, turns, holdsPlace, witness)
             .ConfigureAwait(false);
         return outcome.Session is { Origin: null } moved
             ? outcome with { Session = await SessionTurnKeep.UsageAsync(sessions, moved, spent, ct).ConfigureAwait(false) }
