@@ -509,7 +509,7 @@ runnable output is found only by a build tool's output setting or a generation s
 
 | Class | What it is | Between one line and the next | Examples |
 |---|---|---|---|
-| **Dependencies** | what a package manager installs from a lockfile, by the command the declaration names | kept or placed by its key and its placement record, read at every take (R5.6), never linked; one that names its own path is kept in place, never stored, and installed again when its key or record moves *(R7)* | `node_modules`, `vcpkg_installed`; in place: a `.venv`, a conda environment |
+| **Dependencies** | what a package manager installs from a lockfile, by the command the declaration names | kept or placed by its key and its placement record, read at every take (R5.6), each file linked to the store's own (HOMESIZE1); one that names its own path is kept in place, never stored, and installed again when its key or record moves *(R7)* | `node_modules`, `vcpkg_installed`; in place: a `.venv`, a conda environment |
 | **Intermediates** | what a build tool checks itself and makes again when stale, valid only at the path it was made | carried only by a tree kept at one path, the checkout under a room or a kept slot, and while the tree's `toolchain` key holds; renewed when it moves *(R7)*; never two trees' at once, never cloned to another path | `obj/`, cargo's `target/`, `.gradle/` |
 | **Runnable outputs** | what a runner uses without building first, or what its writer makes again cheaply; a folder holding both is an output unless every runner builds first *(R7-C10)* | never carried: cleared at every take | `bin/`, `dist/`, `wwwroot`, `docs/index/`, a CMake build tree `ctest` runs |
 | **Local** | machine-local inputs the gates read | copied in read-only at every open (TREELOCAL1), never stored or cloned | `localInputs` |
@@ -669,11 +669,12 @@ the group's earlier keys and the mark.
   written back from the commit first and the folder cleared, since a session starts at its commit and that change is Daoris's own of a
   moment ago. A dependency that writes the tree's path into its files, or says `bound`, is installed in each tree and kept in place in a
   slot (R5.5).
-- **Placed** at an open or a take wherever its key hits: copied eight at once (TREEDEPS1's measure), the read-only mark cleared, its links
-  made again inside the tree. **Its placement record** is written last, beside the tree's in the home: the key and the manifest, with each
-  copy's size, write and change time. A folder with no record is no placement, and is cleared before anything reads it. **Never a hard
-  link or a junction**: D51's rejection stands, a write in place or the package manager's own clean reaching every tree's copy (R5.2; Opus
-  round 5's F10).
+- **Placed** at an open or a take wherever its key hits: each file a hard link to the store's own (HOMESIZE1; copied where a volume refuses
+  it, and the files at the folder's top, which a manager's own record of its install, copied and stamped), eight at once, its links made again
+  inside the tree. The store's files keep the read-only mark, set again at each placement, so a write in place fails and a manager's clean
+  unlinks one name; a placed tree costs no bytes of its dependencies. **Its placement record** is written last, beside the tree's in the home: the key and the manifest, with each
+  copy's size, write and change time. A folder with no record is no placement, and is cleared before anything reads it. **Never a junction**
+  of the folder, which a manager's install would write through (D51's rejection stands for it).
 - **Kept** in a slot while its key and its record hold. At every take its namespace is read against the record, stat first and a hash
   where a stat differs: a file, folder or link missing, changed, or added outside the dependency's `caches` replaces the placement. A
   removal of a placed folder takes its links as links first and never follows one (PRUNELINKS1's rule).
@@ -781,8 +782,7 @@ larger than a session reads, B once rows 2 and 4 show builds colliding between r
   (upstream since git 2.38); ProjFS is installed here, disabled, and was not enabled.
 - **MSBuild's project cache plugin**, and cargo's, CMake's, uv's and Gradle's path-dependence in R5.5's examples, from their
   documentation; only the .NET case was measured.
-- **The hard-link figure** is Git for Windows' `cp -al`, file by file; a native `CreateHardLink` caller would be faster, and stays rejected
-  (D51) whatever its speed.
+- **The hard-link figure** was Git for Windows' `cp -al`, file by file; HOMESIZE1 measured a native `CreateHardLink` on this machine: the web's `node_modules` (21,505 files) 33 s one at a time against 52 s for a copy, and a placement links eight at once.
 - **The install's 29 repositories** were not read; row 2 counts their overlapping sessions from the install's own records.
 
 ## 0. What this rests on
@@ -2461,7 +2461,7 @@ slot path, answers the round-3 reader's proposed item 6 *(R4-F1)*.
 | *Round 5:* `SlotKeeps`, a list of stack folders in Daoris's code (round 4's §11) | Daoris is generic: a repository declares its classes (R5.5), and an undeclared path is scratch |
 | *Round 5:* `bin/`, `wwwroot` and the generated files carried in a kept slot (round 4's §11) *(R4-F2, R4-F5)* | each is run, or read, without a build: runnable outputs, cleared at every take |
 | *Round 5:* a clone of a warm template per session as the fallback's default | it saves no build, the path being new (R5.2), and saves bytes only on a Dev Drive; it serves inside the kept slot instead (R5.7), and stays the owner's alternative (§18 item 6) |
-| *Round 5:* hard links or junctions from the dependency store | a write in place, or a package manager's own clean, reaches every tree's copy (D51); a link is still an entry per file (R5.2) |
+| *Round 5:* hard links or junctions from the dependency store *(reversed for hard links by HOMESIZE1, 2026-11-27; a junction of the folder stays rejected)* | a write in place, or a package manager's own clean, reaches every tree's copy (D51); a link is still an entry per file (R5.2) |
 | *Round 5:* the dependency store filled from a tree an agent worked in, or from the checkout | an earlier line's or a person's install is trusted by a file's time (R4-F6); the store fills only right after a prepare step |
 | *Round 5:* a view (ProjFS) per session now (model A) | builds and searches hydrate most of a repository this size (R5.2); stock git cannot work in a view; a provider must run for every read |
 | *Round 5:* a command shim routing an agent's builds to a build slot (model B) | a script or an absolute path steps around it, and a `--no-build` run defeats it; a build is asked of Daoris's tool |
