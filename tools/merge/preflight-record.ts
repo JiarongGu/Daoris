@@ -47,7 +47,7 @@ export function firstGates<T extends { name: string }>(gates: T[], declaration: 
 
 /** The files changed from `base` to `tip` with their lines; a binary file counts none, and a diff git cannot make reads as no change. */
 export function changesOf(root: string, base: string, tip: string, git: Git): Change[] {
-  const ran = git(root, ['diff', '--numstat', `${base}...${tip}`], { allowFail: true });
+  const ran = git(root, ['--no-optional-locks', 'diff', '--numstat', `${base}...${tip}`], { allowFail: true });
   if (ran.status !== 0) return [];
   return ran.out.split('\n').filter(Boolean).flatMap((line) => {
     const [added, removed, ...path] = line.split('\t');
@@ -56,7 +56,7 @@ export function changesOf(root: string, base: string, tip: string, git: Git): Ch
 }
 
 const show = (root: string, git: Git, commit: string, path: string): string | null => {
-  const ran = git(root, ['show', `${commit}:${path}`], { allowFail: true });
+  const ran = git(root, ['--no-optional-locks', 'show', `${commit}:${path}`], { allowFail: true });
   return ran.status === 0 ? ran.out : null;
 };
 

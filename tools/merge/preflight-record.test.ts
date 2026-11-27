@@ -6,6 +6,7 @@ import { fixtureFolder } from './fixture-home.ts';
 import { readReceipts, receiptsFolder } from './receipts.ts';
 import { changesOf, checkRunOf, firstGates, keepRun, receiptOf, summaryInputOf, type Git } from './preflight-record.ts';
 
+const queued = 3000;
 const result = (name: string, verdict: string, over: Record<string, unknown> = {}) => ({ gate: { name, run: `run ${name}` }, verdict, ms: 2000, note: '', ...over });
 
 test('a gate\'s result becomes a receipt: PASS and FLAKE pass, ENDED proves nothing, anything else fails with its first line as the note', () => {
@@ -13,8 +14,8 @@ test('a gate\'s result becomes a receipt: PASS and FLAKE pass, ENDED proves noth
   assert.equal(receiptOf(result('a', 'PASS'), { at, waitMs: 0 }).verdict, 'pass');
   assert.equal(receiptOf(result('a', 'FLAKE'), { at, waitMs: 0 }).verdict, 'pass');
   assert.equal(receiptOf(result('a', 'ENDED'), { at, waitMs: 0 }).verdict, 'ended');
-  const failed = receiptOf(result('a', 'FAIL', { note: 'first line\nsecond' }), { at, waitMs: 3000 });
-  assert.deepEqual([failed.verdict, failed.note, failed.waitMs, failed.command, failed.ms], ['fail', 'first line', 3000, 'run a', 2000]);
+  const failed = receiptOf(result('a', 'FAIL', { note: 'first line\nsecond' }), { at, waitMs: queued });
+  assert.deepEqual([failed.verdict, failed.note, failed.waitMs, failed.command, failed.ms], ['fail', 'first line', queued, 'run a', 2000]);
 });
 
 test('the run keeps the kept gates as replayed passes, the results with their waits, the trigger and the tree', () => {
@@ -38,7 +39,7 @@ test('the censuses named first run first, so a census red is seen before any oth
 
 test('the changes are read from git\'s numstat, a binary file counting no lines', () => {
   const git: Git = (_cwd, args) => {
-    assert.deepEqual(args, ['diff', '--numstat', 'a...b']);
+    assert.deepEqual(args, ['--no-optional-locks', 'diff', '--numstat', 'a...b']);
     return { status: 0, out: '10\t2\ttools/a.ts\n-\t-\tlogo.png\n3\t0\tdocs/areas/x.md\n' };
   };
   assert.deepEqual(changesOf('root', 'a', 'b', git), [
@@ -49,7 +50,7 @@ test('the changes are read from git\'s numstat, a binary file counting no lines'
 
 test('the summary\'s input reads the area documents on both sides and the code map\'s modules, and names the deferred gates', () => {
   const git: Git = (_cwd, args) => {
-    if (args[0] === 'diff') return { status: 0, out: '1\t1\tdocs/areas/x.md\n2\t0\ttools/a.ts\n' };
+    if (args.includes('diff')) return { status: 0, out: '1\t1\tdocs/areas/x.md\n2\t0\ttools/a.ts\n' };
     const spec = args.at(-1);
     if (spec === 'base:docs/areas/x.md') return { status: 0, out: '1. Old.\n' };
     if (spec === 'tip:docs/areas/x.md') return { status: 0, out: '1. New.\n' };
@@ -67,7 +68,7 @@ test('the summary\'s input reads the area documents on both sides and the code m
 });
 
 test('a code map that does not read leaves no module, so every path is named as placed nowhere, never guessed', () => {
-  const git: Git = (_cwd, args) => (args[0] === 'diff' ? { status: 0, out: '1\t0\ttools/a.ts\n' } : { status: 0, out: '{broken' });
+  const git: Git = (_cwd, args) => (args.includes('diff') ? { status: 0, out: '1\t0\ttools/a.ts\n' } : { status: 0, out: '{broken' });
   const input = summaryInputOf({ root: 'r', branch: 'b', base: 'x', tip: 'y', git, receipts: [], required: [], deferred: [] });
   assert.deepEqual(input.modules, []);
 });
@@ -75,7 +76,7 @@ test('a code map that does not read leaves no module, so every path is named as 
 test('a preflight keeps its run: the receipts under the tree in the home, the measure appended, the summary record beside the brief, and the summary said', () => {
   const { dir, remove } = fixtureFolder('keep-run');
   try {
-    const git: Git = (_cwd, args) => (args[0] === 'diff' ? { status: 0, out: '4\t1\ttools/a.ts\n' } : { status: 128, out: '' });
+    const git: Git = (_cwd, args) => (args.includes('diff') ? { status: 0, out: '4\t1\ttools/a.ts\n' } : { status: 128, out: '' });
     const kept = keepRun({
       root: dir, checkout: dir, home: dir, scratch: join(dir, 'scratch'), git, id: 'r1', trigger: 'done', branch: 'b', base: 'base', tip: 'tip', tree: 'T', baseTip: 'main',
       startedAt: 1_000, now: () => 11_000, results: [result('censuses', 'PASS'), result('reached', 'FAIL', { note: 'RED y' })], waits: { reached: 500 },
