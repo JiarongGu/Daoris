@@ -23,7 +23,7 @@ public sealed class HomeProbeTests : IDisposable
 
     public void Dispose()
     {
-        if (Directory.Exists(_install)) Directory.Delete(_install, recursive: true);
+        if (Directory.Exists(_install)) FolderRemoval.Delete(_install);
     }
 
     private void Put(string relative, string text = "")
@@ -123,16 +123,103 @@ public sealed class HomeProbeTests : IDisposable
     }
 
     [Fact]
-    public void A_problem_that_names_the_copy_s_path_is_the_homes_problem_all_the_same()
+    public void A_problem_that_names_the_copy_s_path_in_another_form_is_the_same_problem()
     {
-        var copy = Path.Combine(_install, "update", "staged", "probe", "ab12", "data");
+        var copy = Path.Combine(_install, "update", "probe", "ab12", "data");
+        var relative = Path.GetRelativePath(Environment.CurrentDirectory, copy);
 
         var novel = HomeProbe.Novel(
-            [$"workflow `a` does not read: cannot open {copy}{Path.DirectorySeparatorChar}a.json", $"session `s-2` does not read: {copy}", "run `q1` binds `ghost`"],
-            [$"workflow `a` does not read: cannot open {Home}{Path.DirectorySeparatorChar}a.json", $"session `s-2` does not read: {Home}"],
-            copy, Home);
+            [$"workflow `a` does not read: cannot open {copy.ToUpperInvariant()}{Path.DirectorySeparatorChar}a.json", "run `q1` binds `ghost`"],
+            [$"workflow `a` does not read: cannot open {copy}{Path.DirectorySeparatorChar}a.json"],
+            relative);
 
         Assert.Equal(["run `q1` binds `ghost`"], novel);
+    }
+
+    [Fact]
+    public void A_home_whose_check_seat_a_running_check_holds_is_copied_and_not_refused()
+    {
+        Account("claude-code", "acct-a");
+        Put("data/checks/broker.lock");
+
+        using (new FileStream(DaorisHome.Entry(Home, HomeEntry.Checks, "broker.lock"), FileMode.Open, FileAccess.ReadWrite, FileShare.None))
+        {
+            Assert.Null(HomeProbe.Refused(_install, Home, "0.0.9", SameReader));
+        }
+    }
+
+    [Fact]
+    public void A_held_record_the_reading_reads_refuses_as_a_copy_that_could_not_be_made()
+    {
+        Put("data/workflows/held.json", "{}");
+
+        using (new FileStream(DaorisHome.Entry(Home, HomeEntry.Workflows, "held.json"), FileMode.Open, FileAccess.ReadWrite, FileShare.None))
+        {
+            var refusal = HomeProbe.Refused(_install, Home, "0.0.9", SameReader);
+            Assert.Contains("the copy of the home could not be made", refusal?.Sentence);
+            Assert.Contains("`data/workflows/held.json`", refusal?.Sentence);
+        }
+    }
+
+    [Fact]
+    public void A_pass_says_in_one_log_line_what_the_copy_did_not_read_and_a_refusal_says_it_in_its_sentence()
+    {
+        Account("claude-code", "acct-a");
+        Put("data/checks/04e0ba77.log", "a check's log");
+        var logs = Directory.CreateDirectory(_install + "-log").FullName;
+        using (var log = new MachineLog(logs, "probe-test"))
+        using (new FileStream(DaorisHome.Entry(Home, HomeEntry.Checks, "04e0ba77.log"), FileMode.Open, FileAccess.ReadWrite, FileShare.None))
+        {
+            Assert.Null(HomeProbe.Refused(_install, Home, "0.0.9", SameReader, log));
+            var refusal = HomeProbe.Refused(_install, Home, "0.0.9", (_, copy) =>
+                (0, HomeProof.Say(HomeProof.Read(copy) with { Problems = ["run `q1` binds the workflow `ghost`, which the home does not hold"] })), log);
+            Assert.Contains("`q1`", refusal?.Sentence);
+            Assert.Contains("1 held", refusal?.Sentence);
+        }
+
+        var said = Directory.EnumerateFiles(logs, "*", SearchOption.AllDirectories).SelectMany(File.ReadAllLines).Where(line => line.Contains(HomeProbe.Copied, StringComparison.Ordinal)).ToList();
+        Directory.Delete(logs, recursive: true);
+        var line = Assert.Single(said);
+        Assert.Contains("\"standIns\":1", line);
+        Assert.DoesNotContain(_install, line, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public void A_copy_that_misses_an_account_the_home_holds_is_refused_as_the_copy_s_fault()
+    {
+        Account("claude-code", "acct-a");
+
+        var refusal = HomeProbe.Refused(_install, Home, "0.0.9", (staged, copy) =>
+        {
+            // Made after the copy: the home holds an account its copy does not.
+            Account("claude-code", "acct-z");
+            return SameReader(staged, copy);
+        });
+
+        Assert.Equal(HomeProbe.Code, refusal?.Code);
+        Assert.Contains("the copy of the home does not hold", refusal?.Sentence);
+        Assert.Contains("`claude-code/acct-z`", refusal?.Sentence);
+    }
+
+    [Fact]
+    public void A_running_build_that_cannot_read_the_copy_is_said_apart_from_a_copy_that_could_not_be_made()
+    {
+        Account("claude-code", "acct-a");
+        string? loop = null;
+
+        var refusal = HomeProbe.Refused(_install, Home, "0.0.9", (staged, copy) =>
+        {
+            var said = SameReader(staged, copy);
+            var at = Path.Combine(DaorisHome.FolderOf(copy), "profiles", "agents", "claude-code");
+            if (UnlistableFolder.Loop(at)) loop = at;
+            return said;
+        });
+        if (loop is null) return;
+        // The link itself, which a recursive delete cannot unmount, if the proof's removal left it.
+        if (Directory.Exists(loop)) Directory.Delete(loop);
+
+        Assert.Contains("this build could not read the copy of the home", refusal?.Sentence);
+        Assert.DoesNotContain("could not be made", refusal?.Sentence);
     }
 
     [Fact]
