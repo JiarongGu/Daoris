@@ -12,6 +12,8 @@ internal sealed class GreenChecks : ICheckPort
 
     public bool Answered(string invocation) => true;
 
+    public void Supersede(string invocation, string why) => Stop(invocation);
+
     public void Stop(string invocation)
     {
     }

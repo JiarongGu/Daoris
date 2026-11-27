@@ -4,7 +4,7 @@ namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
 /// A check Daoris could not run is its own error, held on the check and never said to the session; a log is opened to share with its reader;
-/// and one broker holds the machine's checks, so two Daoris processes never run one ask on one log.
+/// and one broker holds a home's checks, so two Daoris processes never run one ask on one log.
 /// </summary>
 public sealed class CheckBrokerErrorTests : IDisposable
 {
@@ -38,11 +38,12 @@ public sealed class CheckBrokerErrorTests : IDisposable
         var files = new CheckFiles(_home);
         files.WriteAsk(Ask("a1"));
         Directory.CreateDirectory(files.LogOf("a1"));
-        var broker = new CheckBroker(_home, _ => _tree, (_, _, _, _) => Task.FromResult(0));
+        var broker = new CheckBroker(_home, CheckBrokerTests.Tree(_tree), (_, _, _, _) => Task.FromResult(0));
 
-        var state = await broker.RunNextAsync(CancellationToken.None);
+        await broker.RunAsync(CancellationToken.None);
 
-        Assert.Equal(CheckStates.Errored, state!.State);
+        var state = files.ReadState("a1")!;
+        Assert.Equal(CheckStates.Errored, state.State);
         Assert.False(string.IsNullOrEmpty(state.Error));
         Assert.Null(state.Tail);
         var words = new List<string>();
@@ -57,18 +58,19 @@ public sealed class CheckBrokerErrorTests : IDisposable
         var files = new CheckFiles(_home);
         files.WriteAsk(Ask("a1"));
         var clock = new MovedClock();
-        var broker = new CheckBroker(_home, _ => _tree, async (_, _, output, _) =>
+        var broker = new CheckBroker(_home, CheckBrokerTests.Tree(_tree), async (_, _, output, _) =>
         {
             await output.WriteLineAsync("run-heavy: no declared gate could be run");
             return 2;
         }, clock);
 
-        var state = await broker.RunNextAsync(CancellationToken.None);
+        await broker.RunAsync(CancellationToken.None);
 
-        Assert.Equal(CheckStates.Errored, state!.State);
+        var state = files.ReadState("a1")!;
+        Assert.Equal(CheckStates.Errored, state.State);
         Assert.Contains("no declared gate", state.Error);
-        Assert.Null(CheckQueue.Next(files.Asks(), files.ReadState, clock.GetUtcNow()));
-        Assert.Equal("a1", CheckQueue.Next(files.Asks(), files.ReadState, state.At + CheckQueue.RetryAfter)?.Id);
+        Assert.Empty(CheckBroker.Pending(files.Asks(), files.ReadState, clock.GetUtcNow()));
+        Assert.Equal(["a1"], CheckBroker.Pending(files.Asks(), files.ReadState, state.At + CheckBroker.RetryAfter).Select(ask => ask.Id));
     }
 
     [Fact]
@@ -76,13 +78,14 @@ public sealed class CheckBrokerErrorTests : IDisposable
     {
         var files = new CheckFiles(_home);
         files.WriteAsk(Ask("a1"));
-        var broker = new CheckBroker(_home, _ => _tree, async (_, _, output, _) =>
+        var broker = new CheckBroker(_home, CheckBrokerTests.Tree(_tree), async (_, _, output, _) =>
         {
             await output.WriteLineAsync("boom");
             return 1;
         });
 
-        Assert.Equal(CheckStates.Failed, (await broker.RunNextAsync(CancellationToken.None))!.State);
+        await broker.RunAsync(CancellationToken.None);
+        Assert.Equal(CheckStates.Failed, files.ReadState("a1")!.State);
         var words = new List<string>();
         Assert.Equal(["a1"], await CheckHanding.HandAsync(files, (s, t, k, c) => Said(words, s, t, k, c), CancellationToken.None));
         Assert.Contains("it failed (exit 1)", Assert.Single(words));
@@ -94,15 +97,16 @@ public sealed class CheckBrokerErrorTests : IDisposable
         var files = new CheckFiles(_home);
         files.WriteAsk(Ask("a1"));
         var clock = new MovedClock();
-        var broker = new CheckBroker(_home, _ => _tree, (_, _, _, _) => throw new DriverException("no job could be made"), clock);
+        var broker = new CheckBroker(_home, CheckBrokerTests.Tree(_tree), (_, _, _, _) => throw new DriverException("no job could be made"), clock);
 
-        var state = await broker.RunNextAsync(CancellationToken.None);
+        await broker.RunAsync(CancellationToken.None);
 
-        Assert.Equal(CheckStates.Errored, state!.State);
+        var state = files.ReadState("a1")!;
+        Assert.Equal(CheckStates.Errored, state.State);
         Assert.Contains("no job could be made", state.Error);
         var asks = files.Asks();
-        Assert.Null(CheckQueue.Next(asks, files.ReadState, clock.GetUtcNow()));
-        Assert.Equal("a1", CheckQueue.Next(asks, files.ReadState, clock.GetUtcNow() + CheckQueue.RetryAfter + TimeSpan.FromSeconds(1))?.Id);
+        Assert.Empty(CheckBroker.Pending(asks, files.ReadState, clock.GetUtcNow()));
+        Assert.Equal(["a1"], CheckBroker.Pending(asks, files.ReadState, clock.GetUtcNow() + CheckBroker.RetryAfter + TimeSpan.FromSeconds(1)).Select(ask => ask.Id));
     }
 
     [Fact]
@@ -111,7 +115,7 @@ public sealed class CheckBrokerErrorTests : IDisposable
         var files = new CheckFiles(_home);
         files.WriteAsk(Ask("a1"));
         string? seen = null;
-        var broker = new CheckBroker(_home, _ => _tree, async (_, _, output, _) =>
+        var broker = new CheckBroker(_home, CheckBrokerTests.Tree(_tree), async (_, _, output, _) =>
         {
             await output.WriteLineAsync("first");
             seen = files.ReadLog("a1");
@@ -120,9 +124,10 @@ public sealed class CheckBrokerErrorTests : IDisposable
             return 0;
         });
 
-        var state = await broker.RunNextAsync(CancellationToken.None);
+        await broker.RunAsync(CancellationToken.None);
 
-        Assert.Equal(CheckStates.Reached, state!.State);
+        var state = files.ReadState("a1")!;
+        Assert.Equal(CheckStates.Reached, state.State);
         Assert.Contains("first", seen);
         Assert.Contains("second", state.Tail);
     }
@@ -133,19 +138,23 @@ public sealed class CheckBrokerErrorTests : IDisposable
         var files = new CheckFiles(_home);
         files.WriteAsk(Ask("a1"));
         files.WriteAsk(Ask("a2", minute: 1));
-        CheckState? second = null;
-        var other = new CheckBroker(_home, _ => _tree, (_, _, _, _) => Task.FromResult(0));
-        var first = new CheckBroker(_home, _ => _tree, async (_, _, output, _) =>
+        var otherRan = false;
+        var other = new CheckBroker(_home, CheckBrokerTests.Tree(_tree), (_, _, _, _) =>
+        {
+            otherRan = true;
+            return Task.FromResult(0);
+        });
+        var first = new CheckBroker(_home, CheckBrokerTests.Tree(_tree), async (_, _, output, _) =>
         {
             await output.WriteLineAsync("running");
-            second = await other.RunNextAsync(CancellationToken.None);
+            await other.RunAsync(CancellationToken.None);
             return 0;
         });
 
-        var state = await first.RunNextAsync(CancellationToken.None);
+        await first.RunAsync(CancellationToken.None);
 
-        Assert.Null(second);
-        Assert.Equal(CheckStates.Reached, state!.State);
+        Assert.False(otherRan);
         Assert.Equal(CheckStates.Reached, files.ReadState("a1")!.State);
+        Assert.Equal(CheckStates.Reached, files.ReadState("a2")!.State);
     }
 }

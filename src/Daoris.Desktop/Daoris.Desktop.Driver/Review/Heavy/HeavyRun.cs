@@ -238,6 +238,7 @@ public static class HeavyRun
             }
 
             output.WriteLine($"run-heavy: inside the heavy run that holds `{repository}`'s slot, so this one runs in it without waiting.");
+            world.Turn?.Admitted();
             return await RunGatesAsync(checkout, choice.Gates, key, outer.Gates, Job(null), output, ct, steps: world.Steps).ConfigureAwait(false);
         }
 
@@ -252,7 +253,7 @@ public static class HeavyRun
             // A session's run (its tree read from git's lock) never waits behind a verification.
             var waiter = new HeavyWaiter(pid, started, checkout, DateTimeOffset.UtcNow, session);
             var sessions = SessionLocks.HolderOf(checkout) is not null;
-            var admit = new HeavyAdmit(world.Rules, token => AcceptedSlots.OfRepositoryAsync(world.Home, keyedAs, checkout, token), () => written = new HeavyHolder(pid, started, checkout, gates, DateTimeOffset.UtcNow, session, null)) { Agent = session, Gates = gates };
+            var admit = new HeavyAdmit(world.Rules, token => AcceptedSlots.OfRepositoryAsync(world.Home, keyedAs, checkout, token), () => written = new HeavyHolder(pid, started, checkout, gates, DateTimeOffset.UtcNow, session, null)) { Agent = session, Gates = gates, Turn = world.Turn };
             took = await HeavySlot.TakeUnlessAsync(
                 world.Home, key, repository, output, ct, world.Waiting, waiter, sessions ? holder => holder.Run is not null : null, admit).ConfigureAwait(false);
         }

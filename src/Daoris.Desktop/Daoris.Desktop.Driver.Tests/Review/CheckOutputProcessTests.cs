@@ -19,11 +19,12 @@ public sealed class CheckOutputProcessTests : IDisposable
         var files = new CheckFiles(_fixture.Home);
         files.WriteAsk(new CheckAsk("a1", "s1", null,
             ["node", _fixture.At("says.mjs")], Moment));
-        var broker = new CheckBroker(_fixture.Home, _ => _fixture.Tree);
+        var broker = new CheckBroker(_fixture.Home, CheckBrokerTests.Tree(_fixture.Tree));
 
-        var state = await broker.RunNextAsync(CancellationToken.None);
+        await broker.RunAsync(CancellationToken.None);
 
-        Assert.Equal(CheckStates.Failed, state!.State);
+        var state = files.ReadState("a1")!;
+        Assert.Equal(CheckStates.Failed, state.State);
         Assert.Contains("gate stdout", state.Tail);
         Assert.Contains("gate stderr", state.Tail);
         Assert.Contains("gate stdout", files.ReadLog("a1"));

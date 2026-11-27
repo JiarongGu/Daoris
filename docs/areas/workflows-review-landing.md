@@ -281,7 +281,13 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     answers with no commit, its session waiting on the run's next step since the red was asked and none of its sessions still working
     (`CheckRounds.Answered`), has the same commit asked again as its next round. Each exit of the check's start that leaves it ready (not
     sent, no executor, a red not answered, sessions unread) is said once per change of reason in the machine log (`check.waits`,
-    `CheckStartWaits`, the memory `NodeWaits` the landing's `landing.waits` shares). A check's reds are counted from its run's record
+    `CheckStartWaits`, the memory `NodeWaits` the landing's `landing.waits` shares). A check still waiting for a slot or running at a commit
+    the work has moved past, its node invalidated or ready again, holds the node's gate until it answers (D173), so the pass that finds it
+    ends its job as a stop does, its result saying the commit it was sent at and the one the work moved to (`SupersededChecks.End`,
+    CONTENTWAIT1), its answer settles it as a stale attempt's, and the check at the tip starts; a check on the landing's commit, or at the
+    tip, runs on. `content.holds` reads what the line holds of the branch once a look while nothing under it moves (`ContentReadMemo`:
+    the tree's head, its repository's refs, the home's landings and choices and the tree's working files, read from files), so a look over
+    an unchanged branch starts no git. A check's reds are counted from its run's record
     (`CheckRounds.Reds`, each settled failed attempt a round); the way back is taken while they stay under `CheckRounds.Bound` (3), and the
     red that reaches it is not sent back. That red is a left attempt's recovery, the act `work.recover` (D354), its failure kept on the
     left attempt's role, the place's supervisor (`SpentChecks.HeldOn`): a row classing it `role` gives it to that role's holder as the place
@@ -884,7 +890,7 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     starts never both see no holder. The machine setting `checks` (`daoris settings checks <n>|auto`, the window's `SET_CHECKS`) pins a
     number, never more than the machine's heavy-run admission holds. **The room is measured, never a number** (ADMITDYNAMIC1, D362; the
     judgement is `RoomJudge`, its state `RoomLedger`, in `Review/Room/`). A gate's need is learned per repository, kind and one gate from its
-    own runs on this machine (`LearnedNeeds`, `admission/learned.json`, D367: keyed by the repository's key, `HeavySlot.KeyOf`, so every
+    own runs on this machine (`LearnedNeeds`, `admission/learned.json`, D368: keyed by the repository's key, `HeavySlot.KeyOf`, so every
     tree of it and its landing line read one history, never by a tree or folder; the job's peak memory so far and the cores the gate
     kept busy, a tenth over the larger of the newest five peaks, kept by `RunMeter` as each gate ends, in a session's `run-heavy` and in a
     check's gates alike); a run of several gates asks the largest of its gates, since they run one after another, never their sum
@@ -938,7 +944,7 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     order sent. A run held waiting (`HoldBook`, read at each pass with the classes) leaves the pass, its row saying who held it, and keeps its place in the queue; checks running are never cut. The executor tries its due attempts in that order, a pass ending at the first refused because every slot runs or the
     admission's lock is held, the checks behind it told the same wait, so a slot freed while a pass goes on is never taken by one behind
     it; a check refused for memory, the reserve or its repository's slots is its own, and the next is tried. Each takes a slot only as its
-    own admission allows, so an urgent quest's check takes the next freed slot and nothing running is cut. A session's `run-heavy`, the
+    own admission allows, so an urgent quest's check takes the next freed slot and nothing running is cut. A session's `check_run` (the broker, driving rule 40a) waits in the same order beside the executor's (`AdmissionOrder`: its quest's class, then its arrival, the same pass rule `CheckAdmission.EndsPass`) and is admitted by the same judgement, so checks of either door run side by side as the room admits. A session's `run-heavy`, the
     integration's gated lines and the machine's places (`MachineAdmission`) still wait first come. `["reached"]` in a list still names a gate called so. (D192, D293) A declaration's `reached` entry (`run` with `{base}`, `cwd`, `clock`, and
     `outcome`, the marker of the last line the runner prints, JSON of `ran`, `replayed`, `flaked`, `mainRed`, `red`) replaces the
     gates for a check whose run has a base (its batch's base, else its line's branch): the runner runs in the verification tree
