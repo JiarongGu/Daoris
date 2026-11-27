@@ -56,7 +56,7 @@ internal sealed record ContentStamp(string Text, TreeReadChanges.Version Files)
         try
         {
             var full = Path.GetFullPath(tree);
-            if (TreeReadMemo.HeadOf(full) is not { } head || CountedRefs.Read(head.Common) is not { } refs) return null;
+            if (TreeReadPass.HeadOf(full) is not { } head || CountedRefs.Read(head.Common) is not { } refs) return null;
             var at = head.Name is { } name ? head.Loose ?? refs.Packed.GetValueOrDefault(name) : head.Text;
             if (at is not { Length: > 0 } || !string.Equals(at, tip, StringComparison.OrdinalIgnoreCase)) return null;
             var landings = FileStamp.Of(trees.LandingsPath);
