@@ -148,6 +148,9 @@ it stopped and which never started, and why. A red writes `local/scratch/merge-<
 error, its file and line, the first error lines, and whether main fails it too (a log's failing test is its first `not ok` or `✖` line, and its
 error never a pass line, a count of none or a warning; a log with none says the run ended without a failing test, with its exit), from that selection run on main's tip in the
 worktree's `local/scratch/main-tree`. The branch-worker hands back on its summary: its pass, its brief, or what its bound left.
+The preflight starts the gates `verifyBudget.preflightFirst` names (the censuses) first, keeps a receipt for each unit it ran or replayed under the
+tree it judged, appends one measure line per run to `runs.jsonl` beside them (`DAORIS_PREFLIGHT_TRIGGER` names what started it, `agent` where it is unset; the driver is to set `done` when it starts one at a session's done, VERIFY2a), and
+says and writes its summary: what changed by module and rule, what is verified with its receipts, what is left for judgement.
 
 Every time breach says why (`tools/time-why.mjs`): a test over its time ratchet limit, a unit test over the layers census's second,
 a test the hang timeout killed and a gate killed at its budget are each one line of the merge's breach report, `breaches.json`

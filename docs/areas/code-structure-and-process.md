@@ -205,7 +205,11 @@ finishes first and the whole set runs once.
     suites on the new tip, whose red holds the queue's next merge until fixed or named known. A merge's run keeps going past every
     failure but a blocking light gate's, and its reds go in one brief, each marked main's or the branch's (`merge/red-brief.ts`);
     a builder runs the same fast gates first with `--preflight` (`merge/preflight.ts`, its plan `merge/fast-plan.ts`: never a
-    Process or git half, a rehearsal or a browser spec), within a bound it says the outcome at. `reached` reuses a pass
+    Process or git half, a rehearsal or a browser spec), starting the gates `verifyBudget.preflightFirst` names (the censuses) before the rest, within a bound it says the outcome at. It keeps
+    its run (`merge/preflight-record.ts`): a receipt per unit keyed by the git tree it judged and one measure line per run (gates, minutes,
+    wait, trigger, units replayed) in the home's `checks/receipts/` (the main checkout's `local/receipts/` with no home), and one summary
+    record built by code (`merge/run-summary.ts`: what changed by module and rule, what is verified with its receipts, what is left for
+    judgement), printed and written as `summary.json` beside the brief: the one record the second opinion, the Outputs panel and the landing record are to read (VERIFY2d, OUTPUTS2 build their sides). `reached` reuses a pass
     per class: a class's key is the digest of every tree file that reaches it (its own files, the source files that declare what
     its files name, the areas its program or a `[Reaches]` names, the build
     files above its project), its suite's declaration and the toolchain, with wiring (a project reference, a `Using`, a `global

@@ -8,7 +8,7 @@ import { BASELINE, BLOCKING, MERGE_SUITES, gateReach, selectGates } from './reac
 import { isLongGate, isProcessGate } from './plan.ts';
 import { buildRecord } from './merge-record.ts';
 import {
-  declaredWidePaths, fileOverrun, fullReason, fullRefusal, overrunLines, planVerification, readVerifyBudget, readWidePaths, scopeLine, settleVerification,
+  declaredWidePaths, preflightFirstOf, fileOverrun, fullReason, fullRefusal, overrunLines, planVerification, readVerifyBudget, readWidePaths, scopeLine, settleVerification,
   verifyBudgetOf, verificationRecord, RUN_REASONS, type FullReason,
 } from './verification.ts';
 
@@ -204,4 +204,10 @@ test('an overrun that cannot be filed is said so, and the run keeps its record r
   } finally {
     rmSync(dir, { recursive: true, force: true });
   }
+});
+
+test('the gates a preflight starts first are read where the other verification rules are, and none where the declaration names none or does not read', () => {
+  assert.deepEqual([...preflightFirstOf(JSON.stringify({ verifyBudget: { preflightFirst: ['censuses', 7, '', 'test-map'] } }))], ['censuses', 'test-map']);
+  assert.deepEqual([...preflightFirstOf(JSON.stringify({ verifyBudget: { budgetMinutes: 10 } }))], []);
+  assert.deepEqual([...preflightFirstOf('not json')], []);
 });
