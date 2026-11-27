@@ -151,8 +151,8 @@ export async function runPlan(options: RunOptions): Promise<ClassOutcome> {
   const besideLanes = [...new Set(entries.filter(([, group]) => beside(group)).map(([, group]) => laneOf(group)))];
   await Promise.all([
     (async () => {
-      // A run a newer heavy tier asked to stop before its build builds nothing: every group is handed on.
-      if (options.build && projects.length && !halt?.asked()) builds = await options.build(projects);
+      // A run a newer heavy tier asked to stop builds nothing: every group is handed on. The step is asked with no project too, as a build started ahead still runs.
+      if (options.build && !halt?.asked()) builds = await options.build(projects);
       ready = new Set(builds.ready);
       say(builtLine());
       await inTurn(entries.filter(([, group]) => !beside(group)));

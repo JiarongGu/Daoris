@@ -214,3 +214,20 @@ test('the run says once that its builds are done: after the last build ended and
   await runPlan({ root, plan: planOf('a'), keys: keysOf('a'), store, exec: () => { none.push('run'); return 0; }, say: (line) => { if (line.startsWith('reached-built:')) none.push('said'); }, mainRedOf: () => false });
   assert.deepEqual(none, ['said', 'run'], 'a plan with no build has nothing to wait for');
 }));
+
+test('a plan with no .NET group still waits for a build in flight before it says its builds are done', () => withStore(async (store, root) => {
+  const order: string[] = [];
+  let finish!: () => void;
+  const ahead = new Promise<void>((done) => { finish = done; });
+  const running = runPlan({
+    root, plan: planOf('a'), keys: keysOf('a'), store, mainRedOf: () => false,
+    say: (line) => { if (line.startsWith('reached-built:')) order.push('said'); },
+    exec: () => { order.push('run'); return 0; },
+    build: async (projects) => { order.push(`build ${projects.length}`); await ahead; order.push('built'); return { ready: [], failed: new Map() }; },
+  });
+  await loopTurns(6);
+  assert.ok(!order.includes('said'), 'nothing is said while the build ahead runs');
+  finish();
+  await running;
+  assert.ok(order.indexOf('built') < order.indexOf('said'), `the line comes after the build: ${order.join(', ')}`);
+}));

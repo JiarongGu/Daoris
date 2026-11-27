@@ -400,15 +400,19 @@ public sealed class HeavyExecutor(string home, VerifyWorld? world = null) : IAsy
             var candidate = await CandidateJob.OpenAsync(job).ConfigureAwait(false);
             try
             {
+                var kept = new object();
                 var run = new VerifyExecution(home, send, candidate, _world, key, repository.Name, change =>
                 {
-                    holder = change(holder);
-                    try
+                    lock (kept)
                     {
-                        repository.Keep(holder);
-                    }
-                    catch (Exception error) when (error is IOException or UnauthorizedAccessException)
-                    {
+                        holder = change(holder);
+                        try
+                        {
+                            repository.Keep(holder);
+                        }
+                        catch (Exception error) when (error is IOException or UnauthorizedAccessException)
+                        {
+                        }
                     }
                 });
                 (result, busy) = await run.ExecuteAsync(stop.Token).ConfigureAwait(false);
