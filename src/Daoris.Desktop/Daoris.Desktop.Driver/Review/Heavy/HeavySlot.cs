@@ -27,6 +27,9 @@ public sealed record HeavyHolder(
 
     /// <summary>The verification run holding it, where the heavy executor does; an older reader passes over it.</summary>
     public string? Run { get; init; }
+
+    /// <summary>When its runner said its builds were done (<see cref="BuiltWatch"/>), so no compile is left to raise its peak; null before, and in a record older than it.</summary>
+    public DateTimeOffset? Built { get; init; }
 }
 
 /// <summary>The gate a holder runs now: its name, its place in the holder's gates from 0, and when it started.</summary>
@@ -442,6 +445,7 @@ public sealed class HeavySlot : IDisposable
             if (holder.Session is { } session) writer.WriteString("session", session);
             if (holder.Job is { } job) writer.WriteString("job", job);
             if (holder.Run is { } run) writer.WriteString("run", run);
+            if (holder.Built is { } built) writer.WriteString("built", Stamp(built));
             if (holder.Now is { } now)
             {
                 writer.WriteStartObject("now");
@@ -539,13 +543,16 @@ public sealed class HeavySlot : IDisposable
             return new HeavyHolder(
                 id, ticks, checkout.GetString()!,
                 [.. gates.EnumerateArray().Where(gate => gate.ValueKind == JsonValueKind.String).Select(gate => gate.GetString()!)],
-                at, Text(root, "session"), Text(root, "job")) { Now = NowOf(root), Failed = FailedOf(root), Run = Text(root, "run") };
+                at, Text(root, "session"), Text(root, "job")) { Now = NowOf(root), Failed = FailedOf(root), Run = Text(root, "run"), Built = Moment(root, "built") };
         }
         catch (JsonException)
         {
             return null;
         }
     }
+
+    private static DateTimeOffset? Moment(JsonElement root, string name) =>
+        root.TryGetProperty(name, out var value) && value.ValueKind == JsonValueKind.String && value.TryGetDateTimeOffset(out var at) ? at : null;
 
     private static string? Text(JsonElement root, string name) =>
         root.TryGetProperty(name, out var value) && value.ValueKind == JsonValueKind.String ? value.GetString() : null;

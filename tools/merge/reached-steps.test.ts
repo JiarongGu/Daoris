@@ -1,6 +1,6 @@
 import { test } from 'vitest';
 import assert from 'node:assert/strict';
-import { StepClock, outsideTests, parseSteps, stepsLine } from './reached-steps.ts';
+import { StepClock, builtLine, outsideTests, parseSteps, stepsLine } from './reached-steps.ts';
 import { runStartOf } from './reached-reports.ts';
 
 /** A clock whose time moves only when told. */
@@ -48,4 +48,9 @@ test('a log cut in a step names it open, timed to where the gate ended; with no 
   assert.match(stepsLine(parseSteps(log, 300_000)), /build Daoris\.Desktop\.Driver\.Tests 4 m 14 s \(running when it ended\)$/);
   assert.deepEqual(parseSteps(log).at(-1), { step: 'build Daoris.Desktop.Driver.Tests', ms: 0, open: true });
   assert.deepEqual(parseSteps('reached-step: {not json\nreached-step: {"at":3}'), [], 'a line it cannot read is passed over');
+});
+
+test('the builds-done line is its own machine line: no step, so no clock reads it as time and parseSteps passes it over', () => {
+  assert.equal(builtLine(), 'reached-built: {}');
+  assert.deepEqual(parseSteps(builtLine()), []);
 });
