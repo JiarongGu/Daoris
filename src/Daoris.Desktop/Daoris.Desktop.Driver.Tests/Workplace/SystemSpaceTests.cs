@@ -28,6 +28,7 @@ public sealed class SystemSpaceTests : IDisposable
         Sizes = sizes ?? new SpaceSizes(),
         Now = () => Now,
         Volume = _ => (143L << 30, 1024L << 30),
+        Weights = (_, _) => null,
         Uses = () => DownloadUses.Read(_home, new HarnessSettings(), null),
     };
 

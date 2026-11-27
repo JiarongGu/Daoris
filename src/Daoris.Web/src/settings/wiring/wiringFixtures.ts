@@ -313,6 +313,16 @@ export const SPACE_ALLOWANCE: SystemSpace = { ...SPACE, allowance: { gb: 48, def
 export const SPACE_STRAYS: SystemSpace = { ...SPACE, strays: { paths: [{ path: 'data/harnesses', bytes: 3 * GB }, { path: 'data/old.json', bytes: 2048 }], partial: false } };
 export const SPACE_ALLOWANCE_OVER: SystemSpace = { ...SPACE, allowance: { gb: 10, default: false, bytes: 11.2 * GB, partial: false } };
 
+export const SPACE_WEIGHT: SystemSpace = {
+  ...SPACE,
+  weight: {
+    over: [{ path: 'work/trees/games/Daoris/s-aaaa1111', entry: 'trees', bytes: 5 * GB, budget: 4 * GB }],
+    largest: [{ path: 'data/knowledge.db', bytes: 2 * GB }],
+    duplicates: [{ bytes: 2 * 1024 ** 2, copies: 2, wasted: 2 * 1024 ** 2, paths: ['work/trees/games/Daoris/s-aaaa1111/esbuild.exe', 'work/trees/games/Daoris/s-bbbb2222/esbuild.exe'] }],
+    partial: false,
+  },
+};
+
 /** The floor turned off: Daoris frees nothing early, and says so. */
 export const SPACE_FLOOR_OFF: SystemSpace = { ...SPACE, volume: { ...SPACE.volume!, floor: { bytes: null, from: 'off' }, below: false } };
 

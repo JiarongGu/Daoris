@@ -180,7 +180,7 @@ built, but nothing outside tests makes, takes or ends one; `LinePlaces` answers 
 21. A tree opens with its hooks held and is marked `unworked` in the home's files record (`work/files/trees/`); a failed open, like
     every other end of a tree, removes the tree, its branch and its record. The `files` run stage, after `open` and before `hand`
     (and the same step at a conversation's open and a go-on), is the one way a tree gets its dependencies: in an unworked tree it
-    keeps, places from the store (`work/deps/<key>`, copied, never linked) or installs each effective `dependency` rule in order,
+    keeps, places from the store (`work/deps/<key>`, each file a hard link to the entry's own, read-only, the folder itself never a link; the files at its top and any a volume will not link are copied, `FileLinks`) or installs each effective `dependency` rule in order,
     under its key's lock and the machine's admission (`npm ci --ignore-scripts` where the lockfile marks no install script; a package
     whose `os` leaves this system out, fsevents' shape, runs none here, `NpmPlatform`, so the repository's own `prepare`, which writes
     beside the folder, does not keep the install out of the store, SESSIONOPEN2). Its keys

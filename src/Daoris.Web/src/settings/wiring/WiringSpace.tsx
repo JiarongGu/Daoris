@@ -555,6 +555,44 @@ export function WiringSpace({ space, busy = false, onCount, downloads, onDownloa
           </div>
         </SettingRow>
       )}
+      {space.weight && space.weight.over.length > 0 && (
+        <SettingRow label={t('settings.daoris.space.weight.over.label')} control={<span className="text-small text-ink-soft">{space.weight.over.length}</span>}>
+          <div className="grid gap-1">
+            <p className="m-0 text-small text-ink-soft">{t('settings.daoris.space.weight.over.hint')}</p>
+            <ul className="m-0 grid list-none gap-0.5 p-0 text-small text-ink-soft" data-weight-over>
+              {space.weight.over.map((over) => (
+                <li key={over.path} className="flex flex-wrap gap-x-2"><code>{over.path}</code><span>{t('settings.daoris.space.weight.over.of', { bytes: size(over.bytes), budget: size(over.budget) })}</span></li>
+              ))}
+            </ul>
+          </div>
+        </SettingRow>
+      )}
+      {space.weight && space.weight.largest.length > 0 && (
+        <SettingRow label={t('settings.daoris.space.weight.largest.label')} control={<span className="text-small text-ink-soft">{size(space.weight.largest[0].bytes)}</span>}>
+          <ul className="m-0 grid list-none gap-0.5 p-0 text-small text-ink-soft" data-weight-largest>
+            {space.weight.largest.map((file) => (
+              <li key={file.path} className="flex flex-wrap gap-x-2"><code>{file.path}</code><span>{size(file.bytes)}</span></li>
+            ))}
+          </ul>
+        </SettingRow>
+      )}
+      {space.weight && space.weight.duplicates.length > 0 && (
+        <SettingRow label={t('settings.daoris.space.weight.duplicates.label')} control={<span className="text-small text-ink-soft">{size(space.weight.duplicates.reduce((sum, group) => sum + group.wasted, 0))}</span>}>
+          <div className="grid gap-1">
+            <p className="m-0 text-small text-ink-soft">{t('settings.daoris.space.weight.duplicates.hint')}</p>
+            {space.weight.duplicates.map((group) => (
+              <ul key={group.paths[0]} className="m-0 grid list-none gap-0.5 p-0 text-small text-ink-soft" data-weight-duplicates>
+                {group.paths.map((path, index) => (
+                  <li key={path} className="flex flex-wrap gap-x-2"><code>{path}</code>{index === 0 && <span>{t('settings.daoris.space.weight.duplicates.lost', { bytes: size(group.wasted) })}</span>}</li>
+                ))}
+              </ul>
+            ))}
+          </div>
+        </SettingRow>
+      )}
+      {space.weight?.partial && space.weight.over.length + space.weight.largest.length + space.weight.duplicates.length > 0 && (
+        <p className="m-0 text-small text-ink-soft">{t('settings.daoris.space.weight.partial')}</p>
+      )}
     </WiringCard>
   );
 }
