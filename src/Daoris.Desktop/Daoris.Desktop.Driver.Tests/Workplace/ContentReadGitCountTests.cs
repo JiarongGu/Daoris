@@ -47,8 +47,15 @@ public sealed class ContentReadGitCountTests(ITestOutputHelper output) : LandedF
 
         // A file the work changes is another reading: its tree's work is asked again.
         await File.WriteAllTextAsync(Path.Combine(tree.Path, "draft.txt"), "not committed\n");
-        var (_, editedStarts) = await ReadAsync(trees, tree.Path, tip);
-        Assert.NotEmpty(editedStarts);
+        var edited = false;
+        // The working files' watch hears the edit on its own thread, so the read that sees it may come a moment later.
+        for (var look = 0; look < 100 && !edited; look++)
+        {
+            edited = (await ReadAsync(trees, tree.Path, tip)).Starts.Count > 0;
+            if (!edited) await Task.Delay(50);
+        }
+
+        Assert.True(edited, "an edit to the tree's files never asked git again");
 
         // A new commit is another tip: the read at the old one is nothing, and the new one is judged afresh.
         await CommitAsync(tree.Path, "more.txt", "more\n", "more of the work");
