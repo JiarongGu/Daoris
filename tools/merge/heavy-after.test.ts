@@ -17,6 +17,8 @@ describe('the heavy run started when a merge lands', () => {
     });
     expect(started).toEqual([{ args: runnerArgs(run), log: input.log }]);
     expect(started[0]!.args).toEqual(expect.arrayContaining(['--commit', commit, '--base', input.base, '--branches', 'feature-a']));
+    expect(started[0]!.args[0]).toBe('tools/heavy-run.mjs');
+    expect(started[0]!.args).not.toContain('--now');
     expect(records).toEqual([run]);
     expect(run).toMatchObject({ state: 'running', commit, branches: ['feature-a'] });
     expect(lines[0]).toMatch(new RegExp(`^${HEAVY_PREFIX} heavy-0123456-\\d+ started in the background on 0123456`));
