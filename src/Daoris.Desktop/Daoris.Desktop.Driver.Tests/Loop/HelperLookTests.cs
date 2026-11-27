@@ -9,7 +9,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// read, judged and started beside the look; the state names the helper BEFORE its turn; what the helper said (its tool's answer,
 /// else its last words, else nothing) settles the ask; and the answer reaches the asker as a word marked as the helper's, through
 /// the local host's door, refused as the opinion's delivery is refused. The pass itself is a stand-in here (the real one is the
-/// <c>Process</c> half's <c>HelperProcessTests</c>), so nothing starts a process: the fast half.
+/// <c>Process</c> half's <c>HelperProcessTests</c>), so nothing starts a process.
 /// </summary>
 public sealed class HelperLookTests : IDisposable
 {
@@ -17,7 +17,7 @@ public sealed class HelperLookTests : IDisposable
 
     private const string Helper = "h1000001";
 
-    private static readonly DateTimeOffset At = DateTimeOffset.Parse("2026-10-12T10:00:00Z");
+    internal static readonly DateTimeOffset At = DateTimeOffset.Parse("2026-10-12T10:00:00Z");
 
     public HelperLookTests() => Directory.CreateDirectory(_home);
 
@@ -26,10 +26,10 @@ public sealed class HelperLookTests : IDisposable
         try { Directory.Delete(_home, recursive: true); } catch (IOException) { } catch (UnauthorizedAccessException) { }
     }
 
-    private HelperFiles Files => new(_home);
+    internal HelperFiles Files => new(_home);
 
     /// <summary>An ask on file as <c>helper_ask</c> writes it.</summary>
-    private void Ask(
+    internal void Ask(
         string id, string question = "Why does it drop the last day?", string by = "agent", string? agent = null, string asker = "s1", bool urgent = false)
     {
         Directory.CreateDirectory(DaorisHome.Entry(_home, HomeEntry.Helpers));
@@ -44,7 +44,7 @@ public sealed class HelperLookTests : IDisposable
     private static HelperRule On => new(HelperRules.On, []);
 
     /// <summary>What the stand-in pass saw, and does: it names its helper at once, then says what the test has it say.</summary>
-    private sealed class Pass(HelperFiles files)
+    internal sealed class Pass(HelperFiles files)
     {
         public List<HelperPassAsk> Asked { get; } = [];
         public List<HelperState?> SeenAtTurn { get; } = [];
@@ -83,7 +83,7 @@ public sealed class HelperLookTests : IDisposable
     private static DriverConfig Drain(DriverConfig config, bool drained) => drained ? InstallUpdate.Drained(config) : config;
 
     /// <param name="unset">No rule for the repository at all, so its workspace's or Daoris's default stands.</param>
-    private Daoris.Driver.Driver Driver(
+    internal Daoris.Driver.Driver Driver(
         OpinionStandIn host, Pass? pass, HelperRule? rule = null, int cap = 3, ReviewerChoice? choice = null,
         Func<string, CancellationToken, Task<HelperCaptureRead>>? capture = null, Func<ReviewerChoice>? choose = null,
         bool unset = false, Dictionary<string, HelperRule>? workspaces = null, bool drained = false) =>
@@ -102,7 +102,7 @@ public sealed class HelperLookTests : IDisposable
         };
 
     /// <summary>The host with the asker's record and the record the pass's helper opened, a chat that serves it.</summary>
-    private OpinionStandIn Host(string state = "completed", string kind = "drive")
+    internal OpinionStandIn Host(string state = "completed", string kind = "drive")
     {
         var host = new OpinionStandIn().Session("s1", state, tree: "trees/default/reports/s-1", kind: kind)
             .Session(Helper, "completed", adapter: "codex-acp", kind: "chat");
@@ -114,7 +114,7 @@ public sealed class HelperLookTests : IDisposable
         return host;
     }
 
-    private async Task Until(Func<bool> done)
+    internal async Task Until(Func<bool> done)
     {
         await Poll.Until(done, () => "the helper's pass did not settle. " + (Directory.Exists(DaorisHome.Entry(_home, HomeEntry.Helpers))
             ? string.Join(" | ", Directory.GetFiles(DaorisHome.Entry(_home, HomeEntry.Helpers)).Select(file => $"{Path.GetFileName(file)}: {File.ReadAllText(file).ReplaceLineEndings(" ")}"))

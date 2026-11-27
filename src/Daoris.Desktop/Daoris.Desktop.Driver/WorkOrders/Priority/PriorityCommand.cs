@@ -72,7 +72,7 @@ public sealed record PriorityWorld(string Home, Func<string, CancellationToken, 
 [CommandGroup("priority", Takes = "<ask|quest>", Whole = true)]
 public static class PriorityCommand
 {
-    public const string Usage = "usage: daoris priority <ask|quest> [<class> --why \"<words>\" [--until <time> | <n>m|h|d]]  (class: urgent, high, normal or low)";
+    public const string Usage = "usage: daoris priority <ask|quest> [<class> --why \"<words>\" [--until <time> | <n>m|h|d]]  (class: urgent, high, normal or low) | daoris priority <ask|quest> hold --why \"<words>\" | daoris priority <ask|quest> lift";
 
     public static async Task<int> RunAsync(IReadOnlyList<string> args, PriorityWorld world, TextWriter said, CancellationToken ct)
     {
@@ -90,7 +90,23 @@ public static class PriorityCommand
                 return 1;
             }
 
-            said.WriteLine(Standing(target, PriorityBook.Read(world.Home), world.Clock()));
+            var now = world.Clock();
+            if (asked.Hold is { } hold)
+            {
+                var word = new HoldEvent(now, target.Target, target.Id, target.Workspace, hold, asked.Why ?? "lifted", world.By) { Run = target.Run };
+                if (HoldBook.Set(world.Home, word) is { } notHeld)
+                {
+                    said.WriteLine($"priority: not set: {notHeld}");
+                    return 1;
+                }
+
+                said.WriteLine(HoldStanding(target, HoldBook.Read(world.Home)));
+                return 0;
+            }
+
+            var (events, holds) = PriorityBook.Load(world.Home);
+            said.WriteLine(Standing(target, events, now));
+            if (HoldStanding(target, holds) is { Length: > 0 } held && held != NotHeld(target)) said.WriteLine(held);
             return 0;
         }
 
@@ -153,13 +169,34 @@ public static class PriorityCommand
         return $"{target.Target} #{target.Id} is {reading.Class}{from}.";
     }
 
-    private sealed record PriorityWords(string Id, string? Class, string? Why, DateTimeOffset? Until);
+    /// <summary>Whether an ask's or a quest's waiting items stand aside, and whose word says so: <c>quest #q is held by the person: why.</c></summary>
+    public static string HoldStanding(PriorityTarget target, IReadOnlyList<HoldEvent> holds)
+    {
+        var word = target.Target == PriorityBook.Quest
+            ? HoldBook.Reading(holds, target.Run ?? target.Id, target.Ask)
+            : HoldBook.Standing(holds, PriorityBook.Ask, target.Id);
+        var elsewhere = word is { Target: PriorityBook.Quest } other && !string.Equals(other.Id, target.Id, StringComparison.OrdinalIgnoreCase) ? $", set on quest #{word.Id}" : "";
+        return word is { Held: true } held
+            ? $"{target.Target} #{target.Id} is {HoldBook.Said(held)}{elsewhere}."
+            : word is null ? NotHeld(target) : $"{NotHeld(target)[..^1]}, lifted by {word.By}{elsewhere}.";
+    }
+
+    private static string NotHeld(PriorityTarget target) => $"{target.Target} #{target.Id} is not held.";
+
+    private sealed record PriorityWords(string Id, string? Class, string? Why, DateTimeOffset? Until, bool? Hold = null);
 
     private static PriorityWords? Parse(IReadOnlyList<string> args, DateTimeOffset now)
     {
         if (args.Count == 0 || args[0].StartsWith('-') || args[0].TrimStart('#').Length == 0) return null;
         var id = args[0].TrimStart('#');
         if (args.Count == 1) return new PriorityWords(id, null, null, null);
+        if (args[1] is "hold" or "lift")
+        {
+            var holding = args[1] == "hold";
+            if (args.Count == 2) return holding ? null : new PriorityWords(id, null, null, null, false);
+            return args is [_, _, "--why", { Length: > 0 } reason] && !string.IsNullOrWhiteSpace(reason) ? new PriorityWords(id, null, reason, null, holding) : null;
+        }
+
         if (PriorityClasses.Parse(args[1]) is not { } @class) return null;
 
         string? why = null;

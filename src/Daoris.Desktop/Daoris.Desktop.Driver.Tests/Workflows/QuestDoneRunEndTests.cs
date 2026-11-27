@@ -44,6 +44,8 @@ public sealed class QuestDoneRunEndTests : NodeRunFixture
 
         public bool Answered(string invocation) => Green;
 
+        public void Supersede(string invocation, string why) => Stop(invocation);
+
         public void Stop(string invocation) => Stopped.Add(invocation);
     }
 

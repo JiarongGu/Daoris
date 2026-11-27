@@ -40,4 +40,6 @@ public sealed record CheckState(string Id, string State, DateTimeOffset At)
     public string? Handed { get; init; }
 
     public string? Error { get; init; }
+
+    public CheckWait? Wait { get; init; } // what a queued check waits for, by code and values
 }

@@ -65,6 +65,8 @@ public sealed class HeavyExecutor(string home, VerifyWorld? world = null) : IAsy
         public string? For { get; set; }
         public CheckWait? Wait { get; set; }
         public CancellationTokenSource Stop { get; } = new();
+
+        public string? StopWhy { get; set; }
     }
 
     /// <summary>The job an attempt's processes are held in, by its home and invocation, which a restart finds by name and no other home shares.</summary>
@@ -110,16 +112,17 @@ public sealed class HeavyExecutor(string home, VerifyWorld? world = null) : IAsy
     }
 
     /// <summary>
-    /// The person's stop: a running attempt's job is ended as at its bound; one waiting is taken off the queue. Either
-    /// way its result follows, a stale attempt's to the performer, settling it and moving nothing.
+    /// The person's stop, or Daoris's where <paramref name="why"/> says why (a new commit superseded it): a running attempt's job is ended as at
+    /// its bound; one waiting is taken off the queue. Either way its result follows, a stale attempt's to the performer, settling it and moving nothing.
     /// </summary>
-    public void Stop(string invocation)
+    public void Stop(string invocation, string? why = null)
     {
         Queued? waiting;
         lock (_gate)
         {
             if (_running.TryGetValue(invocation, out var running))
             {
+                running.StopWhy ??= why;
                 running.Stop.Cancel();
                 return;
             }
@@ -130,7 +133,10 @@ public sealed class HeavyExecutor(string home, VerifyWorld? world = null) : IAsy
         }
 
         VerifySlot.Forget(home, invocation);
-        Settle(waiting.Send, new VerifyResult(invocation, waiting.Send.Commit, VerifyVerdicts.Unknown, "the person stopped it before it ran", []) { Code = VerifyResult.Stopped });
+        Settle(waiting.Send, new VerifyResult(invocation, waiting.Send.Commit, VerifyVerdicts.Unknown, why is null ? "the person stopped it before it ran" : $"{why}, so it was not run", [])
+        {
+            Code = VerifyResult.Stopped,
+        });
     }
 
     /// <summary>
@@ -213,7 +219,7 @@ public sealed class HeavyExecutor(string home, VerifyWorld? world = null) : IAsy
                     continue;
                 }
 
-                if (held is null && HoldsTheRest(each.Refused))
+                if (held is null && AdmissionOrder.EndsPass(each.Refused))
                 {
                     foreach (var behind in ordered.Skip(at + 1)) Blocked(behind, each.Refused!);
                     break;
@@ -271,7 +277,9 @@ public sealed class HeavyExecutor(string home, VerifyWorld? world = null) : IAsy
             if (stopped)
             {
                 VerifySlot.Forget(home, queued.Send.Invocation);
-                Settle(queued.Send, new VerifyResult(queued.Send.Invocation, queued.Send.Commit, VerifyVerdicts.Unknown, "the person stopped it before it ran again", [])
+                Settle(queued.Send, new VerifyResult(
+                    queued.Send.Invocation, queued.Send.Commit, VerifyVerdicts.Unknown,
+                    queued.StopWhy is { } superseded ? $"{superseded}, so it was not run again" : "the person stopped it before it ran again", [])
                 {
                     Code = VerifyResult.Stopped, Declaration = queued.Send.Accepted,
                 });
@@ -327,9 +335,6 @@ public sealed class HeavyExecutor(string home, VerifyWorld? world = null) : IAsy
         return taken;
     }
 
-    /// <summary>Whether a refusal ends the pass: every slot running or the admission's lock, the same wait for every check behind.</summary>
-    private static bool HoldsTheRest(CheckWait? refused) => refused is { Code: CheckWait.Slots or CheckWait.Admitting };
-
     private void Blocked(Queued queued, CheckWait wait)
     {
         var what = wait.Sentence;
@@ -344,19 +349,24 @@ public sealed class HeavyExecutor(string home, VerifyWorld? world = null) : IAsy
     private List<Queued> Ordered(List<Queued> due, DateTimeOffset now)
     {
         if (due.Count == 0) return due;
-        var events = PriorityBook.Read(home);
+        var look = PriorityLook.Read(home, now);
+        var standing = new List<Queued>();
         foreach (var each in due)
         {
-            var priority = PriorityBook.OfRun(events, each.Send.Run, each.Send.Ask, now);
-            if (priority == each.Priority) continue;
+            var priority = PriorityBook.OfRun(look.Events, each.Send.Run, each.Send.Ask, now);
+            var word = HoldBook.Reading(look.Holds, each.Send.Run, each.Send.Ask);
+            var held = word is { Held: true } ? $"{HoldBook.Said(word)}: it is tried again once the hold is lifted" : null;
+            if (held is null) standing.Add(each);
+            if (priority == each.Priority && (held is null || each.For == held)) continue;
             each.Priority = priority;
+            if (held is not null) (each.For, each.Wait) = (held, null);
             lock (_gate)
             {
                 if (_queue.Contains(each)) Waiting(each);
             }
         }
 
-        return [.. QueueOrder.Of(due, each => each.Priority.Class, each => each.Arrived).ThenBy(each => each.Order)];
+        return [.. QueueOrder.Of(standing, each => each.Priority.Class, each => each.Arrived).ThenBy(each => each.Order)];
     }
 
     private void Waiting(Queued queued) => VerifySlot.Wait(
@@ -420,7 +430,7 @@ public sealed class HeavyExecutor(string home, VerifyWorld? world = null) : IAsy
                 result = null;
                 Closed(send);
             }
-            else if (queued.Stop.IsCancellationRequested) result = (result ?? Unknown(send, "")) with { Verdict = VerifyVerdicts.Unknown, Why = "the person stopped it, and its job was ended", Code = VerifyResult.Stopped, Failed = null };
+            else if (queued.Stop.IsCancellationRequested) result = (result ?? Unknown(send, "")) with { Verdict = VerifyVerdicts.Unknown, Why = queued.StopWhy is { } superseded ? $"{superseded}, and its job was ended" : "the person stopped it, and its job was ended", Code = VerifyResult.Stopped, Failed = null };
             else if (bound.IsCancellationRequested) result = (result ?? Unknown(send, "")) with { Verdict = VerifyVerdicts.Unknown, Why = $"it ran past its bound of {HeavySlot.Took(send.Bound)}, and its job was ended", Code = VerifyResult.Bound, Failed = null };
         }
         catch (DriverException error)

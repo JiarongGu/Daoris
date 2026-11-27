@@ -92,6 +92,12 @@ internal sealed class PlanRound
                 continue;
             }
 
+            if (reading.Plans(quest) && HoldOf(quest) is { Held: true } holdWaiting)
+            {
+                considerations.Add(HoldVerdicts.HeldWaiting(quest, holdWaiting));
+                continue;
+            }
+
             // The person wrote to its last session here, parked or ended: that record goes on with their words. Before the
             // person's stop, which the words release as Try again does: the same session goes on with them. Or the session its
             // reopen names, told it: see WordsOn.
@@ -188,6 +194,10 @@ internal sealed class PlanRound
 
         return [.. considerations.Select(each => Aged(each, placed))];
     }
+
+    private HoldEvent? HoldOf(QuestView quest) => Snapshot.Priority.Holds.Count == 0
+        ? null
+        : HoldBook.Reading(Snapshot.Priority.Holds, QuestRuns.Of(quest, id => Snapshot.Quests.FirstOrDefault(each => string.Equals(each.Id, id, StringComparison.OrdinalIgnoreCase))), AskWords.AskOf(quest.From));
 
     /// <summary>A quest's place in the one order: its class aged at this look, a resume where a session of this machine's ran on it, else a new start, and when it began to wait.</summary>
     private WalkSlot PlaceOf(QuestView quest)

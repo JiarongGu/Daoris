@@ -593,6 +593,7 @@ public sealed class NodeRuntime(
 
         if (governed.Scope is { } run)
         {
+            SupersededChecks.End(_performer, unit, tip, run.AfterHanded);
             if (!atEnd) await Keeping.AfterRoundsAsync(governed, run, _config, said, ct).ConfigureAwait(false);
             await Keeping.EndAsync(governed, run, said, git.Lacks, tip, git.Heads, ct).ConfigureAwait(false);
             await Keeping.ReleaseStepsAsync(governed, run, ct).ConfigureAwait(false);

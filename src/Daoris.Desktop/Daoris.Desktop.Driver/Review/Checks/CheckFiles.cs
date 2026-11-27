@@ -132,6 +132,9 @@ public sealed class CheckFiles(string home)
                 Tip = Text(element, "tip"),
                 Handed = Text(element, "handed"),
                 Error = Text(element, "error"),
+                Wait = Text(element, "wait") is { } waitCode && element.TryGetProperty("values", out var values) && values.ValueKind == JsonValueKind.Object
+                    ? new CheckWait(waitCode, values.EnumerateObject().Where(each => each.Value.ValueKind == JsonValueKind.String).ToDictionary(each => each.Name, each => each.Value.GetString()!, StringComparer.Ordinal))
+                    : null,
             };
         }
     }
@@ -147,6 +150,13 @@ public sealed class CheckFiles(string home)
         if (state.Tip is not null) writer.WriteString("tip", state.Tip);
         if (state.Handed is not null) writer.WriteString("handed", state.Handed);
         if (state.Error is not null) writer.WriteString("error", state.Error);
+        if (state.Wait is { } wait)
+        {
+            writer.WriteString("wait", wait.Code);
+            writer.WriteStartObject("values");
+            foreach (var (name, value) in wait.Values) writer.WriteString(name, value);
+            writer.WriteEndObject();
+        }
         writer.WriteEndObject();
     });
 

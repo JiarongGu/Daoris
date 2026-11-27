@@ -57,7 +57,7 @@ internal sealed class DriverHelpers(LoopContext context, Driver driver)
         var begunFor = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
         // The agents set up and signed in here, read once a look and only where an ask is judged.
         IReadOnlyList<string>? setUp = null;
-        foreach (var ask in asks)
+        foreach (var ask in HelperOrder.Of(asks, snapshot))
         {
             var state = states[ask.Id];
             try
@@ -148,6 +148,13 @@ internal sealed class DriverHelpers(LoopContext context, Driver driver)
                         if (Wait(files, ask, state, verdict.Code) && verdict.Code is null)
                         {
                             events.Add(_context.Said.Wait("helper", $"helper  ask `{ask.Id}` from session `{ask.Asker}` waits for the person's yes or no in What needs you"));
+                        }
+
+                        break;
+                    case HelperVerdict.GoKind when HelperOrder.HoldOf(ask, snapshot) is { } hold:
+                        if (_context.Runs.HoldSaid($"helper/{ask.Id}/{hold.At.UtcTicks}"))
+                        {
+                            events.Add(_context.Said.Wait("helper", $"helper  ask `{ask.Id}` from session `{ask.Asker}` stands aside, {HoldBook.Said(hold)}: it is begun once the hold is lifted"));
                         }
 
                         break;

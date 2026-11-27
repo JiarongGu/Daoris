@@ -64,6 +64,9 @@ public sealed record HeavyAdmit(Func<CheckRules> Rules, Func<CancellationToken, 
     public string? Agent { get; init; }
 
     public string Gate { get; init; } = CheckAdmission.DefaultGate;
+
+    /// <summary>The run's place in its queue's order (<see cref="AdmissionOrder"/>): it asks the admission only when it is the turn's, and tells the turn what came of it; null asks at each look.</summary>
+    public AdmissionTurn? Turn { get; init; }
 }
 
 /// <summary>A wait for a repository's slot as it ended: the slot, or none and why the admission refused it (null where none judged).</summary>
@@ -221,8 +224,16 @@ public sealed class HeavySlot : IDisposable
             {
                 ct.ThrowIfCancellationRequested();
                 CheckWait? wait = null;
-                HeavySlot? slot;
-                if (admit is null)
+                HeavySlot? slot = null;
+
+                // A run in an order asks only at its turn, so a slot that frees goes to the first of the order; one not yet its turn asks nothing.
+                var asked = true;
+                if (admit?.Turn is { } turn && !turn.MayTry(out wait))
+                {
+                    asked = false;
+                    if (wait is not null) turn.Waits(wait);
+                }
+                else if (admit is null)
                 {
                     slot = TryTake(home, key);
                 }
@@ -230,16 +241,18 @@ public sealed class HeavySlot : IDisposable
                 {
                     (var taken, wait) = CheckAdmission.TryTake(home, admit.Rules(), new HeavyAsk(key, repository, await admit.Declared(ct).ConfigureAwait(false), admit.Holder) { Agent = admit.Agent, Gate = admit.Gate });
                     slot = taken?.Repository;
+                    if (slot is null && wait is not null) admit.Turn?.Refused(wait);
                 }
 
                 if (slot is not null)
                 {
+                    admit?.Turn?.Admitted();
                     if (looks > 0) said.WriteLine($"run-heavy: `{repository}`'s heavy-run slot is this run's, after waiting {Took(waited.Elapsed)}.");
                     return new HeavyTake(slot, null);
                 }
 
                 var holders = Records(home, key);
-                if (yieldTo is not null && holders.Any(yieldTo)) return new HeavyTake(null, wait);
+                if (asked && yieldTo is not null && holders.Any(yieldTo)) return new HeavyTake(null, wait);
                 if (waiter is not null && waits is null) waits = KeepWaiter(home, key, waiter);
                 var of = string.Join('|', holders.Select(holder => $"{holder.Pid}:{holder.Started}:{holder.Since:O}")) + wait?.Code;
                 if (saidAt is null || waited.Elapsed - saidAt >= waiting.SayEvery || of != saidOf)

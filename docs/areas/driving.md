@@ -152,7 +152,8 @@ built, but nothing outside tests makes, takes or ends one; `LinePlaces` answers 
     Aging is by promotion (`QueueOrder.Age`): a normal item that waited past 2 hours is ordered as high, a low one past 8 hours as normal,
     keeping its first arrival, never into urgent; its consideration carries `AgedFrom` and its reason says "aged from normal". The bounds
     are `PriorityRules.AgeNormal` and `AgeLow`, Daoris's defaults until a workspace's setting carries them. A start that came to a hold is
-    still weighed after every quest that can start, whatever its class. The landing line and opinions do not read it yet.
+    still weighed after every quest that can start, whatever its class. The landing line (`LandingOrder`, in the workflows area) and the asks for a helper (`HelperOrder`: the class of the asker's quest, read from its active session, aged from the ask's arrival, then the order asked) read it by the same comparator; the opinion gate's own passes take no place under the cap, so they queue on nothing it orders.
+    *Hold waiting* (`daoris priority <ask|quest> hold --why "…"`, then `lift`; `HoldBook`, the `holds` list of the classes' file, each hold and lift an event with its why and who) stands an ask's or a quest's queued items aside, a quest's own newest word over its ask's. The planner reads it after the reopen and the pause and before every other reason (`HoldVerdicts.HeldWaiting`, a sit saying `holdWaiting` in both catalogues, so no place or turn is spent), the check queue leaves its waiting checks out of the pass and says why on their rows, the landing line forms without its landings, and a helper ask of its asker is not begun, said once in the machine log with who held it (`HoldSaid`). `daoris priority <id>` reads the word the queues act on (`HoldBook.Reading`: the newest among the run's quests, else the ask's) and names the quest it was set on. Nothing running is cut: a session in its turn, a check holding its slots, a candidate already formed and a helper started go on and keep their result, and a lift returns each item at its own first arrival. A hold has no end of its own: `daoris priority <id>` says it and `lift` ends it.
     Every waiting item says its place (PRIORITY1d): one reader (`QueueRows`) gives the starts and resumes the last plan leaves waiting
     (`AtCapacity`, and `RepositoryBusy` behind another's start or work, never a quest being worked on or opening) and the checks waiting
     for a slot, each row carrying its sort inputs (the class as ordered, the stage, the first arrival, its queue's own order: the walk,
@@ -551,10 +552,18 @@ built, but nothing outside tests makes, takes or ends one; `LinePlaces` answers 
 40a. A session that asks the check broker (`check_run`, a file under the home's `checks` folder, run as the heavy run
     `daoris gate run` makes) and ends its turn on it with no question to the person waits as `awaiting-step` on that check
     (`StepWait.Check`, its note `waits.check`), holding its tree; the verdict (reached, failed or stopped, a red's log tail)
-    is Daoris's word under the key `check/<id>`, which wakes it in the same conversation, so the wait spends no tokens. The broker runs one
-    check at a time on this machine, the oldest ask first. One broker
-    seat per home (`checks/broker.lock`, held while a check runs) keeps a second Daoris process from queuing again a run the first
-    holds; every check log is opened in `CheckFiles` only, shared with its reader. A check Daoris could not run (its log, its
+    is Daoris's word under the key `check/<id>`, which wakes it in the same conversation, so the wait spends no tokens. The broker has no
+    queue and no limit of its own (CHECKSLOTS1, D362, D365): it starts every due ask at once as a heavy run in its session's tree, and each
+    waits its turn for the machine's one admission (`CheckAdmission`) in the one order (`AdmissionOrder`): its quest's class
+    (`PriorityBook.OfRun`, read at each look), then its arrival; the run whose turn it is asks the admission, so the next freed slot goes
+    to the first of the order and nothing running is cut. How many run at once is the admission's alone: memory against each run's learned
+    need, the limit pressure has left, `checks`, the machine's places. A refusal every run behind would meet (every slot runs, the
+    admission's lock) holds the rest; a run's own (memory, its repository's slots) lets the next try, as the executor's pass does
+    (`CheckAdmission.EndsPass`). An ask waiting is `queued` with what it waits for in its state (`wait`, by code and values) and `running` once its slots are
+    held; a command of the asker's own takes no repository slot and waits first come for the machine's places until ADMITDYNAMIC1 joins
+    it to the room. One broker
+    seat per home (`checks/broker.lock`, held while the broker has asks to look over) keeps a second Daoris process from starting again a run the first
+    holds; a run cut off by the driver's end before its slots is `queued` again, never a verdict; every check log is opened in `CheckFiles` only, shared with its reader. A check Daoris could not run (its log, its
     process, a missing tree or a wrapper's tool-error exit) ends `errored`, held on the check with its error, said in the run's log as `look.said` and never to
     the session, and asked again after a minute; only a gate that ran is a verdict said to the session. The check log includes the gate's standard output and error before the wrapper's verdict. Every verdict is said to the
     session that asked, whatever its quest's state: Daoris asks no check of its own, so no verdict is owed to the person. An ask Daoris wrote

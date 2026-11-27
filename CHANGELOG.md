@@ -5,6 +5,11 @@ with the version and date at release.
 
 ## Unreleased
 
+- A session's `check_run` no longer waits in a queue of its own that runs one check at a time. Every due check starts at once and
+  waits its turn for the machine's one measured admission, in the same order as every other check (its quest's class, then when it was
+  asked), so as many run at once as the free memory, the limit and the machine's places admit, and an urgent quest's check takes the
+  next freed slot. A waiting check's state says what it waits for, and a check cut off by Daoris closing before it ran is asked again,
+  never handed back as stopped.
 - An update is no longer refused for a path the home's table lacks. The table now names the memo folder (`data/memo`) and a session's
   start record (`run/sessions/*.agent`), a path still unnamed is said (the start's log, `daoris home`, the proof's `strays`) and never
   refuses, and a build is refused for a finding only where it would break the new build: an unreadable record or binding, a missing
@@ -24,6 +29,10 @@ with the version and date at release.
   for a slot) with its place, its class and where that comes from, its stage, why it waits and each item ahead; the Overview's new
   queues card shows the same places in English and Chinese, and sets an item's class with one press and a why. A class a session sets
   from its terminal is the risk policy's act `priority.set`, which a workspace may hold for a role's or the owner's yes.
+  over eight as normal, and its reason says "aged from normal". The landing line and the asks for a helper go by the same order, so
+  an urgent quest's landing forms before an older normal one. `daoris priority <ask|quest> hold --why "…"` stands a quest's or an
+  ask's queued starts, checks, landings and helper asks aside while what is running finishes and keeps its result, and `lift`
+  returns them at their first arrival.
 - A family member's gates build against the commits it pins, never a sibling checkout as it stands. `daoris family materialize` writes
   each pin of the repository's own `daoris.family.lock` as its producer's files at the pinned commit into `pinned/<producer>` (`--into`
   names another folder inside the repository), read from git's own files with no process. Wherever `family check` would refuse, or an
