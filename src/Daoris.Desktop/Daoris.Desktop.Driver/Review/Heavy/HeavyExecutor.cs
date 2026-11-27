@@ -213,7 +213,7 @@ public sealed class HeavyExecutor(string home, VerifyWorld? world = null) : IAsy
                     continue;
                 }
 
-                if (held is null && HoldsTheRest(each.Refused))
+                if (held is null && AdmissionOrder.EndsPass(each.Refused))
                 {
                     foreach (var behind in ordered.Skip(at + 1)) Blocked(behind, each.Refused!);
                     break;
@@ -326,9 +326,6 @@ public sealed class HeavyExecutor(string home, VerifyWorld? world = null) : IAsy
         if (taken is null) Blocked(queued, wait!);
         return taken;
     }
-
-    /// <summary>Whether a refusal ends the pass: every slot running or the admission's lock, the same wait for every check behind.</summary>
-    private static bool HoldsTheRest(CheckWait? refused) => refused is { Code: CheckWait.Slots or CheckWait.Admitting };
 
     private void Blocked(Queued queued, CheckWait wait)
     {
