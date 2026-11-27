@@ -35,7 +35,6 @@ public sealed class CheckBroker(string home, Func<string, CancellationToken, Tas
     /// <summary>The quest a session serves, whose class orders its checks; null for a session serving none.</summary>
     public Func<string, string?> QuestOf { get; init; } = _ => null;
 
-    /// <summary>What admits a run; null reads the machine's, its <c>checks</c> from the home's driver file.</summary>
     public Func<CheckRules>? Rules { get; init; }
 
     public HeavyWaiting Waiting { get; init; } = HeavyWaiting.Default;
@@ -85,7 +84,9 @@ public sealed class CheckBroker(string home, Func<string, CancellationToken, Tas
             {
                 foreach (var ask in Pending(asks, _files.ReadState, _clock.GetUtcNow()).Where(each => !_active.ContainsKey(each.Id)))
                 {
-                    _active[ask.Id] = Task.Run(() => OneAsync(ask, ct), CancellationToken.None);
+                    // Joined before any of the pass starts, so the order holds however long each one's tree takes to read.
+                    var turn = ask.Command is null ? _order.Join(ask.Id, () => PlaceOf(ask)) : null;
+                    _active[ask.Id] = Task.Run(() => OneAsync(ask, turn, ct), CancellationToken.None);
                 }
 
                 running = [.. _active.Values];
@@ -100,19 +101,20 @@ public sealed class CheckBroker(string home, Func<string, CancellationToken, Tas
         await Task.WhenAll(ending).ConfigureAwait(false);
     }
 
-    private async Task OneAsync(CheckAsk ask, CancellationToken ct)
+    private async Task OneAsync(CheckAsk ask, AdmissionTurn? turn, CancellationToken ct)
     {
         try
         {
-            if (await RunOneAsync(ask, ct).ConfigureAwait(false) is { } state) Settled?.Invoke(state);
+            if (await RunOneAsync(ask, turn, ct).ConfigureAwait(false) is { } state) Settled?.Invoke(state);
         }
         finally
         {
+            turn?.Dispose();
             lock (_gate) _active.Remove(ask.Id);
         }
     }
 
-    private async Task<CheckState?> RunOneAsync(CheckAsk ask, CancellationToken ct)
+    private async Task<CheckState?> RunOneAsync(CheckAsk ask, AdmissionTurn? turn, CancellationToken ct)
     {
         if (await folderOf(ask.Session, ct).ConfigureAwait(false) is not { Length: > 0 } folder || !Directory.Exists(folder))
         {
@@ -121,7 +123,6 @@ public sealed class CheckBroker(string home, Func<string, CancellationToken, Tas
 
         string? tip = null;
         var admitted = false;
-        AdmissionTurn? turn = null;
         try
         {
             tip = await TipAsync(folder, ct).ConfigureAwait(false);
@@ -131,10 +132,9 @@ public sealed class CheckBroker(string home, Func<string, CancellationToken, Tas
                 _files.WriteState(new CheckState(ask.Id, CheckStates.Running, _clock.GetUtcNow()) { Tip = tip });
             }
 
-            if (ask.Command is null)
+            if (turn is not null)
             {
                 _files.WriteState(new CheckState(ask.Id, CheckStates.Queued, _clock.GetUtcNow()) { Tip = tip });
-                turn = _order.Join(ask.Id, () => PlaceOf(ask));
                 turn.WhenRefused = wait => Waits(ask, tip, wait);
                 turn.WhenAdmitted = Running;
             }
@@ -162,10 +162,6 @@ public sealed class CheckBroker(string home, Func<string, CancellationToken, Tas
         catch (Exception error) when (error is IOException or UnauthorizedAccessException or DriverException)
         {
             return Keep(new CheckState(ask.Id, CheckStates.Errored, _clock.GetUtcNow()) { Error = error.Message, Tip = tip });
-        }
-        finally
-        {
-            turn?.Dispose();
         }
     }
 
