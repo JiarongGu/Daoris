@@ -281,7 +281,13 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     answers with no commit, its session waiting on the run's next step since the red was asked and none of its sessions still working
     (`CheckRounds.Answered`), has the same commit asked again as its next round. Each exit of the check's start that leaves it ready (not
     sent, no executor, a red not answered, sessions unread) is said once per change of reason in the machine log (`check.waits`,
-    `CheckStartWaits`, the memory `NodeWaits` the landing's `landing.waits` shares). A check's reds are counted from its run's record
+    `CheckStartWaits`, the memory `NodeWaits` the landing's `landing.waits` shares). A check still waiting for a slot or running at a commit
+    the work has moved past, its node invalidated or ready again, holds the node's gate until it answers (D173), so the pass that finds it
+    ends its job as a stop does, its result saying the commit it was sent at and the one the work moved to (`SupersededChecks.End`,
+    CONTENTWAIT1), its answer settles it as a stale attempt's, and the check at the tip starts; a check on the landing's commit, or at the
+    tip, runs on. `content.holds` reads what the line holds of the branch once a look while nothing under it moves (`ContentReadMemo`:
+    the tree's head, its repository's refs, the home's landings and choices and the tree's working files, read from files), so a look over
+    an unchanged branch starts no git. A check's reds are counted from its run's record
     (`CheckRounds.Reds`, each settled failed attempt a round); the way back is taken while they stay under `CheckRounds.Bound` (3), and the
     red that reaches it is not sent back. That red is a left attempt's recovery, the act `work.recover` (D354), its failure kept on the
     left attempt's role, the place's supervisor (`SpentChecks.HeldOn`): a row classing it `role` gives it to that role's holder as the place

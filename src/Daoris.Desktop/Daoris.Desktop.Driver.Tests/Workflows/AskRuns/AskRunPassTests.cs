@@ -90,6 +90,8 @@ public sealed class AskRunPassTests : NodeRunFixture
 
         public bool Answered(string invocation) => false;
 
+        public void Supersede(string invocation, string why) => Stop(invocation);
+
         public void Stop(string invocation)
         {
         }

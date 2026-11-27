@@ -42,6 +42,8 @@ public sealed class CheckStartTests : NodeRunFixture
 
         public bool Answered(string invocation) => Answers.Contains(invocation);
 
+        public void Supersede(string invocation, string why) => Stop(invocation);
+
         public void Stop(string invocation)
         {
         }

@@ -23,6 +23,8 @@ public sealed class CheckExecution(
 
     public void Stop(string invocation) => executor.Stop(invocation);
 
+    public void Supersede(string invocation, string why) => executor.Stop(invocation, why);
+
     /// <summary>The run a <c>run:&lt;run&gt;</c> unit names.</summary>
     public static string RunOf(string unit) => RunUnits.Is(unit) ? unit[RunUnits.Prefix.Length..] : unit;
 
