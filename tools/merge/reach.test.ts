@@ -74,6 +74,7 @@ const cases: [string, string[], string[]][] = [
     ['the service publisher the publish calls', ['tools/service-publish.mjs'], [...BASE, toolTests, rehearse, family, deployment]],
     ["the family rehearsal's set-up kit", ['tools/setup-kit.mjs'], [...BASE, toolTests, family]],
     ["the rehearsals' kit", ['tools/rehearsal-kit.mjs'], [...BASE, toolTests, rehearse, family, deployment]],
+    ["the rehearsals' port listener and run lock", ['tools/port-listeners.mjs', 'tools/machine-read.mjs', 'tools/run-lock.mjs'], [...BASE, toolTests, rehearse, family, deployment]],
     ['a tool-test file', ['src/Daoris.Cli/tool-test/setup-kit.test.ts'], [...BASE, toolTests, toolE2e]],
     ['a tool outside the merge tool', ['tools/test-recall.mjs'], [...BASE, toolTests]],
     ['the fixture the tool-tests share', ['src/Daoris.Cli/test/_fixture.ts'], [...BASE, toolTests]],

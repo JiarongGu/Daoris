@@ -91,6 +91,13 @@ export const REACH: readonly Rule[] = Object.freeze<Rule[]>([
     why: "the rehearsals' kit, which the set-up kit's tool-tests import, and the port test it takes each run's ports with (REHEARSEPORT1, GATESLIM1)",
   },
   {
+    paths: ['tools/port-listeners.mjs', 'tools/machine-read.mjs', 'tools/run-lock.mjs'],
+    gates: ['tool-tests', 'rehearse', 'rehearse-family', 'deployment'],
+    why: "the rehearsal kit's port listener, the process table it reads (WMICOST1) and the run lock, imported by every rehearsal",
+  },
+  { paths: ['tools/family-gates.mjs', 'tools/family-pins.mjs'], gates: ['tool-tests', 'rehearse-family'], why: "rehearse:family's gate and pin stages import them (FAMILY1b)" },
+  { paths: ['tools/contracts.mjs'], gates: ['rehearse-family', 'deployment'], why: 'the family rehearsal and the deployment rehearsal generate the contracts through it' },
+  {
     paths: ['tools/cdp.mjs'],
     gates: ['rehearse', 'rehearse-family', 'deployment'],
     why: "the port test the rehearsals take each run's ports with (REHEARSEPORT1)",
