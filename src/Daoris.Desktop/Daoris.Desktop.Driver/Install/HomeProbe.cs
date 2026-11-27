@@ -10,7 +10,7 @@ public delegate (string Code, string Sentence)? StagedProof(string install, stri
 /// A staged build starts clean on a copy of the real home before it is swapped in. The running build reads the home
 /// (<see cref="HomeProof.Read"/>), copies it into a scratch beside the staged build, and has the staged build's own driver read the copy
 /// (<c>daoris home proof</c>); the swap is refused, the old build keeps running and the sentence says why, unless every account the
-/// running build lists is still listed and the staged build finds nothing amiss in the copy (<see cref="HomeProofReport.Problems"/>).
+/// running build lists is still listed and the staged build finds nothing amiss the running build does not (<see cref="Novel"/>).
 /// </summary>
 /// <remarks>
 /// <para>The source is read and never written. The copy holds the home's own folder whole (its files above
@@ -62,7 +62,7 @@ public static class HomeProbe
                 reasons.AddRange(accounts.Where(account => !listed.Contains(account, StringComparer.Ordinal)).Select(account => $"the account `{agent}/{account}` is no longer listed"));
             }
 
-            reasons.AddRange(proof.Problems);
+            reasons.AddRange(Novel(proof.Problems, running.Problems, copy, home));
             return reasons.Count == 0 ? null : Refuse(string.Join("; ", reasons.Take(Said)) + (reasons.Count > Said ? $"; and {reasons.Count - Said} more" : ""));
         }
         catch (Exception error) when (error is IOException or UnauthorizedAccessException)
@@ -73,6 +73,14 @@ public static class HomeProbe
         {
             HomeCopy.Remove(made);
         }
+    }
+
+    internal static IReadOnlyList<string> Novel(IEnumerable<string> staged, IEnumerable<string> running, string copy, string home)
+    {
+        string Key(string problem) =>
+            problem.Replace(Path.GetFullPath(copy), "<home>", StringComparison.OrdinalIgnoreCase).Replace(Path.GetFullPath(home), "<home>", StringComparison.OrdinalIgnoreCase);
+        var known = running.Select(Key).ToHashSet(StringComparer.Ordinal);
+        return [.. staged.Where(problem => !known.Contains(Key(problem)))];
     }
 
     private const int Said = 4;

@@ -117,7 +117,7 @@ public sealed class GitObjectMemoTests(ITestOutputHelper output) : LandedFixture
     public async Task A_bad_row_or_another_version_is_dropped_at_load_and_never_stops_a_read()
     {
         var (root, line, tip) = await BranchAsync();
-        var file = Path.Combine(Home, "memo", "git-objects.json");
+        var file = DaorisHome.Entry(Home, HomeEntry.Memo, "git-objects.json");
         Directory.CreateDirectory(Path.GetDirectoryName(file)!);
         await File.WriteAllTextAsync(file, "[{\"K\":\"k\",\"C\":0,\"O\":null}]");
         using (GitObjectMemo.Within(Home))
@@ -138,7 +138,7 @@ public sealed class GitObjectMemoTests(ITestOutputHelper output) : LandedFixture
     public async Task A_batch_appends_only_its_new_answers()
     {
         var (root, line, tip) = await BranchAsync();
-        var file = Path.Combine(Home, "memo", "git-objects.json");
+        var file = DaorisHome.Entry(Home, HomeEntry.Memo, "git-objects.json");
         using var home = GitObjectMemo.Within(Home);
         await AsksAsync(root, Proof(tip, line));
         GitObjectMemo.Restart(Home);
@@ -194,7 +194,7 @@ public sealed class GitObjectMemoTests(ITestOutputHelper output) : LandedFixture
         }
 
         using var again = GitObjectMemo.Within(Home);
-        Assert.True(File.Exists(Path.Combine(Home, "memo", "git-objects.json")));
+        Assert.True(File.Exists(DaorisHome.Entry(Home, HomeEntry.Memo, "git-objects.json")));
         Assert.Equal(0, await AsksAsync(root, Proof(tip, line)));
     }
 
