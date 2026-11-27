@@ -10,6 +10,11 @@ with the version and date at release.
   asked), so as many run at once as the free memory, the limit and the machine's places admit, and an urgent quest's check takes the
   next freed slot. A waiting check's state says what it waits for, and a check cut off by Daoris closing before it ran is asked again,
   never handed back as stopped.
+- A new session tree no longer costs its dependencies' bytes: the dependency store places each file as a hard link to the entry's own
+  (read-only, so a write in place fails and a clean unlinks one name), copying only the files at the folder's top and any a volume
+  will not link. Disk space and the machine log (`home.over`, `home.duplicate`, `home.largest`) now name each place over its
+  entry's budget, the largest files, and identical files held in more than one place, a file under two names of one record counting once.
+
 - An update is no longer refused for a path the home's table lacks. The table now names the memo folder (`data/memo`) and a session's
   start record (`run/sessions/*.agent`), a path still unnamed is said (the start's log, `daoris home`, the proof's `strays`) and never
   refuses, and a build is refused for a finding only where it would break the new build: an unreadable record or binding, a missing

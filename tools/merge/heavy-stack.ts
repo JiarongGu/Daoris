@@ -20,6 +20,7 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { withKeepLock } from '../../src/Daoris.Cli/src/platform/keeplock.ts';
 import { writeAtomic } from '../fsx.mjs';
+import type { Range } from './heavy-batch.ts';
 
 export const HEAVY_STACK = 'local/heavy-stack.json';
 /** Where a holder's halt is written, one file a tier, read by its reached run (`heavy-halt.ts`). */
@@ -33,16 +34,18 @@ export const WAIT_BOUND_MS = 10 * 60_000;
 export const WAIT_DEADLINE_MS = 3 * 60 * 60_000;
 
 /** A tier as the stack keeps it: the landing's run, its process, and (on a holder) the newer tier that asked it to stop. */
-export type Tier = { id: string; pid: number; commit: string; base: string; branches: string[]; since: string; beat: string; supersededBy?: string };
-/** A tier whose range is carried: the base it ran from, and the classes it left unrun (null: it ran none, its whole range). */
-export type Carried = { id: string; commit: string; base: string; branches: string[]; since: string; unrun: string[] | null };
+export type Tier = { id: string; pid: number; commit: string; base: string; branches: string[]; since: string; beat: string; supersededBy?: string; ranges?: Range[] };
+/** A tier whose range is carried: the base it ran from, the classes it left unrun (null: it ran none) and the landings' changes it ran over, none for a run by hand. */
+export type Carried = { id: string; commit: string; base: string; branches: string[]; since: string; unrun: string[] | null; ranges?: Range[] };
 /** What waits for the next holder: the oldest base carried, and each tier carried, oldest first. */
 export type Handed = { base: string; from: Carried[] };
 export type Stack = { holder: Tier | null; waiting: Tier | null; handed: Handed | null };
 
 export const haltFileOf = (home: string, id: string): string => join(home, HEAVY_HALTS, `${id.replace(/[^\w.-]+/g, '-')}.json`);
 
-const carriedOf = (tier: Tier, unrun: string[] | null, base = tier.base): Carried => ({ id: tier.id, commit: tier.commit, base, branches: tier.branches, since: tier.since, unrun });
+const carriedOf = (tier: Tier, unrun: string[] | null, base = tier.base): Carried => ({
+  id: tier.id, commit: tier.commit, base, branches: tier.branches, since: tier.since, unrun, ...(tier.ranges ? { ranges: tier.ranges } : {}),
+});
 
 /** `handed` with `entries` carried too: oldest first by when each tier landed, the range from the oldest's base. */
 export function carry(handed: Handed | null, ...entries: Carried[]): Handed {

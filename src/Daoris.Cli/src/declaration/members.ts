@@ -67,7 +67,7 @@ export const HOME_WHOLE = ['devkit', 'treeBaseline', 'localInputs', 'unasked'] a
  */
 export const SPLIT_SECTIONS: Readonly<Record<string, { file: string; home: readonly string[]; repository: readonly string[] }>> = {
   sensitive: { file: 'sensitive.json', home: ['patternsFile'], repository: ['reviewedObjects'] },
-  verifyBudget: { file: 'verify-budget.json', home: ['overruns'], repository: ['budgetMinutes', 'fullRunReasons'] },
+  verifyBudget: { file: 'verify-budget.json', home: ['overruns'], repository: ['budgetMinutes', 'fullRunReasons', 'preflightFirst', 'preflightFirstWhy'] },
 };
 
 /** The members of `integration`, the folder's `merge.json` holding what is under `merge`. */

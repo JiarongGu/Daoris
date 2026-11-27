@@ -890,7 +890,7 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     starts never both see no holder. The machine setting `checks` (`daoris settings checks <n>|auto`, the window's `SET_CHECKS`) pins a
     number, never more than the machine's heavy-run admission holds. **The room is measured, never a number** (ADMITDYNAMIC1, D362; the
     judgement is `RoomJudge`, its state `RoomLedger`, in `Review/Room/`). A gate's need is learned per repository, kind and one gate from its
-    own runs on this machine (`LearnedNeeds`, `admission/learned.json`, D368: keyed by the repository's key, `HeavySlot.KeyOf`, so every
+    own runs on this machine (`LearnedNeeds`, `admission/learned.json`, D369: keyed by the repository's key, `HeavySlot.KeyOf`, so every
     tree of it and its landing line read one history, never by a tree or folder; the job's peak memory so far and the cores the gate
     kept busy, a tenth over the larger of the newest five peaks, kept by `RunMeter` as each gate ends, in a session's `run-heavy` and in a
     check's gates alike); a run of several gates asks the largest of its gates, since they run one after another, never their sum

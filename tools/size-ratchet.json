@@ -1,7 +1,7 @@
 {
   "src/Daoris.Cli/test/desktop-tool.test.ts": 46899,
   "src/Daoris.Cli/test/usage-report.test.ts": 88779,
-  "src/Daoris.Cli/tool-test/desktop-publish.test.ts": 67881,
+  "src/Daoris.Cli/tool-test/desktop-publish.test.ts": 67869,
   "src/Daoris.Cli/tool-test/merge-queue.test.ts": 74240,
   "src/Daoris.Cli/tool-test/setup-kit.test.ts": 55660,
   "src/Daoris.Desktop/Daoris.Desktop.Driver.Rehearsals/Workplace/IntegrationFormGitTests.cs": 51656,
@@ -105,7 +105,7 @@
   "src/Daoris.Web/src/workflow/WorkflowRunView.test.tsx": 54537,
   "tools/deployment-rehearsal.mjs": 105401,
   "tools/family-rehearsal.mjs": 368018,
-  "tools/merge-branch.mjs": 389996,
+  "tools/merge-branch.mjs": 388349,
   "tools/merge-queue.mjs": 65185,
   "tools/rehearsal-kit.mjs": 55821,
   "tools/rehearsal-kit.test.mjs": 45751

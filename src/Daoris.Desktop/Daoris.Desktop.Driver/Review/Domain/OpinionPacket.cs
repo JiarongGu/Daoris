@@ -29,6 +29,19 @@ public sealed record OpinionRulesRead(IReadOnlyList<string> Doctrine, string? De
 }
 
 /// <summary>
+/// The verification rule a repository declares for its own work (its gates file's <c>verifyBudget</c>), as a reviewer is told it so it asks
+/// for no run the rule gives no reason for: a task's budget in minutes, the paths whose change is a reason for a full run, and the
+/// share of its test classes a change must reach to be one.
+/// </summary>
+public sealed record OpinionVerification(int BudgetMinutes, IReadOnlyList<string> WidePaths, int ReachPercent, bool Release = false)
+{
+    public bool Equals(OpinionVerification? other) =>
+        other is not null && BudgetMinutes == other.BudgetMinutes && WidePaths.SequenceEqual(other.WidePaths) && ReachPercent == other.ReachPercent && Release == other.Release;
+
+    public override int GetHashCode() => HashCode.Combine(BudgetMinutes, WidePaths.Count, ReachPercent, Release);
+}
+
+/// <summary>
 /// What a pass hands its reviewer, assembled by Daoris with no model, from facts: the
 /// candidate; what the work is asked, the quests of the work with the person's quoted requirements and the ask's words; what the
 /// working session claims, each quest's closing note; what Daoris read of the evidence; and the repository's own rules. Never
@@ -51,6 +64,9 @@ public sealed record OpinionPacket(string Occasion, OpinionCandidateRead Candida
 
     /// <summary>The repository's own rules and records, named by path.</summary>
     public OpinionRulesRead Rules { get; init; } = OpinionRulesRead.None;
+
+    /// <summary>The verification rule the repository declares, which the instruction carries; null where it sets none.</summary>
+    public OpinionVerification? Verification { get; init; }
 
     /// <summary>
     /// The whole diff's file, in the opinion's own folder under the home, which the reviewer is handed a read of; null where it

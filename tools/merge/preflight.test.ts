@@ -159,3 +159,20 @@ test('the plan is said before it runs: the gates, the kept, each deferred with w
 function names(entries: { name: string }[]): string[] {
   return entries.map((entry) => entry.name);
 }
+
+test('a preflight counts the time each gate waited for its place and for memory, so the record says wait apart from run', async () => {
+  const time = heldTime();
+  const run = preflightRun({ branch: 'feature/x', gates: ['early', 'late'], set: SET, started: time.now(), now: time.now, say: () => {}, timers: time.timers });
+  let release: (hold: unknown) => void = () => {};
+  const hooks = run.hooks({ take: () => new Promise((done) => { release = done; }) });
+  const asking = hooks.admission!.take({ what: 'late gate' });
+  time.tick(90_000);
+  release({ id: 'place' });
+  await asking;
+  time.tick(30_000);
+  hooks.onStart({ name: 'late' });
+  hooks.onStart({ name: 'early' });
+  time.tick(5_000);
+  hooks.onResult({ gate: { name: 'early' }, verdict: 'PASS', ms: 5_000 });
+  assert.deepEqual(run.waits(), { late: 120_000 }, 'its place and the memory after it, from the ask to the start; a gate that never waited has none');
+});

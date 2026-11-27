@@ -148,6 +148,9 @@ it stopped and which never started, and why. A red writes `local/scratch/merge-<
 error, its file and line, the first error lines, and whether main fails it too (a log's failing test is its first `not ok` or `✖` line, and its
 error never a pass line, a count of none or a warning; a log with none says the run ended without a failing test, with its exit), from that selection run on main's tip in the
 worktree's `local/scratch/main-tree`. The branch-worker hands back on its summary: its pass, its brief, or what its bound left.
+The preflight starts the gates `verifyBudget.preflightFirst` names (the censuses) first, keeps a receipt for each unit it ran or replayed under the
+tree it judged, appends one measure line per run to `runs.jsonl` beside them (`DAORIS_PREFLIGHT_TRIGGER` names what started it, `agent` where it is unset; the driver is to set `done` when it starts one at a session's done, VERIFY2a), and
+says and writes its summary: what changed by module and rule, what is verified with its receipts, what is left for judgement.
 
 Every time breach says why (`tools/time-why.mjs`): a test over its time ratchet limit, a unit test over the layers census's second,
 a test the hang timeout killed and a gate killed at its budget are each one line of the merge's breach report, `breaches.json`
@@ -605,6 +608,16 @@ run takes every place at once, as that many ordinary entries in one write, and w
 HEAVYQUEUE1 note): its marked gates take a place after the repository's slot, and `run-heavy -- <command>` runs a command of its own,
 a filtered `dotnet test` or a test file's run, as a heavy run with no slot; a driven session is told to use it (`HeavyTold.Focused`).
 The queue's admission is the machine's: it does not read `local/admission.json`, whose reservations remain CISCOPE1e2's.
+
+**The heavy tier follows a reasoned landing, after a pause** (HEAVYBATCH1, D349's note). The tier after a landing is judged on the
+change the landing made, never by the run's kind: `tools/heavy-run.mjs` reads the landing's paths against `daoris.gates.json`'s
+`verifyBudget` (a declared wide path, or a reach of the declared share of the census's classes), and a landing with none settles
+`skipped` and queues nothing, takes no admission place and no tree (a release, which is a reason by its kind, asks the tier by
+hand: `heavy-run.mjs … --now`, which tier-evidence names, from the last green heavy run). A reasoned landing's tier waits until no landing has come for 20
+minutes, and no later than 2 hours after the oldest landing of the batch (`local/heavy-pending.json`, `tools/merge/heavy-batch.ts`); a
+newer reasoned landing carries the waiting one, so one tier runs the batch on the newest reasoned landing's commit, over only what
+the reasoned landings changed. A landing with no reason leaves its heavy classes to the CI beside and the nightly alone. It runs as the machine admission's existing background kind (unchanged here): it takes a place only while no blocking run, a task's check among them, waits, and starts no group
+while one does; a group in flight is not cut. A repository with no `verifyBudget` keeps the tier after every landing.
 
 **One heavy tier at a time** (HEAVYSTACK1). The heavy tier after a landing (`tools/heavy-run.mjs`) holds the heavy tree alone,
 through `local/heavy-stack.json` (`tools/merge/heavy-stack.ts`), so landings in a row hold one admission place and run one git half,

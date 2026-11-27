@@ -81,7 +81,7 @@ Each type is in a file of its name; `docs/index/README.md` says where a seam, ve
     never by deleting a folder while it runs. A workspace's history clear sends its units to the service in presses of at most `HistoryDoors.PressUnits`, so each answers within the client's bound and one `daoris history clear --workspace <w> --yes` clears a history of any length. (from D172, D195)
 17a. Nothing Daoris writes is kept forever unnoticed. The bounds that keep `work/` from growing without end are two. The dependency store
     (`work/deps`, the Disk space card's `deps` kind) evicts a copy not placed in a tree for 30 days, then the least recently placed past 10 GB,
-    in the Keeping pass once a day; a copy is the tree's own once placed, so none is in use. A session tree no run owns, that no session runs
+    in the Keeping pass once a day; a placed tree holds its own names of the files, so evicting an entry frees nothing a tree uses. A session tree no run owns, that no session runs
     or waits in and that nothing has used for 14 days (`TreeReleases.Unused`: the later of the tree's top folder's write time and its HEAD's last move in
     git's reflog) is removed by the look's tidy with its branch standing and holding every commit; uncommitted work,
     a live run's tree and an open session's tree keep it. Each such removal and each eviction is said in the machine log (`tree.ended`,
@@ -315,7 +315,11 @@ Each type is in a file of its name; `docs/index/README.md` says where a seam, ve
     not kept for the files an install holds there (51): the table's place that goes is moved in `home-places.json`
     (`test/fixtures`) from `places` to `dropped` with its declared one-time move, and `home-census.test.ts` refuses a place gone with no
     move, and a place in the table not recorded. The move is run by the steward on the install, never by a build at a start.
-    (from HOMEORPHAN1, FIX-LOG 2026-11-20)
+    The same walk's places are weighed (`HomeWeights.Read`): each over its entry's size in `HomeBudgets` (a named one, else its category's;
+    the census holds every entry to a bound), the largest files and the files of 1 MB or more that identical bytes hold twice (hashed only
+    where sizes match; the names of one file record, as a tree's linked dependencies are, count once) are said at a start (`home.over`,
+    `home.duplicate`, `home.largest`) and in Disk space (`weight`, counted at a start and again in the background, kept an hour, null until the first
+    count ends). (from HOMEORPHAN1, HOMESIZE1, FIX-LOG 2026-11-20)
 
 | Kind | History (moved or emptied) | Configuration (stays) |
 |---|---|---|

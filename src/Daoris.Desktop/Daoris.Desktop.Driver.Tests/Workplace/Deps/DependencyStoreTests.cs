@@ -112,7 +112,7 @@ public sealed class DependencyStoreTests : IDisposable
     }
 
     [Fact]
-    public async Task A_fresh_tree_s_install_is_sealed_and_the_next_tree_is_placed_by_copy_writable_and_link_safe()
+    public async Task A_fresh_tree_s_install_is_sealed_and_the_next_tree_is_placed_by_file_links_and_link_safe()
     {
         await MakeAsync("link-in");
         Environment.SetEnvironmentVariable("DEPS_STRAY", "stray");
@@ -132,8 +132,11 @@ public sealed class DependencyStoreTests : IDisposable
 
         Assert.Contains(StartNoteCodes.StartedDepsPlaced.Code, Codes(placed));
         var index = Path.Combine(two, "deps", "pkg", "index.js");
-        Assert.False(File.GetAttributes(index).HasFlag(FileAttributes.ReadOnly), "a placement is writable");
+        Assert.True(File.GetAttributes(index).HasFlag(FileAttributes.ReadOnly), "a placement links the entry's read-only files");
+        File.SetAttributes(index, FileAttributes.Normal);
+        File.Delete(index);
         await File.WriteAllTextAsync(index, "changed in the tree\n");
+        File.SetAttributes(Path.Combine(DependencyStore.EntryOf(Home, entry.Key), "files", "pkg", "index.js"), FileAttributes.ReadOnly);
         Assert.Equal("module.exports = \"link-in\";\n", await File.ReadAllTextAsync(Path.Combine(one, "deps", "pkg", "index.js")));
         var link = new DirectoryInfo(Path.Combine(two, "deps", "src"));
         Assert.True(link.Attributes.HasFlag(FileAttributes.ReparsePoint));

@@ -193,7 +193,7 @@ test('the stage refuses a commit with no landing run, or one still running, and 
 
   let gated = ungatedRefusal(to, repo);
   assert.match(gated.refusal!, new RegExp(`no heavy run is recorded for ${head.slice(0, 7)}`));
-  assert.match(gated.refusal!, /To supply the heavy tier: node tools\/heavy-run\.mjs --id heavy-[0-9a-f]{7}-by-hand --commit [0-9a-f]{40} --base [0-9a-f]{40}~1\n/);
+  assert.match(gated.refusal!, /To supply the heavy tier: node tools\/heavy-run\.mjs --id heavy-\w{7}-by-hand --commit \w{40} --base \w{40}~1 --now\n/);
 
   heavy('running');
   assert.match(ungatedRefusal(to, repo).refusal!, /heavy run heavy-1 is still running/);

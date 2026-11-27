@@ -125,6 +125,7 @@ internal sealed class DriverOpinions(LoopContext context, Driver driver)
 
         // The repository's own rules as they stand in the candidate, read before the reviewer starts and never after.
         var rules = OpinionPackets.RulesIn(copy.Path);
+        var verification = OpinionPackets.VerificationIn(copy.Path);
         var posture = OpinionPosture.Of(adapter);
         var family = choice.Family ?? AgentFamily.Of(_context.Adapters, reviewer);
 
@@ -186,6 +187,7 @@ internal sealed class DriverOpinions(LoopContext context, Driver driver)
                 Words = ask.Words,
                 Opening = ask.Opening,
                 Rules = rules,
+                Verification = verification,
                 Diff = diff,
                 Verify = ask.Rule.Verify,
                 Minutes = ask.Rule.Bound,
