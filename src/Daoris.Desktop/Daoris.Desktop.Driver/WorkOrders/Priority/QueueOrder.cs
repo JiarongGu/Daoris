@@ -35,6 +35,10 @@ public static class QueueOrder
     public static IOrderedEnumerable<T> Of<T>(IEnumerable<T> items, Func<T, QueuePlace> place) =>
         items.OrderBy(item => PriorityClasses.Rank(place(item).Class)).ThenBy(item => place(item).Stage).ThenBy(item => place(item).Arrived);
 
+    /// <summary>Class then stage, the items' given order left for what those leave equal: a queue whose own order is not arrival.</summary>
+    public static IOrderedEnumerable<T> Stable<T>(IEnumerable<T> items, Func<T, QueuePlace> place) =>
+        items.OrderBy(item => PriorityClasses.Rank(place(item).Class)).ThenBy(item => place(item).Stage);
+
     /// <summary>
     /// The check slots' queue, whose items are all first checks until a run back at its checks is told apart from a first one there: class,
     /// then first arrival.

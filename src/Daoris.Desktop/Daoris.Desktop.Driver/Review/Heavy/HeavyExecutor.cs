@@ -344,19 +344,24 @@ public sealed class HeavyExecutor(string home, VerifyWorld? world = null) : IAsy
     private List<Queued> Ordered(List<Queued> due, DateTimeOffset now)
     {
         if (due.Count == 0) return due;
-        var events = PriorityBook.Read(home);
+        var look = PriorityLook.Read(home, now);
+        var standing = new List<Queued>();
         foreach (var each in due)
         {
-            var priority = PriorityBook.OfRun(events, each.Send.Run, each.Send.Ask, now);
-            if (priority == each.Priority) continue;
+            var priority = PriorityBook.OfRun(look.Events, each.Send.Run, each.Send.Ask, now);
+            var word = HoldBook.Reading(look.Holds, each.Send.Run, each.Send.Ask);
+            var held = word is { Held: true } ? $"{HoldBook.Said(word)}: it is tried again once the hold is lifted" : null;
+            if (held is null) standing.Add(each);
+            if (priority == each.Priority && (held is null || each.For == held)) continue;
             each.Priority = priority;
+            if (held is not null) (each.For, each.Wait) = (held, null);
             lock (_gate)
             {
                 if (_queue.Contains(each)) Waiting(each);
             }
         }
 
-        return [.. QueueOrder.Of(due, each => each.Priority.Class, each => each.Arrived).ThenBy(each => each.Order)];
+        return [.. QueueOrder.Of(standing, each => each.Priority.Class, each => each.Arrived).ThenBy(each => each.Order)];
     }
 
     private void Waiting(Queued queued) => VerifySlot.Wait(

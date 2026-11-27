@@ -245,14 +245,14 @@ public sealed class IntegrationTransport(string home, IntegrationTransportWorld?
         var asks = new IntegrationSweepAsks(
             new IntegrationReplayAsk(send.Repository, send.Workspace, root, send.Line)
             {
-                Say = _world.Say, Config = config,
+                Say = _world.Say, Config = config, Order = OrderOf(),
                 Train = new TrainSelection(new TrainParts(store), _world.Plans ?? NoPlans.Read),
                 TrainBase = TrainBranch.AskOf(send.Line) is null ? null : CanonicalLine.Choose(config, send.Repository, send.Workspace, guess: null).Branch,
             },
             new IntegrationPromoteAsk(send.Repository, send.Workspace, root, send.Line, config, home) { Tidy = _world.Tidy, Beside = _world.Beside });
 
         HeavyTaken? held = null;
-        if (Gated(store, send))
+        if (await GatedAsync(store, send, OrderOf(), asks.Replay.Train, ct).ConfigureAwait(false))
         {
             if (HeavySlot.KeyOf(root) is not { } key)
             {
@@ -306,6 +306,10 @@ public sealed class IntegrationTransport(string home, IntegrationTransportWorld?
         return run;
     }
 
+    private Func<IReadOnlyList<IntegrationRequest>, IReadOnlyList<IntegrationRequest>> OrderOf() =>
+        queued => LandingOrder.Of(queued, PriorityLook.Read(home, _world.Clock.GetUtcNow()),
+            request => request.Quest is { Length: > 0 } quest ? WorkflowRunBindings.Read(home, quest)?.Ask : null);
+
     /// <summary>Each request newly open in the line, told queued once.</summary>
     private void Tell(IntegrationStore store, IntegrationLineSend send)
     {
@@ -317,12 +321,22 @@ public sealed class IntegrationTransport(string home, IntegrationTransportWorld?
         }
     }
 
-    /// <summary>Whether the line's next candidate runs gates: its standing candidate's first member's rule, else its first queued request's.</summary>
-    private static bool Gated(IntegrationStore store, IntegrationLineSend send)
+    /// <summary>Whether the line's next candidate runs gates: its standing candidate's first member's rule, else the request the candidate forms from.</summary>
+    private static async Task<bool> GatedAsync(
+        IntegrationStore store, IntegrationLineSend send, Func<IReadOnlyList<IntegrationRequest>, IReadOnlyList<IntegrationRequest>> order, TrainSelection? train, CancellationToken ct)
     {
-        var first = store.StandingFor(send.Repository, send.Line) is { } standing
-            ? store.Members(standing.Id).OrderBy(member => member.Position).Select(member => store.Request(member.Request)).FirstOrDefault()
-            : store.Queued(send.Repository, send.Line).FirstOrDefault();
+        IntegrationRequest? first;
+        if (store.StandingFor(send.Repository, send.Line) is { } standing)
+        {
+            first = store.Members(standing.Id).OrderBy(member => member.Position).Select(member => store.Request(member.Request)).FirstOrDefault();
+        }
+        else
+        {
+            var queued = store.Queued(send.Repository, send.Line);
+            if (train is not null && queued.Count > 0) queued = await train.ReadyAsync(queued, ct).ConfigureAwait(false);
+            first = order(queued).FirstOrDefault();
+        }
+
         return first?.Policy.Gates == LandingIntegrate.Declared;
     }
 

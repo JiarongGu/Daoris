@@ -31,6 +31,12 @@ internal static class HoldVerdicts
             Said = new(SittingFact.Transient) { Session = exhausted.Session },
         };
 
+    internal static Consideration HeldWaiting(QuestView quest, HoldEvent hold) =>
+        new(quest, StartVerdict.RepositoryBusy, $"{HoldBook.Said(hold)}: nothing is started or carried on for it until the hold is lifted — `daoris priority {hold.Id} lift`.")
+        {
+            Said = new(SittingFact.HoldWaiting),
+        };
+
     /// <summary>Held by a pause: the sentence names the pause, what Resume does and the terminal's door. It says paused, never held, since a hold is a repository's and stops nothing that runs.</summary>
     internal static Consideration Paused(QuestView quest, PausedBy pause)
     {

@@ -775,7 +775,13 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     reads. No path drops a line that has a standing candidate or an open request: a line's run that throws, or whose repository has no
     checkout here, keeps its queue place due after `Poll` (said once while it lasts), and an idle transport looks at the store every
     `Poll` and queues each such line it does not hold, so a press's or a landing's line, run on its caller's task and left held, is
-    retried by the transport and not only at the next come-up. (PROMOTEWAKE1, PROMOTEWAKE2)
+    retried by the transport and not only at the next come-up. (PROMOTEWAKE1, PROMOTEWAKE2) The queued requests of a line form in the
+    one order of the classes (`LandingOrder`, D365): the class of the run each belongs to (`PriorityBook.OfRun` over the request's quest,
+    its ask read from the run's binding), aged from the request's arrival, then the queue's own order as `IntegrationStore.Queued` gives it
+    (an `order first` or `last`, else arrival), applied after the ask's train has chosen the ready parts and read at each run, never kept
+    on a request. A request whose run is held (`HoldBook`) is left out and forms at its place once the hold is lifted. The line's next
+    candidate takes the first request, so an urgent landing forms before an older normal one, and a candidate already formed is never cut.
+    A person's own merge press asks its own request alone and is not ordered.
 39a. An ask's parts land through that same queue, never a queue of the team's own. A part's landing is an integration request tagged with
     its ask and part (`integration_parts`, `TrainParts`; the `integrate` door carries `IntegrationAsk.Train`) whose line is the ask's
     branch `daoris/ask-<id>` (`TrainBranch`). Before a candidate forms, `TrainSelection` reads the ask's own plan from the service
@@ -925,7 +931,7 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     read again at each look and never kept on the run: the highest standing on any quest of its chain, each change kept with the run its
     quest's work is, else the class on the ask its send carries, which `RunChecks` reads from the run's binding), then its run's first
     arrival (`CheckArrivals`, `lines/<run>/arrival.json`, which a run back at its checks keeps until a check of it reaches), then the
-    order sent. The executor tries its due attempts in that order, a pass ending at the first refused because every slot runs or the
+    order sent. A run held waiting (`HoldBook`, read at each pass with the classes) leaves the pass, its row saying who held it, and keeps its place in the queue; checks running are never cut. The executor tries its due attempts in that order, a pass ending at the first refused because every slot runs or the
     admission's lock is held, the checks behind it told the same wait, so a slot freed while a pass goes on is never taken by one behind
     it; a check refused for memory, the reserve or its repository's slots is its own, and the next is tried. Each takes a slot only as its
     own admission allows, so an urgent quest's check takes the next freed slot and nothing running is cut. A session's `run-heavy`, the
