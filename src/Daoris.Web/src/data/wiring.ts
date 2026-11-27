@@ -165,6 +165,14 @@ export type KeepSet =
 /** The allowance over the whole: its GB, whether it is the default, and the kinds' counts summed (null until each is counted). */
 export type SpaceAllowance = { gb: number | null; default: boolean; bytes: number | null; partial: boolean };
 
+/** Each place over its entry's budget, the largest files, and identical files held more than once (`wasted` is what the copies past the first cost). */
+export type SpaceWeight = {
+  over: { path: string; entry: string; bytes: number; budget: number }[];
+  largest: { path: string; bytes: number }[];
+  duplicates: { bytes: number; wasted: number; paths: string[] }[];
+  partial: boolean;
+};
+
 /**
  * A volume as `SYSTEM_SPACE` says it: where it is, its free space and size, the floor it is held to
  * (`bytes` null where it is off; `from` the person's rule: `default`, `size`, `percent` or `off`), whether it is below it, and what the
@@ -199,6 +207,8 @@ export type SystemSpace = {
   /** Absent where the shell names no allowance. */
   allowance?: SpaceAllowance;
   strays?: { paths: { path: string; bytes: number }[]; partial: boolean };
+  /** What the home weighs; absent while the first count runs. */
+  weight?: SpaceWeight | null;
   run: SpaceRun | null;
   held: { pid: number; since: string; door: string; gone: boolean } | null;
 };

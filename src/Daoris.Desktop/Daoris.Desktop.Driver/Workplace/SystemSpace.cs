@@ -315,6 +315,9 @@ public sealed record SpaceWorld(string Home)
     /// <summary>The paths under the home no entry names; the walk's kept reading by default.</summary>
     public Func<string, DateTimeOffset, HomeStrayReading> Strays { get; init; } = HomeStrays.Cached;
 
+    /// <summary>What the home weighs (<see cref="HomeWeights"/>); the kept reading by default, null while the first is counted.</summary>
+    public Func<string, DateTimeOffset, HomeWeightReading?> Weights { get; init; } = HomeWeights.Cached;
+
     /// <summary>The terminal's world: this home, its downloads' uses read from the files as the loop resolves them.</summary>
     public static SpaceWorld OfThisTerminal(string home) => new(home)
     {
@@ -373,6 +376,7 @@ public static class SystemSpace
             // The allowance over the whole, and the whole as the kinds' last counts sum it (null while any is not counted yet).
             ["allowance"] = Allowance(world, policy),
             ["strays"] = Strays(world.Strays(home, now)),
+            ["weight"] = Weight(world.Weights(home, now)),
             // The press's run, under way or last ended in this process; none where this process ran none.
             ["run"] = world.Runs.Last(home)?.Json(),
             ["held"] = holder is null
@@ -380,6 +384,17 @@ public static class SystemSpace
                 : new JsonObject { ["pid"] = holder.Pid, ["since"] = Moments.Write(holder.Since), ["door"] = holder.Door, ["gone"] = holder.Gone },
         };
     }
+
+    private static JsonObject? Weight(HomeWeightReading? weight) => weight is null ? null : new JsonObject
+    {
+        ["over"] = new JsonArray([.. weight.Over.Select(each => (JsonNode)new JsonObject { ["path"] = each.Path, ["entry"] = each.Entry, ["bytes"] = each.Bytes, ["budget"] = each.Budget })]),
+        ["largest"] = new JsonArray([.. weight.Largest.Select(each => (JsonNode)new JsonObject { ["path"] = each.Path, ["bytes"] = each.Bytes })]),
+        ["duplicates"] = new JsonArray([.. weight.Duplicates.Select(each => (JsonNode)new JsonObject
+        {
+            ["bytes"] = each.Bytes, ["wasted"] = each.Wasted, ["paths"] = new JsonArray([.. each.Paths.Select(path => (JsonNode)JsonValue.Create(path)!)]),
+        })]),
+        ["partial"] = weight.Partial is not null,
+    };
 
     private static JsonObject Strays(HomeStrayReading strays) => new()
     {

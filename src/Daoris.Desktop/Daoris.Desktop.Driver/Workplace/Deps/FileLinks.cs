@@ -29,6 +29,24 @@ internal static class FileLinks
         }
     }
 
+    /// <summary>
+    /// Which file record <paramref name="path"/> is a name of: equal for the names of one record, so a reader of sizes counts a link once;
+    /// null where the platform names none or the file cannot be opened.
+    /// </summary>
+    internal static string? IdentityOf(string path)
+    {
+        if (!OperatingSystem.IsWindows()) return null;
+        try
+        {
+            using var stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete, 1);
+            return GetFileInformationByHandle(stream.SafeFileHandle, out var info) ? $"{info.VolumeSerialNumber:x}:{info.FileIndexHigh:x}:{info.FileIndexLow:x}" : null;
+        }
+        catch (Exception error) when (error is IOException or UnauthorizedAccessException)
+        {
+            return null;
+        }
+    }
+
     private static string Prefixed(string path)
     {
         var full = Path.GetFullPath(path);
@@ -38,6 +56,28 @@ internal static class FileLinks
     [DllImport("kernel32.dll", SetLastError = true, CharSet = CharSet.Unicode)]
     [return: MarshalAs(UnmanagedType.Bool)]
     private static extern bool CreateHardLinkW(string link, string existing, IntPtr security);
+
+    [StructLayout(LayoutKind.Sequential)]
+    private struct FileInformation
+    {
+        public uint Attributes;
+        public uint CreatedLow;
+        public uint CreatedHigh;
+        public uint AccessedLow;
+        public uint AccessedHigh;
+        public uint WrittenLow;
+        public uint WrittenHigh;
+        public uint VolumeSerialNumber;
+        public uint SizeHigh;
+        public uint SizeLow;
+        public uint Links;
+        public uint FileIndexHigh;
+        public uint FileIndexLow;
+    }
+
+    [DllImport("kernel32.dll", SetLastError = true)]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    private static extern bool GetFileInformationByHandle(Microsoft.Win32.SafeHandles.SafeFileHandle file, out FileInformation information);
 
     [DllImport("libc", EntryPoint = "link", SetLastError = true)]
     private static extern int LinkUnix(string existing, string link);
