@@ -62,10 +62,12 @@ public sealed record CheckWait(string Code, IReadOnlyDictionary<string, string> 
     {
         Slots => $"a slot: {Values["running"]} of {Values["of"]} run",
         Admitting => "the admission's lock, which another start holds",
-        Memory => $"memory: {Values["free"]} GB free, a check needs {Values["need"]} GB" + Starting,
-        Reserve => $"the reserve for your own work: {Values["free"]} GB free, a check needs {Values["need"]} GB and {Values["reserve"]} GB stays free" + Starting,
+        Memory => $"memory: {Values["free"]} GB free, a check needs {Values["need"]} GB{Basis}" + Starting,
+        Reserve => $"the reserve for your own work: {Values["free"]} GB free, a check needs {Values["need"]} GB{Basis} and {Values["reserve"]} GB stays free" + Starting,
         _ => Values.GetValueOrDefault("what") ?? "a heavy run of its repository",
     };
+
+    private string Basis => Values.TryGetValue("source", out var source) ? $" ({source})" : "";
 
     private string Starting => Values.TryGetValue("starting", out var starting) ? $" with {starting} still starting" : "";
 
@@ -91,7 +93,7 @@ public sealed record HeavyHeld(DateTimeOffset Since, string? Key, bool Starting,
 {
     public string? Agent { get; init; }
 
-    public string Gate { get; init; } = CheckAdmission.DefaultGate;
+    public IReadOnlyList<string> Gates { get; init; } = [CheckAdmission.DefaultGate];
 }
 
 /// <summary>
@@ -105,7 +107,7 @@ public sealed record HeavyAsk(string Key, string Repository, int? Declared, Func
 
     public string? Agent { get; init; }
 
-    public string Gate { get; init; } = CheckAdmission.DefaultGate;
+    public IReadOnlyList<string> Gates { get; init; } = [CheckAdmission.DefaultGate];
 
     public string Kind { get; init; } = LoadKind.Test;
 }
@@ -130,9 +132,9 @@ public sealed record HeavyTaken(VerifySlot? Check, HeavySlot Repository, HeavyHo
 /// measured to need back, holds its learned need, within the limit pressure has left and its project's and agent's fair share.
 /// </summary>
 /// <remarks>
-/// <para><b>A run's need</b> is learned from its own runs on this machine (<see cref="LearnedNeeds"/>, kept by <see cref="RunMeter"/>):
-/// its peak memory, a tenth over, once two have run; until then the declared cost of its kind (<see cref="LoadKind.Declared"/>, the
-/// merge tool's 8 GB for a Process suite).</para>
+/// <para><b>A run's need</b> is the largest of its gates' needs, each learned under the repository's key (<see cref="LearnedNeeds.OfGates"/>,
+/// kept by <see cref="RunMeter"/>): its peak memory, a tenth over, once two have run; until then the declared cost of its kind
+/// (<see cref="LoadKind.Declared"/>, the merge tool's 8 GB for a Process suite). A wait says which.</para>
 ///
 /// <para><b>Still starting until its first gate ends.</b> A run whose first gate has not ended may not have reached its peak, so its need is
 /// counted again and two never climb to their peaks on one reading. The first gate's end is a fact its record keeps (<see cref="HeavyHolder.Now"/>
@@ -190,15 +192,15 @@ public static class CheckAdmission
             var at = holder.Run is { } run ? checks.FindIndex(check => check.Pid == holder.Pid && check.Started == holder.Started && check.Run == run) : -1;
             var since = at >= 0 ? checks[at].Since : holder.Since;
             if (at >= 0) checks.RemoveAt(at);
-            held.Add(new HeavyHeld(since, key, Starting(holder), Who(holder)) { Agent = holder.Session, Gate = GateOf(holder) });
+            held.Add(new HeavyHeld(since, key, Starting(holder), Who(holder)) { Agent = holder.Session, Gates = GatesOf(holder) });
         }
 
         held.AddRange(checks.Select(check => new HeavyHeld(check.Since, null, true, $"the verification run {check.Run}")));
         return [.. held.OrderBy(one => one.Since)];
     }
 
-    public static string GateOf(HeavyHolder holder) =>
-        holder.Run is not null ? "reached" : holder.Gates.Count > 0 ? string.Join('+', holder.Gates) : DefaultGate;
+    public static IReadOnlyList<string> GatesOf(HeavyHolder holder) =>
+        holder.Run is not null ? ["reached"] : holder.Gates.Count > 0 ? holder.Gates : [DefaultGate];
 
     /// <summary>Whether a holder's first gate has not ended: none started, or the first still running, with no failure said.</summary>
     public static bool Starting(HeavyHolder holder) => holder.Failed is null && holder.Now is not { At: > 0 };
@@ -212,13 +214,17 @@ public static class CheckAdmission
     {
         var view = RoomLedger.Observe(home, rules, ask.Key, ask.Agent, rules.Ceiling, held.Count);
         var learned = LearnedNeeds.Read(LearnedNeeds.PathOf(home));
-        NeedReading Need(string project, string kind, string gate) =>
-            LearnedNeeds.Need(learned.GetValueOrDefault(LearnedNeeds.KeyOf(project, kind, gate)) ?? [], LoadKind.Declared(kind));
+        NeedReading Need(string project, string kind, IReadOnlyList<string> gates) =>
+            LearnedNeeds.OfGates(learned, project, kind, gates, LoadKind.Declared(kind));
 
-        // A check slot whose repository slot is not written yet has no project of its own: it counts against the limit, never as another project.
-        var holds = held.Select(one => new RoomHold(one.Key ?? "", one.Agent, LoadKind.Test, Need(one.Key ?? one.Who, LoadKind.Test, one.Gate).Cost, one.Starting, one.Who)).ToList();
-        var need = Need(ask.Key, ask.Kind, ask.Gate);
-        return RoomJudge.Decide(view, holds, new RoomAsk(ask.Key, ask.Agent, ask.Kind, need.Cost, need.Source, rule ?? KindRule.Default(ask.Kind)) { Name = ask.Repository }, rules.Setting is null ? null : rules.Slots);
+        // A check slot whose repository slot is not written yet has no project and no history: it counts against the limit, at the declared cost.
+        var holds = held.Select(one =>
+        {
+            var need = one.Key is { } key ? Need(key, LoadKind.Test, one.Gates) : new NeedReading(LoadKind.Declared(LoadKind.Test), NeedReading.DeclaredSource, 0);
+            return new RoomHold(one.Key ?? "", one.Agent, LoadKind.Test, need.Cost, one.Starting, one.Who) { Source = need.Source };
+        }).ToList();
+        var asked = Need(ask.Key, ask.Kind, ask.Gates);
+        return RoomJudge.Decide(view, holds, new RoomAsk(ask.Key, ask.Agent, ask.Kind, asked.Cost, asked.Source, rule ?? KindRule.Default(ask.Kind)) { Name = ask.Repository }, rules.Setting is null ? null : rules.Slots);
     }
 
     /// <summary>The slots a repository has: the machine's, or fewer where its accepted declaration says so.</summary>

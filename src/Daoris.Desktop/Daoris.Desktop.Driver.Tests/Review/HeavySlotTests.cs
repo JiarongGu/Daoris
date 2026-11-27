@@ -297,7 +297,7 @@ public sealed class HeavySlotTests : IDisposable
     /// </summary>
     [Theory]
     [InlineData(null, 20L, null)]
-    [InlineData(null, 5L, "waits for memory: 5.0 GB free, a check needs 16 GB with 1 still starting, beside session s-1")]
+    [InlineData(null, 5L, "waits for memory: 5.0 GB free, a check needs 16 GB (declared) with 1 still starting, beside session s-1")]
     [InlineData(1, 20L, "is held by session s-1")]
     public async Task A_second_run_of_one_repository_is_admitted_by_the_checks_rule(int? checks, long freeGb, string? says)
     {

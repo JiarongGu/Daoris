@@ -46,25 +46,25 @@ public sealed class CheckSlotWaitsTests
     [Fact]
     public void A_check_waiting_for_memory_reads_the_memory_free_and_needed()
     {
-        var memory = new CheckWait(CheckWait.Memory, new Dictionary<string, string> { ["free"] = "4.1", ["need"] = "6" });
+        var memory = new CheckWait(CheckWait.Memory, new Dictionary<string, string> { ["free"] = "4.1", ["need"] = "6", ["source"] = "learned" });
         var look = new VerifyLook([Theirs], [Waiter("mine", "i-mine", 1, memory)]);
 
         var wait = CheckSlotWaits.Of(Graph, Sent("i-mine"), look)["check"];
 
         Assert.Equal(CheckSlotWaits.Memory, wait.Code);
-        Assert.Equal("Waits for memory: 4.1 GB free, the next check needs 6 GB; 1 of 1 in its queue.", CheckSlotWaits.Said(wait));
+        Assert.Equal("Waits for memory: 4.1 GB free, the next check needs 6 GB (learned); 1 of 1 in its queue.", CheckSlotWaits.Said(wait));
     }
 
     [Fact]
     public void A_check_waiting_for_the_reserve_reads_the_memory_free_needed_and_kept_for_the_person()
     {
-        var reserve = new CheckWait(CheckWait.Reserve, new Dictionary<string, string> { ["free"] = "24.0", ["need"] = "8", ["reserve"] = "21" });
+        var reserve = new CheckWait(CheckWait.Reserve, new Dictionary<string, string> { ["free"] = "24.0", ["need"] = "8", ["source"] = "declared", ["reserve"] = "21" });
         var look = new VerifyLook([Theirs], [Waiter("mine", "i-mine", 1, reserve)]);
 
         var wait = CheckSlotWaits.Of(Graph, Sent("i-mine"), look)["check"];
 
         Assert.Equal(CheckSlotWaits.Reserve, wait.Code);
-        Assert.Equal("Waits for the reserve kept for your own work: 24.0 GB free, the next check needs 8 GB and 21 GB stays free; 1 of 1 in its queue.", CheckSlotWaits.Said(wait));
+        Assert.Equal("Waits for the reserve kept for your own work: 24.0 GB free, the next check needs 8 GB (declared) and 21 GB stays free; 1 of 1 in its queue.", CheckSlotWaits.Said(wait));
     }
 
     [Fact]

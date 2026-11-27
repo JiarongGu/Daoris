@@ -77,7 +77,7 @@ public sealed class CheckAdmissionTests : IDisposable
             Assert.Equal(CheckWait.Memory, wait!.Code);
             Assert.Equal("4.5", wait.Values["free"]);
             Assert.Equal("8", wait.Values["need"]);
-            Assert.Equal("memory: 4.5 GB free, a check needs 8 GB", wait.Sentence);
+            Assert.Equal("memory: 4.5 GB free, a check needs 8 GB (declared)", wait.Sentence);
         }
     }
 
@@ -87,7 +87,7 @@ public sealed class CheckAdmissionTests : IDisposable
     {
         var wait = CheckAdmission.Judge(_fixture.Home, [new HeavyHeld(Now, "k", false, "the verification run r-1")], Auto(7.99), Check("r-2", _fixture.Other));
 
-        Assert.Equal("memory: 7.9 GB free, a check needs 8 GB", wait!.Sentence);
+        Assert.Equal("memory: 7.9 GB free, a check needs 8 GB (declared)", wait!.Sentence);
     }
 
     /// <summary>🔴 A run whose first gate has not ended counts its need again, so two never climb to their peaks on one reading.</summary>
@@ -101,7 +101,7 @@ public sealed class CheckAdmissionTests : IDisposable
         {
             Assert.Null(second);
             Assert.Equal("16", wait!.Values["need"]);
-            Assert.Equal("memory: 12.0 GB free, a check needs 16 GB with 1 still starting", wait.Sentence);
+            Assert.Equal("memory: 12.0 GB free, a check needs 16 GB (declared) with 1 still starting", wait.Sentence);
         }
     }
 

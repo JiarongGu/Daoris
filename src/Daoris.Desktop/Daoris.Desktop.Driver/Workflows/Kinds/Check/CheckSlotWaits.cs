@@ -84,11 +84,13 @@ public static class CheckSlotWaits
             {
                 values["free"] = said!.Values.GetValueOrDefault("free") ?? "?";
                 values["need"] = said.Values.GetValueOrDefault("need") ?? "?";
+                values["basis"] = said.Values.GetValueOrDefault("source") ?? "?";
             }
             else if (code == Reserve)
             {
                 values["free"] = said!.Values.GetValueOrDefault("free") ?? "?";
                 values["need"] = said.Values.GetValueOrDefault("need") ?? "?";
+                values["basis"] = said.Values.GetValueOrDefault("source") ?? "?";
                 values["reserve"] = said.Values.GetValueOrDefault("reserve") ?? "?";
             }
             else if (code == Repository)
@@ -132,8 +134,8 @@ public static class CheckSlotWaits
         return wait.Code switch
         {
             Full => $"Waits for a check slot: {Value("running")} of {Value("slots")} run; {queue}.",
-            Memory => $"Waits for memory: {Value("free")} GB free, the next check needs {Value("need")} GB; {queue}.",
-            Reserve => $"Waits for the reserve kept for your own work: {Value("free")} GB free, the next check needs {Value("need")} GB and {Value("reserve")} GB stays free; {queue}.",
+            Memory => $"Waits for memory: {Value("free")} GB free, the next check needs {Value("need")} GB ({Value("basis")}); {queue}.",
+            Reserve => $"Waits for the reserve kept for your own work: {Value("free")} GB free, the next check needs {Value("need")} GB ({Value("basis")}) and {Value("reserve")} GB stays free; {queue}.",
             Repository => $"Waits for a heavy-run slot of {Value("repository")}: its other heavy runs hold every one it has; {queue}.",
             Admitting => $"Waits for the admission's lock, which another start holds; {queue}.",
             _ => $"Waits for a check slot: {queue}.",
