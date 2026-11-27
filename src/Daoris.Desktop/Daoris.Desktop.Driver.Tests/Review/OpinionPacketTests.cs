@@ -138,6 +138,50 @@ public sealed class OpinionPacketTests : IDisposable
         Assert.Equal(OpinionRulesRead.None, OpinionPackets.RulesIn(_tree));
     }
 
+    private const string Gates = """
+        { "verifyBudget": { "budgetMinutes": 10, "fullRunReasons": { "widePaths": ["daoris.gates.json", "src/Contracts/**"], "reachShare": 0.5, "runs": ["after-landing", "release"] } }, "gates": [] }
+        """;
+
+    [Fact]
+    public void The_verification_rule_a_repository_declares_is_read_from_its_gates_file()
+    {
+        Write("daoris.gates.json", Gates);
+
+        var rule = OpinionPackets.VerificationIn(_tree);
+
+        Assert.NotNull(rule);
+        Assert.Equal(10, rule.BudgetMinutes);
+        Assert.Equal(["daoris.gates.json", "src/Contracts/**"], rule.WidePaths);
+        Assert.Equal(50, rule.ReachPercent);
+    }
+
+    [Fact]
+    public void A_gates_file_that_sets_no_rule_or_cannot_be_read_hands_none()
+    {
+        Assert.Null(OpinionPackets.VerificationIn(_tree));
+        Write("daoris.gates.json", """{ "gates": [] }""");
+        Assert.Null(OpinionPackets.VerificationIn(_tree));
+        Write("daoris.gates.json", "{ not json");
+        Assert.Null(OpinionPackets.VerificationIn(_tree));
+    }
+
+    [Fact]
+    public void The_instruction_carries_the_verification_rule_and_tells_the_reviewer_to_ask_for_no_run_it_gives_no_reason_for()
+    {
+        var candidate = new OpinionCandidateRead("web-app", Base, Tip, [Tip], [new OpinionPath("M", "src/report.ts")]);
+        Write("daoris.gates.json", Gates);
+        var text = OpinionInstruction.Compose(new OpinionPacket(OpinionRules.Landing, candidate) { Verification = OpinionPackets.VerificationIn(_tree) });
+
+        Assert.Contains("## The verification this repository sets", text);
+        Assert.Contains("10 minutes", text);
+        Assert.Contains("`daoris.gates.json`, `src/Contracts/**`", text);
+        Assert.Contains("50% or more", text);
+        Assert.Contains("do not ask for a full or end-to-end run", text);
+        Assert.Contains("do not count the absence of one as a finding", text);
+
+        Assert.DoesNotContain("The verification this repository sets", OpinionInstruction.Compose(new OpinionPacket(OpinionRules.Landing, candidate)));
+    }
+
     // ——— What it is handed beside the instruction (design §5.2): the opinion's rules, over the person's.
 
     private static readonly string Connector = $"mcp__{KnowledgeConnector.ServerName}__";

@@ -609,6 +609,16 @@ HEAVYQUEUE1 note): its marked gates take a place after the repository's slot, an
 a filtered `dotnet test` or a test file's run, as a heavy run with no slot; a driven session is told to use it (`HeavyTold.Focused`).
 The queue's admission is the machine's: it does not read `local/admission.json`, whose reservations remain CISCOPE1e2's.
 
+**The heavy tier follows a reasoned landing, after a pause** (HEAVYBATCH1, D349's note). The tier after a landing is judged on the
+change the landing made, never by the run's kind: `tools/heavy-run.mjs` reads the landing's paths against `daoris.gates.json`'s
+`verifyBudget` (a declared wide path, or a reach of the declared share of the census's classes), and a landing with none settles
+`skipped` and queues nothing, takes no admission place and no tree (a release, which is a reason by its kind, asks the tier by
+hand: `heavy-run.mjs … --now`, which tier-evidence names). A reasoned landing's tier waits until no landing has come for 20
+minutes (`local/heavy-pending.json`, `tools/merge/heavy-batch.ts`); a newer reasoned landing carries the waiting one, so one tier
+runs the batch on the newest tip, over only what the reasoned landings changed. It runs as a background run in the machine's
+admission, the low class of D365: it takes a place only while no blocking run, a task's check among them, waits, and starts no group
+while one does; a group in flight is not cut. A repository with no `verifyBudget` keeps the tier after every landing.
+
 **One heavy tier at a time** (HEAVYSTACK1). The heavy tier after a landing (`tools/heavy-run.mjs`) holds the heavy tree alone,
 through `local/heavy-stack.json` (`tools/merge/heavy-stack.ts`), so landings in a row hold one admission place and run one git half,
 not one each. A tier that lands while an older one runs waits, and asks it to stop through the older one's halt file

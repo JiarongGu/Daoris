@@ -3,7 +3,10 @@
  * The heavy tier's run after a merge lands (`tools/merge/heavy-after.ts` says why and what it records), started in the background by the
  * merge queue on main's new tip, never by hand in the main checkout:
  *
- *   node tools/heavy-run.mjs --id <id> --commit <sha> --base <sha> [--branches <a,b>]
+ *   node tools/heavy-run.mjs --id <id> --commit <sha> --base <sha> [--branches <a,b>] [--now]
+ *
+ * The landing is judged first (`admitLanding`, `merge/heavy-batch.ts`): with no reason it settles `skipped` and queues nothing, else it
+ * waits for a pause in landings. `--now` is the person's asking: judged by no one, it takes the heavy tree at once over `--base` to `--commit`.
  *
  * It sets the heavy tree (`local/heavy-tree`, a worktree of its own, so main moves on beside it) to the commit, readies it as a builder's
  * worktree is (`tools/worktree-setup.mjs`), and runs `tools/reached-checks.mjs --tier heavy --base <base>` there: every Process, git
@@ -26,7 +29,9 @@ import { isMain, writeAtomic } from './fsx.mjs';
 import { readFindings, writeFindings, fileSighting } from './ci-background.mjs';
 import { processAlive } from './machine-admission.mjs';
 import { startBackground } from './merge/background.ts';
-import { HEAVY_PREFIX, HEAVY_TREE, appendHeavy, settleHeavy } from './merge/heavy-after.ts';
+import { HEAVY_PREFIX, HEAVY_TREE, appendHeavy, settleHeavy, skipHeavy } from './merge/heavy-after.ts';
+import { HEAVY_PENDING, HEAVY_QUIET_MS, HEAVY_QUIET_POLL_MS, bump, changePending, enlist, judgeLanding, look as lookPending, rangesOf } from './merge/heavy-batch.ts';
+import { readVerifyBudget } from './merge/verification.ts';
 import { readHalt } from './merge/heavy-halt.ts';
 import {
   HEAVY_STACK, STACK_BEAT_MS, STACK_POLL_MS, STACK_STALE_MS, WAIT_BOUND_MS, WAIT_DEADLINE_MS,
@@ -71,6 +76,76 @@ const short = (sha) => String(sha ?? '').slice(0, 7);
 const spanOf = (ms) => `${Math.floor(ms / 60_000)}m ${Math.round((ms % 60_000) / 1000)}s`;
 
 /**
+ * A landing's runner before its tier: judged by the change it landed, a landing with no reason settles `skipped`; a reasoned one joins the
+ * pending batch and waits until no landing has come for `quietMs`, settling `superseded` if a newer one carries it. Answers
+ * `{ outcome, run }` where it ended here, or `{ outcome: 'start', batch }`.
+ */
+export async function admitLanding(input, {
+  checkout, judge, settle, say = console.log, now = Date.now, sleep = (ms) => new Promise((done) => { setTimeout(done, ms); }),
+  pollMs = HEAVY_QUIET_POLL_MS, quietMs = HEAVY_QUIET_MS, append = (record) => appendHeavy(checkout, record),
+}) {
+  const file = join(checkout, HEAVY_PENDING);
+  const stamp = () => new Date(now()).toISOString();
+  const tell = (line) => say(`${HEAVY_PREFIX} ${line}`);
+  const run = { id: input.id, state: 'running', commit: input.commit, base: input.base, branches: input.branches, at: input.at };
+  let judged;
+  try {
+    judged = await judge(input);
+  } catch (error) {
+    judged = { run: true, reason: null, said: `the landing could not be judged (${error.message}): its tier runs` };
+  }
+  if (!judged.run) {
+    changePending(file, (pending) => ({ pending: bump(pending, input.at) }));
+    const skipped = skipHeavy(run, judged.said, stamp());
+    append(skipped.run);
+    for (const line of skipped.lines) say(line);
+    return { outcome: 'skipped', run: skipped.run };
+  }
+  const joined = changePending(file, (pending) => ({ ...enlist(pending, input) }));
+  if (joined.superseded) tell(`${input.id} on ${short(input.commit)} carries ${joined.superseded.id} on ${short(joined.superseded.commit)}, which was waiting for a pause in landings`);
+  tell(`${input.id} on ${short(input.commit)} bears a reason for a heavy run (${judged.said}): its tier starts once no landing has come for ${spanOf(quietMs)}`);
+  for (;;) {
+    await sleep(pollMs);
+    let seen;
+    try {
+      seen = changePending(file, (pending) => lookPending(pending, input.id, now(), quietMs));
+    } catch {
+      continue;
+    }
+    if (seen.role === 'superseded') return { outcome: 'superseded', run: (await settle({ ...run, handedTo: { id: seen.by.id, commit: seen.by.commit } }, null, null)).run };
+    if (seen.role === 'gone') {
+      const note = 'the pending batch was gone before its tier started; its range is carried by the next reasoned landing';
+      const gone = { ...run, state: 'error', ended: stamp(), note };
+      append(gone);
+      say(`${HEAVY_PREFIX} ERROR ${input.id} on ${short(input.commit)}: ${note}`);
+      return { outcome: 'gone', run: gone };
+    }
+    if (seen.role === 'start') return { outcome: 'start', batch: seen.batch };
+  }
+}
+
+function landedPaths(checkout, base, commit) {
+  const ran = git(checkout, ['--no-optional-locks', 'diff', '--name-only', '--no-renames', '-z', base, commit]);
+  if (ran.status !== 0) throw new Error(`git could not read what ${short(commit)} changed: ${String(ran.stderr).trim()}`);
+  return String(ran.stdout).split('\0').filter(Boolean);
+}
+
+/** The census's share a landing's paths reach, read from the checkout's own census, which the merge that landed it just read. */
+async function reachOfPaths(checkout, paths) {
+  const { keyContextOf } = await import('./merge-branch/full-set.mjs');
+  const world = await keyContextOf(checkout);
+  const units = world.map.units;
+  return { reached: units.filter((unit) => paths.some((path) => world.context.reaches(unit, path))).length, of: units.length, what: 'classes' };
+}
+
+export const judgeIn = (checkout) => async ({ base, commit }) => {
+  const rule = readVerifyBudget(checkout);
+  const paths = rule ? landedPaths(checkout, base, commit) : [];
+  const measured = rule && !judgeLanding(rule, paths, () => undefined).run ? await reachOfPaths(checkout, paths) : undefined;
+  return judgeLanding(rule, paths, () => measured);
+};
+
+/**
  * One tier through the heavy stack (`merge/heavy-stack.ts`): it holds the tree or waits for it, superseding the tier before it, then
  * prepares the tree, runs its checks from the oldest base it carries, and hands over or lets the tree go. Answers what `settle`
  * answers. The seams (`alive`, `now`, `sleep`, `prepare`, `check`, `settle`, `append`, and the timings) are a test's.
@@ -82,9 +157,12 @@ export async function runTier(input, {
 }) {
   const file = join(checkout, HEAVY_STACK);
   const stamp = () => new Date(now()).toISOString();
-  const me = { id: input.id, pid, commit: input.commit, base: input.base, branches: input.branches, since: stamp(), beat: stamp() };
+  const me = { id: input.id, pid, commit: input.commit, base: input.base, branches: input.branches, since: stamp(), beat: stamp(), ...(input.ranges ? { ranges: input.ranges } : {}) };
   const live = (tier) => alive(tier.pid) && now() - Date.parse(tier.beat) < staleMs;
-  const run = { id: input.id, state: 'running', commit: input.commit, base: input.base, branches: input.branches, at: input.at };
+  const run = {
+    id: input.id, state: 'running', commit: input.commit, base: input.base, branches: input.branches, at: input.at,
+    ...(input.carried?.length ? { took: input.carried } : {}),
+  };
   const tell = (line) => say(`${HEAVY_PREFIX} ${line}`);
   // A tier whose process ended without settling is settled here, its range carried by this one.
   const bury = (dead) => {
@@ -153,7 +231,8 @@ export async function runTier(input, {
     }
   }
   const from = took?.base ?? input.base;
-  const carrying = took ? { ...run, from, took: took.from.map(({ id, commit, branches }) => ({ id, commit, branches })) } : run;
+  const carrying = took ? { ...run, from, took: [...(run.took ?? []), ...took.from.map(({ id, commit, branches }) => ({ id, commit, branches }))] } : run;
+  const ranges = input.ranges ? [...(took?.from.flatMap((each) => each.ranges ?? [{ base: each.base, commit: each.commit }]) ?? []), ...input.ranges] : null;
   if (took) tell(`${me.id} carries ${took.from.map((each) => `${each.id} (${short(each.commit)}, ${each.unrun ? `${each.unrun.length} unrun` : 'its whole range'})`).join('; ')}: it runs from ${short(from)} on ${short(me.commit)}`);
   const timer = setInterval(() => {
     try {
@@ -170,7 +249,7 @@ export async function runTier(input, {
     let code = null;
     try {
       const tree = await prepare(me.commit);
-      if (!askedOf(readStack(file))) ({ code, outcome } = await check({ tree, commit: me.commit, base: from, halt }));
+      if (!askedOf(readStack(file))) ({ code, outcome } = await check({ tree, commit: me.commit, base: from, ranges, halt }));
     } catch (error) {
       tell(error.message);
     }
@@ -211,7 +290,14 @@ async function main(argv) {
   const home = resolve(process.cwd());
   const lowered = startBackground();
   if (lowered) console.log(`${HEAVY_PREFIX} it could not lower its priority (${lowered}); it runs at the priority it has, its places still background ones`);
-  const input = { id, commit, base, branches: (valueOf(argv, '--branches') ?? '').split(',').filter(Boolean), at: new Date().toISOString() };
+  const landed = { id, commit, base, branches: (valueOf(argv, '--branches') ?? '').split(',').filter(Boolean), at: new Date().toISOString() };
+  const settle = (run, outcome, code) => settleInto(home, run, outcome, code);
+  const admitted = argv.includes('--now') ? { outcome: 'start', batch: null } : await admitLanding(landed, { checkout: home, judge: judgeIn(home), settle });
+  if (admitted.outcome !== 'start') return admitted.run.state === 'skipped' ? 0 : 1;
+  const batch = admitted.batch;
+  const input = batch
+    ? { ...landed, id: batch.id, commit: batch.commit, base: batch.base, branches: batch.branches, ranges: rangesOf(batch), carried: batch.carried }
+    : landed;
   const settled = await runTier(input, {
     checkout: home,
     prepare: async (at) => {
@@ -222,11 +308,12 @@ async function main(argv) {
       if (setup.code !== 0) throw new Error(`the heavy tree's setup failed (exit ${setup.code})`);
       return tree;
     },
-    check: async ({ tree, base: from, halt }) => {
-      const ran = await runLogged(process.execPath, ['tools/reached-checks.mjs', '--tier', 'heavy', '--base', from, '--halt-file', halt], tree);
+    check: async ({ tree, base: from, ranges, halt }) => {
+      const reach = ranges?.length ? ['--ranges', ranges.map((each) => `${each.base}..${each.commit}`).join(',')] : ['--base', from];
+      const ran = await runLogged(process.execPath, ['tools/reached-checks.mjs', '--tier', 'heavy', ...reach, '--halt-file', halt], tree);
       return { code: ran.code, outcome: parseOutcome(ran.text) };
     },
-    settle: (run, outcome, code) => settleInto(home, run, outcome, code),
+    settle,
   });
   for (const line of settled.lines) console.log(line);
   return settled.run.state === 'green' ? 0 : 1;

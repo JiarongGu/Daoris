@@ -142,6 +142,48 @@ public static class OpinionPackets
         return new OpinionRulesRead(doctrine, decisions, gates);
     }
 
+    /// <summary>
+    /// The verification rule the tree's gates file declares (<c>verifyBudget</c>: its budget, the wide paths whose change is a reason for
+    /// a full run, the share of classes a change must reach to be one), as it stands in <paramref name="tree"/>; null where the file is
+    /// missing or unreadable or sets no rule. The rule is the repository's data: a reviewer is told it as written.
+    /// </summary>
+    public static OpinionVerification? VerificationIn(string tree)
+    {
+        var file = Path.Combine(tree, DeclarationNames.Gates);
+        if (!File.Exists(file)) return null;
+        try
+        {
+            using var document = JsonDocument.Parse(File.ReadAllText(file));
+            if (document.RootElement.ValueKind != JsonValueKind.Object
+                || !document.RootElement.TryGetProperty("verifyBudget", out var rule) || rule.ValueKind != JsonValueKind.Object
+                || !rule.TryGetProperty("budgetMinutes", out var budget) || !budget.TryGetDouble(out var minutes) || minutes <= 0)
+            {
+                return null;
+            }
+
+            var wide = new List<string>();
+            var share = 100;
+            if (rule.TryGetProperty("fullRunReasons", out var reasons) && reasons.ValueKind == JsonValueKind.Object)
+            {
+                if (reasons.TryGetProperty("widePaths", out var paths) && paths.ValueKind == JsonValueKind.Array)
+                {
+                    wide.AddRange(paths.EnumerateArray().Where(path => path.ValueKind == JsonValueKind.String).Select(path => path.GetString()!).Where(path => path.Length > 0));
+                }
+
+                if (reasons.TryGetProperty("reachShare", out var reach) && reach.TryGetDouble(out var fraction) && fraction is > 0 and <= 1)
+                {
+                    share = (int)Math.Round(fraction * 100);
+                }
+            }
+
+            return new OpinionVerification((int)Math.Round(minutes), wide, share);
+        }
+        catch (Exception error) when (error is JsonException or IOException or UnauthorizedAccessException)
+        {
+            return null;
+        }
+    }
+
     /// <summary>A commit's full id as git names it, or the refusal naming what it could not.</summary>
     private static async Task<string> CommitAsync(string root, string repository, string name, CancellationToken ct)
     {
