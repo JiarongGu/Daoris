@@ -530,7 +530,8 @@ public sealed class HeavyRunCommandTests : IDisposable
             [new AdmissionEntry("9-1", "queue", Environment.ProcessId, "driver gate", now.AddMinutes(-3), now, null, null, null)], []));
         var said = new SaidWriter();
         using var stop = new CancellationTokenSource();
-        var world = World(_fixture.Tree, (IntakeRoom.SessionVariable, "s-7"), (MachineAdmission.CapacityVariable, "1"));
+        var admitted = false;
+        var world = World(_fixture.Tree, (IntakeRoom.SessionVariable, "s-7"), (MachineAdmission.CapacityVariable, "1")) with { Admitted = () => admitted = true };
         {
             var run = HeavyRun.RunAsync(new HeavyRunAsk(null) { Command = ["dotnet", "test", "--filter", "Foo"] }, world, said, stop.Token);
 
@@ -546,6 +547,7 @@ public sealed class HeavyRunCommandTests : IDisposable
 
             Assert.Equal(1, exit);
             Assert.Contains("run-heavy: stopped while waiting for the machine's admission; nothing ran.", said.Text);
+            Assert.False(admitted);
             Assert.Empty(MachineAdmission.Look(_fixture.Home, _ => true, capacity: 1).Waits);
         }
     }
