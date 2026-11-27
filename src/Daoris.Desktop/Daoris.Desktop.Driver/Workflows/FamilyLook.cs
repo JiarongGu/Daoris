@@ -1,8 +1,9 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// The look's family fan-out (<see cref="FamilyFanout"/>): a producer's line that moved past a consumer's pin opens or retargets the edge's one
-/// pin-move quest, a red move's break is filed, and a hold that has outlasted its edge's lag bound is told to the person once
+/// The look's family pass: an ask across repositories moves its consumer part's pin to the commit the producer's part landed (<see cref="AskPinning"/>);
+/// then the fan-out (<see cref="FamilyFanout"/>): a producer's line that moved past a consumer's pin, and past what an open ask carries, opens or
+/// retargets the edge's one pin-move quest, a red move's break is filed, and a hold that has outlasted its edge's lag bound is told to the person once
 /// (<see cref="FamilyNotices"/>). Only the lease's loop acts, as a line's verification does.
 /// </summary>
 [LookPass("family", LookPhase.After, "departures")]
@@ -14,10 +15,25 @@ internal sealed class FamilyLook(ILookWiring wiring) : ILookPass
         if (!FamilyFanout.HasFamily(registry) || !HomeLease.HeldHere(wiring.Home)) return;
         var now = wiring.Clock.GetUtcNow();
         var quests = await wiring.Service.EveryQuestAsync(ct).ConfigureAwait(false);
-        var done = await FamilyFanout.RunAsync(registry, quests, wiring.Service, TipAsync, LockAsync, now, ct).ConfigureAwait(false);
+        var carried = await PinAsksAsync(registry, round, ct).ConfigureAwait(false);
+        var done = await FamilyFanout.RunAsync(registry, quests, wiring.Service, TipAsync, LockAsync, now, ct, edge => carried.TryGetValue(edge, out var open) ? ((string Commit, DateTimeOffset Since)?)open : null).ConfigureAwait(false);
         round.Events.AddRange(done.Said);
         var occurrences = FamilyNotices.Occurrences(done.Told, registry, now);
         if (occurrences.Count > 0) new News(wiring.Home).Claim(FamilyNotices.Teller, occurrences, null, now);
+    }
+
+    /// <summary>Moves the pins the open asks owe their consumer parts, and gives back the commit each edge's open ask carries, so the fan-out asks nothing of it.</summary>
+    private async Task<IReadOnlyDictionary<PinEdge, (string Commit, DateTimeOffset Since)>> PinAsksAsync(IReadOnlyList<RepoView> registry, LookRound round, CancellationToken ct)
+    {
+        var roots = registry.Where(repo => repo.Root is { Length: > 0 }).GroupBy(repo => repo.Repository, StringComparer.Ordinal)
+            .ToDictionary(group => group.Key, group => group.First().Root!, StringComparer.Ordinal);
+        var asks = await AskRunReads.ReadAsync(wiring.Home, roots, wiring.Config, ct).ConfigureAwait(false);
+        if (asks.Runs.Count == 0) return new Dictionary<PinEdge, (string Commit, DateTimeOffset Since)>();
+        var reports = await PartsReports.ReadAsync(new IntegrationStore(wiring.Home), new ServiceTrainPlans(wiring.Service), ct, asks.Asks).ConfigureAwait(false);
+        var doors = new AskPinDoors();
+        var pinned = await AskPinning.RunAsync(registry, reports, asks.Runs, doors, ct).ConfigureAwait(false);
+        round.Events.AddRange(pinned.Said);
+        return pinned.Carried;
     }
 
     private async Task<string?> TipAsync(RepoView repo, CancellationToken ct)

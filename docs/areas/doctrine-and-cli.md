@@ -10,7 +10,7 @@ canon would change, and the repository's own session adopts, keeps or proposes e
 handed to the desktop's program. Set-up of a repository is a quest that the driver's set-up press publishes to that
 repository's own session. The devkit is a .NET binary that runs the universal gates and delegates doctrine to `daoris check`.
 The canon is lean: two rule files in full (`every-session`, `how-a-change-goes`), knowledge read on demand, one `change`
-skill, and `co-working` as a pack.
+skill, and the packs a repository takes (`co-working`, `family`, ...).
 
 ## Its parts
 
@@ -292,6 +292,12 @@ skill, and `co-working` as a pack.
     writes one where links are off; a blob's bytes are written as stored, with no line-ending conversion; a producer whose `.gitattributes`
     routes files through LFS is warned, its pointers written as they are; a submodule is said and not written. With no pin it says so,
     exit 0. (from D364)
+59. The agents' rules of a family are the canon pack `family` (`canon/packs/family/`): never pin a branch, a tag or "latest"; a pin
+    move is a change of its own; shared code moves in three changes (the shared repository gains the code, its tests and attribution,
+    each consumer moves its pin, each deletes its copy with its tests unchanged); a feature across repositories lands its consumer part
+    with the pin moved to the commit the producer's part landed, which the driver makes on the consumer's ask branch (workflows-review-landing 39c).
+    It names no kind of repository and no service, and says what to do where no tool checks the family. Both examples take it
+    (`packs` in their `daoris.json`), so `rehearse:family` runs on members that carry it. (from D364)
 
 ## Where a change goes
 

@@ -432,6 +432,11 @@ internal sealed class IntegrationPromotes(IntegrationStore store, string treesRo
 
         if (Seam is { } afterMove) await afterMove("after-move").ConfigureAwait(false);
         await TrainRefs.KeepAsync(ask.Root, ask.Line, tip, ct).ConfigureAwait(false);
+        foreach (var member in replayed)
+        {
+            if (store.Request(member.Request) is { } landed && TrainBranch.AskOf(landed.Branch) is { } ofAsk) await TrainRefs.KeepLandedAsync(ask.Root, ofAsk, tip, ct).ConfigureAwait(false);
+        }
+
         return new IntegrationStepEnd(IntegrationStepOutcomes.Promoted)
         {
             Promoted = true,
