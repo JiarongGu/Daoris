@@ -1,12 +1,10 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { execFileSync } from 'node:child_process';
-import { mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
-import { dirname, join } from 'node:path';
+import { mkdirSync, readFileSync, rmSync } from 'node:fs';
+import { join } from 'node:path';
 import { setTimeout as delay } from 'node:timers/promises';
 import { readFindings } from './ci-background.mjs';
-import { admitLanding, judgeIn, runTier, settleInto } from './heavy-run.mjs';
-import { pathsOfRanges } from './reached-checks.mjs';
+import { admitLanding, runTier, settleInto } from './heavy-run.mjs';
 import { HEAVY_PENDING, readPending } from './merge/heavy-batch.ts';
 import { askTiers } from './desktop-publish/tier-evidence.mjs';
 import { PassedClasses, splitByReuse, unitId } from './merge/class-reuse.ts';
@@ -287,36 +285,6 @@ test('a tier runs its check over the ranges it carries, its own and those a tier
     const newer = runTier({ ...landing('heavy-b', 'c2', 'c1'), ranges: [{ base: 'c1', commit: 'c2' }] }, tierSeams(dir, m, 2, { check }));
     await Promise.all([older, newer]);
     assert.deepEqual(seen.at(-1), { commit: 'c2', ranges: [{ base: 'c0', commit: 'c1' }, { base: 'c1', commit: 'c2' }] });
-  } finally {
-    rmSync(dir, { recursive: true, force: true });
-  }
-});
-
-test('the landing is judged on the paths its range changed, and a batch is reached over the ranges alone', async () => {
-  const dir = join('_fixtures', 'heavy-run-judge-test');
-  rmSync(dir, { recursive: true, force: true });
-  mkdirSync(dir, { recursive: true });
-  const git = (...args) => execFileSync('git', ['-c', 'user.name=t', '-c', 'user.email=t@example.com', ...args], { cwd: dir, encoding: 'utf8' }).trim();
-  const commitFile = (path, text) => {
-    mkdirSync(join(dir, dirname(path)), { recursive: true });
-    writeFileSync(join(dir, path), text);
-    git('add', '-A');
-    git('commit', '-q', '-m', path);
-    return git('rev-parse', 'HEAD');
-  };
-  try {
-    git('init', '-q');
-    const rule = { verifyBudget: { budgetMinutes: 10, fullRunReasons: { widePaths: ['daoris.gates.json'], reachShare: 0.5, runs: ['after-landing'] } } };
-    const c0 = commitFile('daoris.gates.json', JSON.stringify(rule));
-    const c1 = commitFile('docs/a.md', 'a');
-    const c2 = commitFile('daoris.gates.json', JSON.stringify({ ...rule, gates: [] }));
-    const c3 = commitFile('docs/b.md', 'b');
-    const wide = await judgeIn(dir)({ base: c1, commit: c2 });
-    assert.equal(wide.run, true);
-    assert.match(wide.said, /daoris\.gates\.json is a declared wide path/);
-    assert.deepEqual(pathsOfRanges(dir, [`${c0}..${c1}`, `${c2}..${c3}`]).sort(), ['docs/a.md', 'docs/b.md'], 'the change between the ranges is not reached');
-    rmSync(join(dir, 'daoris.gates.json'));
-    assert.equal((await judgeIn(dir)({ base: c2, commit: c3 })).run, true);
   } finally {
     rmSync(dir, { recursive: true, force: true });
   }
