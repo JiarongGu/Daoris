@@ -203,34 +203,13 @@ public static class HarnessAccountFolders
             return false;
         }
 
-        DeleteFolder(directory);
+        FolderRemoval.Delete(directory);
         // An account that is a key goes with its key: a removed account keeps nothing here. Nor its cool-off:
         // an account made later by `profile add` under its name starts afresh. Nor its name.
         HarnessKeys.Remove(home, harness, profile);
         AccountCooling.End(home, harness, profile, DateTimeOffset.UtcNow);
         AccountNames.Forget(home, harness, profile);
         return true;
-    }
-
-    /// <summary>A folder gone whole, a read-only file in it cleared first; a link inside is removed as a link, never followed.</summary>
-    internal static void DeleteFolder(string directory)
-    {
-        var walk = new EnumerationOptions
-        {
-            RecurseSubdirectories = true,
-            AttributesToSkip = FileAttributes.ReparsePoint,
-            IgnoreInaccessible = true,
-        };
-        foreach (var file in Directory.EnumerateFiles(directory, "*", walk))
-        {
-            var attributes = File.GetAttributes(file);
-            if (attributes.HasFlag(FileAttributes.ReadOnly))
-            {
-                File.SetAttributes(file, attributes & ~FileAttributes.ReadOnly);
-            }
-        }
-
-        Directory.Delete(directory, recursive: true);
     }
 
     /// <summary>

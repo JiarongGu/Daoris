@@ -23,7 +23,7 @@ public sealed class HomeProbeTests : IDisposable
 
     public void Dispose()
     {
-        if (Directory.Exists(_install)) Directory.Delete(_install, recursive: true);
+        if (Directory.Exists(_install)) FolderRemoval.Delete(_install);
     }
 
     private void Put(string relative, string text = "")
@@ -149,15 +149,77 @@ public sealed class HomeProbeTests : IDisposable
     }
 
     [Fact]
-    public void A_problem_only_the_copy_shows_is_read_alike_by_both_builds_and_no_refusal()
+    public void A_held_record_the_reading_reads_refuses_as_a_copy_that_could_not_be_made()
     {
-        // Held from every reader: the copy stands it in, and the running build reads that stand-in as the staged build does.
         Put("data/workflows/held.json", "{}");
 
         using (new FileStream(Path.Combine(Home, "workflows", "held.json"), FileMode.Open, FileAccess.ReadWrite, FileShare.None))
         {
-            Assert.Null(HomeProbe.Refused(_install, Home, "0.0.9", SameReader));
+            var refusal = HomeProbe.Refused(_install, Home, "0.0.9", SameReader);
+            Assert.Contains("the copy of the home could not be made", refusal?.Sentence);
+            Assert.Contains("`data/workflows/held.json`", refusal?.Sentence);
         }
+    }
+
+    [Fact]
+    public void A_pass_says_in_one_log_line_what_the_copy_did_not_read_and_a_refusal_says_it_in_its_sentence()
+    {
+        Account("claude-code", "acct-a");
+        Put("data/checks/04e0ba77.log", "a check's log");
+        var logs = Directory.CreateDirectory(_install + "-log").FullName;
+        using (var log = new MachineLog(logs, "probe-test"))
+        using (new FileStream(Path.Combine(Home, "checks", "04e0ba77.log"), FileMode.Open, FileAccess.ReadWrite, FileShare.None))
+        {
+            Assert.Null(HomeProbe.Refused(_install, Home, "0.0.9", SameReader, log));
+            var refusal = HomeProbe.Refused(_install, Home, "0.0.9", (_, copy) =>
+                (0, HomeProof.Say(HomeProof.Read(copy) with { Problems = ["run `q1` binds the workflow `ghost`, which the home does not hold"] })), log);
+            Assert.Contains("`q1`", refusal?.Sentence);
+            Assert.Contains("1 held", refusal?.Sentence);
+        }
+
+        var said = Directory.EnumerateFiles(logs, "*", SearchOption.AllDirectories).SelectMany(File.ReadAllLines).Where(line => line.Contains(HomeProbe.Copied, StringComparison.Ordinal)).ToList();
+        Directory.Delete(logs, recursive: true);
+        var line = Assert.Single(said);
+        Assert.Contains("\"standIns\":1", line);
+        Assert.DoesNotContain(_install, line, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public void A_copy_that_misses_an_account_the_home_holds_is_refused_as_the_copy_s_fault()
+    {
+        Account("claude-code", "acct-a");
+
+        var refusal = HomeProbe.Refused(_install, Home, "0.0.9", (staged, copy) =>
+        {
+            // Made after the copy: the home holds an account its copy does not.
+            Account("claude-code", "acct-z");
+            return SameReader(staged, copy);
+        });
+
+        Assert.Equal(HomeProbe.Code, refusal?.Code);
+        Assert.Contains("the copy of the home does not hold", refusal?.Sentence);
+        Assert.Contains("`claude-code/acct-z`", refusal?.Sentence);
+    }
+
+    [Fact]
+    public void A_running_build_that_cannot_read_the_copy_is_said_apart_from_a_copy_that_could_not_be_made()
+    {
+        Account("claude-code", "acct-a");
+        string? loop = null;
+
+        var refusal = HomeProbe.Refused(_install, Home, "0.0.9", (staged, copy) =>
+        {
+            var said = SameReader(staged, copy);
+            var at = Path.Combine(DaorisHome.FolderOf(copy), "profiles", "agents", "claude-code");
+            if (UnlistableFolder.Loop(at)) loop = at;
+            return said;
+        });
+        if (loop is null) return;
+        // The link itself, which a recursive delete cannot unmount, if the proof's removal left it.
+        if (Directory.Exists(loop)) Directory.Delete(loop);
+
+        Assert.Contains("this build could not read the copy of the home", refusal?.Sentence);
+        Assert.DoesNotContain("could not be made", refusal?.Sentence);
     }
 
     [Fact]

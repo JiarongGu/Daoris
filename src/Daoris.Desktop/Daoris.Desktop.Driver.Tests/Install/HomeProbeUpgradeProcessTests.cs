@@ -7,7 +7,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// runs (<see cref="HomeProbeAt0039"/>) and by this build's own (<see cref="HomeProbe"/>), each starting this build's driver on its copy.
 /// The home holds what that install's does: accounts under <c>profiles</c>, sessions, a database above the copy's bound, the check
 /// broker's seat, and a check's work tree whose dependencies are the dependency store's read-only hard links. 0.0.39's reading of a home
-/// is this build's (<c>HomeProofReading</c> and what it reads are unchanged since e82e2e5116).
+/// is this build's (<c>HomeProofReading</c> reads what it read at e82e2e5116, its accounts a part of their own).
 /// </summary>
 [Trait(Category.Name, Category.Process)]
 [Trait(Category.Needs, Needed.Process)]

@@ -5,10 +5,11 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// The home probe as 0.0.39 (e82e2e5116) runs it, its logic copied unchanged: the probe that judges an update is the running build's, so a
-/// build must pass this one to reach an install that runs 0.0.39. It copies the home's own folder whole, reads the real home with the
-/// running build's reading, and fails on the first file it cannot read. Delete it once no install runs a build older than the one this
-/// file lands with.
+/// The home probe as 0.0.39 (e82e2e5116) runs it: the probe that judges an update is the running build's, so a build must pass this one to
+/// reach an install that runs 0.0.39. Its copy and its steps are copied as they were: it copies the home's own folder whole, reads the real
+/// home, and fails on the first file it cannot read. What it calls of today's build (<see cref="HomeProof"/>'s reading and report,
+/// <see cref="StagedBuild"/>, <see cref="DaorisHome"/>) reads as 0.0.39's did: the reading's accounts are a part of their own, read the
+/// same way, and nothing checks the rest stays so. Delete it once the install runs a build with this branch's probe.
 /// </summary>
 internal static class HomeProbeAt0039
 {

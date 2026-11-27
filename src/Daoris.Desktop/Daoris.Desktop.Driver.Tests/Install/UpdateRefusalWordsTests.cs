@@ -2,7 +2,10 @@ using Daoris.Driver;
 
 namespace Daoris.Desktop.Driver.Tests;
 
-/// <summary>A refusal's sentence as the machine log keeps it (<see cref="UpdateRefusalWords"/>): one line, its words, no path of the machine's.</summary>
+/// <summary>
+/// A refusal's sentence as the machine log keeps it (<see cref="UpdateRefusalWords"/>): one line, bounded, the install's and the home's
+/// paths named, an email said as one, and the rest as the build said it.
+/// </summary>
 public sealed class UpdateRefusalWordsTests
 {
     [Fact]
@@ -28,5 +31,28 @@ public sealed class UpdateRefusalWordsTests
         var home = Path.Combine(TestHomes.Root, "a-home");
 
         Assert.Equal("nothing is staged beside <home>.", UpdateRefusalWords.Logged($"nothing is staged beside {home}.", null, home));
+    }
+
+    [Fact]
+    public void A_path_is_named_only_where_it_ends_on_a_separator_in_either_slash_and_in_the_long_form()
+    {
+        var home = Path.Combine(TestHomes.Root, "an-install", "data");
+        var forward = home.Replace('\\', '/');
+
+        var logged = UpdateRefusalWords.Logged($"a: {home}2{Path.DirectorySeparatorChar}x; b: {forward}/checks; c: \\\\?\\{home}\\sessions; d: `{home}`", null, home);
+
+        Assert.Equal($"a: {home}2{Path.DirectorySeparatorChar}x; b: <home>/checks; c: <home>\\sessions; d: `<home>`", logged);
+    }
+
+    [Fact]
+    public void A_path_that_is_no_path_an_email_and_a_long_sentence_never_make_a_refusal_a_crash()
+    {
+        var home = Path.Combine(TestHomes.Root, "a-home");
+
+        Assert.Equal("seen", UpdateRefusalWords.Logged("seen", "bad\0path", home));
+        Assert.Equal("the account `codex/<email>` is no longer listed", UpdateRefusalWords.Logged("the account `codex/someone@example.com` is no longer listed", null, home));
+        var logged = UpdateRefusalWords.Logged(new string('x', 5000), null, home);
+        Assert.Equal(UpdateRefusalWords.Longest, logged.Length);
+        Assert.EndsWith("…", logged);
     }
 }
