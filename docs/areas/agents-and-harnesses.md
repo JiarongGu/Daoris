@@ -192,7 +192,7 @@ where a seam, route, verb or fixture is. Which folder owns which job:
     account off <agent> <account>`, the window's *Switch off*, a key of `accounts.json` beside the name, `AccountSwitch`) stays signed in
     and is read as before, and the roster's `Before` reads the switch first (`AccountReadiness.Off`, `NextHold.Off`), so no start, move or
     resume is chosen onto it while another account is ready, and a pick of it is refused, never moved. A session already on it goes on to
-    its turn's end; the next resume reads its own account off and moves it by the walk (the line that switches), or holds it for the
+    its turn's end; the next resume reads its own account off and moves it by the walk (the line that switches, and a closed quest's session whose line walks without carrying, said as switched all the same), or holds it for the
     switch where no other account is ready or the line does not move: it never waits for a reset it has not got. A running
     conversation's turn-end move (`CurveMove`) moves by the account's curve, and reads its own account's switch too: at its turn's end
     a conversation on an off account moves to another ready account of its agent whatever it has used (`SwitchChoice.MoveOff`, the
