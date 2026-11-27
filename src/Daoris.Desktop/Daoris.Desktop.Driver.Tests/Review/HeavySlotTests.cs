@@ -108,6 +108,23 @@ public sealed class HeavySlotTests : IDisposable
         Assert.Equal("daoris-heavy-x", next.Before?.Job);
     }
 
+    /// <summary>The moment a run's builds were done is kept in its record; a record written before it says none.</summary>
+    [Fact]
+    public void The_moment_the_builds_were_done_is_kept_in_the_record_and_an_older_record_says_none()
+    {
+        var key = Key(_fixture.Checkout);
+        var since = DateTimeOffset.Parse("2026-11-26T09:00:00Z");
+        var holder = new HeavyHolder(4242, 1, _fixture.Tree, ["reached"], since, null, null) { Run = "r-1", Built = since.AddMinutes(3) };
+
+        using var slot = HeavySlot.TryTake(_fixture.Home, key)!;
+        slot.Keep(holder with { Built = null });
+        Assert.Null(HeavySlot.Holder(_fixture.Home, key)!.Built);
+
+        slot.Keep(holder);
+        Assert.Equal(since.AddMinutes(3), HeavySlot.Holder(_fixture.Home, key)!.Built);
+        Assert.False(CheckAdmission.Starting(HeavySlot.Holder(_fixture.Home, key)!));
+    }
+
     /// <summary>A record that does not read is no holder, never a reason to refuse the slot.</summary>
     [Fact]
     public void A_record_that_does_not_read_is_no_holder()

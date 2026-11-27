@@ -240,7 +240,7 @@ internal sealed class VerifyExecution(string home, VerifySend send, CandidateJob
             if (await UnregeneratedAsync(tree, place, unrun, ct).ConfigureAwait(false) is { } regenerated) return regenerated;
             keep(holder => holder with { Gates = [ReachedVerdict.Gate], Now = new HeavyGateNow(ReachedVerdict.Gate, 0, world.Clock.GetUtcNow()) });
             var wall = Stopwatch.StartNew();
-            var exit = await StepAsync(place.Hold, command, folder, [ReachedVerdict.Gate], new Dictionary<string, string>(), log, runner.Clock, ct).ConfigureAwait(false);
+            var exit = await WatchedStepAsync(place.Hold, command, folder, ReachedVerdict.Gate, log, runner.Clock, ct).ConfigureAwait(false);
             if (exit is null) return Ended([new VerifyGate(ReachedVerdict.Gate, RunnerVerdicts.Ended) { Log = log, WallSeconds = wall.Elapsed.TotalSeconds }]);
             _failed = new FailedRun(ReachedVerdict.Gate, folder, runner.Clock, log, runner.Outcome);
             if (exit != 0) _seen = LoadFailures.Read(home, world, place.Hold?.Id);
@@ -369,8 +369,8 @@ internal sealed class VerifyExecution(string home, VerifySend send, CandidateJob
             try
             {
                 await TreeAtAsync(tree, ct).ConfigureAwait(false);
-                keep(holder => holder with { Gates = [failed.Gate], Now = new HeavyGateNow(failed.Gate, 0, world.Clock.GetUtcNow()) });
-                exit = await StepAsync(hold, command, failed.Folder, [failed.Gate], new Dictionary<string, string>(), log, failed.Clock, ct).ConfigureAwait(false);
+                keep(holder => holder with { Gates = [failed.Gate], Now = new HeavyGateNow(failed.Gate, 0, world.Clock.GetUtcNow()), Built = null });
+                exit = await WatchedStepAsync(hold, command, failed.Folder, failed.Gate, log, failed.Clock, ct).ConfigureAwait(false);
             }
             catch (DriverException error)
             {
@@ -571,6 +571,21 @@ internal sealed class VerifyExecution(string home, VerifySend send, CandidateJob
         internal AdmissionHold? Hold { get; } = hold;
 
         public void Dispose() => Hold?.Dispose();
+    }
+
+    private async Task<int?> WatchedStepAsync(AdmissionHold? hold, string run, string folder, string gate, string log, bool clock, CancellationToken ct)
+    {
+        using var running = CancellationTokenSource.CreateLinkedTokenSource(ct);
+        var watching = BuiltWatch.RunAsync(log, () => keep(holder => holder with { Built = world.Clock.GetUtcNow() }), world.Poll, world.Clock, running.Token);
+        try
+        {
+            return await StepAsync(hold, run, folder, [gate], new Dictionary<string, string>(), log, clock, ct).ConfigureAwait(false);
+        }
+        finally
+        {
+            await running.CancelAsync().ConfigureAwait(false);
+            await watching.ConfigureAwait(false);
+        }
     }
 
     /// <summary>One command in the job, composed from the driver's environment; its exit, or null where the run is ended before it.</summary>

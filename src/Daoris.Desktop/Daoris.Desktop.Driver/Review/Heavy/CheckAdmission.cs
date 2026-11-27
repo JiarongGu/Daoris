@@ -138,9 +138,9 @@ public sealed record HeavyTaken(VerifySlot? Check, HeavySlot Repository, HeavyHo
 ///
 /// <para><b>Still starting until its first gate ends.</b> A run whose first gate has not ended may not have reached its peak, so its need is
 /// counted again and two never climb to their peaks on one reading. The first gate's end is a fact its record keeps (<see cref="HeavyHolder.Now"/>
-/// past the first, or <see cref="HeavyHolder.Failed"/>); a time window would be a guess the machine's load stretches, and a Daoris check runs
-/// one gate (its <c>reached</c> runner) whose build and suites both run inside it, so no window could tell its build from its suites. Such a
-/// run is counted as starting for its whole run: a second starts beside it with room for both its own need and the first one's.</para>
+/// past the first, or <see cref="HeavyHolder.Failed"/>); a time window would be a guess the machine's load stretches. A Daoris check's one
+/// <c>reached</c> gate holds its build and its suites, so its runner says once that its builds are done (<c>reached-built: {}</c>, read by
+/// <see cref="BuiltWatch"/> into <see cref="HeavyHolder.Built"/>) and it counts as starting until then; a runner that never says it counts for its whole run.</para>
 ///
 /// <para><b>Judged, taken and said under one lock.</b> The judgement, the take of each slot and the write of each record happen while this
 /// process holds the home's admission lock (<c>locks/heavy/admitting.lock</c>, opened alone and let go with its handle, so a process that
@@ -202,8 +202,8 @@ public static class CheckAdmission
     public static IReadOnlyList<string> GatesOf(HeavyHolder holder) =>
         holder.Run is not null ? ["reached"] : holder.Gates.Count > 0 ? holder.Gates : [DefaultGate];
 
-    /// <summary>Whether a holder's first gate has not ended: none started, or the first still running, with no failure said.</summary>
-    public static bool Starting(HeavyHolder holder) => holder.Failed is null && holder.Now is not { At: > 0 };
+    /// <summary>Whether a holder may still climb to its peak: its first gate has not ended and no failure or runner word of its builds being done is said.</summary>
+    public static bool Starting(HeavyHolder holder) => holder.Failed is null && holder.Built is null && holder.Now is not { At: > 0 };
 
     /// <summary>A holder as a wait names it.</summary>
     public static string Who(HeavyHolder holder) =>
