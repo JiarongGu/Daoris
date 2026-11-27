@@ -79,7 +79,7 @@ public sealed class QueueRowsTests
         var spots = QueueRows.Placed(QueueRows.Read(plan, new VerifyLook([], [])));
 
         var asked = spots.Single(spot => spot.Row.Item == "asked");
-        Assert.Equal((PriorityClasses.High, PriorityBook.Ask, "cafee7"), (asked.Row.Class, asked.Row.Source, asked.Row.Ask));
+        Assert.Equal((PriorityClasses.High, PriorityBook.Ask, "cafee7"), (asked.Row.Class, asked.Row.Source, asked.Row.AskId));
         Assert.Equal("high (from its ask #cafee7, set by the person: the release)", QueueRows.Class(asked.Row));
         var aged = spots.Single(spot => spot.Row.Item == "aged");
         Assert.Equal((PriorityClasses.High, PriorityClasses.Normal), (aged.Row.Class, aged.Row.AgedFrom));
@@ -110,9 +110,9 @@ public sealed class QueueRowsTests
         var plan = Plan(1, [Open("old", 30), Open("asked", 5, "ask #cafee7")], Set(PriorityBook.Ask, "cafee7", PriorityClasses.Urgent, "the fix"));
         var rows = QueueRows.Read(plan, new VerifyLook([], [Waiter("u", 1, PriorityClasses.High, "session s-2", "unblocks")])).ToList();
 
-        var read = rows.Select(row => QueueRows.Parse(System.Text.Json.JsonDocument.Parse(QueueRows.Wire(row).ToJsonString()).RootElement)!).ToList();
+        var read = rows.Select(row => QueueRows.Parse(System.Text.Json.JsonDocument.Parse(QueueRows.Json(row).ToJsonString()).RootElement)!).ToList();
 
-        Assert.Equal(rows.Select(row => QueueRows.Wire(row).ToJsonString()), read.Select(row => QueueRows.Wire(row).ToJsonString()));
+        Assert.Equal(rows.Select(row => QueueRows.Json(row).ToJsonString()), read.Select(row => QueueRows.Json(row).ToJsonString()));
         Assert.Equal(QueueRows.Said(rows), QueueRows.Said(read));
     }
 

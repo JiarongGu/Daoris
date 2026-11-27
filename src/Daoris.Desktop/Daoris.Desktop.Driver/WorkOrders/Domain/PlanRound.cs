@@ -207,7 +207,7 @@ internal sealed class PlanRound
             new QueuePlace(aged.Class, last is null ? QueueStage.NewStart : QueueStage.Resume, arrived ?? DateTimeOffset.MaxValue), aged.From, reading, look.Rules);
     }
 
-    /// <summary>Each quest carries its place and class reading (<see cref="QueueRows"/>); one ordered by a promoted class says so and carries the class it came from.</summary>
+    /// <summary>Each quest carries its place and class reading (<c>QueueRows</c>); one ordered by a promoted class says so and carries the class it came from.</summary>
     private static Consideration Aged(Consideration each, Dictionary<string, WalkSlot> placed)
     {
         if (!placed.TryGetValue(each.Quest.Id, out var at)) return each;

@@ -29,7 +29,7 @@ public sealed record QueueRow(string Queue, string Item, string Class, QueueStag
     public string? Why { get; init; }
 
     /// <summary>The ask whose class it reads where its class comes from its ask.</summary>
-    public string? Ask { get; init; }
+    public string? AskId { get; init; }
 
     public string Repository { get; init; } = "";
 
@@ -132,7 +132,7 @@ public static class QueueRows
         row with
         {
             Source = reading.Source, By = reading.Event?.By, Why = reading.Event?.Why,
-            Ask = reading.Source == PriorityBook.Ask ? reading.Event?.Id : null,
+            AskId = reading.Source == PriorityBook.Ask ? reading.Event?.Id : null,
         };
 
     /// <summary>
@@ -168,7 +168,7 @@ public static class QueueRows
         Enum.GetValues<QueueStage>().Select(stage => (QueueStage?)stage).FirstOrDefault(stage => Word(stage!.Value) == word);
 
     /// <summary>A row as the route answers it, camel-cased, a fact none holds left out.</summary>
-    public static JsonObject Wire(QueueRow row)
+    public static JsonObject Json(QueueRow row)
     {
         var wire = new JsonObject
         {
@@ -179,14 +179,14 @@ public static class QueueRows
         if (row.AgedFrom is { } from) wire["agedFrom"] = from;
         if (row.By is { } by) wire["by"] = by;
         if (row.Why is { } why) wire["why"] = why;
-        if (row.Ask is { } ask) wire["ask"] = ask;
+        if (row.AskId is { } ask) wire["ask"] = ask;
         if (row.Verdict is { } verdict) wire["verdict"] = verdict;
         wire["values"] = new JsonObject([.. row.Values.Select(each => KeyValuePair.Create(each.Key, (JsonNode?)each.Value))]);
         wire["reason"] = row.Reason;
         return wire;
     }
 
-    /// <summary>A row as <see cref="Wire"/> wrote it, or null where it does not read as one.</summary>
+    /// <summary>A row as <see cref="Json"/> wrote it, or null where it does not read as one.</summary>
     public static QueueRow? Parse(JsonElement raw)
     {
         if (raw.ValueKind != JsonValueKind.Object) return null;
@@ -199,7 +199,7 @@ public static class QueueRows
             : new Dictionary<string, string>(StringComparer.Ordinal);
         return new QueueRow(queue, item, PriorityClasses.Parse(Text("class")) ?? PriorityClasses.Normal, stage, arrived, order)
         {
-            AgedFrom = Text("agedFrom"), Source = Text("source") ?? PriorityReading.Unset, By = Text("by"), Why = Text("why"), Ask = Text("ask"),
+            AgedFrom = Text("agedFrom"), Source = Text("source") ?? PriorityReading.Unset, By = Text("by"), Why = Text("why"), AskId = Text("ask"),
             Repository = Text("repository") ?? "", Code = Text("code") ?? "", Verdict = Text("verdict"), Values = values, Reason = Text("reason") ?? "",
         };
     }
@@ -233,7 +233,8 @@ public static class QueueRows
     {
         var why = new List<string>();
         if (row.AgedFrom is { } from) why.Add($"aged from {from}");
-        if (row.By is { } by) why.Add((row.Source == PriorityBook.Ask ? $"from its ask{(row.Ask is { } ask ? $" #{ask}" : "")}, " : "") + $"set by {by}: {row.Why}");
+        var asked = row.AskId is { } id ? $"from its ask #{id}, " : "from its ask, ";
+        if (row.By is { } by) why.Add((row.Source == PriorityBook.Ask ? asked : "") + $"set by {by}: {row.Why}");
         return why.Count == 0 ? row.Class : $"{row.Class} ({string.Join("; ", why)})";
     }
 

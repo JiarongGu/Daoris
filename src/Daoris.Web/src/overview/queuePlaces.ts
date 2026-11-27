@@ -13,7 +13,7 @@ export type QueueStage = (typeof STAGES)[number];
 /** The queues in the order they are shown: the planner's starts and resumes, then the checks waiting for a slot. */
 export const QUEUES = ['starts', 'checks'] as const;
 
-/** One waiting item, as `QueueRows.Wire` writes it. */
+/** One waiting item, as `QueueRows.Json` writes it. */
 export type QueueRow = {
   queue: string;
   /** The quest a start is of, or the run a check is of: the id a class is set on. */

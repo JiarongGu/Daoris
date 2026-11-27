@@ -50,6 +50,6 @@ public static class QueueCommand
     /// </summary>
     public static IReadOnlyList<string> Lines(IReadOnlyList<QueueRow> rows, bool json) =>
         json
-            ? [new JsonObject { ["rows"] = new JsonArray([.. rows.Select(QueueRows.Wire)]) }.ToJsonString()]
+            ? [new JsonObject { ["rows"] = new JsonArray([.. rows.Select(QueueRows.Json)]) }.ToJsonString()]
             : QueueRows.Said(rows).TrimEnd('\n').Split('\n');
 }

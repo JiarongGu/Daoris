@@ -37,7 +37,7 @@ public sealed class QueuesRoutes(DriverContext context)
         var rows = await Task.Run(() => QueueRows.Read(plan, VerifySlot.Look(_loop.Home)), cancellationToken).ConfigureAwait(false);
         return new
         {
-            Rows = rows.Select(QueueRows.Wire).ToArray(),
+            Rows = rows.Select(QueueRows.Json).ToArray(),
             Said = read.Said ? new TreesSaid(QueueCommand.Lines(rows, read.Json), [], 0).ToWire() : null,
         };
     }

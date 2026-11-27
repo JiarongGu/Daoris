@@ -28,7 +28,7 @@ public static class OpenRoutes
     /// <summary><c>sessions</c>' list.</summary>
     public static InstanceRoute SessionGroups { get; } = Open("SESSION_GROUPS");
 
-    /// <summary><c>queue</c>: every item waiting in the machine's queues, each with its place (<see cref="QueueRows"/>).</summary>
+    /// <summary><c>queue</c>: every item waiting in the machine's queues, each with its place (<c>QueueRows</c>).</summary>
     public static InstanceRoute Queues { get; } = Open("QUEUES");
 
     /// <summary><c>sessions supervise &lt;id&gt;</c>'s read of the course decisions on a session's referred points.</summary>
