@@ -71,5 +71,6 @@ public static class SessionsGroupsWires
             }
             : null,
         Line = row.Line is { } line ? new { line.State, line.Group, line.Reason, line.By, line.Role } : null,
+        Fold =row.Fold is { } fold ? new { fold.State, fold.Outcome, fold.Holder, fold.Since, fold.Breach } : null,
     };
 }

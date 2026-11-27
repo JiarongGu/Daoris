@@ -48,6 +48,7 @@ internal sealed class WatchRun(
     // Once, before the first tick: what the last run left `working` with nothing behind it (a crash, a kill, a power cut) ended before this
     // tick counts it against the cap and its repository's lock. Retried each tick until the service has answered it once.
     private bool _swept;
+    private bool _begun;
 
     private readonly LandingOnce _landed = new();
 
@@ -348,6 +349,8 @@ internal sealed class WatchRun(
         _config = Load(ConfigPath);
         // A home whose staffing the store holds no import of yet is imported by a look, waiting for no lock.
         _staffing?.Check(StaffingCheckAt.Look);
+
+        if (!_begun) _begun = await SessionFolds.BeginAsync(Service, SessionFolds.ApplicationStarted, ct).ConfigureAwait(false);
 
         var orphans = await Stages.TimeAsync("sweep", () => Orphans.EndAsync(Service, watch.Processes, ct: ct, held: Running.Holds, now: Now)).ConfigureAwait(false);
         // An end nobody pressed and nobody must answer: news.

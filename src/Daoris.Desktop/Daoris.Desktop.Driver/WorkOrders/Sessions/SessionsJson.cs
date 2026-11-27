@@ -158,6 +158,21 @@ internal static class SessionsJson
                     writer.WriteNull("line");
                 }
 
+                if (row.Fold is { } fold)
+                {
+                    writer.WriteStartObject("fold");
+                    writer.WriteString("state", fold.State);
+                    writer.WriteString("outcome", fold.Outcome);
+                    writer.WriteString("holder", fold.Holder);
+                    writer.WriteString("since", fold.Since);
+                    writer.WriteString("breach", fold.Breach);
+                    writer.WriteEndObject();
+                }
+                else
+                {
+                    writer.WriteNull("fold");
+                }
+
                 writer.WriteEndObject();
             }
 
