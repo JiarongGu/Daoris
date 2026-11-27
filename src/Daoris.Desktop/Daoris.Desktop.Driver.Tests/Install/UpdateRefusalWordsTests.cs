@@ -13,7 +13,9 @@ public sealed class UpdateRefusalWordsTests
     {
         var install = Path.Combine(TestHomes.Root, "an-install");
         var home = Path.Combine(install, "data");
-        var sentence = $"the copy of the home could not be made: The process cannot access the file '{Path.Combine(home, "checks", "broker.lock")}'\r\n"
+        // A sentence's words, no home read: the seat's path as a build's message writes it.
+        var seat = string.Join(Path.DirectorySeparatorChar, home, "checks", "broker.lock");
+        var sentence = $"the copy of the home could not be made: The process cannot access the file '{seat}'\r\n"
             + $"because it is being used by another process (copy in {Path.Combine(install, "update", "probe", "c1")}).";
 
         var logged = UpdateRefusalWords.Logged(sentence, install, home);

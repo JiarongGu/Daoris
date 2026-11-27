@@ -31,7 +31,7 @@ public sealed class HomeProbeUpgradeProcessTests : IDisposable
         Put("work/trees/ws/repo/tree/src/a.cs", "class A {}");
         Put("data/accounts.json", "{}");
         Put("data/desktop.db", "a store");
-        using (var large = File.Create(Path.Combine(Home, "knowledge.db"))) large.SetLength(HomeCopy.MaxFile + 1);
+        using (var large = File.Create(DaorisHome.Entry(Home, HomeEntry.Knowledge))) large.SetLength(HomeCopy.MaxFile + 1);
         Put("data/sessions/4f0c2a91.events.jsonl", "");
         Put("data/sessions/4f0c2a91.log", "a session's log");
         Put("data/checks/broker.lock", "");
@@ -74,7 +74,7 @@ public sealed class HomeProbeUpgradeProcessTests : IDisposable
         Assert.Null(HomeProbe.Refused(_install, Home, "0.0.41"));
 
         // A check waits or runs, so the broker holds its seat: 0.0.39 cannot make its copy, which refused 0.0.40; this build's probe can.
-        using (new FileStream(Path.Combine(Home, "checks", "broker.lock"), FileMode.Open, FileAccess.ReadWrite, FileShare.None))
+        using (new FileStream(DaorisHome.Entry(Home, HomeEntry.Checks, "broker.lock"), FileMode.Open, FileAccess.ReadWrite, FileShare.None))
         {
             var refused = HomeProbeAt0039.Refused(_install, Home, "0.0.41");
             Assert.Equal(HomeProbe.Code, refused?.Code);

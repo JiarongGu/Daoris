@@ -54,9 +54,9 @@ public sealed class HomeCopyTests : IDisposable
             made = Make();
         }
 
-        Assert.Equal(0, new FileInfo(Path.Combine(made.Home, "checks", "broker.lock")).Length);
-        Assert.Equal(0, new FileInfo(Path.Combine(made.Home, "checks", "04e0ba77.log")).Length);
-        Assert.Equal("{}", File.ReadAllText(Path.Combine(made.Home, "workflows", "w.json")));
+        Assert.Equal(0, new FileInfo(DaorisHome.Entry(made.Home, HomeEntry.Checks, "broker.lock")).Length);
+        Assert.Equal(0, new FileInfo(DaorisHome.Entry(made.Home, HomeEntry.Checks, "04e0ba77.log")).Length);
+        Assert.Equal("{}", File.ReadAllText(DaorisHome.Entry(made.Home, HomeEntry.Workflows, "w.json")));
         Assert.Equal((1, 1), (made.Seats, made.StandIns));
         Assert.Contains("1 held", made.Said);
     }
@@ -87,7 +87,7 @@ public sealed class HomeCopyTests : IDisposable
     {
         Directory.CreateDirectory(Path.Combine(_install, "profiles", "agents", "claude-code", "acct-a"));
         Put("data/brainstorms/b1/notes.md", "kept");
-        Assert.True(Directory.Exists(Path.Combine(Make().Home, "brainstorms", "b1")));
+        Assert.True(Directory.Exists(DaorisHome.Entry(Make().Home, HomeEntry.Brainstorms, "b1")));
         HomeCopy.Remove(Into);
 
         var loop = Path.Combine(_install, "profiles", "agents", "claude-code");
@@ -108,7 +108,7 @@ public sealed class HomeCopyTests : IDisposable
         var made = Make();
 
         Assert.Equal(1, made.Unlisted);
-        Assert.Empty(Directory.EnumerateFileSystemEntries(Path.Combine(made.Home, "brainstorms", "b1")));
+        Assert.Empty(Directory.EnumerateFileSystemEntries(DaorisHome.Entry(made.Home, HomeEntry.Brainstorms, "b1")));
     }
 
     [Fact]
@@ -132,12 +132,12 @@ public sealed class HomeCopyTests : IDisposable
 
         var made = Make();
 
-        Assert.Empty(Directory.EnumerateFileSystemEntries(Path.Combine(made.Home, "workflows", "lines", "trees")));
-        Assert.Empty(Directory.EnumerateFileSystemEntries(Path.Combine(made.Home, "plugins", "daoris-github")));
-        Assert.Empty(Directory.EnumerateFileSystemEntries(Path.Combine(made.Home, "plugins", ".trials")));
-        Assert.Equal("{\"kept\":1}", File.ReadAllText(Path.Combine(made.Home, "plugins", ".data", "daoris-github", "state.json")));
-        Assert.Equal("{\"deep\":1}", File.ReadAllText(Path.Combine(made.Home, "workflows", "units", "a", "b", "c", "d", "e", "f.json")));
-        Assert.Equal("{}\n", File.ReadAllText(Path.Combine(made.Home, "sessions", "4f0c2a91.events.jsonl")));
+        Assert.Empty(Directory.EnumerateFileSystemEntries(DaorisHome.Entry(made.Home, HomeEntry.Workflows, "lines", "trees")));
+        Assert.Empty(Directory.EnumerateFileSystemEntries(DaorisHome.Entry(made.Home, HomeEntry.Plugins, "daoris-github")));
+        Assert.Empty(Directory.EnumerateFileSystemEntries(DaorisHome.Entry(made.Home, HomeEntry.Plugins, ".trials")));
+        Assert.Equal("{\"kept\":1}", File.ReadAllText(DaorisHome.Entry(made.Home, HomeEntry.Plugins, ".data", "daoris-github", "state.json")));
+        Assert.Equal("{\"deep\":1}", File.ReadAllText(DaorisHome.Entry(made.Home, HomeEntry.Workflows, "units", "a", "b", "c", "d", "e", "f.json")));
+        Assert.Equal("{}\n", File.ReadAllText(DaorisHome.Entry(made.Home, HomeEntry.Sessions, "4f0c2a91.events.jsonl")));
         Assert.Equal(3, made.Content);
     }
 
@@ -149,17 +149,17 @@ public sealed class HomeCopyTests : IDisposable
         var linked = Path.Combine(Home, "kept", "pkg", "index.js");
         Directory.CreateDirectory(Path.GetDirectoryName(linked)!);
         Assert.True(FileLinks.Make(linked, store), "the volume links");
-        using (var large = File.Create(Path.Combine(Home, "knowledge.db"))) large.SetLength(HomeCopy.MaxFile + 1);
-        Directory.CreateDirectory(Path.Combine(Home, "sessions"));
-        using (var record = File.Create(Path.Combine(Home, "sessions", "4f0c2a91.events.jsonl"))) record.SetLength(HomeCopy.MaxFile + 1);
+        using (var large = File.Create(DaorisHome.Entry(Home, HomeEntry.Knowledge))) large.SetLength(HomeCopy.MaxFile + 1);
+        Directory.CreateDirectory(DaorisHome.Entry(Home, HomeEntry.Sessions));
+        using (var record = File.Create(DaorisHome.Entry(Home, HomeEntry.Sessions, "4f0c2a91.events.jsonl"))) record.SetLength(HomeCopy.MaxFile + 1);
 
         var made = Make();
 
         var copied = new FileInfo(Path.Combine(made.Home, "kept", "pkg", "index.js"));
         Assert.Equal("module.exports = 1;", File.ReadAllText(copied.FullName));
         Assert.False(copied.IsReadOnly);
-        Assert.Equal(0, new FileInfo(Path.Combine(made.Home, "knowledge.db")).Length);
-        Assert.Equal(HomeCopy.MaxFile + 1, new FileInfo(Path.Combine(made.Home, "sessions", "4f0c2a91.events.jsonl")).Length);
+        Assert.Equal(0, new FileInfo(DaorisHome.Entry(made.Home, HomeEntry.Knowledge)).Length);
+        Assert.Equal(HomeCopy.MaxFile + 1, new FileInfo(DaorisHome.Entry(made.Home, HomeEntry.Sessions, "4f0c2a91.events.jsonl")).Length);
         Assert.Equal(1, made.LeftOut);
         HomeCopy.Remove(Into);
         Assert.False(Directory.Exists(Into));

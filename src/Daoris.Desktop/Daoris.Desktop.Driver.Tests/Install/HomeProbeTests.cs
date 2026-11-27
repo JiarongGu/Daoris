@@ -142,7 +142,7 @@ public sealed class HomeProbeTests : IDisposable
         Account("claude-code", "acct-a");
         Put("data/checks/broker.lock");
 
-        using (new FileStream(Path.Combine(Home, "checks", "broker.lock"), FileMode.Open, FileAccess.ReadWrite, FileShare.None))
+        using (new FileStream(DaorisHome.Entry(Home, HomeEntry.Checks, "broker.lock"), FileMode.Open, FileAccess.ReadWrite, FileShare.None))
         {
             Assert.Null(HomeProbe.Refused(_install, Home, "0.0.9", SameReader));
         }
@@ -153,7 +153,7 @@ public sealed class HomeProbeTests : IDisposable
     {
         Put("data/workflows/held.json", "{}");
 
-        using (new FileStream(Path.Combine(Home, "workflows", "held.json"), FileMode.Open, FileAccess.ReadWrite, FileShare.None))
+        using (new FileStream(DaorisHome.Entry(Home, HomeEntry.Workflows, "held.json"), FileMode.Open, FileAccess.ReadWrite, FileShare.None))
         {
             var refusal = HomeProbe.Refused(_install, Home, "0.0.9", SameReader);
             Assert.Contains("the copy of the home could not be made", refusal?.Sentence);
@@ -168,7 +168,7 @@ public sealed class HomeProbeTests : IDisposable
         Put("data/checks/04e0ba77.log", "a check's log");
         var logs = Directory.CreateDirectory(_install + "-log").FullName;
         using (var log = new MachineLog(logs, "probe-test"))
-        using (new FileStream(Path.Combine(Home, "checks", "04e0ba77.log"), FileMode.Open, FileAccess.ReadWrite, FileShare.None))
+        using (new FileStream(DaorisHome.Entry(Home, HomeEntry.Checks, "04e0ba77.log"), FileMode.Open, FileAccess.ReadWrite, FileShare.None))
         {
             Assert.Null(HomeProbe.Refused(_install, Home, "0.0.9", SameReader, log));
             var refusal = HomeProbe.Refused(_install, Home, "0.0.9", (_, copy) =>
