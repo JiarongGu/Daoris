@@ -394,6 +394,7 @@
   "note.handed.why.limit": "它的账户已达上限",
   "note.handed.why.agent": "智能体要求转交",
   "note.handed.why.curve": "它的账户超出了用量曲线",
+  "note.handed.why.off": "它的账户已被停用",
   "note.handed.why.resume": "它自己的对话已丢失",
   "note.handed.why.carry-on": "它在工作完成前停下了",
   "note.handed.why.retry": "它自己的对话无法恢复",

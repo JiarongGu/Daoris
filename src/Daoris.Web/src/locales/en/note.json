@@ -394,6 +394,7 @@
   "note.handed.why.limit": "its account reached its limit",
   "note.handed.why.agent": "the agent asked for it",
   "note.handed.why.curve": "its account was over its usage curve",
+  "note.handed.why.off": "its account was switched off",
   "note.handed.why.resume": "its own conversation was lost",
   "note.handed.why.carry-on": "it stopped before its work was done",
   "note.handed.why.retry": "its own conversation could not be resumed",

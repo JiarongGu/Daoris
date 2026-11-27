@@ -180,6 +180,7 @@ public static class NoteCodes
         new(HandOverWhy.Limit, [], "note.handed.why.limit"),
         new(HandOverWhy.Agent, [], "note.handed.why.agent"),
         new(HandOverWhy.Curve, [], "note.handed.why.curve"),
+        new(HandOverWhy.Off, [], "note.handed.why.off"),
         new(HandOverWhy.Resume, [], "note.handed.why.resume"),
         new(HandOverWhy.CarryOn, [], "note.handed.why.carry-on"),
         new(HandOverWhy.Retry, [], "note.handed.why.retry"),

@@ -191,6 +191,7 @@ export function AccountRow({ name, label = name, who, plan, id, home, why, state
   return (
     <li
       aria-label={label}
+      data-off={state?.off ? 'true' : undefined}
       // A line at 1546 px (a row at most 36 px): the act's own padding is the row's air, so the row adds little.
       className="grid grid-cols-[minmax(0,1fr)_auto_1.75rem] items-center gap-x-3 gap-y-0.5 border-t border-line py-1 @min-[40rem]/main:col-span-full @min-[40rem]/main:grid-cols-subgrid @min-[40rem]/main:py-0.5"
     >
@@ -278,7 +279,7 @@ export function AccountRow({ name, label = name, who, plan, id, home, why, state
       {/* What its agent last said: a cell a window, the session's and the week's in two columns at every width, so
           each sits in the same place on every row and two makers compare cell by cell; then the account's own notes. */}
       {usage && (
-        <div data-usage className="col-span-full col-start-1 min-w-0 text-small text-ink-soft [overflow-wrap:anywhere]">
+        <div data-usage className={`col-span-full col-start-1 min-w-0 text-small text-ink-soft [overflow-wrap:anywhere]${state?.off ? ' opacity-60' : ''}`}>
           {usage.cells.length > 0 && (
             <div className="grid grid-cols-2 gap-x-4 gap-y-0.5">
               {usage.cells.map((cell) => <WindowCellView key={cell.window} cell={cell} />)}

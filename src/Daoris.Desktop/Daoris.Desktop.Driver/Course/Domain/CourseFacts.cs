@@ -211,7 +211,7 @@ public sealed record CourseFailure(AgentErrorKind? Kind = null, bool PastBound =
 /// <param name="Runner">The shell's chat runner is here: a closed quest's session goes on as a conversation in its tree only where it is.</param>
 public sealed record CourseRules(
     bool HandOverAdmits = false, bool SwitchAdmits = false, string? CurveAccount = null, int LaterChoices = 0, bool HandOverAsks = false,
-    bool Runner = false);
+    bool Runner = false, string? OffAccount = null);
 
 /// <summary>
 /// What Daoris's own word on a resume is keyed by: a conversation's wake keys its limit word by the wake's clock, a

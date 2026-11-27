@@ -95,7 +95,7 @@ public static class UpdateCommand
                 return 2;
             }
 
-            Status(install, manifest, InstallUpdate.Read(home), output);
+            Status(install, home, manifest, InstallUpdate.Read(home), output, proof);
             return 0;
         }
 
@@ -183,7 +183,7 @@ public static class UpdateCommand
         }
     }
 
-    private static void Status(string install, StagedManifest? manifest, UpdateRequest? request, StringBuilder output)
+    private static void Status(string install, string home, StagedManifest? manifest, UpdateRequest? request, StringBuilder output, StagedProof? proof)
     {
         output.AppendLine(Installed(InstalledVersion(install)));
         if (!StagedBuild.IsStaged(install))
@@ -200,7 +200,16 @@ public static class UpdateCommand
             var commit = manifest.Commit is null ? "" : $" ({manifest.Commit})";
             var at = manifest.At is { } staged ? $", staged {Moment(staged)}" : "";
             output.AppendLine($"update: Daoris {manifest.Version}{commit} is staged beside {install}, build {manifest.Id}{at}.");
-            output.AppendLine($"  {Meaning(InstallUpdate.ModeFor(request, manifest.Id))}.");
+            var mode = InstallUpdate.ModeFor(request, manifest.Id);
+            if (mode == UpdateMode.Now && UpdateRefusal.Of(install, home, manifest.Version, UpdateRefusal.Running, proof) is var (_, why))
+            {
+                output.AppendLine($"  Asked to install now, and refused: {why}");
+                output.AppendLine("  Nothing closes. `daoris update --now` tries again once that has moved.");
+            }
+            else
+            {
+                output.AppendLine($"  {Meaning(mode)}.");
+            }
         }
 
         if (StagedBuild.ReadJournal(install) is { } last)

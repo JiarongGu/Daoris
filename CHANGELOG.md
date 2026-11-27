@@ -5,6 +5,12 @@ with the version and date at release.
 
 ## Unreleased
 
+- An update is no longer refused for a path the home's table lacks. The table now names the memo folder (`data/memo`) and a session's
+  start record (`run/sessions/*.agent`), a path still unnamed is said (the start's log, `daoris home`, the proof's `strays`) and never
+  refuses, and a build is refused for a finding only where it would break the new build: an unreadable record or binding, a missing
+  bound workflow, an account the new build no longer lists, and not one the running build reports of the home too. `daoris update` of a
+  build asked for now says a refusal and its words; a close that does not take within five minutes is given up, and a cancel said
+  meanwhile is read at once, so the desktop takes asks again instead of answering "Daoris is updating".
 - An ask or a quest can be given a class, urgent, high, normal or low, with `daoris priority <ask|quest> <class> --why "…"`, an urgent
   one with an end (`--until`, else a day) and at most two in a workspace at once; each change is kept on this machine with its why and
   who set it, and the id alone says the class standing. Checks waiting for the machine's check slots now go by their quest's class
@@ -38,7 +44,10 @@ with the version and date at release.
   ever read; a process of another program at the same path is never touched, and a process started before the record was kept is not named.
 - Each agent account has the person's on/off switch: `daoris agent account off <agent> <account>` (and `on`), or *Switch off* in Agents → the
   agent's page → Accounts. A switched-off account stays signed in and is read as before, shows as off in the window and in `daoris agent list`,
-  and gets no session started on it and none moved to it; a session already on it goes on to its turn's end and is moved at the next. It is
+  and gets no session started on it and none moved to it; a session already on it goes on to its turn's end and is then moved to another
+  ready account of its agent where there is one (a conversation at its turn's end, whatever the account has used, so one idle when you
+  switch the account off is moved at the end of its next turn; a resumed session by the walk). The window
+  says *off, by you* wherever it names the account, dims its usage, and says the next start passes it because it is off. It is
   the same record for Claude Code, Codex and every other agent, kept in `accounts.json` beside the account's name, and only your own press
   writes it (a session's terminal is refused), as a sign-in is yours.
 - A place's Settings shows its risk as an act table (*Acts and who answers*, in English and 中文): per kind of act its class, where the rule comes from, who answers by the cast and the last seven days' passes and asks, `policy.change` locked, and the waits a change would open or release before you save it. `daoris settings risk` prints the same table and `daoris settings risk set <place> <act> none|role|owner` sets a row from your own terminal at the revision it read (an agent's `set` is a proposal; `propose` is gone); `why` names the rule each verdict stood on. The canon's rules 1 and 3 now read the risk policy.

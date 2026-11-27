@@ -35,7 +35,7 @@ public static class HomeHistory
         HomeEntry.Usage, HomeEntry.RegistryFollowed, HomeEntry.Update, HomeEntry.Knowledge, HomeEntry.DesktopDb, HomeEntry.Memory,
         HomeEntry.Setup, HomeEntry.Workflows, HomeEntry.ConfiguredAccess, HomeEntry.BrowserSettings, HomeEntry.BrowserFavorites,
         HomeEntry.HomeId, HomeEntry.UsageHistory, HomeEntry.CheckBudgets, HomeEntry.GitIdentities, HomeEntry.AgentOffers,
-        HomeEntry.ActFiles, HomeEntry.LastBuild, HomeEntry.TerminalActs, HomeEntry.UxTrail,
+        HomeEntry.ActFiles, HomeEntry.LastBuild, HomeEntry.TerminalActs, HomeEntry.UxTrail, HomeEntry.Memo,
         HomeEntry.Keys, HomeEntry.Remotes, HomeEntry.AgentHomes, HomeEntry.BrowserEngine, HomeEntry.BrowserEdge, HomeEntry.EdgeCookies,
         HomeEntry.GitKeys, HomeEntry.GitTokens, HomeEntry.PluginPrivate, HomeEntry.GitSshConfig, HomeEntry.GitKnownHosts, HomeEntry.GitConfig,
         HomeEntry.Window, HomeEntry.DepsSecret, HomeEntry.Landings, HomeEntry.SessionBranches, HomeEntry.PlaceReceipts,
@@ -43,7 +43,7 @@ public static class HomeHistory
         HomeEntry.TreeFiles, HomeEntry.Places, HomeEntry.Plans, HomeEntry.Evidence,
         HomeEntry.Toolchain, HomeEntry.ToolVersions, HomeEntry.Bin,
         HomeEntry.HomeLease, HomeEntry.Running, HomeEntry.Locks, HomeEntry.Spawn, HomeEntry.Starts, HomeEntry.Hooks,
-        HomeEntry.Probing, HomeEntry.SessionPids, HomeEntry.Requests, HomeEntry.EdgeRecord, HomeEntry.StopAsk, HomeEntry.Pipe,
+        HomeEntry.Probing, HomeEntry.SessionPids, HomeEntry.SessionStarts, HomeEntry.Requests, HomeEntry.EdgeRecord, HomeEntry.StopAsk, HomeEntry.Pipe,
         HomeEntry.GitHeld, HomeEntry.GitGrants, HomeEntry.GitUsed, HomeEntry.GitAsks, HomeEntry.GitCheckouts, HomeEntry.GitLibrary,
         HomeEntry.GitLibraryLeases, HomeEntry.GitHome, HomeEntry.GitSessions, HomeEntry.ClockMark, HomeEntry.Logs,
     ];

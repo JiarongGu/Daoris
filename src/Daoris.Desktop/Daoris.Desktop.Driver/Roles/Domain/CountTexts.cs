@@ -113,6 +113,7 @@ public static class CountTexts
         [HandOverWhy.Limit] = "moved on at a limit",
         [HandOverWhy.Agent] = "handed over at its agent's ask",
         [HandOverWhy.Curve] = "moved on by its account's curve",
+        [HandOverWhy.Off] = "moved on as its account was switched off",
         [HandOverWhy.Resume] = "moved on from a lost conversation",
         [HandOverWhy.CarryOn] = "carried on after a cut-off",
         [HandOverWhy.Retry] = "retried",

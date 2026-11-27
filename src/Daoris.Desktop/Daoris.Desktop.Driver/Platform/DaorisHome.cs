@@ -328,6 +328,7 @@ public sealed record HomeEntry(string Name, HomeCategory Category, string New, p
     public static readonly HomeEntry TerminalActs = new("terminal-acts", HomeCategory.Data, "data/terminal-acts.json");
     public static readonly HomeEntry UxTrail = new("ux-trail", HomeCategory.Data, "data/ux-trail");
     public static readonly HomeEntry Priority = new("priority", HomeCategory.Data, "data/priority.json");
+    public static readonly HomeEntry Memo = new("memo", HomeCategory.Data, "data/memo");
     public static readonly HomeEntry Keys = new("keys", HomeCategory.Profiles, "profiles/keys.json");
     public static readonly HomeEntry Remotes = new("remotes", HomeCategory.Profiles, "profiles/remotes.json");
     public static readonly HomeEntry AgentHomes = new("agent-homes", HomeCategory.Profiles, "profiles/agents/*/*");
@@ -376,6 +377,7 @@ public sealed record HomeEntry(string Name, HomeCategory Category, string New, p
     public static readonly HomeEntry Hooks = new("hooks", HomeCategory.Run, "run/hooks");
     public static readonly HomeEntry Probing = new("probing", HomeCategory.Run, "run/probing");
     public static readonly HomeEntry SessionPids = new("session-pids", HomeCategory.Run, "run/sessions/*.pid");
+    public static readonly HomeEntry SessionStarts = new("session-starts", HomeCategory.Run, "run/sessions/*.agent");
     public static readonly HomeEntry Requests = new("requests", HomeCategory.Run, "run/requests");
     public static readonly HomeEntry EdgeRecord = new("edge-record", HomeCategory.Run, "run/edge.json");
     public static readonly HomeEntry StopAsk = new("stop-ask", HomeCategory.Run, "run/stop-ask.json");
@@ -400,13 +402,13 @@ public sealed record HomeEntry(string Name, HomeCategory Category, string New, p
         Landings, SessionBranches, LinesMoved, OverlapsTold, RegistryFollowed, Abandoned, Update, Knowledge, DesktopDb, Memory, Sessions, Helpers, Partners, Checks, Handed, Setup,
         Workflows, ConfiguredAccess, OpinionGates, OpinionDues, BrowserSettings, BrowserFavorites, HomeId, Brainstorms,
         UsageHistory, Keeping, Notices, CheckBudgets, GitIdentities, AgentOffers, PipeWaiting, ActFiles, PlaceReceipts, StewardDesk,
-        LastBuild, TerminalActs, UxTrail, Priority,
+        LastBuild, TerminalActs, UxTrail, Priority, Memo,
         Keys, Remotes, AgentHomes, BrowserEngine, BrowserEdge, EdgeCookies, GitKeys, GitTokens, PluginPrivate, GitSshConfig, GitKnownHosts, GitConfig, Window, PipeSent,
         DepsSecret,
         Trees, HelpRoom, HelpRooms, Intake, OpinionPackets, QuestFiles, AskFiles, SessionFiles, Proof, UsageRead, BrainstormRooms, RoleRooms,
         Deps, TreeFiles, Places, Plans, Evidence,
         Toolchain, ToolVersions, Bin,
-        HomeLease, Running, Locks, Spawn, Starts, Hooks, Probing, SessionPids, Requests, EdgeRecord, StopAsk, Pipe,
+        HomeLease, Running, Locks, Spawn, Starts, Hooks, Probing, SessionPids, SessionStarts, Requests, EdgeRecord, StopAsk, Pipe,
         GitHeld, GitGrants, GitUsed, GitAsks, GitCheckouts, GitLibrary, GitLibraryLeases, GitHome, GitSessions, ClockMark, Logs,
     ];
 

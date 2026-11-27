@@ -312,8 +312,9 @@ public static class CourseDecision
         if (!head.Conversation || head.AskDaoris || head.Profile is null) return Held(facts, CourseHoldWhy.Stays);
         if (facts.Boundary == CourseBoundary.TurnRunning) return Held(facts, CourseHoldWhy.Stays);
         if (facts.Rules?.SwitchAdmits != true) return Held(facts, CourseHoldWhy.SwitchOff);
-        if (facts.Rules.CurveAccount is not { } account) return Held(facts, CourseHoldWhy.Stays);
-        return Moved(facts, CourseWhen.TurnEnd, new CourseWhere(CourseAccountSource.Pick, head.Role, head.Choice, account), CourseFromWhy.Curve, CourseFromBy.Daoris, Ids([]));
+        var (account, why) = facts.Rules.OffAccount is { } off ? (off, CourseFromWhy.Off) : (facts.Rules.CurveAccount, CourseFromWhy.Curve);
+        if (account is null) return Held(facts, CourseHoldWhy.Stays);
+        return Moved(facts, CourseWhen.TurnEnd, new CourseWhere(CourseAccountSource.Pick, head.Role, head.Choice, account), why, CourseFromBy.Daoris, Ids([]));
     }
 
     // A hand-over pressed or asked. An agent's ask goes through the hand-over rule's consent first (DriverHandOvers.cs:

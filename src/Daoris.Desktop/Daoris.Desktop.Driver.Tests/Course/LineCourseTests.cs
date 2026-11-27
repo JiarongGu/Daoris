@@ -114,8 +114,8 @@ public sealed class LineCourseTests
     private static CourseFacts Pressed(CourseFacts facts, CoursePressKind kind, string? agent = null, string? account = null, CourseFromWhy? why = null, CourseFromBy? by = null, string? intent = null) =>
         facts with { Press = new CoursePress(kind, agent, account, intent, why, by) };
 
-    private static CourseFacts Ruled(CourseFacts facts, bool admits = false, bool asks = false, bool switches = false, string? curve = null, bool runner = false) =>
-        facts with { Rules = new CourseRules(admits, switches, curve, HandOverAsks: asks, Runner: runner) };
+    private static CourseFacts Ruled(CourseFacts facts, bool admits = false, bool asks = false, bool switches = false, string? curve = null, bool runner = false, string? off = null) =>
+        facts with { Rules = new CourseRules(admits, switches, curve, HandOverAsks: asks, Runner: runner, OffAccount: off) };
 
     private static CourseFacts Later(CourseFacts facts, string agent, string choice) =>
         facts with { Account = (facts.Account ?? new CourseAccount()) with { Later = new CourseLater(agent, choice) } };
@@ -333,6 +333,9 @@ public sealed class LineCourseTests
         ["G-09"] = new(T.TurnEnd, Ruled(Live(Chat()) with { Boundary = CourseBoundary.Reserved }, switches: true, curve: "account-2")),
         ["G-10"] = new(T.TurnEnd, Ruled(Live(Chat()), switches: true, curve: "account-2")),
         ["G-11"] = new(T.TurnEnd, Ruled(Live(Help()), switches: true, curve: "account-2")),
+        ["G-12"] = new(T.TurnEnd, Ruled(Live(Chat()), switches: true, off: "account-3")),
+        ["G-13"] = new(T.TurnEnd, Ruled(Live(Chat()), switches: true, curve: "account-2", off: "account-3")),
+        ["G-14"] = new(T.TurnEnd, Ruled(Live(Chat()), off: "account-3")),
 
         // ——— H: a conversation's hand-over, with its consent before an agent's ask.
         ["H-01"] = new(T.HandOver, Pressed(Live(Chat(P())), CoursePressKind.HandOver, "codex-acp", "work", CourseFromWhy.Limit, CourseFromBy.Person)),
@@ -507,7 +510,7 @@ public sealed class LineCourseTests
                 case "Left":
                 {
                     var parts = line.Split(' ');
-                    // A case left out as a reading (R) names the fact it reads, one of the course's own, so the letter alone is no excuse.
+                    // A case left out as a reading (R) names the fact it reads, so the letter alone is no excuse.
                     Assert.True(parts is ["out", _, not "R"] or ["out", _, "R", _], $"a left-out line reads `out Suite.Method why`, and `out Suite.Method R <fact>` for a reading: {line}");
                     if (parts is [_, _, "R", var fact])
                     {
@@ -645,7 +648,6 @@ public sealed class LineCourseTests
         Assert.True(failures.Count == 0, string.Join("\n", failures));
     }
 
-    /// <summary>What a table's rows, left-out cases and suites say against the cases the suites have, each failure as a sentence.</summary>
     private static List<string> CaseFailures(
         IEnumerable<Row> rows, IReadOnlyDictionary<string, string> leftOutCases, IReadOnlyCollection<string> suites,
         IReadOnlyDictionary<string, string> reasons, Func<string, IReadOnlyList<string>> methodsOf)
@@ -680,7 +682,6 @@ public sealed class LineCourseTests
         return failures;
     }
 
-    /// <summary>A case added to a listed suite and placed nowhere fails the census; one placed as left out (or ported) passes, however many the suite has.</summary>
     [Fact]
     public void A_case_added_to_a_listed_suite_fails_until_it_is_placed_and_the_count_of_cases_is_no_rule()
     {

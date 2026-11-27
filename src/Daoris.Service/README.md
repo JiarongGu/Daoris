@@ -271,7 +271,7 @@ no Daoris home, files are refused, and links still travel.
 The service's home table (`Platform/DaorisHome.cs`, a twin of the driver's and the CLI's) names every place a home holds,
 each in a category folder (`data/`, `profiles/`, `work/`, `cache/`, `run/`, `logs/`) of the Daoris folder, its older flat place
 read where that holds it and a place found in both refused (`HomeEntryTwiceException`, D172); a reader asks the table for an
-entry and never joins a path. Below, a place is named by its entry (`sessions`, `helpers`, `proposals`) or by its category
+entry and never joins a path (the table also names the driver's memo folder, `data/memo`, and the session start records, `run/sessions/*.agent`, which only the desktop writes). Below, a place is named by its entry (`sessions`, `helpers`, `proposals`) or by its category
 folder. The git identities are among them (D198): the list in `data/`, the keys, ssh files and git file under `profiles/git/`, and
 what the doors used under `run/git/`. The service reads none of them; it names them so a census of the home counts them.
 The desktop's own store, `data/desktop.db` (FOUNDATION1 z-i, D212), is another of them: the driver library alone opens it, the service keeps its own store and never opens the desktop's, and the two pin the same SQLite package versions (a twins row).

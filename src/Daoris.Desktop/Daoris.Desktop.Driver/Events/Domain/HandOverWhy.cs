@@ -22,6 +22,9 @@ public static class HandOverWhy
     /// <remarks>A box takes it, and declares its coded line; the automatic move asks for it.</remarks>
     public const string Curve = "curve";
 
+    /// <summary>The person switched the account it ran on off, and Daoris moved it at its turn's end. A reason a record continues another by.</summary>
+    public const string Off = "off";
+
     /// <summary>
     /// Its own conversation is proven lost, and it goes on by itself in a new part. A reason a record continues another by; no box
     /// takes it.
@@ -67,6 +70,7 @@ public static class HandOverWhy
         Limit => "the account it ran on reached its limit",
         Agent => "the agent asked for it",
         Curve => "the account it ran on was over the usage curve the person's switching setting draws",
+        Off => "the person switched the account it ran on off",
         Resume => "its own conversation was lost, so it could not go on in it",
         CarryOn => "it stopped before its work was done",
         Retry => "its own conversation could not be resumed",
@@ -86,6 +90,7 @@ public static class HandOverWhy
         Limit => "its account reached its limit",
         Agent => "the agent asked for it",
         Curve => "its account was over its usage curve",
+        Off => "its account was switched off",
         Resume => "its own conversation was lost",
         CarryOn => "it stopped before its work was done",
         Retry => "its own conversation could not be resumed",
@@ -103,6 +108,9 @@ public static class HandOverWhy
     /// </summary>
     public static bool Known(string? why) => why is Press or Near or Limit or Agent or Curve;
 
+    /// <summary>Whether a part this reason began is one just handed on: an agent's ask waits a turn after it.</summary>
+    public static bool Handed(string? why) => Known(why) || why is Off;
+
     /// <summary>Whether a word is one of the reasons a record continues another by: each has its <c>note.handed.why.*</c> line.</summary>
-    public static bool Continues(string? why) => Known(why) || why is Resume or CarryOn or Retry or NotOffered or Transient or Failed or Quiet or Budget;
+    public static bool Continues(string? why) => Known(why) || why is Off or Resume or CarryOn or Retry or NotOffered or Transient or Failed or Quiet or Budget;
 }

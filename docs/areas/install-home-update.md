@@ -69,8 +69,10 @@ Each type is in a file of its name; `docs/index/README.md` says where a seam, ve
 12. The Daoris folder is found from the home: a folder holding the marker; a `data` folder whose parent holds it; else the home
     itself. Folders "beside the home" (`app/bin/`, plugin offers, the tool list) are read in the Daoris folder. (from D172)
 13. Every home file is an entry of `HomeEntry`: a name, a category, a place and the names it holds, where it is known by them. The
-    three twins hold the same rows in the same order. A reader asks `DaorisHome.Entry` by name and never joins a home path by hand.
-    (from D172, D323)
+    three twins hold the same rows in the same order. A reader asks `DaorisHome.Entry` by name and never joins a home path by hand:
+    `HomeJoinsCensusTests` fails for a desktop source that joins a literal onto the home (`Path.Combine(home, "memo")`), so a writer's
+    place is a row before it is written (the memo folder `data/memo` and a session's start record `run/sessions/*.agent` were not,
+    HOMEPROOF2). (from D172, D323)
 14. An entry has one place, and is read there. "Holds" (an entry known by its names) is one of its named files being there. (from D172, D323)
 15. Asking for an entry's place makes its category's folder. A home laid out in an earlier build is purged, not read. (from D172, D323)
 16. `data/` holds no secret: a file with a key is a sign-in and lives in `profiles/`. (from D172, D323)
@@ -204,7 +206,11 @@ Each type is in a file of its name; `docs/index/README.md` says where a seam, ve
     version while a delivery is unresolved, and below the first build that saved a workflow whose step names a role other than its
     kind's own (`workflows`, `WorkflowRolesSince`); a role equal to a step kind's own is never written, so it closes nothing. `UpdateRefusal` is that one check, which `daoris update --now` asks too: refused, it says
     the sentence, names the deliveries, writes the word and exits 1. A refusal closes nothing, is said again at every look, and holds
-    for its build until the person's next word, from the banner, Settings or the terminal, which checks again. (from D139, D215)
+    for its build until the person's next word, from the banner, Settings or the terminal, which checks again. A bare `daoris update`
+    of a build asked for now asks the same refusal and says it with its words, never "installed now". The presses a close holds go on
+    the moment the update is refused, a newer word (a cancel) is said, or the close has not taken within `InstallUpdater.CloseBound`
+    (five minutes, past the launcher's three: refused as `close`, kept until the next word); a word said while the build is being
+    checked withdraws the close before it is made. (from D139, D215, HOMEPROOF2)
 41. *Update now* is the person closing Daoris. It does not wait; driven sessions are recorded stopped and carried on at the
     next start. (from D139)
 42. The application starts `Daoris.exe --update --after <pid>` followed by its own start arguments, keeping any debug port
@@ -231,14 +237,18 @@ Each type is in a file of its name; `docs/index/README.md` says where a seam, ve
     a command line. (from D94, D139)
 47a. A staged build starts clean on a copy of the home before it is swapped in (`HomeProbe`, the last of `UpdateRefusal.Of`'s checks, asked at the
     close by the application's `InstallUpdater.Proof` and by `daoris update --now`, so both answer one sentence). The running build reads the home
-    (`HomeProof.Read`, over Workflows' `HomeProofReading` installed into Install's port: the agent accounts it lists, the sessions' records and runs' bindings it meets, each workflow's file, the runs that bind a
-    workflow the home does not hold, and the paths no entry names), copies it into `update/probe/<id>/` (the home's own folder whole, a file over 64 MB
+    (`HomeProof.Read`, over Workflows' `HomeProofReading` installed into Install's port: the agent accounts it lists, the sessions' records and runs' bindings it meets, each workflow's file and the runs that bind a
+    workflow the home does not hold, which are its `problems`, and the paths no entry names, its `strays`), copies it into `update/probe/<id>/` (the home's own folder whole, a file over 64 MB
     as an empty one; every other folder of the Daoris folder as names to five levels, empty, with no link followed; the source is read and never
     written), and has the staged build's own driver read the copy (`daoris home proof`, one line of JSON; routed before the lease and the machine log,
     so it writes nothing). The swap is refused with `home` unless every account the running build lists is still listed and the staged build's report
-    holds no problem; a build that gives no readable report (no driver, no such verb, past two minutes, a line without the report's fields) is refused as one that found the home amiss,
+    holds no problem the running build does not report of the home too (`HomeProbe.Novel`: what the running build reads as broken breaks
+    nothing the staged one starts on); a build that gives no readable report (no driver, no such verb, past two minutes, a line without the report's fields) is refused as one that found the home amiss,
     a build older than the verb too, whichever way the version runs: waving through the unread build would let past the one the proof exists for. A path no entry
-    names is a problem whoever reads it (the row's own words, HOMEORPHAN1), and `daoris home` lists them; a run on Current and a run the bind held
+    names is said, never refused: the report lists it apart (`strays`), the start's log and `daoris home` list it, and the accounts a
+    stray place hides are still caught by the account comparison (HOMEPROOF2, the row HOMEORPHAN1 first read it as a problem); the report's `accounts` and
+    `problems` are the fields the running build's own update reads of a staged one, kept so an earlier build's proof still reads a newer
+    build's; a run on Current and a run the bind held
     (its workflow not saved or unread) are records the product writes and are none. The proof runs off the caller's thread, since *Update now*'s SET would otherwise freeze the
     window for the copy and the staged build's reading; each folder outside the home's own is named in the copy within a budget of its own.
     A refusal closes nothing, this build keeps running and the sentence says why; it is kept as rule 40's is. The copy is removed when the proof ends,
@@ -294,7 +304,7 @@ Each type is in a file of its name; `docs/index/README.md` says where a seam, ve
 54. What is history and what is configuration is `HomeHistory`'s lists, one side or the other for every `HomeEntry` and every table
     of the desktop store and the service store (`HomePurgeTests` and `HomePurgeProcessTests` fail a new one named on neither), and the
     place a new one is classified when it is added. Where it was unclear it is kept, and the table says so. (from D322)
-55. The home names every path in it. `HomeStrays` walks the Daoris folder down the folders an entry's place passes through, bounded and
+55. The home names every path in it (`memo` and `session-starts` included: what Daoris writes of its own accord is a row). `HomeStrays` walks the Daoris folder down the folders an entry's place passes through, bounded and
     never into a junction, and names each path no `HomeEntry` matches (an entry's pattern covers its children; the install's `app/`,
     marker and `purged/` are the install's), with its bytes. A start says each in the machine log (`home.stray`), a bare `daoris home` (the
     group is `Bare`, so the tree routes it to the command, not the usage; `HomeStraysTests`) lists them under *Not in the table* after each

@@ -55,7 +55,7 @@ internal sealed class GitObjectMemo
 
     private GitObjectMemo(string folder)
     {
-        _path = Path.Combine(folder, "memo", "git-objects.json");
+        _path = DaorisHome.Entry(folder, HomeEntry.Memo, "git-objects.json");
         Load();
     }
 

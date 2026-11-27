@@ -2,7 +2,7 @@ using System.Runtime.CompilerServices;
 
 namespace Daoris.Driver;
 
-/// <summary>The build's reading of a home (<see cref="HomeProof"/>): accounts, sessions' records, runs' bindings, workflows and strays.</summary>
+/// <summary>The build's reading of a home (<see cref="HomeProof"/>): accounts, sessions' records, runs' bindings and workflows, with the strays said apart.</summary>
 internal sealed class HomeProofReading : IHomeProofReading
 {
     [ModuleInitializer]
@@ -19,12 +19,8 @@ internal sealed class HomeProofReading : IHomeProofReading
 
         var sessions = Sessions(home, problems);
         var runs = Runs(home, problems);
-        foreach (var stray in HomeStrays.Read(home).Paths)
-        {
-            problems.Add($"`{stray.Path}` names no entry of the home's table, so no reader finds what is there");
-        }
-
-        return new(accounts, sessions, runs, problems);
+        var strays = HomeStrays.Read(home).Paths.Select(stray => stray.Path).ToList();
+        return new(accounts, sessions, runs, problems, strays);
     }
 
     private static int Sessions(string home, List<string> problems)

@@ -24,6 +24,8 @@ export function namer(t: ReturnType<typeof useTranslation>['t'], harnesses: Tool
     if (!profile) return (tool ? ownWho(tool) : null) ?? t('harness.own');
     const row = tool?.accounts.find((account) => account.name === profile);
     // Told apart from another sign-in of its email by its organisation, else its plan.
-    return row ? accountLabel(row, tool) : profile;
+    if (!row) return profile;
+    // An account the person switched off says so wherever it is named: a session's account, a chain, a card.
+    return row.off ? t('harness.account.named', { account: accountLabel(row, tool) }) : accountLabel(row, tool);
   };
 }

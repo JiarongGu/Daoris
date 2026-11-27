@@ -43,7 +43,7 @@
   "harness.next.held.refused": "{{account}} 被其服务商拒绝",
   "harness.next.held.keyRefused": "{{account}} 的密钥被拒绝，需要换上新的 API 密钥",
   "harness.next.held.signedOut": "{{account}} 未登录",
-  "harness.next.held.off": "{{account}} 已停用",
+  "harness.next.held.off": "{{account}} 已被你停用，下一次启动会跳过它",
   "harness.next.held.kept": "{{account}} 留作对话",
   "harness.next.held.near": "{{account}} 已达上限、正在使用用量额度或用量超出曲线",
   "harness.next.held.nearReached": "{{account}} 已达到{{window}}上限",

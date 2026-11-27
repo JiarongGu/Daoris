@@ -81,6 +81,7 @@ public sealed class HandOverAskJudgeTests
 
         Assert.Equal(HandOverAskVerdict.Refuse(HandOverAskWhy.JustHanded), Judge(handed, HandOverRules.On, turnSince: false));
         Assert.Equal(HandOverAskVerdict.Refuse(HandOverAskWhy.JustHanded), Judge(handed with { FromWhy = HandOverWhy.Press }, HandOverRules.Ask, turnSince: false));
+        Assert.Equal(HandOverAskVerdict.Refuse(HandOverAskWhy.JustHanded), Judge(handed with { FromWhy = HandOverWhy.Off, FromBy = HandOverBy.Daoris }, HandOverRules.On, turnSince: false));
         Assert.Equal(HandOverAskVerdict.Go("codex-acp"), Judge(handed, HandOverRules.On, turnSince: true));
         Assert.Equal(HandOverAskVerdict.Go("codex-acp"), Judge(Record() with { From = "s0", FromWhy = "carry-on" }, HandOverRules.On, turnSince: false));
     }

@@ -55,6 +55,7 @@ export const HANDED_REASONS: Readonly<Record<string, { key: string; values: read
   agent: { key: 'note.handed.why.agent', values: [] },
   // Daoris moved it by the usage curve.
   curve: { key: 'note.handed.why.curve', values: [] },
+  off: { key: 'note.handed.why.off', values: [] },
   // Every other continuation names its link: its conversation lost, a carry-on, a driven record's fallback.
   resume: { key: 'note.handed.why.resume', values: [] },
   'carry-on': { key: 'note.handed.why.carry-on', values: [] },

@@ -33,6 +33,23 @@ describe('the roster’s one namer', () => {
     expect(nameOf('claude-code', 'acct-0badc0de')).toBe(i18n.t('harness.profile.keyName', { handle: 'sk-…a1b2' }));
   });
 
+  it('says an account the person switched off as off, by you, wherever a card names it', async () => {
+    const off = namer(i18n.t.bind(i18n), [{
+      door: 'claude-code', present: true,
+      profiles: [
+        { name: 'acct-3f9c1a2b', displayName: 'work', home: 'h1', login: 'in', account: 'you@work.example', off: true },
+        { name: 'acct-77aa00ff', displayName: 'spare', home: 'h2', login: 'in', account: 'spare@example.invalid' },
+      ],
+    }, { door: 'claude-code-acp', present: true, accountOf: 'claude-code' }]);
+
+    expect(off('claude-code', 'acct-3f9c1a2b')).toBe('work (off, by you)');
+    expect(off('claude-code-acp', 'acct-3f9c1a2b')).toBe('work (off, by you)');
+    expect(off('claude-code', 'acct-77aa00ff')).toBe('spare');
+    await i18n.changeLanguage('zh');
+    expect(off('claude-code', 'acct-3f9c1a2b')).toBe('work（已被你停用）');
+    await i18n.changeLanguage('en');
+  });
+
   it('reads a door’s accounts as its owner’s, and says an account no roster holds by its id', () => {
     expect(nameOf('claude-code-acp', 'acct-3f9c1a2b')).toBe('work');
     expect(nameOf('claude-code', 'acct-gone0000')).toBe('acct-gone0000');

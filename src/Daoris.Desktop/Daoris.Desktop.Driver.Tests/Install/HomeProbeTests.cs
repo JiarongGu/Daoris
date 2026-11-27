@@ -87,15 +87,52 @@ public sealed class HomeProbeTests : IDisposable
     }
 
     [Fact]
-    public void A_build_that_reads_a_stray_in_the_copy_is_refused_naming_it()
+    public void A_path_no_entry_names_is_not_a_refusal()
     {
-        // An install holding accounts at a place the table no longer names: the reading the account fix lacked.
-        Put("data/harnesses/claude-code/old-acct/state.json", "{}");
+        Put("check");
+        Put("data/unnamed/thing.bin", "x");
 
-        var refusal = HomeProbe.Refused(_install, Home, "0.0.9", SameReader);
+        Assert.Null(HomeProbe.Refused(_install, Home, "0.0.9", SameReader));
+    }
+
+    [Fact]
+    public void A_build_that_no_longer_lists_an_account_held_where_the_table_dropped_it_is_still_refused()
+    {
+        Account("claude-code", "acct-a");
+
+        var refusal = HomeProbe.Refused(_install, Home, "0.0.9", (_, copy) =>
+            (0, HomeProof.Say(HomeProof.Read(copy) with { Accounts = new Dictionary<string, IReadOnlyList<string>>() })));
+
+        Assert.Contains("claude-code/acct-a", refusal?.Sentence);
+    }
+
+    [Fact]
+    public void A_problem_the_running_build_reports_too_is_not_a_refusal_and_one_only_the_staged_build_finds_is()
+    {
+        Put("data/workflows/broken.json", "{ not json");
+        Assert.Contains(HomeProof.Read(Home).Problems, problem => problem.Contains("broken", StringComparison.Ordinal));
+
+        Assert.Null(HomeProbe.Refused(_install, Home, "0.0.9", SameReader));
+
+        var refusal = HomeProbe.Refused(_install, Home, "0.0.9", (_, copy) =>
+            (0, HomeProof.Say(HomeProof.Read(copy) with { Problems = [.. HomeProof.Read(copy).Problems, "run `q1` binds the workflow `ghost`, which the home does not hold"] })));
 
         Assert.Equal(HomeProbe.Code, refusal?.Code);
-        Assert.Contains("data/harnesses", refusal?.Sentence);
+        Assert.Contains("`q1`", refusal?.Sentence);
+        Assert.DoesNotContain("broken", refusal?.Sentence);
+    }
+
+    [Fact]
+    public void A_problem_that_names_the_copy_s_path_is_the_homes_problem_all_the_same()
+    {
+        var copy = Path.Combine(_install, "update", "staged", "probe", "ab12", "data");
+
+        var novel = HomeProbe.Novel(
+            [$"workflow `a` does not read: cannot open {copy}{Path.DirectorySeparatorChar}a.json", $"session `s-2` does not read: {copy}", "run `q1` binds `ghost`"],
+            [$"workflow `a` does not read: cannot open {Home}{Path.DirectorySeparatorChar}a.json", $"session `s-2` does not read: {Home}"],
+            copy, Home);
+
+        Assert.Equal(["run `q1` binds `ghost`"], novel);
     }
 
     [Fact]
