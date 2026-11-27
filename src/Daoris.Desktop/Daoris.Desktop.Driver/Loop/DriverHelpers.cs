@@ -151,7 +151,12 @@ internal sealed class DriverHelpers(LoopContext context, Driver driver)
                         }
 
                         break;
-                    case HelperVerdict.GoKind when HelperOrder.Held(ask, snapshot):
+                    case HelperVerdict.GoKind when HelperOrder.HoldOf(ask, snapshot) is { } hold:
+                        if (_context.Runs.HoldSaid($"helper/{ask.Id}/{hold.At.UtcTicks}"))
+                        {
+                            events.Add(_context.Said.Wait("helper", $"helper  ask `{ask.Id}` from session `{ask.Asker}` stands aside, {HoldBook.Said(hold)}: it is begun once the hold is lifted"));
+                        }
+
                         break;
                     case HelperVerdict.GoKind when config.Draining:
                         // Judged and left as found, no state written and no slot taken; it goes at the first look that does not drain.

@@ -33,7 +33,7 @@
   "src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Loop/ChatTransientProcessTests.cs": 49364,
   "src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Loop/ChatTurnsTests.cs": 78873,
   "src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Loop/DriverCommandTests.cs": 47920,
-  "src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Loop/HelperLookTests.cs": 82848,
+  "src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Loop/HelperLookTests.cs": 82841,
   "src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Loop/SessionMessagesTickTests.cs": 106956,
   "src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Loop/SessionsOutliveTheirLookTests.cs": 43762,
   "src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Participants/ChildBindingsTests.cs": 42895,

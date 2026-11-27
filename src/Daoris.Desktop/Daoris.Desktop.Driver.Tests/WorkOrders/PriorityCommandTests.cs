@@ -116,6 +116,18 @@ public sealed class PriorityCommandTests : IDisposable
     }
 
     [Fact]
+    public async Task A_chain_s_run_quest_says_the_hold_its_later_quest_holds_it_by_and_the_lift_that_ends_it()
+    {
+        await RunAsync(World(), "second", "hold", "--why", "make room");
+
+        var held = (await RunAsync(World(), "2c0c81fd6f19")).Said;
+        Assert.Contains("held by the person: make room, set on quest #second", held);
+
+        await RunAsync(World(), "2c0c81fd6f19", "lift");
+        Assert.Contains("quest #second is not held", (await RunAsync(World(), "second")).Said);
+    }
+
+    [Fact]
     public async Task The_id_alone_says_a_hold_beside_the_class_and_a_hold_needs_its_why()
     {
         Assert.Equal(2, (await RunAsync(World(), "e27fc2", "hold")).Exit);

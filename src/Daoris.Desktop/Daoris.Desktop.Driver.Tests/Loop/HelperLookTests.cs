@@ -9,9 +9,9 @@ namespace Daoris.Desktop.Driver.Tests;
 /// read, judged and started beside the look; the state names the helper BEFORE its turn; what the helper said (its tool's answer,
 /// else its last words, else nothing) settles the ask; and the answer reaches the asker as a word marked as the helper's, through
 /// the local host's door, refused as the opinion's delivery is refused. The pass itself is a stand-in here (the real one is the
-/// <c>Process</c> half's <c>HelperProcessTests</c>), so nothing starts a process: the fast half.
+/// <c>Process</c> half's <c>HelperProcessTests</c>), so nothing starts a process.
 /// </summary>
-public sealed class HelperLookTests : IDisposable
+public sealed partial class HelperLookTests : IDisposable
 {
     private readonly string _home = Path.Combine(TestHomes.Root, "daoris-helper-look-" + Guid.NewGuid().ToString("N")[..8]);
 

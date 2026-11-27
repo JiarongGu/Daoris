@@ -17,9 +17,15 @@ internal static class HelperOrder
         })];
     }
 
-    /// <summary>Whether the asker's quest or its ask holds its waiting items aside: its ask for a helper is not begun until the hold is lifted.</summary>
-    public static bool Held(HelperAsk ask, Snapshot snapshot) =>
-        snapshot.Priority.Holds.Count > 0 && Of(ask, snapshot) is { } asker && snapshot.Priority.IsHeld(asker.Quest, asker.Ask);
+    /// <summary>The hold that stands the asker's quest or its ask aside, so its ask for a helper is not begun until it is lifted; null where none holds.</summary>
+    public static HoldEvent? HoldOf(HelperAsk ask, Snapshot snapshot)
+    {
+        if (snapshot.Priority.Holds.Count == 0 || Of(ask, snapshot) is not { } asker) return null;
+        var word = HoldBook.Reading(snapshot.Priority.Holds, asker.Quest, asker.Ask);
+        return word is { Held: true } ? word : null;
+    }
+
+    public static bool Held(HelperAsk ask, Snapshot snapshot) => HoldOf(ask, snapshot) is not null;
 
     private static (string Quest, string? Ask)? Of(HelperAsk ask, Snapshot snapshot)
     {

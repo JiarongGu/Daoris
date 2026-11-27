@@ -106,6 +106,7 @@ public sealed class RunningSessions
 
     // The starts an update's drain held that a look has said so of, kept across the looks so each is said once per drain.
     private readonly HashSet<string> _drainHeld = new(StringComparer.Ordinal);
+    private readonly HashSet<string> _holdSaid = new(StringComparer.Ordinal);
 
     /// <summary>
     /// Note that a look says the drain held <paramref name="key"/>: true the first time since the drain began, so the hold is
@@ -114,6 +115,12 @@ public sealed class RunningSessions
     internal bool DrainHeld(string key)
     {
         lock (_gate) return _drainHeld.Add(key);
+    }
+
+    /// <summary>Note that a hold on a waiting item is said: true the first time for that key, which names the hold, so a lift and a new hold say it again.</summary>
+    internal bool HoldSaid(string key)
+    {
+        lock (_gate) return _holdSaid.Add(key);
     }
 
     /// <summary>A look that does not drain (*Not now*, the update installed or cancelled): what the drain held is said again if a later drain holds it.</summary>

@@ -252,7 +252,7 @@ public sealed class IntegrationTransport(string home, IntegrationTransportWorld?
             new IntegrationPromoteAsk(send.Repository, send.Workspace, root, send.Line, config, home) { Tidy = _world.Tidy, Beside = _world.Beside });
 
         HeavyTaken? held = null;
-        if (Gated(store, send, OrderOf()))
+        if (await GatedAsync(store, send, OrderOf(), asks.Replay.Train, ct).ConfigureAwait(false))
         {
             if (HeavySlot.KeyOf(root) is not { } key)
             {
@@ -321,12 +321,22 @@ public sealed class IntegrationTransport(string home, IntegrationTransportWorld?
         }
     }
 
-    /// <summary>Whether the line's next candidate runs gates: its standing candidate's first member's rule, else its first queued request's.</summary>
-    private static bool Gated(IntegrationStore store, IntegrationLineSend send, Func<IReadOnlyList<IntegrationRequest>, IReadOnlyList<IntegrationRequest>> order)
+    /// <summary>Whether the line's next candidate runs gates: its standing candidate's first member's rule, else the request the candidate forms from.</summary>
+    private static async Task<bool> GatedAsync(
+        IntegrationStore store, IntegrationLineSend send, Func<IReadOnlyList<IntegrationRequest>, IReadOnlyList<IntegrationRequest>> order, TrainSelection? train, CancellationToken ct)
     {
-        var first = store.StandingFor(send.Repository, send.Line) is { } standing
-            ? store.Members(standing.Id).OrderBy(member => member.Position).Select(member => store.Request(member.Request)).FirstOrDefault()
-            : order(store.Queued(send.Repository, send.Line)).FirstOrDefault();
+        IntegrationRequest? first;
+        if (store.StandingFor(send.Repository, send.Line) is { } standing)
+        {
+            first = store.Members(standing.Id).OrderBy(member => member.Position).Select(member => store.Request(member.Request)).FirstOrDefault();
+        }
+        else
+        {
+            var queued = store.Queued(send.Repository, send.Line);
+            if (train is not null && queued.Count > 0) queued = await train.ReadyAsync(queued, ct).ConfigureAwait(false);
+            first = order(queued).FirstOrDefault();
+        }
+
         return first?.Policy.Gates == LandingIntegrate.Declared;
     }
 

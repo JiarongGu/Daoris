@@ -127,11 +127,13 @@ public static class PriorityCommand
     /// <summary>Whether an ask's or a quest's waiting items stand aside, and whose word says so: <c>quest #q is held by the person: why.</c></summary>
     public static string HoldStanding(PriorityTarget target, IReadOnlyList<HoldEvent> holds)
     {
-        var ask = target.Ask;
-        var word = HoldBook.Standing(holds, target.Target, target.Id) ?? (string.IsNullOrEmpty(ask) ? null : HoldBook.Standing(holds, PriorityBook.Ask, ask));
+        var word = target.Target == PriorityBook.Quest
+            ? HoldBook.Reading(holds, target.Run ?? target.Id, target.Ask)
+            : HoldBook.Standing(holds, PriorityBook.Ask, target.Id);
+        var elsewhere = word is { Target: PriorityBook.Quest } other && !string.Equals(other.Id, target.Id, StringComparison.OrdinalIgnoreCase) ? $", set on quest #{word.Id}" : "";
         return word is { Held: true } held
-            ? $"{target.Target} #{target.Id} is {HoldBook.Said(held)}."
-            : word is null ? NotHeld(target) : $"{NotHeld(target)[..^1]}, lifted by {word.By}.";
+            ? $"{target.Target} #{target.Id} is {HoldBook.Said(held)}{elsewhere}."
+            : word is null ? NotHeld(target) : $"{NotHeld(target)[..^1]}, lifted by {word.By}{elsewhere}.";
     }
 
     private static string NotHeld(PriorityTarget target) => $"{target.Target} #{target.Id} is not held.";
