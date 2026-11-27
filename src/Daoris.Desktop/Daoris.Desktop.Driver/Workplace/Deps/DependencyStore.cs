@@ -9,8 +9,8 @@ internal sealed record StoreEntry(string Key, long Bytes, DateTimeOffset Placed)
 /// <summary>
 /// Daoris's dependency store, the home's <c>work/deps/</c>: one entry per key, each a read-only copy of a folder Daoris's own install
 /// made and sealed, with its manifest beside it. It is filled only by sealing, copied and never moved, so a package manager's hard links
-/// into its own store (pnpm's) never share a file record, or the read-only mark, with an entry; and it is placed into a tree only by
-/// copy, never a link or a junction, so a write in one tree or a manager's clean never reaches another tree or the entry.
+/// into its own store (pnpm's) never share a file record with an entry; and it is placed into a tree by a hard link for each file
+/// (<see cref="FileLinks"/>; the top's files and any a volume refuses are copied), read-only, so a write in place fails and a clean never reaches the entry.
 /// </summary>
 internal static class DependencyStore
 {
@@ -94,7 +94,7 @@ internal static class DependencyStore
 
     /// <summary>
     /// <paramref name="key"/>'s entry copied into <paramref name="folder"/> of <paramref name="tree"/>, an absent folder: made under a
-    /// name of its own beside it, eight files at once, the read-only mark cleared, each link made again inside the tree, the files at
+    /// name of its own beside it, eight files at once, each file linked to the entry's, each link made again inside the tree, the files at
     /// the folder's top (a manager's own record of its install) written last and stamped now, then renamed into place. The copy's
     /// manifest, each file's write time its own, or null where it placed nothing: a source missing or of another size evicts the entry.
     /// </summary>
@@ -121,7 +121,7 @@ internal static class DependencyStore
             Directory.CreateDirectory(making);
             foreach (var each in manifest.Folders) Directory.CreateDirectory(Path.Combine(making, each));
             var top = manifest.Files.Where(each => !each.Path.Contains('/')).ToList();
-            AtOnceEach(manifest.Files.Except(top), ct, each => Copy(source, making, each));
+            AtOnceEach(manifest.Files.Except(top), ct, each => Link(source, making, each));
             ct.ThrowIfCancellationRequested();
             foreach (var link in manifest.Links)
             {
@@ -165,6 +165,16 @@ internal static class DependencyStore
         {
             ExceptionDispatchInfo.Capture(error.InnerExceptions[0]).Throw();
         }
+    }
+
+    /// <summary>A file linked under a second name, its read-only mark made again first (a clean clears it on the shared record); copied where refused.</summary>
+    private static void Link(string source, string into, ManifestFile each)
+    {
+        var from = Path.Combine(source, each.Path);
+        Copying.Value?.Invoke(from);
+        var attributes = File.GetAttributes(from);
+        if (!attributes.HasFlag(FileAttributes.ReadOnly)) File.SetAttributes(from, attributes | FileAttributes.ReadOnly);
+        if (!FileLinks.Make(Path.Combine(into, each.Path), from)) Copy(source, into, each);
     }
 
     private static void Copy(string source, string into, ManifestFile each)
