@@ -41,6 +41,7 @@ public static class OpinionInstruction
         Asked(text, packet);
         if (packet.Rechecks is { } recheck) FirstReading(text, recheck);
         Rules(text, packet.Rules);
+        if (packet.Verification is { } verification) Verification(text, verification);
         May(text, packet.Verify);
         Say(text, packet.Minutes, packet.Rechecks);
         return text.ToString();
@@ -211,6 +212,28 @@ public static class OpinionInstruction
         if (rules.Decisions is { } decisions) records.Add($"Its decisions are recorded in `{decisions}`.");
         if (rules.Gates is { } gates) records.Add($"What it declares safe to run is in `{gates}`.");
         if (records.Count > 0) text.Append('\n').Append(string.Join(" ", records)).Append('\n');
+    }
+
+    private const int WideShown = 12;
+
+    /// <summary>The repository's declared verification rule, so a reviewer asks for no run it gives no reason for.</summary>
+    private static void Verification(StringBuilder text, OpinionVerification rule)
+    {
+        text.Append("\n## The verification this repository sets\n\n")
+            .Append($"This repository keeps one task's verification to {rule.BudgetMinutes} minutes of wall time, scoped to what the change's paths reach. ")
+            .Append("A full or end-to-end run is taken only for a reason the change bears: ");
+        var reasons = new List<string>();
+        if (rule.WidePaths.Count > 0)
+        {
+            var named = string.Join(", ", rule.WidePaths.Take(WideShown).Select(path => $"`{path}`"));
+            reasons.Add($"a change to one of its declared wide paths ({named}{(rule.WidePaths.Count > WideShown ? $", and {rule.WidePaths.Count - WideShown} more in its gates file" : "")})");
+        }
+
+        reasons.Add($"a change that reaches {rule.ReachPercent}% or more of its test classes");
+        if (rule.Release) reasons.Add("a release");
+        text.Append(reasons.Count == 1 ? reasons[0] : string.Join(", ", reasons.Take(reasons.Count - 1)) + " or " + reasons[^1]).Append(". ")
+            .Append("Judge the work by that: where the change bears none of them, do not ask for a full or end-to-end run, and do not count the absence of one as a finding. ")
+            .Append("A gap in what the change's own tests cover is still a finding.\n");
     }
 
     private static void May(StringBuilder text, bool verify) =>

@@ -51,7 +51,8 @@ export function askTiers(repoRoot, { home = repoRoot, commit = null } = {}) {
   const short = sha.slice(0, 7);
   const mine = heavyRuns(home).filter((run) => sha.startsWith(run.commit) || run.commit.startsWith(sha))
     .sort((a, b) => String(a.at).localeCompare(String(b.at))).at(-1);
-  const byHand = `node tools/heavy-run.mjs --id heavy-${short}-by-hand --commit ${sha} --base ${sha}~1`;
+  const lastGreen = heavyRuns(home).filter((run) => run.state === 'green' && !sha.startsWith(run.commit)).sort((a, b) => String(a.at).localeCompare(String(b.at))).at(-1);
+  const byHand = `node tools/heavy-run.mjs --id heavy-${short}-by-hand --commit ${sha} --base ${lastGreen?.commit ?? `${sha}~1`} --now`;
   if (!mine) {
     return {
       code: 1,
@@ -74,6 +75,7 @@ export function askTiers(repoRoot, { home = repoRoot, commit = null } = {}) {
     }
     return { code: 0, out: `the fast tier passed at the merge of ${short}, and heavy run ${mine.id} is red on ${reds.join(', ')}, each filed as main's red` };
   }
+  if (mine.state === 'skipped') return { code: 1, out: `heavy run ${mine.id} on ${short} was skipped: its landing bore no reason for a heavy run, so none ran there`, remedy: { what: 'the heavy tier on this commit, which a release asks for', command: byHand } };
   if (mine.state !== 'green') return { code: 1, out: `heavy run ${mine.id} on ${short} is ${mine.state}, which is no pass`, remedy: { what: 'the heavy tier again', command: byHand } };
   return { code: 0, out: `the fast tier passed at the merge of ${short}, and heavy run ${mine.id} is green on ${short}` };
 }

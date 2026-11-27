@@ -190,7 +190,13 @@ finishes first and the whole set runs once.
     run by a merge: it counts them deferred (the merge record's `heavy.deferred`), and every way a merge lands starts
     `tools/heavy-run.mjs` in the background on the new tip (`merge/heavy-after.ts`): the queue's promotion, and `--commit`, which
     commits the merge left open once every gate chosen for it has a standing pass (a `--rerun` or `--no-timeout` run too, the
-    commit message saying so), starts the run and prunes (`merge/land-merge.ts`). It runs every class the landing's range reaches,
+    commit message saying so), starts the run and prunes (`merge/land-merge.ts`). The run's runner first judges the landing by the
+    change it landed (`merge/heavy-batch.ts`, `admitLanding` in `heavy-run.mjs`, D349's note of 2026-11-27): the run after a landing is
+    no reason by its kind, so a landing whose paths bear none of a full run's reasons (a declared wide path, the declared reach share)
+    settles `skipped` (a `SKIPPED` line; a stage reads it as no pass) and queues nothing heavy, takes no place and no tree. A reasoned
+    landing joins `local/heavy-pending.json` and its tier starts once no landing, reasoned or not, has come for 20 minutes (2 hours from the oldest landing at most); a newer
+    reasoned one carries the waiting one's range (it settles `superseded`). The tier runs every class the reasoned landings' own
+    changes reach (`reached-checks --ranges`, never the main line's whole run between them),
     each dependency class included (`reached-checks --tier heavy` leaves none to the night), through that tier
     in `local/heavy-tree` (a worktree of its own, under the machine's admission as a background run: below normal priority, one
     place at most, taken only while no blocking run such as a merge's gate waits, and no group started while one waits; the CI

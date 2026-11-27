@@ -1,7 +1,7 @@
 import { mkdirSync, rmSync } from 'node:fs';
 import { join } from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
-import { HEAVY_PREFIX, appendHeavy, heavyStanding, readHeavy, runnerArgs, settleHeavy, startHeavy, type HeavyRun } from './heavy-after.ts';
+import { HEAVY_PREFIX, appendHeavy, heavyStanding, readHeavy, runnerArgs, settleHeavy, skipHeavy, startHeavy, type HeavyRun } from './heavy-after.ts';
 import type { ClassOutcome } from './reached-classify.ts';
 
 const commit = '0123456789abcdef0123456789abcdef01234567';
@@ -17,6 +17,8 @@ describe('the heavy run started when a merge lands', () => {
     });
     expect(started).toEqual([{ args: runnerArgs(run), log: input.log }]);
     expect(started[0]!.args).toEqual(expect.arrayContaining(['--commit', commit, '--base', input.base, '--branches', 'feature-a']));
+    expect(started[0]!.args[0]).toBe('tools/heavy-run.mjs');
+    expect(started[0]!.args).not.toContain('--now');
     expect(records).toEqual([run]);
     expect(run).toMatchObject({ state: 'running', commit, branches: ['feature-a'] });
     expect(lines[0]).toMatch(new RegExp(`^${HEAVY_PREFIX} heavy-0123456-\\d+ started in the background on 0123456`));
@@ -28,6 +30,16 @@ describe('the heavy run started when a merge lands', () => {
     expect(run.state).toBe('error');
     expect(records).toEqual([run]);
     expect(lines[0]).toContain('could not be started');
+  });
+});
+
+describe('a landing that bears no reason for a heavy run', () => {
+  it('settles skipped with the reason said on the steward\'s line, and is no pass for a stage', () => {
+    const run: HeavyRun = { id: 'heavy-0123456-1', state: 'running', commit, base: input.base, branches: ['feature-a'], at: '2026-11-27T10:00:00.000Z' };
+    const skipped = skipHeavy(run, 'it bears no reason', '2026-11-27T10:00:05.000Z');
+    expect(skipped.run).toMatchObject({ state: 'skipped', note: 'it bears no reason', ended: '2026-11-27T10:00:05.000Z' });
+    expect(skipped.lines).toEqual([`${HEAVY_PREFIX} SKIPPED 0123456 (feature-a): it bears no reason`]);
+    expect(heavyStanding([skipped.run])).toEqual([]);
   });
 });
 

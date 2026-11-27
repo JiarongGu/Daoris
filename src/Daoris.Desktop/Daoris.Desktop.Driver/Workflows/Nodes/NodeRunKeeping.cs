@@ -386,7 +386,10 @@ internal sealed class NodeRunKeeping(
     internal static string FailedWords(string node, string? code, string? found) =>
         $"Daoris: `{node}` failed{(code is { } named ? $" (`{named}`)" : "")}, so your work goes back to you: "
         + (string.IsNullOrWhiteSpace(found) ? "mend what it found" : "\n\n" + found.Trim() + "\n\nMend what it found")
-        + " and commit, and what you commit goes through the workflow again.";
+        + " and commit, and what you commit goes through the workflow again. " + VerificationWords;
+
+    private const string VerificationWords =
+        "Where the repository's own verification rule scopes its checks, the next one runs on what you changed: ask for no full or end-to-end run that rule gives this change no reason for.";
 
     /// <summary>A check's red past its rounds' bound decided by the risk policy, then told to the work's session all the same, once (<see cref="SpentChecks"/>).</summary>
     public async Task SpentRedsAsync(GovernedUnit governed, DriverConfig? config, List<string> said, List<LookLine> noticed, CancellationToken ct)
