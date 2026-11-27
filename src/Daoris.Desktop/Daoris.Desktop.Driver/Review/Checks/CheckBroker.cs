@@ -10,7 +10,8 @@ public delegate Task<int> BrokeredRun(HeavyRunAsk ask, HeavyRunWorld world, Text
 /// <remarks>
 /// <para>The broker has no queue and no limit of its own. Every due ask starts at once and waits its turn (<see cref="AdmissionOrder"/>) in
 /// the one order, its quest's class then its arrival; how many run is the admission's alone. A waiting ask's state says what it waits for.
-/// A command of the asker's own takes no repository slot and waits first come for the machine's places, as a terminal's does.</para>
+/// A command of the asker's own, and each required hand-back command a check with no command runs, takes no repository slot and waits
+/// first come for the machine's places, as a terminal's does.</para>
 /// <para>One broker seat per home (<c>checks/broker.lock</c>) keeps a second Daoris process from starting a check the first holds. A run
 /// the state calls running that this broker does not hold ended with a restart and is queued again; one cut off by the driver's end before
 /// it had its slots is queued, never a verdict.</para>
@@ -122,6 +123,28 @@ public sealed class CheckBroker(string home, Func<string, CancellationToken, Tas
             return Keep(new CheckState(ask.Id, CheckStates.Errored, _clock.GetUtcNow()) { Error = "its session has no tree on this machine to run in." });
         }
 
+        CheckPlan? plan = null;
+        if (ask.Gate is null && ask.Command is null)
+        {
+            try
+            {
+                plan = CheckPlans.Of(folder, () => Mapped(folder));
+            }
+            catch (Exception error) when (error is IOException or UnauthorizedAccessException or DriverException)
+            {
+                return Keep(new CheckState(ask.Id, CheckStates.Errored, _clock.GetUtcNow()) { Error = error.Message });
+            }
+
+            // Before any admission, so a check with nothing to run is answered at once and never after a slot.
+            if (plan.Empty is { } nothing) return Keep(new CheckState(ask.Id, CheckStates.Refused, _clock.GetUtcNow()) { Error = nothing });
+
+            if (plan.Handback.Count > 0)
+            {
+                turn?.Dispose();
+                turn = null;
+            }
+        }
+
         string? tip = null;
         var admitted = false;
         try
@@ -133,27 +156,30 @@ public sealed class CheckBroker(string home, Func<string, CancellationToken, Tas
                 _files.WriteState(new CheckState(ask.Id, CheckStates.Running, _clock.GetUtcNow()) { Tip = tip });
             }
 
+            _files.WriteState(new CheckState(ask.Id, CheckStates.Queued, _clock.GetUtcNow()) { Tip = tip });
             if (turn is not null)
             {
-                _files.WriteState(new CheckState(ask.Id, CheckStates.Queued, _clock.GetUtcNow()) { Tip = tip });
                 turn.WhenRefused = wait => Waits(ask, tip, wait);
                 turn.WhenAdmitted = Running;
             }
-            else
+
+            void Admitted()
             {
-                Running();
+                if (!admitted) Running();
             }
 
             int exit;
+            IReadOnlyList<string>? ran = null;
             await using (var log = _files.OpenLogWriter(ask.Id))
             {
-                exit = await _run(new HeavyRunAsk(ask.Gate) { Command = ask.Command }, WorldOf(folder, ask, turn), log, ct).ConfigureAwait(false);
+                if (plan is { Handback.Count: > 0 }) (exit, ran) = await RunHandbackAsync(plan.Handback, folder, ask, Admitted, log, ct).ConfigureAwait(false);
+                else exit = await _run(new HeavyRunAsk(ask.Gate) { Command = ask.Command }, WorldOf(folder, ask, turn, Admitted), log, ct).ConfigureAwait(false);
             }
 
-            if (ct.IsCancellationRequested && (!admitted || exit != 0)) return Cut(ask, tip, admitted);
+            if (ct.IsCancellationRequested && (!admitted || exit != 0)) return Cut(ask, tip, admitted, ran);
             return Keep(new CheckState(ask.Id, exit == 0 ? CheckStates.Reached : exit == 2 ? CheckStates.Errored : CheckStates.Failed, _clock.GetUtcNow())
             {
-                Exit = exit, Tail = TailOf(ask.Id), Tip = tip, Error = exit == 2 ? TailOf(ask.Id) : null,
+                Exit = exit, Tail = TailOf(ask.Id), Tip = tip, Error = exit == 2 ? TailOf(ask.Id) : null, Ran = ran,
             });
         }
         catch (OperationCanceledException) when (ct.IsCancellationRequested)
@@ -166,14 +192,38 @@ public sealed class CheckBroker(string home, Func<string, CancellationToken, Tas
         }
     }
 
-    private HeavyRunWorld WorldOf(string folder, CheckAsk ask, AdmissionTurn? turn)
+    private HeavyRunWorld WorldOf(string folder, CheckAsk ask, AdmissionTurn? turn, Action admitted)
     {
         var world = new HeavyRunWorld(home, folder, System.Environment.GetEnvironmentVariable);
         return world with
         {
-            Log = _files.PathOf(ask.Id, "gate.log"), Turn = turn, Waiting = Waiting,
+            Log = _files.PathOf(ask.Id, "gate.log"), Turn = turn, Admitted = admitted, Waiting = Waiting,
             Checks = Rules ?? (() => world.Rules() with { World = RoomWorld.Machine }),
         };
+    }
+
+    /// <summary>This machine's heavy gates for the tree's repository, named as <c>run-heavy</c> names it where no session hands it one.</summary>
+    private IReadOnlyList<HeavyGate>? Mapped(string folder)
+    {
+        var repository = HeavySlot.CheckoutOf(folder) is { } checkout ? HeavySlot.RepositoryOf(checkout) ?? Path.GetFileName(checkout) : Path.GetFileName(folder);
+        return HeavyMapping.For(DriverConfig.Load(DriverConfig.ResolvePath(home)), repository);
+    }
+
+    /// <summary>The required commands one after another, each as written in its folder, the first failure ending the check with its exit; and the commands begun, the last the one it ended at.</summary>
+    private async Task<(int Exit, IReadOnlyList<string> Ran)> RunHandbackAsync(
+        IReadOnlyList<DeclaredGate> gates, string folder, CheckAsk ask, Action admitted, TextWriter log, CancellationToken ct)
+    {
+        var ran = new List<string>();
+        foreach (var gate in gates)
+        {
+            var where = gate.Cwd is { } cwd ? Path.GetFullPath(Path.Combine(folder, cwd)) : folder;
+            await log.WriteLineAsync($"check: `{gate.Name}`: {gate.Run}").ConfigureAwait(false);
+            ran.Add(gate.Run);
+            var exit = await _run(new HeavyRunAsk(null) { Line = gate.Run }, WorldOf(where, ask, null, admitted), log, ct).ConfigureAwait(false);
+            if (exit != 0) return (exit, ran);
+        }
+
+        return (0, ran);
     }
 
     /// <summary>An ask's place in the order, read again at each look: its quest's class (<see cref="PriorityBook.OfRun"/>), then its arrival.</summary>
@@ -202,9 +252,9 @@ public sealed class CheckBroker(string home, Func<string, CancellationToken, Tas
         _files.WriteState(new CheckState(ask.Id, CheckStates.Queued, _clock.GetUtcNow()) { Tip = tip, Wait = wait });
     }
 
-    private CheckState? Cut(CheckAsk ask, string? tip, bool admitted)
+    private CheckState? Cut(CheckAsk ask, string? tip, bool admitted, IReadOnlyList<string>? ran = null)
     {
-        if (admitted) return Keep(new CheckState(ask.Id, CheckStates.Stopped, _clock.GetUtcNow()) { Tail = TailOf(ask.Id), Tip = tip });
+        if (admitted) return Keep(new CheckState(ask.Id, CheckStates.Stopped, _clock.GetUtcNow()) { Tail = TailOf(ask.Id), Tip = tip, Ran = ran });
         _files.WriteState(new CheckState(ask.Id, CheckStates.Queued, _clock.GetUtcNow()) { Tip = tip });
         return null;
     }

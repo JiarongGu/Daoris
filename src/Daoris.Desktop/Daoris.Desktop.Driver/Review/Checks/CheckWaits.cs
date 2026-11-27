@@ -17,13 +17,14 @@ public static class CheckWaits
     /// <summary>The verdict as Daoris's word to the session that asked: what ran, how it ended, and a red's log tail.</summary>
     public static string Words(CheckAsk ask, CheckState state)
     {
-        var what = ask.Gate is { } gate ? $"`{gate}`" : ask.Command is { } command ? $"`{HeavyRun.CommandText(command)}`" : "the heavy gates";
+        if (state.State == CheckStates.Refused) return $"Daoris did not run the checks you asked for: {state.Error}";
+        var what = ask.Gate is { } gate ? $"`{gate}`" : ask.Command is { } command ? $"`{HeavyRun.CommandText(command)}`" : "the repository's checks";
         const string who = "Daoris ran, as you asked,";
         var head = state.State switch
         {
             CheckStates.Reached => $"{who} {what} in your tree and it reached.",
             CheckStates.Stopped => $"{who} {what} in your tree and the run was stopped before it ended.",
-            _ => $"{who} {what} in your tree and it failed" + (state.Exit is { } exit ? $" (exit {exit})." : "."),
+            _ => $"{who} {what} in your tree and it failed" + (state.Ran is [.., var last] ? $" at `{last}`" : "") + (state.Exit is { } exit ? $" (exit {exit})." : "."),
         };
         return state.State == CheckStates.Reached || state.Tail is not { Length: > 0 } tail
             ? head

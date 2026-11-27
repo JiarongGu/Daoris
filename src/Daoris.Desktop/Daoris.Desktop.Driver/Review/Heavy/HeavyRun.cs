@@ -6,7 +6,7 @@ namespace Daoris.Driver;
 
 /// <summary>
 /// What <c>daoris gate run</c> asks: one gate by name, or every heavy one (null); or, with <see cref="Look"/>, who holds
-/// the slot and who waits, running nothing; or, with <see cref="Command"/>, a command of the caller's own as a heavy run.
+/// the slot and who waits, running nothing; or, with <see cref="Command"/> (words) or <see cref="Line"/> (as written, the broker's), a command of the caller's own as a heavy run.
 /// </summary>
 public sealed record HeavyRunAsk(string? Gate)
 {
@@ -15,9 +15,10 @@ public sealed record HeavyRunAsk(string? Gate)
 
     /// <summary>
     /// <c>-- &lt;command…&gt;</c>: the words after it, a command the caller chose (a filtered <c>dotnet test</c>, a <c>vitest</c>
-    /// run) run as a heavy run: after the machine's admission, in the folder it runs from, no repository's slot taken and no gate read.
+    /// run) run as a heavy run: after the machine's admission, in the folder it runs from, no repository's slot taken and no gate read; <see cref="Line"/> is the broker's own, run as written.
     /// </summary>
     public IReadOnlyList<string>? Command { get; init; }
+    public string? Line { get; init; }
 }
 
 /// <summary>What a run hands its gates: the slot it holds, and the gates running, outermost first.</summary>
@@ -188,7 +189,8 @@ public static class HeavyRun
 
     private static async Task<int> RunCheckoutAsync(HeavyRunAsk ask, HeavyRunWorld world, TextWriter output, CancellationToken ct)
     {
-        if (ask.Command is { } command) return await RunCommandAsync(command, world, output, ct).ConfigureAwait(false);
+        if (ask.Line is { } asWritten) return await RunCommandAsync(asWritten, world, output, ct).ConfigureAwait(false);
+        if (ask.Command is { } command) return await RunCommandAsync(CommandText(command), world, output, ct).ConfigureAwait(false);
         if (HeavySlot.CheckoutOf(world.Directory) is not { } checkout)
         {
             throw new DriverException($"{world.Directory} is in no git checkout: `run-heavy` runs a checkout's own gates, from inside it.");
@@ -378,13 +380,12 @@ public static class HeavyRun
     /// go, and answers as a gate does: 0 passed, 1 failed (its exit said) or stopped. No repository's slot is taken and no gate is read: it is not a gate, and two
     /// sessions' focused runs may run side by side as far as the machine admits.
     /// </summary>
-    private static async Task<int> RunCommandAsync(IReadOnlyList<string> command, HeavyRunWorld world, TextWriter output, CancellationToken ct)
+    private static async Task<int> RunCommandAsync(string line, HeavyRunWorld world, TextWriter output, CancellationToken ct)
     {
         var folder = Path.GetFullPath(world.Directory);
         var checkout = HeavySlot.CheckoutOf(folder);
         var repository = world.Variable(RepositoryVariable)?.Trim() is { Length: > 0 } handed ? handed : checkout is null ? null : HeavySlot.RepositoryOf(checkout);
         var session = world.Variable(IntakeRoom.SessionVariable) is { Length: > 0 } ofSession ? ofSession : null;
-        var line = CommandText(command);
         AdmissionHold? hold;
         try
         {
@@ -397,6 +398,7 @@ public static class HeavyRun
             return 1;
         }
 
+        world.Admitted?.Invoke();
         using (hold)
         {
             var job = Job(OperatingSystem.IsWindows() ? $"Local\\daoris-heavy-{Guid.NewGuid():N}" : null);

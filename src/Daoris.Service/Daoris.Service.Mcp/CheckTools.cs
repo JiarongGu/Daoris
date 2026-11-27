@@ -15,10 +15,10 @@ public sealed class CheckTools(IntakeScope? intake = null, SessionLedger? ledger
 {
     [McpServerTool(Name = "check_run")]
     [Description(
-        "Have Daoris run a build or test in your tree instead of you: it runs one at a time on this machine. Say what you asked, "
+        "Have Daoris run a build or test in your tree instead of you: it runs as many at once as this machine admits. Say what you asked, "
         + "then end your turn; the verdict, with a failure's log tail, is your next turn, and the wait costs no tokens. Commit first.")]
     public async Task<string> RunCheckAsync(
-        [Description("A declared gate by name; with no command, every heavy gate.")]
+        [Description("A declared gate by name; with no command, the repository's required hand-back checks, else its heavy gates.")]
         string? gate = null,
         [Description("Or a command of your own, as words (a filtered test run).")]
         string[]? command = null,

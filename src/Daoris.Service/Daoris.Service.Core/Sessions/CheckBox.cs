@@ -29,7 +29,7 @@ public sealed class CheckBox(string? home)
 
     /// <summary>
     /// Write an ask for the session the connector names, or refuse it: answered as the sentence an agent reads. A gate by name, a command
-    /// of its own, or neither (every heavy gate) is one check; a gate and a command together are refused.
+    /// of its own, or neither (what the driver reads in the tree: its required hand-back commands, else its heavy gates) is one check; a gate and a command together are refused.
     /// </summary>
     public (string? Id, string Message) Ask(Session? asker, string? named, string? gate, IReadOnlyList<string>? command, DateTimeOffset at)
     {
