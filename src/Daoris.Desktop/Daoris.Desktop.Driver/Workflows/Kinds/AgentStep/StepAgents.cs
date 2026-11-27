@@ -69,6 +69,8 @@ public sealed class StepAgents(
 
     public void Stop(string invocation) => sessions.Stop(invocation);
 
+    public void Supersede(string invocation, string why) => sessions.Stop(invocation);
+
     /// <summary>Completes once every session started here has ended; a test's wait, and a closing loop's.</summary>
     public Task IdleAsync() => _runs.IdleAsync();
 }

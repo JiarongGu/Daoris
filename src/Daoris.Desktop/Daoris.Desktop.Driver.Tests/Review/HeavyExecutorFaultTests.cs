@@ -96,4 +96,25 @@ public sealed class HeavyExecutorFaultTests : IAsyncLifetime
         await SettledAsync("r2", "i2");
         Assert.Equal(VerifyResult.Stopped, (await SettledAsync("r1", "i1")).Code);
     }
+
+    [Fact]
+    public async Task A_stop_with_its_reason_says_that_reason_and_never_the_persons_stop()
+    {
+        var executor = Executor();
+        var checkout = Checkout("engine");
+        var armed = true;
+        executor.SlotsTaken = () =>
+        {
+            if (!armed) return;
+            armed = false;
+            executor.Stop("i1", "the work moved on to 22222222 after it was sent at 11111111");
+        };
+
+        await executor.SendAsync(new VerifySend("r1", "i1", "engine", checkout, "c1", null));
+        var stopped = await SettledAsync("r1", "i1");
+
+        Assert.Equal(VerifyResult.Stopped, stopped.Code);
+        Assert.StartsWith("the work moved on to 22222222 after it was sent at 11111111, ", stopped.Why, StringComparison.Ordinal);
+        Assert.DoesNotContain("person", stopped.Why, StringComparison.Ordinal);
+    }
 }

@@ -20,5 +20,5 @@ public interface ICheckPort : INodeDoor
     void Stop(string invocation);
 
     /// <summary>Daoris's end of an attempt a new commit superseded: its job ends as at the person's stop, its result saying <paramref name="why"/>.</summary>
-    void Supersede(string invocation, string why) => Stop(invocation);
+    void Supersede(string invocation, string why);
 }

@@ -28,6 +28,19 @@ public sealed class ContentReadGitCountTests(ITestOutputHelper output) : LandedF
     [Fact]
     public async Task A_look_over_an_unchanged_branch_judges_what_the_line_holds_with_no_git_start_and_a_new_commit_asks_again()
     {
+        try
+        {
+            await LooksAsync();
+        }
+        finally
+        {
+            // The working files' watches the stamp opened are let go, so the scratch tree can be removed.
+            TreeReadMemo.Release(Home);
+        }
+    }
+
+    private async Task LooksAsync()
+    {
         var root = await GitSeed.PlainAsync(Path.Combine(Scratch, "engine"), "engine");
         var trees = new SessionTrees(Home);
         var tree = await trees.OpenAsync(root, "engine", "aurora");

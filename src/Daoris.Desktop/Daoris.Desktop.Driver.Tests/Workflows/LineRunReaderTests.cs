@@ -36,6 +36,8 @@ public sealed class LineRunReaderTests : NodeRuntimeFixture
 
         public bool Answered(string invocation) => Answers.Contains(invocation);
 
+        public void Supersede(string invocation, string why) => Stop(invocation);
+
         public void Stop(string invocation)
         {
         }

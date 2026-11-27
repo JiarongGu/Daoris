@@ -20,9 +20,6 @@ internal sealed class ContentReadMemo
     /// <summary>The memo of <paramref name="home"/>'s trees, one for the process.</summary>
     internal static ContentReadMemo Of(string home) => Homes.GetOrAdd(Path.GetFullPath(home), _ => new ContentReadMemo());
 
-    /// <summary>Forgets what this process kept of <paramref name="home"/>: the tests' restart.</summary>
-    internal static void Release(string home) => Homes.TryRemove(Path.GetFullPath(home), out _);
-
     /// <summary>The kept read of <paramref name="tree"/> while <paramref name="stamp"/> answers as at its keeping, else <paramref name="read"/>'s.</summary>
     internal async Task<HoldContent?> ReadAsync(string tree, Func<ContentStamp?> stamp, Func<CancellationToken, Task<HoldContent?>> read, CancellationToken ct)
     {

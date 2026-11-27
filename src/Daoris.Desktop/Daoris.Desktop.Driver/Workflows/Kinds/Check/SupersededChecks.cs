@@ -14,26 +14,40 @@ internal static class SupersededChecks
 
     public static void End(WorkPerformer performer, string unit, string? tip, IReadOnlySet<string> afterHanded)
     {
-        if (tip is null || !WorkingTree.IsCommitId(tip) || performer.RecordOf(unit) is not { } record) return;
-        foreach (var attempt in record.Attempts)
+        if (tip is null || performer.RecordOf(unit) is not { } record) return;
+        foreach (var (attempt, why) in Of(record, tip, afterHanded))
         {
-            if (attempt.State is not (AttemptStates.Sent or AttemptStates.Recorded or AttemptStates.Unknown) || afterHanded.Contains(attempt.Node)
-                || !WorkingTree.IsCommitId(attempt.Call.SubjectRevision) || string.Equals(attempt.Call.SubjectRevision, tip, StringComparison.OrdinalIgnoreCase)
-                || performer.PortOf(attempt.Plugin) is not { } check)
-            {
-                continue;
-            }
-
-            var status = WorkPerformer.StatusOf(record, attempt.Node);
-            if (status.Unreconciled != attempt.Attempt || status.State is NodeStates.Active or NodeStates.Unknown) continue;
+            if (performer.PortOf(attempt.Plugin) is not { } check) continue;
             lock (Ended)
             {
                 if (Ended.Count >= Most) Ended.Clear();
                 if (!Ended.Add(attempt.Call.Invocation)) continue;
             }
 
-            check.Supersede(attempt.Call.Invocation,
-                $"the work moved on to {TextBounds.ShortCommit(tip, 8)} after it was sent at {TextBounds.ShortCommit(attempt.Call.SubjectRevision, 8)}");
+            check.Supersede(attempt.Call.Invocation, why);
         }
+    }
+
+    /// <summary>The checks of <paramref name="record"/> that <paramref name="tip"/> superseded, each with the words its result says.</summary>
+    public static IReadOnlyList<(NodeAttempt Attempt, string Why)> Of(NodeRecord record, string tip, IReadOnlySet<string> afterHanded)
+    {
+        if (!WorkingTree.IsCommitId(tip)) return [];
+        var found = new List<(NodeAttempt, string)>();
+        foreach (var attempt in record.Attempts)
+        {
+            if (attempt.Plugin != NodeKinds.Check || attempt.State is not (AttemptStates.Sent or AttemptStates.Recorded or AttemptStates.Unknown)
+                || afterHanded.Contains(attempt.Node) || !WorkingTree.IsCommitId(attempt.Call.SubjectRevision)
+                || string.Equals(attempt.Call.SubjectRevision, tip, StringComparison.OrdinalIgnoreCase))
+            {
+                continue;
+            }
+
+            var status = WorkPerformer.StatusOf(record, attempt.Node);
+            if (status.Unreconciled != attempt.Attempt || status.State is NodeStates.Active or NodeStates.Unknown) continue;
+            found.Add((attempt,
+                $"the work moved on to {TextBounds.ShortCommit(tip, 8)} after it was sent at {TextBounds.ShortCommit(attempt.Call.SubjectRevision, 8)}"));
+        }
+
+        return found;
     }
 }
