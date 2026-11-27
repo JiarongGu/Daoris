@@ -36,7 +36,7 @@ export async function preflightVerb(root: string, options: { base?: string | nul
   const home = verdictsHome(root);
   const plan = readPlan(root);
   const choice = deps.scopedChoice(home, root, { plan, base: facts.from, tip: facts.tip });
-  const set = fastPlan(choice.set, (name) => scopedKind(plan.find((gate: { name: string }) => gate.name === name)));
+  const set = fastPlan(choice.set, (name) => scopedKind(plan.find((gate: { name: string }) => gate.name === name)!));
   const dir = join(root, SCRATCH, `merge-${slug(facts.branch)}`);
   deps.clearLogs(dir);
   const declaration = join(root, 'daoris.gates.json');
