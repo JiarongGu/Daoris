@@ -10,6 +10,8 @@ namespace Daoris.Desktop.Driver.Tests;
 /// and were taken up again at every look. The fall-back now ends the record first, as an answered park's is, so the part opens once.
 /// </summary>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Git)]
+[Trait(Category.Needs, Needed.Harness)]
 public sealed class AccountSwitchGoOnTickTests : IDisposable
 {
     private static readonly TimeZoneInfo Zone = TimeZoneInfo.FindSystemTimeZoneById("Asia/Kathmandu");
