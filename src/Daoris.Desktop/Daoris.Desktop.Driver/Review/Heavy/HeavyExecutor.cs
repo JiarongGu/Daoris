@@ -349,7 +349,8 @@ public sealed class HeavyExecutor(string home, VerifyWorld? world = null) : IAsy
         foreach (var each in due)
         {
             var priority = PriorityBook.OfRun(look.Events, each.Send.Run, each.Send.Ask, now);
-            var held = HoldBook.Reading(look.Holds, each.Send.Run, each.Send.Ask) is { Held: true } hold ? $"{HoldBook.Said(hold)}: it is tried again once the hold is lifted" : null;
+            var word = HoldBook.Reading(look.Holds, each.Send.Run, each.Send.Ask);
+            var held = word is { Held: true } ? $"{HoldBook.Said(word)}: it is tried again once the hold is lifted" : null;
             if (held is null) standing.Add(each);
             if (priority == each.Priority && (held is null || each.For == held)) continue;
             each.Priority = priority;
