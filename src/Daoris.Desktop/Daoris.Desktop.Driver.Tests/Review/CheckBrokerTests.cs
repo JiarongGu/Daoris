@@ -47,7 +47,7 @@ public sealed class CheckBrokerTests : IAsyncLifetime
         }
 
         _stop.Dispose();
-        if (Directory.Exists(Path.GetDirectoryName(_home))) Directory.Delete(Path.GetDirectoryName(_home)!, recursive: true);
+        GitSeed.Discard(Path.GetDirectoryName(_home)!);
     }
 
     private Task Look(CheckBroker broker)
@@ -251,7 +251,7 @@ public sealed class CheckBrokerTests : IAsyncLifetime
         await UntilAsync(() => started.Count == 3, "the third to run once one ended");
         release.GetOrAdd("two", _ => new TaskCompletionSource()).SetResult();
         release.GetOrAdd("three", _ => new TaskCompletionSource()).SetResult();
-        await running.WaitAsync(TimeSpan.FromSeconds(30));
+        await running.WaitAsync(Poll.Patience);
 
         Assert.Equal(["one", "two", "three"], started);
         Assert.All(new[] { "one", "two", "three" }, name => Assert.Equal(CheckStates.Reached, files.ReadState(name)!.State));
@@ -278,7 +278,7 @@ public sealed class CheckBrokerTests : IAsyncLifetime
         release.GetOrAdd("one", _ => new TaskCompletionSource()).SetResult();
         await UntilAsync(() => started.Count == 2, "the second to run once the first ended");
         release.GetOrAdd("two", _ => new TaskCompletionSource()).SetResult();
-        await running.WaitAsync(TimeSpan.FromSeconds(30));
+        await running.WaitAsync(Poll.Patience);
     }
 
     [Fact]
@@ -311,7 +311,7 @@ public sealed class CheckBrokerTests : IAsyncLifetime
             await UntilAsync(() => files.ReadState(name)?.State == CheckStates.Reached, $"{name} to end");
         }
 
-        await running.WaitAsync(TimeSpan.FromSeconds(30));
+        await running.WaitAsync(Poll.Patience);
         Assert.Equal(["urgent", "one", "two", "three"], started);
     }
 }
