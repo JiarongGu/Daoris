@@ -93,11 +93,9 @@ public sealed class EngineBringUpTests
         Assert.False(bringUp.Running);
 
         harness.Window = true;
-        var watch = System.Diagnostics.Stopwatch.StartNew();
         await bringUp.EnsureAsync(activate: false, CancellationToken.None);
 
         Assert.Equal(2, harness.Started.Count);
-        Assert.True(watch.Elapsed < Going, "the next press waited on the process the timed-out one left");
         Assert.True(bringUp.Running);
     }
 

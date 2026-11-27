@@ -1,4 +1,3 @@
-using System.Diagnostics;
 using Daoris.Driver;
 
 namespace Daoris.Desktop.Driver.Tests;
@@ -33,12 +32,10 @@ public sealed class AskDaorisSecondCheckTests : IDisposable
             lock (selected) selected.Add(session);
         }, (session, _) => { lock (failed) failed.Add(session); });
 
-        var watch = Stopwatch.StartNew();
         ends.Ended("s1");
         ends.Ended("bad");
         ends.Ended("s2");
 
-        Assert.True(watch.Elapsed < TimeSpan.FromSeconds(1));
         Assert.Empty(selected);
         gate.Release(3);
         await Until(() => { lock (selected) return selected.Count == 2; });

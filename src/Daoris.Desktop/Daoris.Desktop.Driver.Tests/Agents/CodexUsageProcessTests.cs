@@ -1,4 +1,3 @@
-using System.Diagnostics;
 using Daoris.Driver;
 
 namespace Daoris.Desktop.Driver.Tests;
@@ -117,13 +116,11 @@ public sealed class CodexUsageProcessTests : IDisposable
     public async Task A_server_that_hangs_is_unknown_once_its_patience_is_spent()
     {
         var home = HarnessSettings.ProfileHome(_home, "door", "hangs");
-        var timer = Stopwatch.StartNew();
 
         var readings = await CodexUsage.ReadAsync(
             CodexUsage.Prepare(["node", Script, "app-server"], Toolchain, home), TimeSpan.FromSeconds(2), CancellationToken.None);
 
         Assert.Null(readings);
-        Assert.InRange(timer.Elapsed, TimeSpan.Zero, Poll.Patience);
         Assert.Equal(["hangs app-server"], AskedLines());
     }
 

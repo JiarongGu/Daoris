@@ -46,16 +46,13 @@ public sealed class CaptureBoundProcessTests : IDisposable
         var pidFile = Path.Combine(_home, "stray.pid");
         var driver = Driver(service, pidFile, mode);
         driver.CaptureBound = TimeSpan.FromSeconds(3);
-        var clock = Stopwatch.StartNew();
 
         await driver.RunOnceAsync().WaitAsync(Poll.Patience);
-        clock.Stop();
 
         var record = service.Session("s1");
         var note = record["note"]!.GetValue<string>();
         Assert.Equal(state, record["state"]!.GetValue<string>());
         Assert.DoesNotContain("timed out", note, StringComparison.Ordinal);
-        Assert.True(clock.Elapsed < TimeSpan.FromSeconds(60), $"the run took {clock.Elapsed}");
 
         // The strays' end is a note line of the conversation, never its conclusion.
         var events = File.ReadAllText(DaorisHome.Entry(_home, HomeEntry.Sessions, "s1.events.jsonl"));

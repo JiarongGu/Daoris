@@ -316,7 +316,6 @@
     "src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Workplace/HistoryKeepingTests.cs": 1,
     "src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Workplace/KeepRulesTests.cs": 2,
     "src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Workplace/KeepSizeServiceProcessTests.cs": 2,
-    "src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Workplace/KeepingTests.cs": 2,
     "src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Workplace/LandedFixture.cs": 1,
     "src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Workplace/LandingHoldsTests.cs": 8,
     "src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Workplace/PartialClonePreviewTests.cs": 1,

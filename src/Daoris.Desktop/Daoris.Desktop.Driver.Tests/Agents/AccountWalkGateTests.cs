@@ -1,4 +1,3 @@
-using System.Diagnostics;
 using Daoris.Driver;
 
 namespace Daoris.Desktop.Driver.Tests;
@@ -246,18 +245,20 @@ public sealed class AccountWalkGateTests : IDisposable
         Accounts("account-1");
         var roster = Roster(patience: LockWait);
         var held = await ProbeLock.TakeAsync(ProbeLock.PathOf(_home, "fake", "account-1"));
-        var watch = Stopwatch.StartNew();
-        var letGo = Task.Run(async () =>
+        var letGo = false;
+        var letting = Task.Run(async () =>
         {
             await Task.Delay(Short);
+            letGo = true;
             await held!.DisposeAsync();
         });
 
         var selection = await roster.SelectAsync("fake", Config, null, chosen: "account-1").WaitAsync(Poll.Patience);
-        await letGo;
+        var waited = letGo;
+        await letting;
 
         Assert.Equal(("account-1", true), (selection.Profile, selection.Allowed));
-        Assert.True(watch.Elapsed >= Short - TimeSpan.FromMilliseconds(50), "the start did not wait out the question in flight");
+        Assert.True(waited, "the start did not wait out the question in flight");
         Assert.True(roster.Busy("fake", "account-1"));
     }
 

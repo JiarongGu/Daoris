@@ -45,15 +45,7 @@ public sealed class ServiceHostEndProcessTests : IDisposable
         }
     }
 
-    private static async Task Until(Func<bool> holds, Func<string> what, int seconds = 60)
-    {
-        var bound = Stopwatch.StartNew();
-        while (!holds())
-        {
-            Assert.True(bound.Elapsed < TimeSpan.FromSeconds(seconds), what());
-            await Task.Delay(100);
-        }
-    }
+    private static Task Until(Func<bool> holds, Func<string> what, int seconds = 60) => Poll.Until(holds, what, TimeSpan.FromSeconds(seconds));
 
     [Fact]
     public async Task A_host_a_dead_run_left_is_ended_at_the_next_start_and_one_of_a_live_run_is_not()

@@ -62,15 +62,7 @@ public sealed class LaunchedSessionJobProcessTests : IDisposable
     }
 
     /// <summary>Until <paramref name="holds"/> holds, bounded: a condition that never holds fails.</summary>
-    private static async Task Until(Func<bool> holds, string what)
-    {
-        var bound = Stopwatch.StartNew();
-        while (!holds())
-        {
-            Assert.True(bound.Elapsed < TimeSpan.FromSeconds(30), what);
-            await Task.Delay(50);
-        }
-    }
+    private static Task Until(Func<bool> holds, string what) => Poll.Until(holds, () => what, TimeSpan.FromSeconds(30));
 
     [Fact]
     public async Task A_launched_sessions_job_is_read_busy_by_the_watcher_and_its_stop_ends_its_whole_tree()
@@ -107,10 +99,9 @@ public sealed class LaunchedSessionJobProcessTests : IDisposable
             var steps = new List<QuietStep>();
             using (watch.Watch("s1", new WatchedRun(SessionWatch.Quest, "q1", "claude-code")))
             {
-                var bound = Stopwatch.StartNew();
-                while (!steps.Any(step => step.Step == SessionWatch.Brought))
+                for (var looks = 0; !steps.Any(step => step.Step == SessionWatch.Brought); looks++)
                 {
-                    Assert.True(bound.Elapsed < TimeSpan.FromSeconds(30), "the busy, nothing heard row never came");
+                    Assert.True(looks < 150, "the busy, nothing heard row never came");
                     steps.AddRange(watch.Look(
                         id => processes.JobOf(id) is { } read ? new JobRead(read.Holds, read.Cpu) : null, TimeSpan.FromMilliseconds(200)));
                     await Task.Delay(200);

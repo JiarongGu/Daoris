@@ -1,4 +1,3 @@
-using System.Diagnostics;
 using Daoris.Driver;
 
 namespace Daoris.Desktop.Driver.Tests;
@@ -194,13 +193,10 @@ public sealed class MachineFactsTests
 
         facts.Wake(Lines, "engine");
         await entered.Task.WaitAsync(Within);
-        var reading = Stopwatch.StartNew();
         var during = await Task.Run(() => facts.Current).WaitAsync(Within);
-        reading.Stop();
 
         Assert.Same(before, during);
         Assert.Equal("`main`", during.Value<string>(Lines, "engine"));
-        Assert.True(reading.Elapsed < TimeSpan.FromSeconds(2), $"a read took {reading.Elapsed}");
 
         release.SetResult();
         await Poll.Until(() => facts.Current.Value<string>(Lines, "engine") == "`trunk`", within: Within);

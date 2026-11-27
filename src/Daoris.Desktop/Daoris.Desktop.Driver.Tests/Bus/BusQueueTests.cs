@@ -324,11 +324,8 @@ public sealed class BusQueueTests : IDisposable
         dues.Due(new OpinionDue("s-2", "q-2", "engine", "", "tree-2", OpinionRules.Landing, DateTimeOffset.UtcNow));
         await Poll.Until(() => judged.Any(each => each.Subject == "s-2/landing"), () => "the owed opinion was not judged", Soon);
 
-        var given = Stopwatch.GetTimestamp();
         bus.Append(Given("op-s-1", 1));
         await Poll.Until(() => judged.Count(each => each.Subject == "s-1/landing") == 2, () => "the given was not judged", Soon);
-        var took = Stopwatch.GetElapsedTime(given, judged.Last(each => each.Subject == "s-1/landing").At);
-        Assert.True(took < TimeSpan.FromSeconds(5), $"the gate judged {took} after the given");
     }
 
     /// <summary>

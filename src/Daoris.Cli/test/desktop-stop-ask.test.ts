@@ -9,13 +9,16 @@ import { askStop } from '../../../tools/desktop/stop-ask.mjs';
 /** The desktop's kill and restart say who closes the window, in the file the application reads as it stops (`StopAsk`). */
 test('a stop asked of the shell by the tool leaves its ask in the home, for the pids it closes', () => {
   const root = scratchFolder('daoris-stop-ask');
+  const before = Date.now();
   assert.equal(askStop(root, [4242], { DAORIS_SESSION_ID: '76cdd5db' }), true);
+  const after = Date.now();
 
   const asked = JSON.parse(readText(homeEntry(root, 'stop-ask')));
   assert.deepEqual(asked.pids, [4242]);
   assert.equal(asked.by, 'desktop-tool');
   assert.equal(asked.session, '76cdd5db');
-  assert.ok(Math.abs(Date.now() - Date.parse(asked.at)) < 60_000);
+  const at = Date.parse(asked.at);
+  assert.ok(at >= before - 1000 && at <= after + 1000, 'the ask is stamped when it was made, between the call\'s start and end');
 
   // No home, or no process, leaves nothing; an id that is no session's is not carried.
   assert.equal(askStop(undefined, [4242], {}), false);
