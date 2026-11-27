@@ -547,7 +547,7 @@ built, but nothing outside tests makes, takes or ends one; `LinePlaces` answers 
     to the first of the order and nothing running is cut. How many run at once is the admission's alone: memory against each run's learned
     need, the limit pressure has left, `checks`, the machine's places. A refusal every run behind would meet (every slot runs, the
     admission's lock) holds the rest; a run's own (memory, its repository's slots) lets the next try, as the executor's pass does
-    (`CheckAdmission.EndsPass`). An ask waiting is `queued` with what it waits for in its state (`wait`, `CheckWait.Sentence`) and `running` once its slots are
+    (`CheckAdmission.EndsPass`). An ask waiting is `queued` with what it waits for in its state (`wait`, by code and values) and `running` once its slots are
     held; a command of the asker's own takes no repository slot and waits first come for the machine's places until ADMITDYNAMIC1 joins
     it to the room. One broker
     seat per home (`checks/broker.lock`, held while the broker has asks to look over) keeps a second Daoris process from starting again a run the first

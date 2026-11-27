@@ -41,5 +41,5 @@ public sealed record CheckState(string Id, string State, DateTimeOffset At)
 
     public string? Error { get; init; }
 
-    public string? Wait { get; init; } // what a queued check waits for, as CheckWait.Sentence says it
+    public CheckWait? Wait { get; init; } // what a queued check waits for, by code and values
 }

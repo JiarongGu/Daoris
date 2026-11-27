@@ -123,13 +123,13 @@ public sealed class CheckBrokerTests : IAsyncLifetime
     {
         var files = new CheckFiles(_home);
         files.WriteAsk(Ask("a1", gate: null) with { Command = ["dotnet", "test"] });
-        files.WriteState(new CheckState("a1", CheckStates.Failed, At) { Exit = 1, Tail = "boom", Tip = "abc123", Wait = "a slot: 1 of 1 run" });
+        files.WriteState(new CheckState("a1", CheckStates.Failed, At) { Exit = 1, Tail = "boom", Tip = "abc123", Wait = CheckWait.OfSlots(1, 1) });
 
         var ask = Assert.Single(files.Asks());
         Assert.Equal(("a1", "s1", null), (ask.Id, ask.Session, ask.Gate));
         Assert.Equal(["dotnet", "test"], ask.Command);
         var state = files.ReadState("a1");
-        Assert.Equal((CheckStates.Failed, 1, "boom", "abc123", "a slot: 1 of 1 run"), (state!.State, state.Exit, state.Tail, state.Tip, state.Wait));
+        Assert.Equal((CheckStates.Failed, 1, "boom", "abc123", "a slot: 1 of 1 run"), (state!.State, state.Exit, state.Tail, state.Tip, state.Wait!.Sentence));
         Assert.Null(files.ReadState("zz"));
     }
 
@@ -245,7 +245,7 @@ public sealed class CheckBrokerTests : IAsyncLifetime
         Assert.Equal((CheckStates.Running, CheckStates.Running), (files.ReadState("one")!.State, files.ReadState("two")!.State));
         var third = files.ReadState("three")!;
         Assert.Equal(CheckStates.Queued, third.State);
-        Assert.Equal("a slot: 2 of 2 run", third.Wait);
+        Assert.Equal("a slot: 2 of 2 run", third.Wait!.Sentence);
 
         release.GetOrAdd("one", _ => new TaskCompletionSource()).SetResult();
         await UntilAsync(() => started.Count == 3, "the third to run once one ended");
@@ -274,7 +274,7 @@ public sealed class CheckBrokerTests : IAsyncLifetime
         await UntilAsync(() => files.ReadState("two")?.Wait is not null, "the second waiting");
 
         Assert.Equal(["one"], started);
-        Assert.Contains("memory", files.ReadState("two")!.Wait);
+        Assert.Equal(CheckWait.Memory, files.ReadState("two")!.Wait!.Code);
         release.GetOrAdd("one", _ => new TaskCompletionSource()).SetResult();
         await UntilAsync(() => started.Count == 2, "the second to run once the first ended");
         release.GetOrAdd("two", _ => new TaskCompletionSource()).SetResult();
@@ -313,5 +313,53 @@ public sealed class CheckBrokerTests : IAsyncLifetime
 
         await running.WaitAsync(Poll.Patience);
         Assert.Equal(["urgent", "one", "two", "three"], started);
+    }
+    [Fact]
+    public async Task An_ask_written_while_another_waits_for_its_turn_joins_the_wait_and_neither_freezes()
+    {
+        var files = new CheckFiles(_home);
+        var rules = Room(20, processors: 8, setting: 1);
+        var holder = new HeavyHolder(Environment.ProcessId, Started, _tree, ["x"], Clock.GetUtcNow(), null, null) { Now = new HeavyGateNow("x", 0, Clock.GetUtcNow()) };
+        var outside = CheckAdmission.TryTake(_home, rules, new HeavyAsk("outside", "outside", null, () => holder)).Taken!;
+        files.WriteAsk(Ask("one", 0, session: "one"));
+        var started = new ConcurrentQueue<string>();
+        var release = new ConcurrentDictionary<string, TaskCompletionSource>();
+        var broker = new CheckBroker(_home, (session, _) => Task.FromResult<string?>(TreeOf(session)), Holding(started, release))
+        {
+            Rules = () => rules, Waiting = Quick, Poll = TimeSpan.FromMilliseconds(20),
+        };
+
+        var running = Look(broker);
+        await UntilAsync(() => files.ReadState("one")?.Wait is not null, "the first ask waiting");
+        files.WriteAsk(Ask("two", 1, session: "two"));
+        await UntilAsync(() => files.ReadState("two")?.Wait is not null, "the second ask waiting beside the first");
+
+        outside.Dispose();
+        foreach (var name in new[] { "one", "two" })
+        {
+            await UntilAsync(() => started.Contains(name), $"{name} to run");
+            release.GetOrAdd(name, _ => new TaskCompletionSource()).SetResult();
+        }
+
+        await running.WaitAsync(Poll.Patience);
+        Assert.Equal(["one", "two"], started);
+    }
+
+    [Fact]
+    public async Task A_check_that_finished_reached_as_the_driver_closed_keeps_its_verdict()
+    {
+        var files = new CheckFiles(_home);
+        files.WriteAsk(Ask("a1"));
+        using var cancel = new CancellationTokenSource();
+        var broker = new CheckBroker(_home, Tree(_tree), (_, world, _, _) =>
+        {
+            world.Turn!.Admitted();
+            cancel.Cancel();
+            return Task.FromResult(0);
+        });
+
+        await broker.RunAsync(cancel.Token);
+
+        Assert.Equal(CheckStates.Reached, files.ReadState("a1")!.State);
     }
 }

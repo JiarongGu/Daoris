@@ -238,6 +238,7 @@ public static class HeavyRun
             }
 
             output.WriteLine($"run-heavy: inside the heavy run that holds `{repository}`'s slot, so this one runs in it without waiting.");
+            world.Turn?.Admitted();
             return await RunGatesAsync(checkout, choice.Gates, key, outer.Gates, Job(null), output, ct, steps: world.Steps).ConfigureAwait(false);
         }
 

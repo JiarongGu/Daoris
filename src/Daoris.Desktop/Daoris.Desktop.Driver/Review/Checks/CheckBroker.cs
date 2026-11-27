@@ -28,6 +28,7 @@ public sealed class CheckBroker(string home, Func<string, CancellationToken, Tas
     private readonly BrokeredRun _run = run ?? HeavyRun.RunAsync;
     private readonly AdmissionOrder _order = new();
     private readonly Lock _gate = new();
+    private readonly Lock _classesGate = new();
     private readonly Dictionary<string, Task> _active = new(StringComparer.Ordinal);
     private IReadOnlyList<PriorityEvent> _classes = [];
     private DateTimeOffset _classesAt = DateTimeOffset.MinValue;
@@ -149,7 +150,7 @@ public sealed class CheckBroker(string home, Func<string, CancellationToken, Tas
                 exit = await _run(new HeavyRunAsk(ask.Gate) { Command = ask.Command }, WorldOf(folder, ask, turn), log, ct).ConfigureAwait(false);
             }
 
-            if (ct.IsCancellationRequested) return Cut(ask, tip, admitted);
+            if (ct.IsCancellationRequested && (!admitted || exit != 0)) return Cut(ask, tip, admitted);
             return Keep(new CheckState(ask.Id, exit == 0 ? CheckStates.Reached : exit == 2 ? CheckStates.Errored : CheckStates.Failed, _clock.GetUtcNow())
             {
                 Exit = exit, Tail = TailOf(ask.Id), Tip = tip, Error = exit == 2 ? TailOf(ask.Id) : null,
@@ -180,7 +181,7 @@ public sealed class CheckBroker(string home, Func<string, CancellationToken, Tas
     {
         var now = _clock.GetUtcNow();
         IReadOnlyList<PriorityEvent> events;
-        lock (_gate)
+        lock (_classesGate)
         {
             if (now - _classesAt >= TimeSpan.FromSeconds(1) || now < _classesAt)
             {
@@ -197,9 +198,8 @@ public sealed class CheckBroker(string home, Func<string, CancellationToken, Tas
 
     private void Waits(CheckAsk ask, string? tip, CheckWait wait)
     {
-        var said = wait.Sentence;
-        if (_files.ReadState(ask.Id) is { State: CheckStates.Queued, Wait: { } before } && before == said) return;
-        _files.WriteState(new CheckState(ask.Id, CheckStates.Queued, _clock.GetUtcNow()) { Tip = tip, Wait = said });
+        if (_files.ReadState(ask.Id) is { State: CheckStates.Queued, Wait: { } before } && before.Sentence == wait.Sentence) return;
+        _files.WriteState(new CheckState(ask.Id, CheckStates.Queued, _clock.GetUtcNow()) { Tip = tip, Wait = wait });
     }
 
     private CheckState? Cut(CheckAsk ask, string? tip, bool admitted)

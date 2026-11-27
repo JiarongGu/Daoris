@@ -53,7 +53,7 @@ internal sealed class DriverChecks
         var asks = files.Asks();
         if (asks.Count == 0) return;
 
-        await ReadQuestsAsync(ct).ConfigureAwait(false);
+        if (asks.Any(ask => files.ReadState(ask.Id) is null or { State: CheckStates.Queued or CheckStates.Errored })) await ReadQuestsAsync(ct).ConfigureAwait(false);
         lock (_gate)
         {
             if (_running.IsCompleted) _running = Task.Run(RunAllAsync, CancellationToken.None);
