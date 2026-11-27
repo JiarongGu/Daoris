@@ -153,6 +153,14 @@ internal sealed class DriverHandOvers(LoopContext context, Func<ConversationMove
                 if (left?.Note(PartLeftovers.Bound) is { } said) Say(id, said);
             }
 
+            // A session waiting on its step runs no process here or elsewhere: its record is what ends.
+            if (!stopped && string.Equals(record.State, SessionStates.AwaitingStep, StringComparison.OrdinalIgnoreCase)
+                && !_context.Processes.AliveOnThisMachine(id))
+            {
+                await service.AdvanceAsync(id, "stopped", note, ct: ct).ConfigureAwait(false);
+                stopped = true;
+            }
+
             if (!stopped)
             {
                 await move.EndAsync().ConfigureAwait(false);

@@ -161,14 +161,13 @@ internal sealed class ResumeLedger(LoopContext context)
     }
 
     /// <summary>
-    /// End the park a fallback leaves behind, keeping what it asked and saying why, and write the line. A record
-    /// that has already ended moves no further: its words wait on it until they are handed on. Null when done; else
-    /// the service's refusal.
+    /// End the park (or the record awaiting its step, which a host will not leave while active) a fallback leaves behind, keeping what it
+    /// asked and saying why, and write the line. An ended record moves no further. Null when done; else the service's refusal.
     /// </summary>
     internal async Task<string?> EndParkAsync(PriorSession park, ContinueReason why, string agent, CancellationToken ct)
     {
         var service = _context.Service;
-        if (park.AnsweredPark)
+        if (park.AnsweredPark || string.Equals(park.State, SessionStates.AwaitingStep, StringComparison.OrdinalIgnoreCase))
         {
             try
             {
