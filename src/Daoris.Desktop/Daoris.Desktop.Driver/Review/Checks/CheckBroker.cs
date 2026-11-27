@@ -122,6 +122,22 @@ public sealed class CheckBroker(string home, Func<string, CancellationToken, Tas
             return Keep(new CheckState(ask.Id, CheckStates.Errored, _clock.GetUtcNow()) { Error = "its session has no tree on this machine to run in." });
         }
 
+        CheckPlan? plan = null;
+        if (ask.Gate is null && ask.Command is null)
+        {
+            try
+            {
+                plan = CheckPlans.Of(folder, () => Mapped(folder));
+            }
+            catch (Exception error) when (error is IOException or UnauthorizedAccessException or DriverException)
+            {
+                return Keep(new CheckState(ask.Id, CheckStates.Errored, _clock.GetUtcNow()) { Error = error.Message });
+            }
+
+            // Before any admission, so a check with nothing to run is answered at once and never after a slot.
+            if (plan.Empty is { } nothing) return Keep(new CheckState(ask.Id, CheckStates.Refused, _clock.GetUtcNow()) { Error = nothing });
+        }
+
         string? tip = null;
         var admitted = false;
         try
@@ -147,13 +163,16 @@ public sealed class CheckBroker(string home, Func<string, CancellationToken, Tas
             int exit;
             await using (var log = _files.OpenLogWriter(ask.Id))
             {
-                exit = await _run(new HeavyRunAsk(ask.Gate) { Command = ask.Command }, WorldOf(folder, ask, turn), log, ct).ConfigureAwait(false);
+                exit = plan is { Handback.Count: > 0 }
+                    ? await RunHandbackAsync(plan.Handback, folder, ask, turn, log, ct).ConfigureAwait(false)
+                    : await _run(new HeavyRunAsk(ask.Gate) { Command = ask.Command }, WorldOf(folder, ask, turn), log, ct).ConfigureAwait(false);
             }
 
             if (ct.IsCancellationRequested && (!admitted || exit != 0)) return Cut(ask, tip, admitted);
             return Keep(new CheckState(ask.Id, exit == 0 ? CheckStates.Reached : exit == 2 ? CheckStates.Errored : CheckStates.Failed, _clock.GetUtcNow())
             {
                 Exit = exit, Tail = TailOf(ask.Id), Tip = tip, Error = exit == 2 ? TailOf(ask.Id) : null,
+                Ran = exit == 0 && plan is { Handback.Count: > 0 } ? [.. plan.Handback.Select(gate => gate.Run)] : null,
             });
         }
         catch (OperationCanceledException) when (ct.IsCancellationRequested)
@@ -174,6 +193,28 @@ public sealed class CheckBroker(string home, Func<string, CancellationToken, Tas
             Log = _files.PathOf(ask.Id, "gate.log"), Turn = turn, Waiting = Waiting,
             Checks = Rules ?? (() => world.Rules() with { World = RoomWorld.Machine }),
         };
+    }
+
+    /// <summary>This machine's heavy gates for the tree's repository, named as <c>run-heavy</c> names it where no session hands it one.</summary>
+    private IReadOnlyList<HeavyGate>? Mapped(string folder)
+    {
+        var repository = HeavySlot.CheckoutOf(folder) is { } checkout ? HeavySlot.RepositoryOf(checkout) ?? Path.GetFileName(checkout) : Path.GetFileName(folder);
+        return HeavyMapping.For(DriverConfig.Load(DriverConfig.ResolvePath(home)), repository);
+    }
+
+    /// <summary>The required commands one after another, each as written in its folder, the first failure ending the check with its exit; only the first holds the ask's place in the order.</summary>
+    private async Task<int> RunHandbackAsync(IReadOnlyList<DeclaredGate> gates, string folder, CheckAsk ask, AdmissionTurn? turn, TextWriter log, CancellationToken ct)
+    {
+        foreach (var (gate, index) in gates.Select((gate, index) => (gate, index)))
+        {
+            var where = gate.Cwd is { } cwd ? Path.GetFullPath(Path.Combine(folder, cwd)) : folder;
+            if (!Directory.Exists(where)) throw new DriverException($"`{gate.Name}`'s cwd, {gate.Cwd}, is no folder of the tree.");
+            await log.WriteLineAsync($"check: `{gate.Name}`: {gate.Run}").ConfigureAwait(false);
+            var exit = await _run(new HeavyRunAsk(null) { Line = gate.Run }, WorldOf(where, ask, index == 0 ? turn : null), log, ct).ConfigureAwait(false);
+            if (exit != 0) return exit;
+        }
+
+        return 0;
     }
 
     /// <summary>An ask's place in the order, read again at each look: its quest's class (<see cref="PriorityBook.OfRun"/>), then its arrival.</summary>

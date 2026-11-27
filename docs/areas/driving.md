@@ -553,7 +553,14 @@ built, but nothing outside tests makes, takes or ends one; `LinePlaces` answers 
     seat per home (`checks/broker.lock`, held while the broker has asks to look over) keeps a second Daoris process from starting again a run the first
     holds; a run cut off by the driver's end before its slots is `queued` again, never a verdict; every check log is opened in `CheckFiles` only, shared with its reader. A check Daoris could not run (its log, its
     process, a missing tree or a wrapper's tool-error exit) ends `errored`, held on the check with its error, said in the run's log as `look.said` and never to
-    the session, and asked again after a minute; only a gate that ran is a verdict said to the session. The check log includes the gate's standard output and error before the wrapper's verdict. Every verdict is said to the
+    the session, and asked again after a minute; only a gate that ran is a verdict said to the session. A check asked with no gate and no
+    command runs what `CheckPlans` reads in its tree: the declaration's required `handback` commands, one after another each as written in its
+    folder with the first failure ending it, else its heavy gates (its own or this machine's mapping), and where neither exists it ends `refused`
+    with what the agent may run instead. That is judged when the broker takes the ask (`CheckBroker.RunOneAsync`), before its place in the order and the
+    admission, and every due ask starts at once, so an empty ask is said to the session at the look that takes it and never after a slot; a `refused` ask is finished, said, never retried.
+    A required command that holds a `{base}` or `{tier}` nothing fills ends the ask `refused`, naming the gate. Such a check that reached keeps the
+    commands it ran on its state (`CheckState.Ran`) and meets exactly the required gates whose commands those are at its tip
+    (`HandbackGates.Verified`): no admission gate that is not required, and none from a state an older build wrote. (CHECKRUNCMD1) The check log includes the gate's standard output and error before the wrapper's verdict. Every verdict is said to the
     session that asked, whatever its quest's state: Daoris asks no check of its own, so no verdict is owed to the person. An ask Daoris wrote
     for a hand-back before D293 ("by": "daoris") is deleted with its state and log when the files are read (`CheckFiles.Asks`). (CHECKLOCK1)
 41. The sweep, at every look, stops a record that says it runs with nothing running it, as interrupted, so one left `working`
