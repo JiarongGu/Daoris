@@ -135,14 +135,20 @@ public sealed class CheckPlanTests : IDisposable
         var files = new CheckFiles(_home);
         files.WriteAsk(Ask("a0", gate: "tests"));
         files.WriteAsk(Ask("a1", minute: 1));
-        var broker = new CheckBroker(_home, (_, _) => Task.FromResult<string?>(_tree), async (_, _, _, ct) =>
+        var answered = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var broker = new CheckBroker(_home, (_, _) => Task.FromResult<string?>(_tree), async (_, _, _, _) =>
         {
-            while (files.ReadState("a1") is null) await Task.Delay(10, ct);
+            await answered.Task;
             return 0;
-        });
-        using var cancel = new CancellationTokenSource(TimeSpan.FromSeconds(30));
+        })
+        {
+            Settled = state =>
+            {
+                if (state.Id == "a1") answered.TrySetResult();
+            },
+        };
 
-        await broker.RunAsync(cancel.Token);
+        await broker.RunAsync(CancellationToken.None);
 
         Assert.Equal(CheckStates.Refused, files.ReadState("a1")!.State);
         Assert.Equal(CheckStates.Reached, files.ReadState("a0")!.State);
@@ -164,7 +170,7 @@ public sealed class CheckPlanTests : IDisposable
 
         Assert.True(CheckStates.Finished(answered.State));
         Assert.Equal(["a1"], handed);
-        Assert.Null(CheckQueue.Next(files.Asks(), files.ReadState, At.AddDays(1)));
+        Assert.Empty(CheckBroker.Pending(files.Asks(), files.ReadState, At.AddDays(1)));
         var said = Assert.Single(words);
         Assert.StartsWith("Daoris did not run the checks you asked for", said);
         Assert.Contains(answered.Error!, said);
