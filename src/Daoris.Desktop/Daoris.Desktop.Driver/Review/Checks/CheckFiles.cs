@@ -135,6 +135,7 @@ public sealed class CheckFiles(string home)
                 Wait = Text(element, "wait") is { } waitCode && element.TryGetProperty("values", out var values) && values.ValueKind == JsonValueKind.Object
                     ? new CheckWait(waitCode, values.EnumerateObject().Where(each => each.Value.ValueKind == JsonValueKind.String).ToDictionary(each => each.Name, each => each.Value.GetString()!, StringComparer.Ordinal))
                     : null,
+                Ran = element.TryGetProperty("ran", out var ran) && ran.ValueKind == JsonValueKind.Array ? [.. ran.EnumerateArray().Where(each => each.ValueKind == JsonValueKind.String).Select(each => each.GetString()!)] : null,
             };
         }
     }
@@ -157,6 +158,13 @@ public sealed class CheckFiles(string home)
             foreach (var (name, value) in wait.Values) writer.WriteString(name, value);
             writer.WriteEndObject();
         }
+        if (state.Ran is { } ran)
+        {
+            writer.WriteStartArray("ran");
+            foreach (var command in ran) writer.WriteStringValue(command);
+            writer.WriteEndArray();
+        }
+
         writer.WriteEndObject();
     });
 

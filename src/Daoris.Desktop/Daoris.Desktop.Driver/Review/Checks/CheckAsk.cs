@@ -4,11 +4,11 @@ namespace Daoris.Driver;
 /// One check asked of the broker: a declared gate by name, or a command of its own, to run in <paramref name="Session"/>'s tree. Kept as
 /// <c>&lt;id&gt;.ask.json</c> under the home's <c>checks</c> folder, written by the connector's <c>check_run</c>, never changed.
 /// </summary>
-/// <param name="Gate">The declared gate to run; null with no <paramref name="Command"/> runs every heavy gate.</param>
+/// <param name="Gate">The declared gate to run; null with no <paramref name="Command"/> runs what <see cref="CheckPlans"/> reads in the tree: its required hand-back commands, else its heavy gates.</param>
 /// <param name="Command">A command of the asker's own, run as a heavy run (<c>daoris gate run -- &lt;command&gt;</c>).</param>
 public sealed record CheckAsk(string Id, string Session, string? Gate, IReadOnlyList<string>? Command, DateTimeOffset At);
 
-/// <summary>The states a check passes through, and the newest of them is its verdict.</summary>
+/// <summary>The states a check passes through, and the newest of them is its verdict; <c>Refused</c> is nothing to run, finished, said to the asker, never retried.</summary>
 public static class CheckStates
 {
     public const string Queued = "queued";
@@ -17,17 +17,20 @@ public static class CheckStates
     public const string Failed = "failed";
     public const string Stopped = "stopped";
 
+    public const string Refused = "refused";
+
     /// <summary>Daoris could not run it: no verdict, never said to the asker.</summary>
     public const string Errored = "errored";
 
     /// <summary>Whether the state is a verdict: the run is over.</summary>
-    public static bool Finished(string state) => state is Reached or Failed or Stopped;
+    public static bool Finished(string state) => state is Reached or Failed or Stopped or Refused;
 }
 
 /// <summary>A check's state, <c>&lt;id&gt;.state.json</c>: written by the driver alone.</summary>
 /// <param name="Exit">The heavy run's exit code, where it ran.</param>
 /// <param name="Tail">The end of the run's log, bounded, for a red the asker reads.</param>
 /// <param name="Tip">The commit of the asker's tree when the run began: the inputs the verdict is for.</param>
+/// <param name="Ran">The required hand-back commands a no-command check began, in order, a red's last the one it failed at; null otherwise, and in any state an older build wrote.</param>
 /// <param name="Handed">The word that carried the verdict to the asker; null until it is said.</param>
 public sealed record CheckState(string Id, string State, DateTimeOffset At)
 {
@@ -36,6 +39,8 @@ public sealed record CheckState(string Id, string State, DateTimeOffset At)
     public string? Tail { get; init; }
 
     public string? Tip { get; init; }
+
+    public IReadOnlyList<string>? Ran { get; init; }
 
     public string? Handed { get; init; }
 

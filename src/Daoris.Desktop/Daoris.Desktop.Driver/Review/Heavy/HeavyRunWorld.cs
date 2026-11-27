@@ -29,6 +29,9 @@ public sealed record HeavyRunWorld(string Home, string Directory, Func<string, s
     /// <summary>The run's place in its queue's order (<see cref="AdmissionOrder"/>), where a broker holds several waiting for the one admission; null for a run that asks at each look.</summary>
     public AdmissionTurn? Turn { get; init; }
 
+    /// <summary>Called once a command of the caller's own has its place in the machine's admission, before it starts; a gate's run says it through <see cref="Turn"/>.</summary>
+    public Action? Admitted { get; init; }
+
     /// <summary>The whole environment the gates start in, with the run's own variables over it; null for this process's.</summary>
     public IReadOnlyDictionary<string, string>? Environment { get; init; }
 
