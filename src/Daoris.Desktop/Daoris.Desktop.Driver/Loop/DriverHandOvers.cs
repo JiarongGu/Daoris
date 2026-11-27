@@ -153,6 +153,17 @@ internal sealed class DriverHandOvers(LoopContext context, Func<ConversationMove
                 if (left?.Note(PartLeftovers.Bound) is { } said) Say(id, said);
             }
 
+            // A session waiting on its step runs no process: its run is stopped as the person's stop of it does, and the run's end ends the
+            // record at a later look, which takes the move on; a run with no step to stop leaves the record to end here.
+            if (!stopped && string.Equals(record.State, SessionStates.AwaitingStep, StringComparison.OrdinalIgnoreCase)
+                && !_context.Processes.AliveOnThisMachine(id))
+            {
+                var run = await RunWaitStops.StopAsync(RunWaitStop.At(_context.Home, _context.Clock.GetUtcNow), record, ct).ConfigureAwait(false);
+                if (run is { Done: true, Steps.Count: > 0 }) return false;
+                await service.AdvanceAsync(id, "stopped", note, ct: ct).ConfigureAwait(false);
+                stopped = true;
+            }
+
             if (!stopped)
             {
                 await move.EndAsync().ConfigureAwait(false);

@@ -55,7 +55,7 @@ public sealed class HandOverLookTests : IDisposable
         new(_home, _ledger.Client(), new SessionEvents(DaorisHome.Entry(_home, HomeEntry.Sessions)), store: Store(), scope: MoveTakeUpScope.LeaseHolder);
 
     /// <summary>A driver for a look, its stop landing at once as a real run's record does once its process exited, and its starts only said.</summary>
-    private Daoris.Driver.Driver Driver()
+    private Daoris.Driver.Driver Driver(bool processless = false)
     {
         var service = _ledger.Client();
         var adapters = ProviderRegistry.Built();
@@ -65,6 +65,7 @@ public sealed class HandOverLookTests : IDisposable
             RetryClock = new StandInNow(),
             Stops = (session, note) =>
             {
+                if (processless) return false;
                 _stopped.Add((session, note));
                 _phaseAtStop = MoveFrom(session)?.PhaseWord;
                 service.AdvanceAsync(session, "stopped", note).GetAwaiter().GetResult();
@@ -120,6 +121,22 @@ public sealed class HandOverLookTests : IDisposable
         Assert.Equal("s1", carry.Resumes!.Session);
         Assert.Equal("carrying on in `engine` — session `s1` was handed over to codex-acp.", carry.Reason);
         Assert.Equal(["q1"], _starts.Select(start => start.Quest.Id));
+    }
+
+    /// <summary>A session waiting on its step runs no process: the hand-over ends its record and the quest goes on at the same look.</summary>
+    [Fact]
+    public async Task A_session_waiting_on_its_step_has_no_process_to_stop_and_is_ended_by_the_hand_over_so_the_quest_goes_on()
+    {
+        _ledger.Publish("q2", "engine");
+        _ledger.Driven("s2", "q2", Path.Combine(_home, "tree-s2"), state: "awaiting-step", adapter: "claude-code", profile: "account-1");
+        await Ask("s2");
+
+        var look = await Driver(processless: true).TickAsync().WaitAsync(Bound);
+
+        Assert.DoesNotContain(look.Events, line => line.Contains("another Daoris process", StringComparison.Ordinal));
+        Assert.Contains(look.Events, line => line == "hand-over  session `s2` (#q2): stopped, and `#q2` goes on with codex-acp.");
+        Assert.Equal("stopped", State("s2"));
+        Assert.Equal("codex-acp", new HandedQuests(_home).Read("q2")!.Agent);
     }
 
     /// <summary>A move judged again as it is taken: a quest closed meanwhile stops nothing and keeps nothing, and the move ends on its old part.</summary>
