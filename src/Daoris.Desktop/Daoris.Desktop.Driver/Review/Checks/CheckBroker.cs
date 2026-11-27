@@ -10,7 +10,8 @@ public delegate Task<int> BrokeredRun(HeavyRunAsk ask, HeavyRunWorld world, Text
 /// <remarks>
 /// <para>The broker has no queue and no limit of its own. Every due ask starts at once and waits its turn (<see cref="AdmissionOrder"/>) in
 /// the one order, its quest's class then its arrival; how many run is the admission's alone. A waiting ask's state says what it waits for.
-/// A command of the asker's own takes no repository slot and waits first come for the machine's places, as a terminal's does.</para>
+/// A command of the asker's own, and each required hand-back command a check with no command runs, takes no repository slot and waits
+/// first come for the machine's places, as a terminal's does.</para>
 /// <para>One broker seat per home (<c>checks/broker.lock</c>) keeps a second Daoris process from starting a check the first holds. A run
 /// the state calls running that this broker does not hold ended with a restart and is queued again; one cut off by the driver's end before
 /// it had its slots is queued, never a verdict.</para>
@@ -136,6 +137,12 @@ public sealed class CheckBroker(string home, Func<string, CancellationToken, Tas
 
             // Before any admission, so a check with nothing to run is answered at once and never after a slot.
             if (plan.Empty is { } nothing) return Keep(new CheckState(ask.Id, CheckStates.Refused, _clock.GetUtcNow()) { Error = nothing });
+
+            if (plan.Handback.Count > 0)
+            {
+                turn?.Dispose();
+                turn = null;
+            }
         }
 
         string? tip = null;
@@ -164,7 +171,7 @@ public sealed class CheckBroker(string home, Func<string, CancellationToken, Tas
             await using (var log = _files.OpenLogWriter(ask.Id))
             {
                 exit = plan is { Handback.Count: > 0 }
-                    ? await RunHandbackAsync(plan.Handback, folder, ask, turn, log, ct).ConfigureAwait(false)
+                    ? await RunHandbackAsync(plan.Handback, folder, ask, log, ct).ConfigureAwait(false)
                     : await _run(new HeavyRunAsk(ask.Gate) { Command = ask.Command }, WorldOf(folder, ask, turn), log, ct).ConfigureAwait(false);
             }
 
@@ -202,15 +209,15 @@ public sealed class CheckBroker(string home, Func<string, CancellationToken, Tas
         return HeavyMapping.For(DriverConfig.Load(DriverConfig.ResolvePath(home)), repository);
     }
 
-    /// <summary>The required commands one after another, each as written in its folder, the first failure ending the check with its exit; only the first holds the ask's place in the order.</summary>
-    private async Task<int> RunHandbackAsync(IReadOnlyList<DeclaredGate> gates, string folder, CheckAsk ask, AdmissionTurn? turn, TextWriter log, CancellationToken ct)
+    /// <summary>The required commands one after another, each as written in its folder, the first failure ending the check with its exit.</summary>
+    private async Task<int> RunHandbackAsync(IReadOnlyList<DeclaredGate> gates, string folder, CheckAsk ask, TextWriter log, CancellationToken ct)
     {
-        foreach (var (gate, index) in gates.Select((gate, index) => (gate, index)))
+        foreach (var gate in gates)
         {
             var where = gate.Cwd is { } cwd ? Path.GetFullPath(Path.Combine(folder, cwd)) : folder;
             if (!Directory.Exists(where)) throw new DriverException($"`{gate.Name}`'s cwd, {gate.Cwd}, is no folder of the tree.");
             await log.WriteLineAsync($"check: `{gate.Name}`: {gate.Run}").ConfigureAwait(false);
-            var exit = await _run(new HeavyRunAsk(null) { Line = gate.Run }, WorldOf(where, ask, index == 0 ? turn : null), log, ct).ConfigureAwait(false);
+            var exit = await _run(new HeavyRunAsk(null) { Line = gate.Run }, WorldOf(where, ask, null), log, ct).ConfigureAwait(false);
             if (exit != 0) return exit;
         }
 

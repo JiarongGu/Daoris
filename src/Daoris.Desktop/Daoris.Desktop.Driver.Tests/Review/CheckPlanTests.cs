@@ -66,6 +66,43 @@ public sealed class CheckPlanTests : IDisposable
     }
 
     [Fact]
+    public async Task A_check_running_its_handback_commands_runs_them_as_commands_and_holds_no_place_in_the_order_another_check_waits_in()
+    {
+        // The hand-back commands wait first come for the machine's places, as a command of the asker's own does: a turn they never ask at
+        // would hold every check behind it and never say the check runs.
+        Declare("""{ "name": "cli", "run": "npm run verify:checks", "handback": true }""");
+        var files = new CheckFiles(_home);
+        files.WriteAsk(Ask("a1"));
+        files.WriteAsk(Ask("a2", minute: 1, gate: "tests"));
+        var gateRan = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        AdmissionTurn? commandTurn = null;
+        string? whileCommandRuns = null;
+        var gateMayTry = false;
+        var broker = new CheckBroker(_home, (_, _) => Task.FromResult<string?>(_tree), async (ask, world, _, _) =>
+        {
+            if (ask.Line is not null)
+            {
+                commandTurn = world.Turn;
+                whileCommandRuns = files.ReadState("a1")?.State;
+                await gateRan.Task;
+                return 0;
+            }
+
+            gateMayTry = world.Turn!.MayTry(out _);
+            world.Turn.Admitted();
+            gateRan.TrySetResult();
+            return 0;
+        });
+
+        await broker.RunAsync(CancellationToken.None);
+
+        Assert.Null(commandTurn);
+        Assert.Equal(CheckStates.Running, whileCommandRuns);
+        Assert.True(gateMayTry);
+        Assert.Equal((CheckStates.Reached, CheckStates.Reached), (files.ReadState("a1")!.State, files.ReadState("a2")!.State));
+    }
+
+    [Fact]
     public async Task The_first_required_command_that_fails_ends_the_check_and_the_rest_do_not_run()
     {
         Declare("""

@@ -558,6 +558,8 @@ built, but nothing outside tests makes, takes or ends one; `LinePlaces` answers 
     folder with the first failure ending it, else its heavy gates (its own or this machine's mapping), and where neither exists it ends `refused`
     with what the agent may run instead. That is judged when the broker takes the ask (`CheckBroker.RunOneAsync`), before its place in the order and the
     admission, and every due ask starts at once, so an empty ask is said to the session at the look that takes it and never after a slot; a `refused` ask is finished, said, never retried.
+    Required commands are commands: an ask that runs them leaves the order once its plan is read, is `running` from then, and each command
+    waits first come for the machine's places as a command of the asker's own does, so it never holds a turn it does not ask at.
     A required command that holds a `{base}` or `{tier}` nothing fills ends the ask `refused`, naming the gate. Such a check that reached keeps the
     commands it ran on its state (`CheckState.Ran`) and meets exactly the required gates whose commands those are at its tip
     (`HandbackGates.Verified`): no admission gate that is not required, and none from a state an older build wrote. (CHECKRUNCMD1) The check log includes the gate's standard output and error before the wrapper's verdict. Every verdict is said to the

@@ -15,6 +15,9 @@ with the version and date at release.
   will not link. Disk space and the machine log (`home.over`, `home.duplicate`, `home.largest`) now name each place over its
   entry's budget, the largest files, and identical files held in more than one place, a file under two names of one record counting once.
 
+- A `check_run` with no gate and no command runs the repository's required hand-back checks (its `daoris.gates.json` gates marked
+  `handback`) one after another, else its heavy gates; one with nothing to run is answered when the driver takes it, saying what to run
+  instead, rather than after hours waiting for a slot. A green one meets the hand-back checks it ran at its commit.
 - An update is no longer refused for a path the home's table lacks. The table now names the memo folder (`data/memo`) and a session's
   start record (`run/sessions/*.agent`), a path still unnamed is said (the start's log, `daoris home`, the proof's `strays`) and never
   refuses, and a build is refused for a finding only where it would break the new build: an unreadable record or binding, a missing
