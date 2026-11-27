@@ -504,7 +504,14 @@ built, but nothing outside tests makes, takes or ends one; `LinePlaces` answers 
     application's generation, the step and attempt a `waits.step` names, the time; `SessionFactCensusTests` holds no state write without
     one), and the fold of the journal (`SessionFold`: working with a live lease, waiting on a named holder, needs you on an open question or
     a breach, ended with its outcome; a lease of a process older than this start's generation is void) is read in shadow beside the stored
-    status (`POST /api/session-life/fold`, each difference said once as `session.fold-differs`); nothing acts on it yet (D368). Every live state may be stopped by the person, at *Stop…* and `session stop <id>` (one
+    status (`POST /api/session-life/fold`, each difference said once as `session.fold-differs`). The watch begins the application's
+    generation at its looks until the service answers, before the sweep moves a record, with the application process's start
+    (`SessionFolds.BeginAsync`); `SESSION_GROUPS` and `daoris session list` send the leases the session markers prove (each `.pid` whose
+    process is alive as the one it marked) and carry `fold` (state, outcome, holder, since, breach) on a row only where it differs, said on
+    the terminal's line too. The same journal gives each session's time buckets (`SessionBuckets`: working, waiting on the start or a step,
+    checks, on a person, still, down from the newest fact a generation wrote to the next start; they sum to its wall time; fixing failed
+    checks, the reviewer and landing read zero until a fact names them), and the host's `session-life baseline` reads a store read only for
+    the trial's baseline. Nothing acts on the fold yet (D368). Every live state may be stopped by the person, at *Stop…* and `session stop <id>` (one
     implementation, `SessionsEnding.StopAsync`; `SessionStopCensusTests` holds every state the page counts active): a process here
     stopped, a start or a working record nothing here runs ended as an orphan, a parked one stopped unanswered, and one awaiting its
     run's step stopped with that run (D316, `RunWaitStops`): every step of the run a stop reaches is stopped through the run's node door

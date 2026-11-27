@@ -53,6 +53,8 @@ public sealed class SessionBaselineTests : IAsyncLifetime
 
         Assert.Equal(7, reading.Records);
         Assert.Equal(6, reading.NotEnded);
+        Assert.Equal((3, 2, 1), (reading.ByState["working"], reading.ByState["awaiting-step"], reading.ByState["awaiting-person"]));
+        Assert.Equal(1, reading.Leases);
         Assert.All(reading.Ages, age => Assert.Equal(TimeSpan.FromHours(6), age));
         Assert.Equal(2, reading.InProgressNoProcess);
         Assert.Equal(2, reading.StillOverTwoHours);

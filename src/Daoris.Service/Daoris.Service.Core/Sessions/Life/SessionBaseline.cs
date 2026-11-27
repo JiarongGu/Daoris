@@ -27,6 +27,12 @@ public sealed record SessionBaselineReading(
     int Differ, int DifferSeeded, IReadOnlyDictionary<string, int> Pairs, int Folded, TimeSpan FoldTook,
     IReadOnlyDictionary<TimeBucket, TimeSpan> Buckets)
 {
+    /// <summary>Those not ended, by their stored state's spelling.</summary>
+    public IReadOnlyDictionary<string, int> ByState { get; init; } = new Dictionary<string, int>(StringComparer.Ordinal);
+
+    /// <summary>How many leases the markers proved alive.</summary>
+    public int Leases { get; init; }
+
     /// <summary>The reading as the console prints it.</summary>
     public IReadOnlyList<string> Lines()
     {
@@ -34,7 +40,9 @@ public sealed record SessionBaselineReading(
         string Age(double share) => ages.Count == 0 ? "-" : Span(ages[Math.Min(ages.Count - 1, (int)Math.Floor(share * ages.Count))]);
         return
         [
-            $"sessions: {Records} of this machine's, {NotEnded} not ended",
+            $"sessions: {Records} of this machine's, {NotEnded} not ended"
+            + (ByState.Count == 0 ? "" : $" ({string.Join(", ", ByState.OrderBy(pair => pair.Key, StringComparer.Ordinal).Select(pair => $"{pair.Key} {pair.Value}"))})"),
+            $"live leases: {Leases}",
             $"ages of those not ended: median {Age(0.5)}, 90th percentile {Age(0.9)}, oldest {(ages.Count == 0 ? "-" : Span(ages[^1]))}; "
             + $"{ages.Count(age => age > TimeSpan.FromDays(1))} over a day, {ages.Count(age => age > TimeSpan.FromDays(7))} over a week",
             $"in progress with no process: {InProgressNoProcess}",
@@ -62,8 +70,15 @@ public static class SessionBaseline
     public static readonly TimeSpan StillAfter = TimeSpan.FromHours(2);
 
     /// <summary>Read <paramref name="store"/> (open) at <paramref name="now"/>, against the processes proved alive, timing a list of <paramref name="count"/>.</summary>
-    public static async Task<SessionBaselineReading> ReadAsync(
+    public static Task<SessionBaselineReading> ReadAsync(
         SqliteConnection store, IReadOnlyList<ShadowLease> leases, DateTimeOffset now, int count = 50, CancellationToken ct = default)
+    {
+        var gate = ConnectionGate.For(store);
+        return gate.RunAsync(() => ReadAsync(gate, leases, now, count, ct), ct);
+    }
+
+    private static async Task<SessionBaselineReading> ReadAsync(
+        ConnectionGate store, IReadOnlyList<ShadowLease> leases, DateTimeOffset now, int count, CancellationToken ct)
     {
         var records = await RecordsAsync(store, ct).ConfigureAwait(false);
         var journalled = await HasAsync(store, "session_facts", ct).ConfigureAwait(false);
@@ -122,14 +137,18 @@ public static class SessionBaseline
             live.Count(record => record.State is SessionState.Starting or SessionState.Working
                                  && !LeasesOf(record.Id).Any(lease => lease.Generation == generation)),
             live.Count(record => now - record.Updated > StillAfter),
-            journals.Count, seeded, differ, differSeeded, pairs, listed.Count, took, buckets);
+            journals.Count, seeded, differ, differSeeded, pairs, listed.Count, took, buckets)
+        {
+            ByState = live.GroupBy(record => Session.Spell(record.State), StringComparer.Ordinal).ToDictionary(group => group.Key, group => group.Count(), StringComparer.Ordinal),
+            Leases = leases.Count,
+        };
     }
 
     private sealed record Record(string Id, SessionState State, DateTimeOffset Created, DateTimeOffset Updated, string? Parts);
 
-    private static async Task<List<Record>> RecordsAsync(SqliteConnection store, CancellationToken ct)
+    private static async Task<List<Record>> RecordsAsync(ConnectionGate store, CancellationToken ct)
     {
-        await using var command = store.CreateCommand();
+        await using var command = store.Command();
         command.CommandText = "SELECT id, state, created, updated, note_parts FROM sessions WHERE origin IS NULL";
         var records = new List<Record>();
         await using var reader = await command.ExecuteReaderAsync(ct).ConfigureAwait(false);
@@ -144,17 +163,17 @@ public static class SessionBaseline
         return records;
     }
 
-    private static async Task<bool> HasAsync(SqliteConnection store, string table, CancellationToken ct)
+    private static async Task<bool> HasAsync(ConnectionGate store, string table, CancellationToken ct)
     {
-        await using var command = store.CreateCommand();
+        await using var command = store.Command();
         command.CommandText = "SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = $name";
         command.Parameters.AddWithValue("$name", table);
         return await command.ExecuteScalarAsync(ct).ConfigureAwait(false) is not null;
     }
 
-    private static async Task<IReadOnlyList<AppGeneration>> GenerationsAsync(SqliteConnection store, CancellationToken ct)
+    private static async Task<IReadOnlyList<AppGeneration>> GenerationsAsync(ConnectionGate store, CancellationToken ct)
     {
-        await using var command = store.CreateCommand();
+        await using var command = store.Command();
         command.CommandText = "SELECT generation, started FROM app_generations ORDER BY generation";
         var all = new List<AppGeneration>();
         await using var reader = await command.ExecuteReaderAsync(ct).ConfigureAwait(false);
@@ -168,9 +187,9 @@ public static class SessionBaseline
 
     /// <summary>The journals of <paramref name="sessions"/>, or of every record of this machine's where none are named.</summary>
     private static async Task<IReadOnlyDictionary<string, IReadOnlyList<SessionFact>>> FactsAsync(
-        SqliteConnection store, IReadOnlyList<string>? sessions, CancellationToken ct)
+        ConnectionGate store, IReadOnlyList<string>? sessions, CancellationToken ct)
     {
-        await using var command = store.CreateCommand();
+        await using var command = store.Command();
         command.CommandText = sessions is null
             ? $"SELECT {SessionJournal.FactColumns} FROM session_facts WHERE session IN (SELECT id FROM sessions WHERE origin IS NULL) ORDER BY position"
             : $"SELECT {SessionJournal.FactColumns} FROM session_facts WHERE session IN (SELECT value FROM json_each($sessions)) ORDER BY position";
