@@ -9,6 +9,7 @@
   "update.steps": "还有 {{count}} 个插件步骤在进行中。",
   "update.steps_other": "还有 {{count}} 个插件步骤在进行中。",
   "update.stopping": "Daoris {{version}} 即将安装：不再开始新的工作，Daoris 正在等待{{what}}（已等 {{seconds}} 秒，最多 {{bound}} 秒）。点「暂不更新」即可结束等待。",
+  "update.waits.place": "本机重型运行准入中的一个名额，检查须先取得它",
   "update.waits.check": "对暂存构建的检查",
   "update.waits.launcher": "启动器启动",
   "update.waits.close": "Daoris 关闭",

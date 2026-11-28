@@ -9,6 +9,7 @@
   "update.steps": "{{count}} plugin step still under way.",
   "update.steps_other": "{{count}} plugin steps still under way.",
   "update.stopping": "Daoris {{version}} is about to install: nothing new starts, and Daoris waits on {{what}} ({{seconds}} s of at most {{bound}} s). Not now ends the wait.",
+  "update.waits.place": "a place in the machine's admission, which the check takes first",
   "update.waits.check": "the check of the staged build",
   "update.waits.launcher": "the launcher to start",
   "update.waits.close": "Daoris to close",

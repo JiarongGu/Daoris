@@ -21,7 +21,7 @@ Each type is in a file of its name; `docs/index/README.md` says where a seam, ve
 | Where | Its job |
 |---|---|
 | `src/Daoris.Desktop/Daoris.Desktop.Launcher/` | The root `Daoris.exe`: taskbar id, starts `app/Daoris.Desktop.exe`, runs a staged swap while nothing runs from `app/` |
-| `Mod/Update/` | The application's half: the install found and the home set (`InstallHome`), the update watched, drained, stopped for, checked and said (`InstallUpdater` over `UpdateFlow`'s states and whys, `UpdateModule`, `UpdateLauncher`) |
+| `Mod/Update/` | The application's half: the install found and the home set (`InstallHome`), the update watched, drained, stopped for, checked and said (`InstallUpdater` over `UpdateFlow`'s states and whys, `StopBounds` and `StopPlace` for the check's bound and place, `UpdateModule`, `UpdateLauncher`) |
 | `Drv/Platform/` | The home seam (`DaorisHome`, its `HomeEntry` table), the home a program names once at its entry (`ProgramHome`, never the variable a process inherited; `ProcessHomeCensusTests` lists each read left), the lease and the id (`HomeLease`, `HomeIdentity`); twinned cell for cell by the service's `Platform/DaorisHome.cs` and the CLI's `platform/home.ts` |
 | `Drv/Install/` | The staged build and its swap, confirm and roll back (`StagedBuild`, `InstallSwap`, `HeldFiles`, `HomeLastBuild`, compiled into the launcher), the person's word (`InstallUpdate`), `daoris update`, the state the application keeps for it (`UpdateStateFile`), the start's confirmation, the refusals (`UpdateRefusal`, `GoingBackRefusals`), the tools (`Tools`, `ToolInstall`, `ToolResources`, `daoris tool`) |
 | `Drv/Workflows/` | Going back refused below the saved workflows' floor and while a delivery is unresolved (`InstallRollback`, `DeliveryGoingBack`), installed into Install's port; the floor's rule is `Workflows/Domain/WorkflowRolesSince`, its file `WorkflowRolesSinceStore` |
@@ -211,8 +211,8 @@ Each type is in a file of its name; `docs/index/README.md` says where a seam, ve
     a minute that the terminal does not spend silent. A refusal closes nothing, is said again at every look, and holds
     for its build until the person's next word, from the banner, Settings or the terminal, which checks again. The presses a stop or a close
     holds go on at once when the update is refused, a word is said (a cancel), a build other than the one stopped for is staged, the stop has
-    run out of `InstallUpdater.StopBound` (three minutes, its check and the launcher's start together: refused as `bound`), or the close has not
-    taken within `InstallUpdater.CloseBound` (five minutes, past the launcher's three: refused as `close`); a refusal is kept until the next word. (from D139, D215, HOMEPROOF2, D370)
+    run out of its bound (`StopBounds`: twice the longest of the last five stops this machine measured, its check and the launcher's start together, from the moment the check has its place in the machine's admission, never under three minutes nor over ten, and three minutes for the wait for that place: refused as `bound`, the sentence saying the bound and what it rests on), or the close has not
+    taken within `InstallUpdater.CloseBound` (five minutes, past the launcher's three: refused as `close`); a refusal is kept until the next word. (from D139, D215, HOMEPROOF2, D370, UPDATEBOUND1)
 41. *Update now* is the person closing Daoris: nothing new starts or is answered from the moment it is said (state `stopping`), the build is
     checked, the launcher started and the application closed, and it says what it waits on with the seconds and the bound (rule 41a). The
     wait is bounded and a word or a restage ends it; driven sessions are recorded stopped for the update (`update.closed`) and carried on at the
@@ -251,7 +251,7 @@ Each type is in a file of its name; `docs/index/README.md` says where a seam, ve
     path; so a refusal reads again from the log alone. A home proof that passes logs `update.probe.copied`, what its copy read and did not,
     counted. (from D94, D139, D370, HOMEPROBECOPY1)
 47a. A staged build starts clean on a copy of the home before it is swapped in (`HomeProbe`, the last of `UpdateRefusal.Of`'s checks, asked in the
-    stop by the application's `InstallUpdater.Proof`, never by the terminal; the stop lets go of it when a word, a restage or the stop's bound ends the stop). The running build copies the home
+    stop by the application's `InstallUpdater.Proof`, never by the terminal, and run in a place of the machine's heavy-run admission (`StopPlace`: the stop says `place` while it waits, then `check`; a stop that ended on its own keeps its time under `install|update|stop` in the gates' `admission/learned.json`); the stop lets go of it when a word, a restage or the stop's bound ends the stop). The running build copies the home
     into `update/probe/<id>/` (`HomeCopy`), and the copy is never vacuous: the Daoris folder, its `data` folder and every folder and record the
     proof's reading reads (`HomeProof.Reads`: the agents' account folders under `profiles`, each session's record, the desktop store, each
     workflow's file and each run's binding) are listed and read, or the copy is refused with a sentence naming the place. `data` is copied with

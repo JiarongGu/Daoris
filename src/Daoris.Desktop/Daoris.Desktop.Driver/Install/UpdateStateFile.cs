@@ -95,7 +95,8 @@ public static class UpdateStateFile
 
     private static string WaitWords(string on) => on switch
     {
-        "check" => "the check of the staged build (its files, and its start on a copy of this home)",
+        "place" => "a place in the machine's admission, which the check of the staged build takes first",
+        "check" =>"the check of the staged build (its files, and its start on a copy of this home)",
         "launcher" => "the launcher to start",
         "close" => "the application to close",
         _ => on,
