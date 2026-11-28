@@ -68,7 +68,7 @@ public sealed class UpdateFlowReplayTests : Bridge
         Proof = (_, _, _, cancel) =>
         {
             Interlocked.Increment(ref _proofs);
-            using var ended = cancel.Register(() => Interlocked.Increment(ref _proofsEnded));
+            _ = cancel.Register(() => Interlocked.Increment(ref _proofsEnded));
             return _proof(cancel);
         },
     };
@@ -88,6 +88,12 @@ public sealed class UpdateFlowReplayTests : Bridge
         _proofRunning.Set();
         _unwound.Wait(Poll.Patience);
         return null;
+    }
+
+    private static async Task<UpdateState> Settled(InstallUpdater updater, string state)
+    {
+        await Until(() => updater.State.State == state, $"the state never reached {state}");
+        return updater.State;
     }
 
     private static Task Until(Func<bool> condition, string seen) => Poll.Until(condition, () => seen);
@@ -113,7 +119,8 @@ public sealed class UpdateFlowReplayTests : Bridge
         Assert.Equal(UpdateStates.Deferred, (await updater.LookAsync()).State);
         Assert.Equal(0, _relaunched);
 
-        var applying = await updater.SayAsync(UpdateMode.Now, "terminal");
+        await updater.SayAsync(UpdateMode.Now, "terminal");
+        var applying = await Settled(updater, UpdateStates.Applying);
 
         Assert.Equal(UpdateStates.Applying, applying.State);
         Assert.Equal((1, 1, "b1"), (_relaunched, _closed, _closing));
@@ -132,7 +139,8 @@ public sealed class UpdateFlowReplayTests : Bridge
         _proof = _ => (HomeProbe.Code, "the staged build did not start clean on a copy of this home: the account `claude-code/acct-b` is no longer listed.");
         using var updater = Updater();
 
-        var refused = await updater.SayAsync(UpdateMode.Now, "terminal");
+        await updater.SayAsync(UpdateMode.Now, "terminal");
+        var refused = await Settled(updater, UpdateStates.Refused);
 
         Assert.Equal(UpdateStates.Refused, refused.State);
         Assert.Equal(("home", UpdateWhy.Refusal), (refused.Problem?.Code, refused.Why));
@@ -213,7 +221,8 @@ public sealed class UpdateFlowReplayTests : Bridge
         Assert.Equal(_now, read.Since);
         Assert.Equal(_now.AddMinutes(DrainSetting.Default), read.Until);
 
-        var applying = await updater.SayAsync(UpdateMode.Now, "terminal");
+        await updater.SayAsync(UpdateMode.Now, "terminal");
+        var applying = await Settled(updater, UpdateStates.Applying);
 
         Assert.Equal(UpdateStates.Applying, applying.State);
         Assert.Equal((1, 1, "b2"), (_relaunched, _closed, _closing));
@@ -241,7 +250,8 @@ public sealed class UpdateFlowReplayTests : Bridge
         Assert.Equal(0, _relaunched);
 
         _proof = _ => null;
-        var applying = await updater.SayAsync(UpdateMode.Now, "terminal");
+        await updater.SayAsync(UpdateMode.Now, "terminal");
+        var applying = await Settled(updater, UpdateStates.Applying);
 
         Assert.Equal(UpdateStates.Applying, applying.State);
         Assert.Equal("b2", _closing);
@@ -274,7 +284,7 @@ public sealed class UpdateFlowReplayTests : Bridge
         var waiting = UpdateLines.Of(DataHome, "update.waiting").Single();
         Assert.Equal((UpdateWaits.Check, 10, 180), (waiting["on"]!.GetValue<string>(), waiting["seconds"]!.GetValue<int>(), waiting["bound"]!.GetValue<int>()));
 
-        _now = Now + updater.StopBound + TimeSpan.FromSeconds(1);
+        _now = Now + updater.Placing.Floor + TimeSpan.FromSeconds(1);
         var refused = await updater.LookAsync();
 
         Assert.Equal((UpdateStates.Refused, UpdateWhy.StopBound, InstallUpdater.BoundCode), (refused.State, refused.Why, refused.Problem?.Code));
@@ -288,7 +298,8 @@ public sealed class UpdateFlowReplayTests : Bridge
         // Kept until the person's next word, which asks again.
         Assert.Equal(UpdateStates.Refused, (await updater.LookAsync()).State);
         _proof = _ => null;
-        Assert.Equal(UpdateStates.Applying, (await updater.SayAsync(UpdateMode.Now, "terminal")).State);
+        await updater.SayAsync(UpdateMode.Now, "terminal");
+        await Settled(updater, UpdateStates.Applying);
     }
 
     /// <summary>The terminal reads the state without asking the application, which refuses every ask while it stops: it is kept under the install at every look.</summary>

@@ -100,6 +100,8 @@ public sealed record UpdateWaiting(string On, int Seconds, int Bound);
 /// <summary>What a stop waits on.</summary>
 public static class UpdateWaits
 {
+    public const string Place = "place";
+
     /// <summary>The staged build's check: its files, a going back and its start on a copy of the home.</summary>
     public const string Check = "check";
 

@@ -18,7 +18,7 @@ namespace Daoris.Desktop;
 ///
 /// <para><b>A look is quick and answers within <see cref="Look"/></b>. Looks are one at a time. The stop is its own task, started by the
 /// look that decides it, so a look never waits on the check: a word, a newer build in the staged folder and the stop's bound
-/// (<see cref="StopBound"/>, by the clock) are each judged at every look and end it at once, its check cancelled and the presses let go.
+/// (its bound, <see cref="StopBounds"/>, by the clock) are each judged at every look and end it at once, its check cancelled and the presses let go.
 /// While it stops the loop looks every <see cref="Tick"/>, so the page and the terminal hear each second what it waits on.</para>
 ///
 /// <para><b>Said in the window and the machine log</b>: <c>update.state</c> for every transition (from, to, why, build and what the
@@ -64,8 +64,8 @@ public sealed class InstallUpdater(
     /// <summary>How long the application waits for its own close: the launcher waits three minutes, so one not taken by then is not coming.</summary>
     public static readonly TimeSpan CloseBound = TimeSpan.FromMinutes(5);
 
-    /// <summary>How long a stop may take, its check and the launcher's start together: past it the build is refused (<c>bound</c>) and work goes on.</summary>
-    public TimeSpan StopBound { get; init; } = TimeSpan.FromMinutes(3);
+    /// <summary>The check's floor and place in the machine's admission (<see cref="StopPlace"/>).</summary>
+    public CheckPlacing Placing { get; init; } = CheckPlacing.Machine;
 
     /// <summary>How long a look that has begun a stop waits for it before it answers that it stops: a word is answered within this.</summary>
     public TimeSpan Look { get; init; } = TimeSpan.FromSeconds(2);
@@ -88,7 +88,7 @@ public sealed class InstallUpdater(
     /// <summary>The refusal's code for a going back while a delivery is unresolved.</summary>
     public const string Deliveries = "deliveries";
 
-    /// <summary>The refusal's code for a stop that outlasted <see cref="StopBound"/>.</summary>
+    /// <summary>The refusal's code for a stop that outlasted its bound (<see cref="StopBounds"/>).</summary>
     public const string BoundCode = "bound";
 
     private DateTimeOffset Now => (clock ?? (() => DateTimeOffset.UtcNow))();
@@ -232,9 +232,7 @@ public sealed class InstallUpdater(
                 if (ended == UpdateWhy.StopBound)
                 {
                     var on = stop.On;
-                    return Refuse(stop.Build, staged, stop.Mode, stop.Asked, new UpdateProblem(
-                        BoundCode, $"the application waited {(int)StopBound.TotalSeconds} seconds on {WaitWords(on)} and gave up, so it stays open and nothing was replaced."),
-                        UpdateWhy.StopBound, on);
+                    return Refuse(stop.Build, staged, stop.Mode, stop.Asked, new UpdateProblem(BoundCode, stop.Place.Words(WaitWords(on), on == UpdateWaits.Place)), UpdateWhy.StopBound, on);
                 }
 
                 return await LookOnceAsync().ConfigureAwait(false);
@@ -463,8 +461,10 @@ public sealed class InstallUpdater(
     }
 
     /// <summary>One stop: for a build, under the word that asked it, by what asked it, begun at a time; its task, and what it waits on now.</summary>
-    private sealed class Stop(string build, string mode, UpdateRequest? asked, string by, DateTimeOffset began, CancellationTokenSource cts)
+    private sealed class Stop(string build, string mode, UpdateRequest? asked, string by, DateTimeOffset began, CancellationTokenSource cts, StopPlace place)
     {
+        public StopPlace Place { get; } = place;
+
         public string Build { get; } = build;
 
         public string Mode { get; } = mode;
@@ -488,7 +488,8 @@ public sealed class InstallUpdater(
     {
         if (!string.Equals(id, stop.Build, StringComparison.Ordinal)) return UpdateWhy.Restaged;
         if (Withdrawn(stop, request, id)) return UpdateWhy.NotNow;
-        return Now - stop.Began >= StopBound ? UpdateWhy.StopBound : null;
+        var (since, limit) = stop.Place.Held();
+        return Now - since >= limit ? UpdateWhy.StopBound : null;
     }
 
     /// <summary>
@@ -524,7 +525,7 @@ public sealed class InstallUpdater(
         {
             if (_stop is { } under) return _state;
             waited = _drainSince is { } since ? Math.Max(0, (Now - since).TotalSeconds) : 0;
-            stop = _stop = new Stop(id, mode, asked, by, Now, CancellationTokenSource.CreateLinkedTokenSource(_disposed.Token));
+            stop = _stop = new Stop(id, mode, asked, by, Now, CancellationTokenSource.CreateLinkedTokenSource(_disposed.Token), new StopPlace(home, Now, Placing));
         }
 
         Enter(UpdateStates.Stopping, why, id, staged, now, null, ("by", by), ("waitedSeconds", (long)waited));
@@ -558,12 +559,15 @@ public sealed class InstallUpdater(
         try
         {
             stop.On = UpdateWaits.Check;
-            var check = Task.Run(() => UpdateRefusal.Of(install!, home, staged?.Version, Running) ?? Proof?.Invoke(install!, home, staged?.Version, ct));
+            var check = Task.Run(() => stop.Place.RunAsync(
+                () => Now, () => stop.On = UpdateWaits.Place, () => stop.On = UpdateWaits.Check,
+                () => UpdateRefusal.Of(install!, home, staged?.Version, Running) ?? Proof?.Invoke(install!, home, staged?.Version, ct), ct), ct);
             await Task.WhenAny(check, Task.Delay(Timeout.Infinite, ct)).ConfigureAwait(false);
             ct.ThrowIfCancellationRequested();
             var refused = await check.ConfigureAwait(false);
             if (refused is var (code, why))
             {
+                stop.Place.Measure(Now);
                 Fail(stop, staged, new UpdateProblem(code, why), UpdateWhy.Refusal, code);
                 return;
             }
@@ -626,6 +630,7 @@ public sealed class InstallUpdater(
             }
 
             if (!closing) return;
+            stop.Place.Measure(Now);
             // Said and done with: a word that outlived its build would hold for the next one (InstallUpdate.ModeFor).
             InstallUpdate.Clear(home);
             log.StopBecause(StopReasons.Update, ("build", stop.Build), ("by", stop.By));
@@ -769,7 +774,7 @@ public sealed class InstallUpdater(
     {
         var tens = (int)((Now - stop.Began).TotalSeconds / 10);
         if (tens <= 0 || Interlocked.Exchange(ref stop.Said, tens) == tens) return;
-        log.Info("update.waiting", ("build", stop.Build), ("on", stop.On), ("seconds", tens * 10), ("bound", (int)StopBound.TotalSeconds));
+        log.Info("update.waiting", ("build", stop.Build), ("on", stop.On), ("seconds", tens * 10), ("bound", stop.Place.Waiting(stop.On, Now).Bound));
     }
 
     private UpdateState Compose(UpdateBuild? staged, string? mode, UpdateWork? now, UpdateProblem? problem, DateTimeOffset? since = null, DateTimeOffset? until = null, bool drain = false)
@@ -794,7 +799,7 @@ public sealed class InstallUpdater(
     /// <summary>What a stop or a close waits on now; called under the gate.</summary>
     private UpdateWaiting? WaitingNow() => _flow.State switch
     {
-        UpdateStates.Stopping when _stop is { } stop => new UpdateWaiting(stop.On, Seconds(stop.Began), (int)StopBound.TotalSeconds),
+        UpdateStates.Stopping when _stop is { } stop => stop.Place.Waiting(stop.On, Now),
         UpdateStates.Applying when _closingSince is { } since => new UpdateWaiting(UpdateWaits.Close, Seconds(since), (int)CloseBound.TotalSeconds),
         _ => null,
     };
@@ -803,6 +808,7 @@ public sealed class InstallUpdater(
 
     private static string WaitWords(string on) => on switch
     {
+        UpdateWaits.Place => "a place in the machine's admission",
         UpdateWaits.Check => "the check of the staged build",
         UpdateWaits.Launcher => "the launcher to start",
         _ => "the close",
