@@ -880,7 +880,9 @@ Each row names the place and the registration; the rule behind it is in the tabl
 
 ## Open
 
-- **TREEPOOL1** (D214): rooms first with an optimised fallback for a session's tree; round 5's reads owed.
+- **TREELIFE1** (D371): a few leased slots per repository under one keeper, saved before every clean and reset in place,
+  replacing the per-session tree and its sweeps; **ROOMS1** (D214 round 5): rooms in place where a repository's rooms share no build.
+- **SESSIONLIFE2** (D368): a session's state as a fold of its witnessed facts.
 - **REPOCONFIG1**: the declarations' one store (`docs/2026-11-09-repo-config-design.md`); round 6's reads owed.
 - **SESSWATCH1d, 1e, 1f**: the record of quiet episodes, an automatic end only where it shows quiet is not work, each pass asked
   for its own minutes.
