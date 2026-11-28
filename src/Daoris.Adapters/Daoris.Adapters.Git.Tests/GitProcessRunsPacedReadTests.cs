@@ -30,11 +30,11 @@ public sealed class GitProcessRunsPacedReadTests : IDisposable
 
     private static GitProcessRuns Runs() => new(new MachineProcessHost(new StartPlaces(4, 3), (_, _) => null), new PlainGitPolicy());
 
-    // A git alias, a shell loop that writes a line and then says how many it has written in a file: what git has written, seen from outside.
+    // A git alias, a shell loop that writes lines and says how many in a file at each hundred (a file a line is the disk's pace, not git's).
     private GitAsk Floods()
     {
         var progress = Progress.Replace('\\', '/');
-        var loop = "!i=0; while [ $i -lt " + Lines + " ]; do printf 'line %095d\\n' $i; i=$((i+1)); echo $i > '" + progress + "'; done";
+        var loop = "!i=0; while [ $i -lt " + Lines + " ]; do printf 'line %095d\\n' $i; i=$((i+1)); if [ $((i % 100)) -eq 0 ]; then echo $i > '" + progress + "'; fi; done";
         return new GitAsk(_folder, ["-c", "alias.flood=" + loop, "flood"], GitWait.Read, Writes: false, Bound: TimeSpan.FromMinutes(5));
     }
 
