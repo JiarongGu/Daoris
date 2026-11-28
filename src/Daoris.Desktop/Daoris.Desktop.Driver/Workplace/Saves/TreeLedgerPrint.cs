@@ -5,9 +5,9 @@ namespace Daoris.Driver;
 
 /// <summary>
 /// <c>daoris trees ledger [--days &lt;1-90&gt;] [--record]</c>: the tree ledger by day and repository, read from the home's store. Each day says
-/// the copies and their bytes (a hard link counted once), the copies made, reused and removed and the reuse rate, the bytes written and
-/// freed, the take to ready at p50 and p95, the saves pending, and the drive's free-space change beside the copies' own, which is how
-/// the ledger is reconciled. <c>--record</c> takes a reading first (<see cref="TreeSaveDoors"/>); without it this reads and changes nothing.
+/// the trees and their bytes (a hard link counted once, those set aside apart), the trees made, removed and restored, the bytes written
+/// and freed, the saves pending, and the drive's free-space change beside the trees' own and its floor, which is how the ledger is
+/// reconciled. <c>--record</c> takes a reading first (<see cref="TreeSaveDoors"/>); without it this reads and changes nothing.
 /// </summary>
 /// <remarks>Exit codes keep the family contract: 0 said, or no reading yet · 2 a word it does not take.</remarks>
 public static class TreeLedgerPrint
@@ -70,20 +70,19 @@ public static class TreeLedgerPrint
         {
             var net = row.Freed - row.Written;
             text.Append(row.Day).Append("  ").Append(row.Workspace).Append('/').Append(row.Repository).Append(": ")
-                .Append(row.Trees).Append(" copies, ").Append(SpaceCommand.Size(row.SlotBytes))
-                .Append(row.LinkedBytes > 0 ? $" ({SpaceCommand.Size(row.LinkedBytes)} of it linked, counted once)" : "").Append('\n');
-            text.Append("  made ").Append(row.Made).Append(", reused ").Append(row.Reused).Append(", removed ").Append(row.Removed)
-                .Append(Invariant($" (reuse {row.ReuseRate:0%})"))
-                .Append(row.Installed + row.Restored > 0 ? $"; installed {row.Installed}, restored {row.Restored}" : "").Append('\n');
-            text.Append("  written ").Append(SpaceCommand.Size(row.Written)).Append(", freed ").Append(SpaceCommand.Size(row.Freed))
-                .Append("; take to ready ").Append(row.ReadyP50 is { } p50 ? Invariant($"p50 {p50} ms, p95 {row.ReadyP95} ms") : "not measured (no take yet)").Append('\n');
+                .Append(row.Trees).Append(" trees, ").Append(SpaceCommand.Size(row.SlotBytes))
+                .Append(row.LinkedBytes > 0 ? $" ({SpaceCommand.Size(row.LinkedBytes)} of it linked, counted once)" : "")
+                .Append(row.Aside > 0 ? $"; {row.Aside} set aside until purged, {SpaceCommand.Size(row.AsideBytes)} of it" : "").Append('\n');
+            text.Append("  made ").Append(row.Made).Append(", removed ").Append(row.Removed).Append(", restored ").Append(row.Restored)
+                .Append("; written ").Append(SpaceCommand.Size(row.Written)).Append(", freed ").Append(SpaceCommand.Size(row.Freed)).Append('\n');
             text.Append("  saves pending ").Append(row.SavesPending).Append(row.SavesPending > 0 ? $" ({SpaceCommand.Size(row.SavesBytes)})" : "").Append('\n');
             if (row.FreeFirst is { } first && row.FreeLast is { } last)
             {
                 var change = last - first;
                 text.Append("  drive ").Append(row.Volume).Append(": free ").Append(SpaceCommand.Size(first)).Append(" to ").Append(SpaceCommand.Size(last))
-                    .Append(" (").Append(Signed(change)).Append("; the copies ").Append(Signed(net))
-                    .Append(change == net ? ", the same" : $", the rest {Signed(change - net)} is not the copies'").Append(")\n");
+                    .Append(row.Floor is { } floor ? $" (floor {SpaceCommand.Size(floor)}{(last < floor ? ", under it" : "")})" : "")
+                    .Append("; ").Append(Signed(change)).Append(", the trees ").Append(Signed(net))
+                    .Append(change == net ? ", the same" : $", the rest {Signed(change - net)} is not the trees'").Append('\n');
             }
         }
 
@@ -91,6 +90,4 @@ public static class TreeLedgerPrint
     }
 
     private static string Signed(long bytes) => (bytes < 0 ? "-" : "+") + SpaceCommand.Size(Math.Abs(bytes));
-
-    private static string Invariant(FormattableString text) => text.ToString(CultureInfo.InvariantCulture);
 }

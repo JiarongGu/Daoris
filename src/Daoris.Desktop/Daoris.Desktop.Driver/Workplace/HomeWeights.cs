@@ -122,7 +122,7 @@ public static class HomeWeights
         {
             if (largest.Count >= top) break;
             // One record under many names is listed once, under its first.
-            if (FileLinks.IdentityOf(each.Full) is { } record && !records.Add(record)) continue;
+            if (FileLinks.RecordOf(each.Full) is { } record && !records.Add(record.Identity)) continue;
             largest.Add(new HomeBigFile(each.Path, each.Bytes));
         }
 
@@ -147,7 +147,7 @@ public static class HomeWeights
             var records = new Dictionary<string, (string Path, string Full)>(StringComparer.Ordinal);
             foreach (var each in same.OrderBy(file => file.Path, StringComparer.Ordinal))
             {
-                records.TryAdd(FileLinks.IdentityOf(each.Full) ?? "path:" + each.Full, (each.Path, each.Full));
+                records.TryAdd(FileLinks.RecordOf(each.Full)?.Identity ?? "path:" + each.Full, (each.Path, each.Full));
             }
 
             if (records.Count < 2) continue;

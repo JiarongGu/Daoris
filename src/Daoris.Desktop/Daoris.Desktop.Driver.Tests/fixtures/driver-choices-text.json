@@ -773,6 +773,50 @@
       "after": null
     },
     {
+      "name": "trees budget",
+      "argv": [
+        "trees",
+        "budget",
+        "40"
+      ],
+      "before": null,
+      "exit": 0,
+      "out": [
+        "daoris: a repository's trees holding more than 40 GB are said once a day by the tree ledger's reading.",
+        "  Written to <config> — read at the ledger's next reading, so nothing restarts."
+      ],
+      "err": [],
+      "after": "{\n  \"treeBudgetGb\": 40\n}\n"
+    },
+    {
+      "name": "trees with no value says it",
+      "argv": [
+        "trees"
+      ],
+      "before": "{\n  \"treeBudgetGb\": 40\n}\n",
+      "exit": 0,
+      "out": [
+        "  trees      40 GB at most in a repository's trees  (`daoris settings trees budget <gb>|none` sets it; the drive's floor is `daoris settings keep floor`)"
+      ],
+      "err": [],
+      "after": "{\n  \"treeBudgetGb\": 40\n}\n"
+    },
+    {
+      "name": "trees budget 0",
+      "argv": [
+        "trees",
+        "budget",
+        "0"
+      ],
+      "before": null,
+      "exit": 2,
+      "out": [],
+      "err": [
+        "daoris: a repository's trees' budget is none or a whole number of GB from 1 to 4096 — e.g. `daoris settings trees budget 40` or `daoris settings trees budget none`."
+      ],
+      "after": null
+    },
+    {
       "name": "reserve",
       "argv": [
         "reserve",

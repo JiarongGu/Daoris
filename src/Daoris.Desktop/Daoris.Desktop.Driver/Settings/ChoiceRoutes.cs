@@ -80,6 +80,7 @@ public static class ChoiceRoutes
         ("driver retry <quest> --at <n>", null, "alone: RETRY_QUEST marks at the failures its verdict counts, never at a number the person gives"),
         ("driver retry <quest> --session <id>", null, "alone: RETRY_QUEST releases the stop its verdict names, never a session the person names"),
         ("driver brainstorms", null, "alone: no route sets the brainstorm policy"),
+        ("driver trees budget <gb>|none", null, "alone: no route sets the trees' budget yet"),
         ("driver workflow new|edit|apply|import", ChoiceRoutes.WorkflowSave, "the window's workflow save, a version at a time"),
         ("driver workflow use", ChoiceRoutes.WorkflowUse, "the window's choice of a workflow for a place"),
         ("driver workflow kind", ChoiceRoutes.WorkflowKind, "the window's declaration of a kind of task"),

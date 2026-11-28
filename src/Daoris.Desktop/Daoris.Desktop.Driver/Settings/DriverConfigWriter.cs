@@ -32,6 +32,7 @@ internal static class DriverConfigWriter
             if (config.Checks is { } checks) writer.WriteNumber(ChecksSetting.File, checks);
             if (config.ReserveGb is { } reserve) writer.WriteNumber(ReserveSetting.File, reserve);
             if (config.VacancyHours is { } vacancy) writer.WriteNumber(VacancySetting.File, vacancy);
+            if (config.TreeBudgetGb is { } budget) writer.WriteNumber(TreeBudgetSetting.File, budget);
             config.Manifest.Write(writer);
             writer.WriteStartObject("forgiven");
             foreach (var (quest, mark) in config.Forgiven.OrderBy(f => f.Key, StringComparer.Ordinal))

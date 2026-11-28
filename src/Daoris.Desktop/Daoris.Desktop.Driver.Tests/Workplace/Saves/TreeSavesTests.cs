@@ -55,7 +55,7 @@ public sealed class TreeSavesTests : LandedFixture
 
         Assert.True(saved.Save is not null, saved.Said);
         var save = saved.Save!;
-        Assert.Equal($"refs/daoris/saves/{branch}/1", save.Id);
+        Assert.Equal($"refs/daoris/saves/{branch.Replace('/', '-')}/1", save.Id);
         Assert.Equal(head, save.Head);
         Assert.Equal(head, await Rev(tree, save.Id + "^1"));
         Assert.Equal([".gitignore", "README.md", "kept/state.db", "notes/new.txt", "shared.txt", "work.txt"], save.Files.Select(file => file.Path));
@@ -72,7 +72,7 @@ public sealed class TreeSavesTests : LandedFixture
         Assert.Equal(save.Id, new TreeSaveRecords(Home).LatestOf(tree)!.Id);
 
         var again = await new TreeSaves(Home, _clock).SaveAsync(tree, "aurora", "engine", ["kept"]);
-        Assert.Equal($"refs/daoris/saves/{branch}/2", again.Save!.Id);
+        Assert.Equal($"refs/daoris/saves/{branch.Replace('/', '-')}/2", again.Save!.Id);
     }
 
     [Fact]
@@ -82,27 +82,31 @@ public sealed class TreeSavesTests : LandedFixture
         var trees = new SessionTrees(Home);
         var staged = await GitAsync(tree, "diff", "--cached", "--name-status");
         var said = new StringWriter();
+        var service = new SavedTreeService();
 
-        Assert.Equal(1, await TreeSaveDoors.RunAsync(["remove", tree, "--saved"], trees, () => null, _clock, said, said));
+        Assert.Equal(1, await TreeSaveDoors.RunAsync(["remove", tree, "--saved"], trees, service.Client, _clock, said, said));
         Assert.Contains("no save", said.ToString());
         Assert.True(Directory.Exists(tree));
 
-        Assert.Equal(0, await TreeSaveDoors.RunAsync(["save", tree, "--work", "kept"], trees, () => null, _clock, said, said));
-        await File.AppendAllTextAsync(Path.Combine(tree, "notes", "new.txt"), "written after the save\r\n");
+        Assert.Equal(0, await TreeSaveDoors.RunAsync(["save", tree, "--work", "kept"], trees, service.Client, _clock, said, said));
         Assert.Equal(1, await TreeSaveDoors.RunAsync(["remove", tree, "--saved"], trees, () => null, _clock, said, said));
+        Assert.Contains("no service", said.ToString());
+        await File.AppendAllTextAsync(Path.Combine(tree, "notes", "new.txt"), "written after the save\r\n");
+        Assert.Equal(1, await TreeSaveDoors.RunAsync(["remove", tree, "--saved"], trees, service.Client, _clock, said, said));
         Assert.Contains("changed since its save", said.ToString());
         Assert.True(Directory.Exists(tree));
 
-        Assert.Equal(0, await TreeSaveDoors.RunAsync(["save", tree, "--work", "kept"], trees, () => null, _clock, said, said));
+        // The build log only this tree holds goes only once a save names it: no ignored file is lost unnamed.
+        Assert.Equal(0, await TreeSaveDoors.RunAsync(["save", tree, "--work", "kept", "--work", "noise"], trees, service.Client, _clock, said, said));
         var save = new TreeSaveRecords(Home).LatestOf(tree)!;
         var hashes = save.Files.Where(file => !file.Deleted).ToDictionary(file => file.Path, file => Sha(Path.Combine(tree, file.Path)));
-        Assert.Equal(0, await TreeSaveDoors.RunAsync(["remove", tree, "--saved"], trees, () => null, _clock, said, said));
+        Assert.Equal(0, await TreeSaveDoors.RunAsync(["remove", tree, "--saved"], trees, service.Client, _clock, said, said));
         Assert.False(Directory.Exists(tree), said.ToString());
         Assert.Equal(save.Head, await Rev(root, $"refs/heads/{branch}"));
 
         var folder = Path.Combine(Scratch, "restored");
         Directory.CreateDirectory(folder);
-        Assert.Equal(0, await TreeSaveDoors.RunAsync(["restore", save.Id, folder], trees, () => null, _clock, said, said));
+        Assert.Equal(0, await TreeSaveDoors.RunAsync(["restore", save.Id, folder], trees, service.Client, _clock, said, said));
         Assert.Contains("identical by hash", said.ToString());
         Assert.Equal(branch, (await GitAsync(folder, "symbolic-ref", "--short", "HEAD")).Trim());
         Assert.Equal(save.Head, await Rev(folder, "HEAD"));
@@ -120,11 +124,11 @@ public sealed class TreeSavesTests : LandedFixture
         var trees = new SessionTrees(Home);
         var saves = new TreeSaves(Home, _clock);
 
-        async Task<TreeSave> SavedAsync(Func<string, Task> work)
+        async Task<TreeSave> SavedAsync(Func<string, Task> work, params string[] named)
         {
             var tree = await trees.OpenAsync(root, "engine", "aurora");
             await work(tree.Path);
-            var saved = await saves.SaveAsync(tree.Path, "aurora", "engine", ["kept"]);
+            var saved = await saves.SaveAsync(tree.Path, "aurora", "engine", named);
             Assert.True(saved.Save is not null, saved.Said);
             return saved.Save!;
         }
@@ -137,7 +141,7 @@ public sealed class TreeSavesTests : LandedFixture
             await CommitAsync(tree, ".gitignore", "kept/\n", "ignore kept");
             Directory.CreateDirectory(Path.Combine(tree, "kept"));
             await File.WriteAllTextAsync(Path.Combine(tree, "kept", "db"), "state\n");
-        });
+        }, "kept");
         var squashedThenMore = await SavedAsync(async tree =>
         {
             await CommitAsync(tree, "b.txt", "b\n", "b");
@@ -149,14 +153,20 @@ public sealed class TreeSavesTests : LandedFixture
 
         foreach (var save in new[] { committed, uncommitted, untracked, ignored, squashedThenMore })
         {
-            var judged = await TreeSaveLanded.JudgeAsync(save, "main");
-            Assert.True(judged.Unread is null, judged.Unread);
-            Assert.False(judged.Landed, $"{string.Join(", ", save.Files.Select(file => file.Path))}: {judged.How}");
+            var judged = await LandedProofKinds.JudgeAsync(new(save.Root, save.Commit, "main"));
+            Assert.Equal(LandedVerdict.Unlanded, judged.Verdict);
+            Assert.False(judged.Landed, $"{string.Join(", ", save.Files.Select(file => file.Path))}: {judged.Evidence}");
         }
+
+        // An answer the proof did not give lands nothing: unknown is never landed, and the record takes no other.
+        var unknown = await LandedProofKinds.JudgeAsync(new(root, committed.Commit, "no-such-line"));
+        Assert.Equal(LandedVerdict.Unknown, unknown.Verdict);
+        Assert.Throws<DriverException>(() => new TreeSaveRecords(Home).Landed(committed, unknown));
+        Assert.Null(new TreeSaveRecords(Home).Matching(committed.Id).Single(save => save.Commit == committed.Commit).Landed);
     }
 
     [Fact]
-    public async Task Work_the_line_holds_by_patch_or_by_content_is_landed()
+    public async Task Work_the_line_holds_by_a_merge_a_pick_or_its_content_is_landed()
     {
         var root = await RepositoryAsync("engine");
         var trees = new SessionTrees(Home);
@@ -182,14 +192,14 @@ public sealed class TreeSavesTests : LandedFixture
         await SquashAsync(root, squashed.Branch!);
         await CommitAsync(root, "same.txt", "same\n", "the same file, written on the line");
 
-        Assert.Equal("patch id", (await TreeSaveLanded.JudgeAsync(merged, "main")).How);
-        Assert.Equal("patch id", (await TreeSaveLanded.JudgeAsync(picked, "main")).How);
-        foreach (var save in new[] { squashed, sameFile })
+        foreach (var save in new[] { merged, picked, squashed, sameFile })
         {
-            var judged = await TreeSaveLanded.JudgeAsync(save, "main");
-            Assert.True(judged.Landed, judged.Unread ?? judged.How);
-            Assert.Equal("content", judged.How);
+            var judged = await LandedProofKinds.JudgeAsync(new(save.Root, save.Commit, "main"));
+            Assert.True(judged.Landed, judged.Evidence);
+            new TreeSaveRecords(Home).Landed(save, judged);
         }
+
+        Assert.Empty(new TreeSaveRecords(Home).Pending());
     }
 
     [Fact]

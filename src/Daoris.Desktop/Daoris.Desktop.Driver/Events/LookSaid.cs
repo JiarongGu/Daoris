@@ -186,15 +186,11 @@ public sealed class LookSaid(string? home, Func<MachineLog?> log, Action? notice
 
     public const string TreesBudget = "trees-budget";
 
-    public const string TreesFloor = "trees-floor";
-
-    public const string TreesNoReuse = "trees-no-reuse";
-
     /// <summary>Every news code, which the page's words cover in both languages.</summary>
     public static readonly IReadOnlyList<string> NewsCodes =
         [HandOverRefused, HandOverElsewhere, HandOverDropped, HandOverAskRefused, HandOverFailed, HandedBack, LostClaim, LostToReopen,
          MeetingCut, BrainstormCut, Swept, MeetingFailed, BrainstormFailed, HelperAskerGone, ReopenUnrecorded, ReopenTreeGone,
-         PluginUnsound, LimitWaits, LimitWentOn, LimitResumed, OpinionSettled, FinalExit, TreesBudget, TreesFloor, TreesNoReuse];
+         PluginUnsound, LimitWaits, LimitWentOn, LimitResumed, OpinionSettled, FinalExit, TreesBudget];
 
     private readonly Func<DateTimeOffset> _clock = clock ?? (() => DateTimeOffset.UtcNow);
 

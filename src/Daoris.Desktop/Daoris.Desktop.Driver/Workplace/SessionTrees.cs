@@ -327,9 +327,9 @@ public sealed class SessionTrees(string home, IWorkplacePluginWire? plugins = nu
     public Task<TreeRemoval> RemoveAsync(string path, bool force = false, CancellationToken ct = default, ServiceClient? service = null) =>
         Removals.RemoveAsync(path, force, ct, service);
 
-    /// <summary>A tree whose save reads it as it is (<see cref="TreeSaveDoors"/>), removed by the one remover, its branch kept.</summary>
-    internal Task<TreeRemoval> RemoveSavedAsync(string path, ServiceClient? service, CancellationToken ct = default) =>
-        Removals.RemoveAsync(path, force: true, ct, service, treeOnly: true);
+    /// <summary>A tree behind its save, removed by the one remover, its branch kept, only where <see cref="TreeSaveGate"/> passes under its locks.</summary>
+    internal Task<TreeRemoval> RemoveSavedAsync(string path, ServiceClient? service, Func<CancellationToken, Task<string?>> verify, CancellationToken ct = default) =>
+        Removals.RemoveAsync(path, force: true, ct, service, treeOnly: true, verify: verify);
 
     /// <inheritdoc cref="TreeTidies.RemoveBranchAsync"/>
     public Task<TreeRemoval> RemoveBranchAsync(string root, string repository, string branch, bool force = false, CancellationToken ct = default,

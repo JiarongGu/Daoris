@@ -44,6 +44,8 @@ internal static class DriverConfigReader
                 ? ChecksSetting.Read(checks.TryGetInt64(out var pinned) ? pinned : null) : null,
             ReserveGb = root.TryGetProperty(ReserveSetting.File, out var reserve) && reserve.ValueKind == JsonValueKind.Number
                 ? ReserveSetting.Read(reserve.TryGetInt64(out var kept) ? kept : null) : null,
+            TreeBudgetGb = root.TryGetProperty(TreeBudgetSetting.File, out var budget) && budget.ValueKind == JsonValueKind.Number
+                ? TreeBudgetSetting.Read(budget.TryGetInt64(out var budgeted) ? budgeted : null) : null,
             Manifest = ManifestSetting.Read(root),
             // Each actor's order: an entry that does not read is kept as its error, and holds its starts.
             Actors = actors,

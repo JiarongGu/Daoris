@@ -115,7 +115,7 @@ internal static class TreesConsole
             }
 
             // The save step and the ledger, for the steward's trial: wired into nothing else.
-            case ["save" or "restore" or "ledger", ..]:
+            case ["save" or "restore" or "drop" or "ledger", ..]:
             case ["remove", _, "--saved"]:
                 return await TreeSaveDoors.RunAsync(args, trees, ServiceOrNone, Daoris.Adapters.Clock.MachineClock.Time, Console.Out, Console.Error).ConfigureAwait(false);
 

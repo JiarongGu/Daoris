@@ -6,8 +6,9 @@ using Microsoft.Data.Sqlite;
 namespace Daoris.Driver;
 
 /// <summary>
-/// The saves' records on this machine, one row a save in the desktop store's <c>tree_saves</c> (<see cref="TreeLedgerStoreStep"/>): kept
-/// until the steward or the owner drops a save, its landed mark set once the landed test by content finds its work on the line.
+/// The saves' records on this machine, one row a save in the desktop store's <c>tree_saves</c> (<see cref="TreeLedgerStoreStep"/>), keyed
+/// by its repository and its ref (refs are a repository's own): kept until the steward or the owner drops a save, its landed mark set only
+/// by a landed proof's answer (<see cref="LandedProofKinds"/>), never an agent's word.
 /// </summary>
 /// <remarks>
 /// A record is written after its ref holds its commits, so a record always names a save git has; a ref no record names is part d's to
@@ -17,7 +18,9 @@ public sealed class TreeSaveRecords(string home, Func<StoreSettled>? settled = n
 {
     public const string Family = "tree_saves";
 
-    private const string Columns = "id, workspace, repository, root, tree, branch, head, save, staged, raw, work, files, bytes, took, at, landed";
+    private const string Columns = "id, workspace, repository, root, tree, branch, head, save, staged, raw, work, files, bytes, took, at, landed, session";
+
+    private const string Kept = "workspace = $ws AND repository = $repo AND id = $id";
 
     private static readonly JsonSerializerOptions Shape = new(JsonSerializerDefaults.Web);
 
@@ -26,23 +29,34 @@ public sealed class TreeSaveRecords(string home, Func<StoreSettled>? settled = n
     /// <summary>Keeps <paramref name="save"/>'s record.</summary>
     /// <exception cref="DriverException">The store would not take it.</exception>
     public void Keep(TreeSave save) => Write(write => write.Execute(
-        $"INSERT INTO tree_saves ({Columns}) VALUES ($id, $ws, $repo, $root, $tree, $branch, $head, $save, $staged, $raw, $work, $files, $bytes, $took, $at, $landed)",
+        $"INSERT INTO tree_saves ({Columns}) VALUES ($id, $ws, $repo, $root, $tree, $branch, $head, $save, $staged, $raw, $work, $files, $bytes, $took, $at, $landed, $session)",
         ("$id", save.Id), ("$ws", save.Workspace), ("$repo", save.Repository), ("$root", save.Root), ("$tree", Key(save.Tree)),
         ("$branch", save.Branch), ("$head", save.Head), ("$save", save.Commit), ("$staged", save.Staged), ("$raw", save.Raw),
         ("$work", JsonSerializer.Serialize(save.Work, Shape)), ("$files", JsonSerializer.Serialize(save.Files, Shape)), ("$bytes", save.Bytes),
-        ("$took", save.TookMs), ("$at", Moments.Write(save.At)), ("$landed", save.Landed)));
+        ("$took", save.TookMs), ("$at", Moments.Write(save.At)), ("$landed", save.Landed), ("$session", save.Session)));
 
-    /// <summary>Marks a save landed, saying how the test found it.</summary>
-    public void Landed(string id, string how) => Write(write => write.Execute("UPDATE tree_saves SET landed = $how WHERE id = $id", ("$id", id), ("$how", how)));
-
-    /// <summary>The save kept under <paramref name="id"/>, the ref with or without its namespace.</summary>
-    public TreeSave? Of(string id)
+    /// <summary>Marks a save landed with the evidence of the proof that found it so; any other answer is refused, nothing written.</summary>
+    /// <exception cref="DriverException">The answer is not landed, or the store would not take it.</exception>
+    public void Landed(TreeSave save, LandedAnswer proof)
     {
-        var full = id.StartsWith(TreeSaves.Namespace, StringComparison.Ordinal) ? id : TreeSaves.Namespace + id;
-        return Read($"SELECT {Columns} FROM tree_saves WHERE id = $id", ("$id", full)).FirstOrDefault();
+        if (!proof.Landed) throw new DriverException($"`{save.Id}` is not marked landed: its proof answered {proof.Verdict}, {proof.Evidence}.");
+        Write(write => write.Execute($"UPDATE tree_saves SET landed = $how WHERE {Kept}", Keys(save, ("$how", proof.Evidence))));
     }
 
-    /// <summary>The newest save of the tree at <paramref name="tree"/>, or null.</summary>
+    /// <summary>Marks a save dropped at <paramref name="at"/>: no reader lists it again.</summary>
+    /// <exception cref="DriverException">The store would not take it.</exception>
+    public void Dropped(TreeSave save, DateTimeOffset at) =>
+        Write(write => write.Execute($"UPDATE tree_saves SET dropped = $at WHERE {Kept}", Keys(save, ("$at", Moments.Write(at)))));
+
+    /// <summary>The saves not dropped kept under <paramref name="id"/>, the ref with or without its namespace, of one repository where named.</summary>
+    public IReadOnlyList<TreeSave> Matching(string id, string? repository = null)
+    {
+        var full = id.StartsWith(TreeSaves.Namespace, StringComparison.Ordinal) ? id : TreeSaves.Namespace + id;
+        return Read($"SELECT {Columns} FROM tree_saves WHERE id = $id AND dropped IS NULL" + (repository is null ? "" : " AND repository = $repo") + " ORDER BY at",
+            ("$id", full), ("$repo", repository));
+    }
+
+    /// <summary>The newest save of the tree at <paramref name="tree"/> not dropped, or null.</summary>
     public TreeSave? LatestOf(string tree) =>
         Read($"SELECT {Columns} FROM tree_saves WHERE tree = $tree AND dropped IS NULL ORDER BY at DESC, id DESC LIMIT 1", ("$tree", Key(tree))).FirstOrDefault();
 
@@ -54,6 +68,9 @@ public sealed class TreeSaveRecords(string home, Func<StoreSettled>? settled = n
 
     /// <summary>A tree's path as its record keys it: full, with no trailing separator.</summary>
     internal static string Key(string tree) => Path.TrimEndingDirectorySeparator(Path.GetFullPath(tree));
+
+    private static (string Name, object? Value)[] Keys(TreeSave save, (string Name, object? Value) with) =>
+        [("$ws", save.Workspace), ("$repo", save.Repository), ("$id", save.Id), with];
 
     private IReadOnlyList<TreeSave> Read(string sql, params (string Name, object? Value)[] values)
     {
@@ -91,5 +108,6 @@ public sealed class TreeSaveRecords(string home, Func<StoreSettled>? settled = n
         DateTimeOffset.Parse(row.GetString(14), CultureInfo.InvariantCulture, DateTimeStyles.RoundtripKind))
     {
         Landed = row.IsDBNull(15) ? null : row.GetString(15),
+        Session = row.IsDBNull(16) ? null : row.GetString(16),
     };
 }
