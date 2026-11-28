@@ -17,8 +17,8 @@ public sealed class BrainstormTools(BrainstormBox? brainstorms = null)
     [McpServerTool(Name = "brainstorm_give")]
     [Description(
         "Only for a turn Daoris started to propose answers to a brainstorm's question: give your proposals before you end, "
-        + "at most eight, no idea twice (unknown is an answer: never guess the best value). With none, say why in `none`. "
-        + "`partial: true` marks your answer so far, replaceable; a whole answer is kept once. A refusal says why by code: give "
+        + "no idea twice (unknown is an answer: never guess the best value). "
+        + "`partial: true` marks an answer so far, replaceable; a whole one is kept once. A refusal says why by code: give "
         + "it again, whole. Your proposals are claims a person reads; this changes nothing, and nobody can ask you anything after.")]
     public string Give(
         [Description("Your proposals, at most eight, the strongest first; none where you have no proposal.")]

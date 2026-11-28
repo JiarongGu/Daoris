@@ -17,7 +17,7 @@ const tool = await import(
 
 /** A fixed git identity, none of git's locating variables and none of the test runner's own. */
 function toolEnvironment(): Record<string, string> {
-  const own = /^(GIT_(DIR|WORK_TREE|INDEX_FILE|OBJECT_DIRECTORY|ALTERNATE_OBJECT_DIRECTORIES|COMMON_DIR|NAMESPACE|CEILING_DIRECTORIES)|NODE_TEST_CONTEXT|NODE_ENV|VITEST\w*)$/i;
+  const own = /^(GIT_(DIR|WORK_TREE|INDEX_FILE|OBJECT_DIRECTORY|ALTERNATE_OBJECT_DIRECTORIES|COMMON_DIR|NAMESPACE|CEILING_DIRECTORIES)|NODE_TEST_CONTEXT|NODE_ENV|DAORIS_HOME|VITEST\w*)$/i;
   const kept = Object.entries(process.env).filter((entry): entry is [string, string] => entry[1] !== undefined && !own.test(entry[0]));
   return {
     ...Object.fromEntries(kept),
@@ -94,6 +94,17 @@ test('a preflight in the branch\'s worktree runs the fast gates its merge would,
     const since = Number(/ratchet since (\d+)/.exec(said)?.[1]);
     assert.ok(since >= started && since <= Date.now(), 'a time ratchet inside a gate judges only the records written since the run began');
     assert.match(said, /; 0 DAORIS_ names/, 'no DAORIS_ variable reaches a gate');
+
+    const treeId = git(tree, 'rev-parse', 'HEAD^{tree}');
+    const receipts = JSON.parse(readFileSync(join(root, 'local', 'receipts', `${treeId}.json`), 'utf8')) as { units: Record<string, { verdict: string }> };
+    assert.deepEqual(Object.fromEntries(Object.entries(receipts.units).map(([unit, each]) => [unit, each.verdict])), { one: 'fail', two: 'fail', three: 'pass' });
+    const runs = readFileSync(join(root, 'local', 'receipts', 'runs.jsonl'), 'utf8').trim().split('\n').map((line) => JSON.parse(line) as { trigger: string; gates: unknown[] });
+    assert.deepEqual([runs.length, runs[0]?.trigger, runs[0]?.gates.length], [1, 'agent', 3]);
+    const summary = JSON.parse(readFileSync(join(tree, 'local', 'scratch', 'merge-feature-pre', 'summary.json'), 'utf8')) as { changed: { files: number }; verified: { failed: number }; judgement: { kind: string }[] };
+    assert.deepEqual([summary.changed.files, summary.verified.failed, summary.judgement.map((each) => each.kind)], [1, 2, ['failed', 'failed']]);
+    assert.match(out, /^Changed: 1 files/m);
+    assert.match(out, /^Verified: 1 passed, 2 failed, 0 without a receipt/m);
+    assert.match(out, /^Left for judgement: 2/m);
 
     const brief = join(tree, 'local', 'scratch', 'merge-feature-pre', 'brief.md');
     assert.ok(existsSync(brief), out);

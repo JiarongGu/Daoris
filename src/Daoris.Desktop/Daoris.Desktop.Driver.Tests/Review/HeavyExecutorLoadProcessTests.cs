@@ -46,6 +46,17 @@ public sealed class HeavyExecutorLoadProcessTests : IAsyncLifetime
             if (mode === 'assertpass') { console.log('FAIL X.Y > it adds\nAssertionError: expected 1 to be 2'); line({ ran: 2, red: ['dotnet|X.Y'] }); process.exit(1); }
             if (mode === 'other' && again) { line({ ran: 1 }); process.exit(0); }
             if (mode === 'other') { console.log('FAIL Z.W > it waits\nError: Test timed out in 10000ms.\n\nFAIL X.Y > it adds\nAssertionError: expected 1 to be 2'); line({ ran: 2, red: ['dotnet|X.Y'] }); process.exit(1); }
+            if (mode === 'builtagain') {
+              // The first run says its builds are done and times out; the rerun builds again and says so only when the test lets it, then ends when released.
+              const { existsSync } = await import('node:fs');
+              const until = async (name) => { while (!existsSync(join(folder, name))) await new Promise((done) => setTimeout(done, 50)); };
+              if (!again) { console.log('reached-built: {}'); timeout(); line({ ran: 2, red: ['dotnet|X.Y'] }); process.exit(1); }
+              await until('said');
+              console.log('reached-built: {}');
+              await until('release');
+              line({ ran: 1 });
+              process.exit(0);
+            }
             process.exit(2);
             """);
         await File.WriteAllTextAsync(At("gate.mjs"), "import { appendFileSync } from 'node:fs'; import { join } from 'node:path'; appendFileSync(join(process.argv[2], 'gate-calls.log'), `${process.argv[3]}\\n`);");
@@ -132,6 +143,25 @@ public sealed class HeavyExecutorLoadProcessTests : IAsyncLifetime
     }
 
     private string[] Calls() => File.ReadAllLines(At("reached-calls.log"));
+
+    /// <summary>🔴 The rerun builds its projects again, so the first run's word that its builds were done does not carry over: it counts as starting until it says so itself.</summary>
+    [Fact]
+    public async Task A_rerun_counts_as_starting_again_until_it_says_its_own_builds_are_done()
+    {
+        var repository = await RepositoryAsync(Declaring("builtagain", rerun: true));
+        var key = HeavySlot.KeyOf(Checkout)!;
+        var running = RunAsync(repository, loadedReads: 3);
+
+        await Poll.Until(() => File.Exists(At("reached-calls.log")) && Calls().Length > 1, () => "the rerun never began");
+        Assert.True(HeavySlot.Holder(Home, key) is { Built: null } rerun && CheckAdmission.Starting(rerun), "the rerun counts as starting while it builds");
+
+        await File.WriteAllTextAsync(At("said"), "");
+        await Poll.Until(() => HeavySlot.Holder(Home, key) is { Built: not null }, () => "the rerun's word that its builds were done never reached the record");
+        Assert.False(CheckAdmission.Starting(HeavySlot.Holder(Home, key)!));
+
+        await File.WriteAllTextAsync(At("release"), "");
+        Assert.Equal(VerifyVerdicts.Reached, (await running).Verdict);
+    }
 
     [Fact]
     public async Task Tests_that_timed_out_under_load_run_again_alone_at_a_quiet_slot_and_pass_without_a_failure_or_a_round()

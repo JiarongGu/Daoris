@@ -5,11 +5,25 @@ with the version and date at release.
 
 ## Unreleased
 
+- A session's state is also folded from its journal of witnessed facts, beside the stored status and acting on nothing yet: each start
+  of Daoris begins a generation, a process whose driver went holds no lease while one a terminal's `drive --share` owns keeps its own,
+  each tick of the watch audits the fold and logs each difference once, and a row of the session list (the window's and
+  `daoris session list`, its `--json` too) says what the fold reads where it differs, `in shadow`: its state, holder and since. The
+  service host's `session-life baseline` reads a store, read only, for its live sessions, the stuck ones, the fold's differences, the
+  state moves no fact witnesses and what an append costs.
 - A session's `check_run` no longer waits in a queue of its own that runs one check at a time. Every due check starts at once and
   waits its turn for the machine's one measured admission, in the same order as every other check (its quest's class, then when it was
   asked), so as many run at once as the free memory, the limit and the machine's places admit, and an urgent quest's check takes the
   next freed slot. A waiting check's state says what it waits for, and a check cut off by Daoris closing before it ran is asked again,
   never handed back as stopped.
+- A new session tree no longer costs its dependencies' bytes: the dependency store places each file as a hard link to the entry's own
+  (read-only, so a write in place fails and a clean unlinks one name), copying only the files at the folder's top and any a volume
+  will not link. Disk space and the machine log (`home.over`, `home.duplicate`, `home.largest`) now name each place over its
+  entry's budget, the largest files, and identical files held in more than one place, a file under two names of one record counting once.
+
+- A `check_run` with no gate and no command runs the repository's required hand-back checks (its `daoris.gates.json` gates marked
+  `handback`) one after another, else its heavy gates; one with nothing to run is answered when the driver takes it, saying what to run
+  instead, rather than after hours waiting for a slot. A green one meets the hand-back checks it ran at its commit.
 - An update is no longer refused for a path the home's table lacks. The table now names the memo folder (`data/memo`) and a session's
   start record (`run/sessions/*.agent`), a path still unnamed is said (the start's log, `daoris home`, the proof's `strays`) and never
   refuses, and a build is refused for a finding only where it would break the new build: an unreadable record or binding, a missing

@@ -228,7 +228,7 @@ network, and nothing in the CLI may open a socket. So the CLI has no quest comma
 | `review_ready` | A set-up step's own session says what it set up: `look`, where its tab is; `shows`, at most 300 characters; `again`, at most 600; and a review run's `run`, quoted from the procedure. Kept on its record until its driver posts it with the commit it read; the step's done is refused until one is said (REVIEWENV1b) |
 | `opinion_give` | A second opinion's own reviewer says it, once, within the rule's minutes: at most 20 `findings` (`weight`, `where`, `claim`, `consequence`, `reproduce`, `sure`, a `proposal`), what it `read` and its `limits`, and a recheck's word on each first-pass finding (`rechecked`). Any other session, and a pass that ended or ran out of time, is refused (XAGENT1c) |
 | `opinion_answer` | The working session a pass's findings were handed to answers each by its number: `fixed` with a commit, `rejected` with `evidence`, or `unresolved` with `why`. The latest answer to a finding stands, until a recheck has read them (XAGENT1c) |
-| `check_run` | A quest's or a design's session asks Daoris to run a check in its own tree, a declared `gate` by name, a `command` of its own (one filtered test run) or neither (every heavy gate): written as an ask file under the home's `checks` folder for the driver's broker, answered at once with a sentence, and the session ends its turn. The broker runs one check at a time on the machine under its admission, and the verdict, with a red's log tail, is the session's next turn in the same conversation, so the wait spends no tokens. A helper, a reviewer, an intake and Ask Daoris are refused |
+| `check_run` | A quest's or a design's session asks Daoris to run a check in its own tree, a declared `gate` by name, a `command` of its own (one filtered test run) or neither (the repository's required hand-back commands, else its heavy gates; nothing to run is answered at the driver's next look): written as an ask file under the home's `checks` folder for the driver's broker, answered at once with a sentence, and the session ends its turn. Every due check starts at once and waits its turn for the machine's one admission (its quest's class, then its arrival), as many at once as it admits, and the verdict, with a red's log tail, is the session's next turn in the same conversation, so the wait spends no tokens. A helper, a reviewer, an intake and Ask Daoris are refused |
 | `team_plan` | Any session reads or writes an ask's plan (TEAMWORK1d): with no `parts` it reads the plans, each part's quest, the flags, and the pointers a `seen` map of blob ids shows moved (`json` for the plans whole, which `tools/team-briefs.mjs` composes briefs from); with `parts` and `edges` it writes the next revision whole, `revision` being the one it read. A session answering an ask plans the ask, a worker serving a part splits that part (depth 2); a cycle, a missing reference and a claim on a record or generated path are saved with a flag. Each part is published as a quest under `(ask, part)` |
 | `helper_ask` | A working session asks another agent a `question` (and optionally an `agent`): written as an ask file under the home's `helpers` folder for the driver to take, and answered at once with a sentence. A helper, a reviewer and an intake are refused (a helper cannot ask for a helper); the person's `helpers` rule is the driver's to apply (MIXAGENT2a-i). `urgent` asks the answer at the asker's next step while it works, kept as `urgent: true` on the ask file; an ask with none is ordinary, its next turn (COWORK1d, D188) |
 | `helper_answer` | The helper the driver started says its `answer`, once, for the ask the driver's state file names it the helper of; any other session is refused (MIXAGENT2a-i) |
@@ -443,6 +443,20 @@ characters and codes at 32, so a row is under a KiB, and the inserting statement
 newest 50,000, so a writer that never trims still bounds the table. A `position` is never reused (the table
 is `AUTOINCREMENT`). The store's identity (`store_identity`, the journal's epoch) is written by the sessions
 schema; the change stream's observer reads it and keeps an existing stamp.
+
+**A session's life in shadow** (SESSIONLIFE2, D368): `session_facts` is each session's append-only journal of
+witnessed facts, one row per create and move, written in the move's own transaction (its kind, door and note
+code, holder and subject, step and attempt, outcome, time, and the application's generation its writer names
+in the `Daoris-Generation` header), each naming in `minted` the `event_journal` `opened` or `state` row its
+write minted, so a row no fact names is a write past the journal (the census). `app_generations` keeps each
+start of the application the home lease's holder began (`started`, `begun`, and `seen`, its newest tick's
+audit). A local host alone answers `POST /api/session-life/generations` (the holder's start begins one),
+`POST /api/session-life/audit` (the watch's tick: the fold of every live session against the leases its
+markers prove, each difference said once in the machine log as `session.fold-differs`) and
+`GET /api/session-life/fold` (the last audit, which the session list reads). The serving binary's
+`session-life baseline [--store <file>] [--markers <folder>] [--count N]` reads a store read only for the
+fold's trial. The stored status, and the sessions' `opened` and `state` rows of `event_journal`, end with the
+switch to the fold.
 
 Part 2 (FOUNDATION1k, D212) adds the other three tables' triggers in the same shape, each in its own store's
 schema after the table's own creation (every one makes `event_journal` if it is not there, so a store opened

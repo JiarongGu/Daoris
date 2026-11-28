@@ -97,6 +97,8 @@ public static class CheckSlotWaits
         {
             values["free"] = Value("free");
             values["need"] = Value("need");
+            if (said!.Values.GetValueOrDefault("source") is { } source) values["basis"] = source;
+            if (said.Values.GetValueOrDefault("starting") is { } starting) values["starting"] = starting;
             if (code == Reserve) values["reserve"] = Value("reserve");
         }
         else if (code == Repository)
@@ -140,11 +142,13 @@ public static class CheckSlotWaits
     public static string Why(string code, IReadOnlyDictionary<string, string> values)
     {
         string Value(string name) => values.GetValueOrDefault(name) ?? "?";
+        var basis = values.TryGetValue("basis", out var source) ? $" ({source})" : "";
+        var starting = values.TryGetValue("starting", out var count) ? $" with {count} still starting" : "";
         return code switch
         {
             Full => $"Waits for a check slot: {Value("running")} of {Value("slots")} run",
-            Memory => $"Waits for memory: {Value("free")} GB free, the next check needs {Value("need")} GB",
-            Reserve => $"Waits for the reserve kept for your own work: {Value("free")} GB free, the next check needs {Value("need")} GB and {Value("reserve")} GB stays free",
+            Memory => $"Waits for memory: {Value("free")} GB free, the next check needs {Value("need")} GB{basis}{starting}",
+            Reserve => $"Waits for the reserve kept for your own work: {Value("free")} GB free, the next check needs {Value("need")} GB{basis} and {Value("reserve")} GB stays free{starting}",
             Repository => $"Waits for a heavy-run slot of {Value("repository")}: its other heavy runs hold every one it has",
             Admitting => "Waits for the admission's lock, which another start holds",
             _ => "Waits for a check slot",

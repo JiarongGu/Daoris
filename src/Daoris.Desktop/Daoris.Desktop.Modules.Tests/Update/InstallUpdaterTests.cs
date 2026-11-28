@@ -112,9 +112,8 @@ public sealed class InstallUpdaterTests : Bridge
         Assert.Equal(1, _relaunched);
         Assert.Equal(1, _closed);
 
-        Assert.Single(Logged("update.staged"));
-        Assert.Single(Logged("update.draining"));
-        var applied = Logged("update.applying").Single();
+        Assert.Equal(["none>draining:seen", "draining>stopping:idle", "stopping>applying:checked"], UpdateLines.Said(DataHome));
+        var applied = UpdateLines.To(DataHome, "applying").Single();
         Assert.Equal("idle", applied["by"]!.GetValue<string>());
         Assert.Equal("b1", applied["build"]!.GetValue<string>());
     }
@@ -149,7 +148,7 @@ public sealed class InstallUpdaterTests : Bridge
         Assert.Equal(Now, applying.Since);
         Assert.True(updater.Draining);
         Assert.True(updater.Applying);
-        Assert.Equal(3 * 3600, Logged("update.applying").Single()["waitedSeconds"]!.GetValue<long>());
+        Assert.Equal(3 * 3600, UpdateLines.To(DataHome, "applying").Single()["waitedSeconds"]!.GetValue<long>());
     }
 
     /// <summary>
@@ -180,7 +179,7 @@ public sealed class InstallUpdaterTests : Bridge
         Assert.True(updater.Draining);
         Assert.Equal(0, _relaunched);
         Assert.Equal(0, _closed);
-        Assert.Empty(Logged("update.applying"));
+        Assert.Empty(UpdateLines.To(DataHome, "applying"));
     }
 
     /// <summary>*Not now* ends the drain, and with it its since; *Update now* closes with no drain to have waited.</summary>
@@ -194,7 +193,7 @@ public sealed class InstallUpdaterTests : Bridge
 
         var waiting = await updater.SayAsync(UpdateMode.NotNow, "screen");
 
-        Assert.Equal(UpdateStates.Waiting, waiting.State);
+        Assert.Equal(UpdateStates.Staged, waiting.State);
         Assert.Null(waiting.Since);
         Assert.False(updater.Draining);
         Assert.False(updater.Applying);
@@ -239,7 +238,7 @@ public sealed class InstallUpdaterTests : Bridge
         Assert.Equal(1, _relaunched);
         Assert.Equal(1, _closed);
         Assert.Null(InstallUpdate.Read(DataHome));
-        Assert.Equal("now", Logged("update.applying").Single()["by"]!.GetValue<string>());
+        Assert.Equal("now", UpdateLines.To(DataHome, "applying").Single()["by"]!.GetValue<string>());
         var requested = Logged("update.requested").Single();
         Assert.Equal("now", requested["mode"]!.GetValue<string>());
         Assert.Equal("screen", requested["door"]!.GetValue<string>());
@@ -256,11 +255,11 @@ public sealed class InstallUpdaterTests : Bridge
 
         var waiting = await updater.SayAsync(UpdateMode.NotNow, "screen");
 
-        Assert.Equal(UpdateStates.Waiting, waiting.State);
+        Assert.Equal(UpdateStates.Staged, waiting.State);
         Assert.False(updater.Draining);
         Assert.Equal(new UpdateRequest(UpdateMode.NotNow, "b1", Now), InstallUpdate.Read(DataHome));
         _work = new UpdateWork(0, 0);
-        Assert.Equal(UpdateStates.Waiting, (await updater.LookAsync()).State);
+        Assert.Equal(UpdateStates.Staged, (await updater.LookAsync()).State);
         Assert.Equal(0, _relaunched);
 
         Stage("b2");
@@ -285,8 +284,10 @@ public sealed class InstallUpdaterTests : Bridge
         Assert.Equal(0, _closed);
         Assert.Equal("old application", File.ReadAllText(Path.Combine(_install, "app", "Daoris.Desktop.exe")));
         await updater.LookAsync();
-        var line = Logged("update.refused", "warn").Single();
+        var line = UpdateLines.To(DataHome, "refused").Single();
         Assert.Equal("hash", line["reason"]!.GetValue<string>());
+        Assert.Equal("refusal", line["why"]!.GetValue<string>());
+        Assert.Equal(UpdateRefusalWords.Logged(refused.Problem!.Message, _install, DataHome), line["sentence"]?.GetValue<string>());
     }
 
     /// <summary>
@@ -329,7 +330,7 @@ public sealed class InstallUpdaterTests : Bridge
         Assert.Contains("did not close", given.Problem?.Message);
         Assert.False(updater.Applying);
         Assert.False(updater.Draining);
-        Assert.Equal("close", Logged("update.refused", "warn").Single()["reason"]!.GetValue<string>());
+        Assert.Equal("close", UpdateLines.To(DataHome, "refused").Single()["reason"]!.GetValue<string>());
         Assert.Equal(UpdateStates.Refused, (await updater.LookAsync()).State);
         Assert.Equal(1, _relaunched);
 
@@ -348,7 +349,7 @@ public sealed class InstallUpdaterTests : Bridge
 
         var waiting = await updater.SayAsync(UpdateMode.NotNow, "terminal");
 
-        Assert.Equal(UpdateStates.Waiting, waiting.State);
+        Assert.Equal(UpdateStates.Staged, waiting.State);
         Assert.False(updater.Applying);
         Assert.False(updater.Draining);
         Assert.Equal(1, _relaunched);
@@ -382,7 +383,7 @@ public sealed class InstallUpdaterTests : Bridge
             relaunch: _ => { _relaunched++; return Task.FromResult(true); }, close: () => _closed++, bus: Bus, clock: () => _now, pid: 4242)
         {
             ClosingForUpdate = _ => { },
-            Proof = (_, _, _) =>
+            Proof = (_, _, _, _) =>
             {
                 // The person cancels while the proof runs.
                 InstallUpdate.Write(DataHome, new UpdateRequest(UpdateMode.NotNow, "b1", Now.AddSeconds(1)));
@@ -392,7 +393,7 @@ public sealed class InstallUpdaterTests : Bridge
 
         var state = await updater.LookAsync();
 
-        Assert.Equal(UpdateStates.Waiting, state.State);
+        Assert.Equal(UpdateStates.Staged, state.State);
         Assert.Equal(0, _relaunched);
         Assert.Equal(0, _closed);
         Assert.False(updater.Applying);

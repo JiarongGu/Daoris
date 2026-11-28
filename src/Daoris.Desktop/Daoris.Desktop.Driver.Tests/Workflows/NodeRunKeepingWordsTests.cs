@@ -10,7 +10,19 @@ public sealed class NodeRunKeepingWordsTests
     {
         var words = NodeRunKeeping.FailedWords("check", "gate-failed", null);
 
-        Assert.Equal("Daoris: `check` failed (`gate-failed`), so your work goes back to you: mend what it found and commit, and what you commit goes through the workflow again.", words);
+        Assert.Equal(
+            "Daoris: `check` failed (`gate-failed`), so your work goes back to you: mend what it found and commit, and what you commit goes through the workflow again. "
+            + FailedWordsRule, words);
+    }
+
+    private const string FailedWordsRule =
+        "Where the repository's own verification rule scopes its checks, the next one runs on what you changed: ask for no full or end-to-end run that rule gives this change no reason for.";
+
+    [Fact]
+    public void A_red_check_tells_the_work_it_is_checked_again_on_what_changed_and_that_a_full_run_needs_the_rules_reason()
+    {
+        Assert.EndsWith(FailedWordsRule, NodeRunKeeping.FailedWords("check", null, "the gate 'reached' failed with exit 1"));
+        Assert.Contains(FailedWordsRule, SpentChecks.Words("check", HeavyExecutor.GateFailed, "the gate 'reached' failed with exit 1", 3, NodeTold.OwnerHeld, null));
     }
 
     [Fact]

@@ -26,7 +26,7 @@ public sealed class StepSessionDesk(SessionStore sessions, bool local = true)
 
         var step = await sessions.CreateAsync(
                 quest: null, open.Repository.Trim(), open.Door.Trim(), now, open.Workspace, SessionKind.Chat, doorVersion: open.DoorVersion,
-                profile: open.Account, ct: ct, ownEntry: true, performs: open.Performs.Trim())
+                profile: open.Account, ct: ct, ownEntry: true, performs: open.Performs.Trim(), witness: WitnessDoor.StepOpen)
             .ConfigureAwait(false);
         return new HelperOutcome(HelperRefusal.None, $"Session `{step.Id}` performs the step's attempt `{open.Performs.Trim()}`.") { Session = step };
     }

@@ -3,7 +3,10 @@ using System.Globalization;
 namespace Daoris.Driver;
 
 /// <summary>A heavy thing the machine already holds for Daoris: whose project and agent, what kind, what it needs and whether its first gate has not ended.</summary>
-public sealed record RoomHold(string Project, string? Agent, string Kind, LoadCost Need, bool Starting, string Who);
+public sealed record RoomHold(string Project, string? Agent, string Kind, LoadCost Need, bool Starting, string Who)
+{
+    public string Source { get; init; } = NeedReading.Learned;
+}
 
 /// <summary>What is asked: the project and agent asking, the kind, the need (learned or declared) and the repository's rule for the kind.</summary>
 public sealed record RoomAsk(string Project, string? Agent, string Kind, LoadCost Need, string Source, KindRule Rule)
@@ -91,7 +94,8 @@ public static class RoomJudge
         var basis = view.Basis ?? least;
         var shortNeed = !first && !pinned && least - pending < need;
         if (!shortNeed && basis - pending - kept >= need) return null;
-        var values = new Dictionary<string, string>(StringComparer.Ordinal) { ["free"] = Gb(shortNeed ? least : basis), ["need"] = Gb(need + pending, "0.#") };
+        var source = ask.Source == NeedReading.Learned && starting.All(hold => hold.Source == NeedReading.Learned) ? NeedReading.Learned : NeedReading.DeclaredSource;
+        var values = new Dictionary<string, string>(StringComparer.Ordinal) { ["free"] = Gb(shortNeed ? least : basis), ["need"] = Gb(need + pending, "0.#"), ["source"] = source };
         if (starting.Count > 0) values["starting"] = starting.Count.ToString(CultureInfo.InvariantCulture);
         if (shortNeed) return new CheckWait(CheckWait.Memory, values);
         values["reserve"] = Gb(kept, "0.#");

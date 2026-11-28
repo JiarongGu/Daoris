@@ -491,14 +491,14 @@ test('the swap’s journal is read for its phase, reason and confirmation, and n
 
 test('the machine log is read by event, for each line’s data, skipping what does not read', () => {
   const lines = [
-    JSON.stringify({ event: 'update.applying', data: { by: 'idle', build: 'b1' } }),
+    JSON.stringify({ event: 'update.state', data: { to: 'applying', by: 'idle', build: 'b1' } }),
     '{ torn',
     JSON.stringify({ event: 'update.installed', data: { build: 'b1', confirmed: true } }),
-    JSON.stringify({ event: 'update.applying', data: { by: 'now', build: 'b2' } }),
+    JSON.stringify({ event: 'update.state', data: { to: 'applying', by: 'now', build: 'b2' } }),
     '',
   ].join('\n');
 
-  assert.deepEqual(loggedData(lines, 'update.applying'), [{ by: 'idle', build: 'b1' }, { by: 'now', build: 'b2' }]);
+  assert.deepEqual(loggedData(lines, 'update.state'), [{ to: 'applying', by: 'idle', build: 'b1' }, { to: 'applying', by: 'now', build: 'b2' }]);
   assert.deepEqual(loggedData(lines, 'update.rolled-back'), []);
 });
 

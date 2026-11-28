@@ -89,6 +89,9 @@ public sealed record SessionLook(
     /// <summary>Where each run not ended stands in its bound workflow version (<see cref="RunPassageReader"/>); none where nothing read them.</summary>
     public IReadOnlyList<RunPassage> Passages { get; init; } = [];
 
+    /// <summary>Where the fold says other than the stored status, by session (<see cref="SessionFolds.ReadAsync"/>); none where nothing read it.</summary>
+    public IReadOnlyDictionary<string, FoldShown> Folds { get; init; } = new Dictionary<string, FoldShown>(StringComparer.Ordinal);
+
     /// <summary>Whether a held decision holds <paramref name="record"/>: one is held, and no word of the owner's waits (the planner's own rule).</summary>
     public bool SupervisorHolds(PriorSession record) =>
         SupervisorHeld.Contains(record.Session) && !record.Waiting.Any(word => word.Persons);

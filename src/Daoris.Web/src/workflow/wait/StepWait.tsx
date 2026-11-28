@@ -23,6 +23,10 @@ const OPINION_ROLE_WAITS: Record<string, string> = {
 export function waitSaid(t: TFunction, kind: string, wait: RunWait, language = 'en', holder?: RunHolder | null): string {
   const values: Record<string, string> = {
     ...(wait.values ?? {}), since: clock(wait.since, language) ?? '', until: clock(wait.until, language) ?? '',  };
+  if (kind === 'check') {
+    values.basis = values.basis === 'learned' || values.basis === 'declared' ? t('workflow.wait.basis', { basis: t(`workflow.wait.basis.${values.basis}`) }) : '';
+    values.starting = values.starting ? t('workflow.wait.starting', { count: values.starting }) : '';
+  }
   // The stored code and value stay `actor`; the window's key says role, said alike for the person and an agent.
   if (wait.code === 'actor' || wait.code === 'progress') {
     const held = values.holder !== 'agent' ? t('workflow.wait.holder.person')

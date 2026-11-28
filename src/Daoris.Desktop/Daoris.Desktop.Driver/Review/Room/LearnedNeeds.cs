@@ -34,7 +34,7 @@ public static class LearnedNeeds
     /// <summary>Where the history is, beside the machine's admission.</summary>
     public static string PathOf(string home) => DaorisHome.Entry(home, HomeEntry.Locks, "admission", "learned.json");
 
-    /// <summary>The history's key: a repository's kind and gate.</summary>
+    /// <summary>The history's key: a repository's (its key, <see cref="HeavySlot.KeyOf"/>), a kind and one gate's name; never a tree, a folder or several gates.</summary>
     public static string KeyOf(string repository, string kind, string gate) => $"{repository}|{kind}|{gate}";
 
     /// <summary>The need the whole runs among <paramref name="kept"/> say (a run whose tests timed out is a signal, not a measure), or the <paramref name="declared"/> cost until there are <see cref="LearnedAfter"/>.</summary>
@@ -46,6 +46,18 @@ public static class LearnedNeeds
         var cores = recent.Select(sample => sample.Cores).OrderBy(value => value).ToList();
         var median = cores.Count % 2 == 1 ? cores[cores.Count / 2] : (cores[cores.Count / 2 - 1] + cores[cores.Count / 2]) / 2;
         return new NeedReading(new LoadCost((long)(recent.Max(sample => sample.PeakMemory) * Margin), Math.Round(median, 1)), NeedReading.Learned, samples.Count);
+    }
+
+    /// <summary>A run of gates asks the largest of their needs, never their sum; it is <c>learned</c> only where every gate's is, else <c>declared</c>.</summary>
+    public static NeedReading OfGates(
+        IReadOnlyDictionary<string, IReadOnlyList<RunSample>> learned, string repository, string kind, IReadOnlyList<string> gates, LoadCost declared)
+    {
+        var readings = gates.Select(gate => Need(learned.GetValueOrDefault(KeyOf(repository, kind, gate)) ?? [], declared)).ToList();
+        if (readings.Count == 0) return new NeedReading(declared, NeedReading.DeclaredSource, 0);
+        var all = readings.All(reading => reading.Source == NeedReading.Learned);
+        return new NeedReading(
+            new LoadCost(readings.Max(reading => reading.Cost.Memory), readings.Max(reading => reading.Cost.Cores)),
+            all ? NeedReading.Learned : NeedReading.DeclaredSource, readings.Min(reading => reading.Samples));
     }
 
     /// <summary>The runs kept for <paramref name="key"/>, oldest first.</summary>

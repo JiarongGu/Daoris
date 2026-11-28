@@ -5,8 +5,9 @@ internal static class SetAsideDeleting
 {
     /// <summary>
     /// <paramref name="folder"/> deleted with everything in it, never following a link: a link goes as a link, its own
-    /// entry alone, so what it points at stays wherever it is; a read-only file, as git's objects are, is made writable first, and
-    /// only a file that is one. A folder or file that cannot be deleted throws, and what it deleted before it stays deleted. A
+    /// entry alone, so what it points at stays wherever it is; a read-only file, as git's objects and a tree's linked dependencies are, goes
+    /// with its mark left on the record where the system can (`FileLinks.Unlink`), else made writable first, and only a file that is one. A
+    /// folder or file that cannot be deleted throws, and what it deleted before it stays deleted. A
     /// tree's open discards an unfinished copy of its checkout's dependencies with it too. The bytes its files held.
     /// </summary>
     /// <remarks>
@@ -41,9 +42,20 @@ internal static class SetAsideDeleting
             }
             else
             {
-                if (entry.Attributes.HasFlag(FileAttributes.ReadOnly)) entry.Attributes &= ~FileAttributes.ReadOnly;
-                bytes += ((FileInfo)entry).Length;
-                entry.Delete();
+                var length = ((FileInfo)entry).Length;
+                var readOnly = entry.Attributes.HasFlag(FileAttributes.ReadOnly);
+                if (readOnly && FileLinks.Unlink(entry.FullName, out var names))
+                {
+                    // A name of a linked file frees its bytes only as the record's last.
+                    if (names <= 1) bytes += length;
+                }
+                else
+                {
+                    if (readOnly && OperatingSystem.IsWindows()) entry.Attributes &= ~FileAttributes.ReadOnly;
+                    bytes += length;
+                    entry.Delete();
+                }
+
                 if (SetAsideFaults.Current?.StopInDelete == true) throw new SetAsideStop();
             }
         }

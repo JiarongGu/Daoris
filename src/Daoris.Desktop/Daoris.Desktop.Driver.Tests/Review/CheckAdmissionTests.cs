@@ -24,11 +24,11 @@ public sealed class CheckAdmissionTests : IDisposable
     private static readonly HeavyGateNow Past = new("build", 1, Now);
 
     /// <summary>A check's ask: a check slot and a slot of the repository at <paramref name="checkout"/>, its first gate ended unless <paramref name="starting"/>.</summary>
-    private HeavyAsk Check(string run, string? checkout = null, bool starting = false, int? declared = null)
+    private HeavyAsk Check(string run, string? checkout = null, bool starting = false, int? declared = null, bool built = false)
     {
         var at = checkout ?? _fixture.Checkout;
         return new HeavyAsk(HeavySlot.KeyOf(at)!, "Daoris", declared,
-            () => new HeavyHolder(Environment.ProcessId, 1, at, ["reached"], Now, null, null) { Run = run, Now = starting ? null : Past })
+            () => new HeavyHolder(Environment.ProcessId, 1, at, ["reached"], Now, null, null) { Run = run, Now = starting ? null : Past, Built = built ? Now : null })
         {
             Check = () => new VerifyHolder(Environment.ProcessId, 1, run, "i-" + run, "Daoris", Now),
         };
@@ -77,7 +77,7 @@ public sealed class CheckAdmissionTests : IDisposable
             Assert.Equal(CheckWait.Memory, wait!.Code);
             Assert.Equal("4.5", wait.Values["free"]);
             Assert.Equal("8", wait.Values["need"]);
-            Assert.Equal("memory: 4.5 GB free, a check needs 8 GB", wait.Sentence);
+            Assert.Equal("memory: 4.5 GB free, a check needs 8 GB (declared)", wait.Sentence);
         }
     }
 
@@ -87,7 +87,7 @@ public sealed class CheckAdmissionTests : IDisposable
     {
         var wait = CheckAdmission.Judge(_fixture.Home, [new HeavyHeld(Now, "k", false, "the verification run r-1")], Auto(7.99), Check("r-2", _fixture.Other));
 
-        Assert.Equal("memory: 7.9 GB free, a check needs 8 GB", wait!.Sentence);
+        Assert.Equal("memory: 7.9 GB free, a check needs 8 GB (declared)", wait!.Sentence);
     }
 
     /// <summary>🔴 A run whose first gate has not ended counts its need again, so two never climb to their peaks on one reading.</summary>
@@ -101,7 +101,7 @@ public sealed class CheckAdmissionTests : IDisposable
         {
             Assert.Null(second);
             Assert.Equal("16", wait!.Values["need"]);
-            Assert.Equal("memory: 12.0 GB free, a check needs 16 GB with 1 still starting", wait.Sentence);
+            Assert.Equal("memory: 12.0 GB free, a check needs 16 GB (declared) with 1 still starting", wait.Sentence);
         }
     }
 
@@ -114,6 +114,49 @@ public sealed class CheckAdmissionTests : IDisposable
         Assert.True(CheckAdmission.Starting(holder with { Now = new HeavyGateNow("a", 0, Now) }));
         Assert.False(CheckAdmission.Starting(holder with { Now = new HeavyGateNow("b", 1, Now) }));
         Assert.False(CheckAdmission.Starting(holder with { Now = new HeavyGateNow("a", 0, Now), Failed = new HeavyGateFailed("a", 1) }));
+    }
+
+    /// <summary>A check runs one gate, so its first gate never ends before the run does; the runner's word that its builds are done ends its starting.</summary>
+    [Fact]
+    public void A_holder_whose_builds_are_done_no_longer_starts_though_its_one_gate_still_runs()
+    {
+        var holder = new HeavyHolder(1, 1, "c", ["reached"], Now, null, null) { Run = "r-1", Now = new HeavyGateNow("reached", 0, Now) };
+
+        Assert.True(CheckAdmission.Starting(holder));
+        Assert.False(CheckAdmission.Starting(holder with { Built = Now }));
+    }
+
+    /// <summary>🔴 Three heavy runs waited on memory on a 64 GB machine with 19 GB free: two checks past their builds count their need once, so a third asks 8 GB, not 24.</summary>
+    [Fact]
+    public void A_third_check_starts_beside_two_that_have_finished_building_but_not_beside_two_still_building()
+    {
+        var building = new[] { Take(Auto(20), Check("r-1", starting: true)).Taken, Take(Auto(20), Check("r-2", _fixture.Tree, starting: true)).Taken };
+        try
+        {
+            var (blocked, wait) = Take(Auto(20), Check("r-3", _fixture.Other, starting: true));
+            Assert.Null(blocked);
+            Assert.Equal("memory: 20.0 GB free, a check needs 24 GB (declared) with 2 still starting", wait!.Sentence);
+        }
+        finally
+        {
+            foreach (var slot in building) slot?.Dispose();
+        }
+
+        File.Delete(RoomLedger.PathOf(_fixture.Home));
+        var built = new[] { Take(Auto(20), Check("r-4", starting: true, built: true)).Taken, Take(Auto(20), Check("r-5", _fixture.Tree, starting: true, built: true)).Taken };
+        try
+        {
+            Assert.All(built, Assert.NotNull);
+            var (third, wait) = Take(Auto(20), Check("r-6", _fixture.Other, starting: true));
+            using (third)
+            {
+                Assert.True(third is not null, wait?.Sentence);
+            }
+        }
+        finally
+        {
+            foreach (var slot in built) slot?.Dispose();
+        }
     }
 
     /// <summary>🔴 A pinned number is that many whatever the memory, and never more than the machine's admission holds.</summary>

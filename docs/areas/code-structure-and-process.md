@@ -190,7 +190,13 @@ finishes first and the whole set runs once.
     run by a merge: it counts them deferred (the merge record's `heavy.deferred`), and every way a merge lands starts
     `tools/heavy-run.mjs` in the background on the new tip (`merge/heavy-after.ts`): the queue's promotion, and `--commit`, which
     commits the merge left open once every gate chosen for it has a standing pass (a `--rerun` or `--no-timeout` run too, the
-    commit message saying so), starts the run and prunes (`merge/land-merge.ts`). It runs every class the landing's range reaches,
+    commit message saying so), starts the run and prunes (`merge/land-merge.ts`). The run's runner first judges the landing by the
+    change it landed (`merge/heavy-batch.ts`, `admitLanding` in `heavy-run.mjs`, D349's note of 2026-11-27): the run after a landing is
+    no reason by its kind, so a landing whose paths bear none of a full run's reasons (a declared wide path, the declared reach share)
+    settles `skipped` (a `SKIPPED` line; a stage reads it as no pass) and queues nothing heavy, takes no place and no tree. A reasoned
+    landing joins `local/heavy-pending.json` and its tier starts once no landing, reasoned or not, has come for 20 minutes (2 hours from the oldest landing at most); a newer
+    reasoned one carries the waiting one's range (it settles `superseded`). The tier runs every class the reasoned landings' own
+    changes reach (`reached-checks --ranges`, never the main line's whole run between them),
     each dependency class included (`reached-checks --tier heavy` leaves none to the night), through that tier
     in `local/heavy-tree` (a worktree of its own, under the machine's admission as a background run: below normal priority, one
     place at most, taken only while no blocking run such as a merge's gate waits, and no group started while one waits; the CI
@@ -205,7 +211,11 @@ finishes first and the whole set runs once.
     suites on the new tip, whose red holds the queue's next merge until fixed or named known. A merge's run keeps going past every
     failure but a blocking light gate's, and its reds go in one brief, each marked main's or the branch's (`merge/red-brief.ts`);
     a builder runs the same fast gates first with `--preflight` (`merge/preflight.ts`, its plan `merge/fast-plan.ts`: never a
-    Process or git half, a rehearsal or a browser spec), within a bound it says the outcome at. `reached` reuses a pass
+    Process or git half, a rehearsal or a browser spec), starting the gates `verifyBudget.preflightFirst` names (the censuses) before the rest, within a bound it says the outcome at. It keeps
+    its run (`merge/preflight-record.ts`): a receipt per unit keyed by the git tree it judged and one measure line per run (gates, minutes,
+    wait, trigger, units replayed) in the home's `checks/receipts/` (the main checkout's `local/receipts/` with no home), and one summary
+    record built by code (`merge/run-summary.ts`: what changed by module and rule, what is verified with its receipts, what is left for
+    judgement), printed and written as `summary.json` beside the brief: the one record the second opinion, the Outputs panel and the landing record are to read (VERIFY2d, OUTPUTS2 build their sides). `reached` reuses a pass
     per class: a class's key is the digest of every tree file that reaches it (its own files, the source files that declare what
     its files name, the areas its program or a `[Reaches]` names, the build
     files above its project), its suite's declaration and the toolchain, with wiring (a project reference, a `Using`, a `global

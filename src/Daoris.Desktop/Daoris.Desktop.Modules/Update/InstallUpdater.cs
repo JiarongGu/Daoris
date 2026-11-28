@@ -1,92 +1,30 @@
+using System.Diagnostics;
 using Daoris.Driver;
 using Shenora.Core.Events;
 
 namespace Daoris.Desktop;
 
-/// <summary>What the drain waits on: driven sessions running a turn, conversations with a turn in flight, and runs' plugin steps.</summary>
-public sealed record UpdateWork(int Driven, int Turns)
-{
-    /// <summary>The runs' plugin steps in flight the loop's evaluation runtime governs, their plugin up (<see cref="PluginStepsInFlight"/>).</summary>
-    public int Steps { get; init; }
-
-    public bool Idle => InstallUpdate.Idle(Driven, Turns, Steps);
-}
-
-/// <summary>The staged build, as the banner names it: no path of this machine's.</summary>
-public sealed record UpdateBuild(string Id, string Version, string? Commit, DateTimeOffset? At);
-
-/// <summary>Why the staged build is not being installed: the check's code, which the page words, and the driver's sentence.</summary>
-public sealed record UpdateProblem(string Code, string Message);
-
-/// <summary>How a swap ended: its phase — installed, rolled back or refused — the build, and the reason.</summary>
-public sealed record UpdateOutcome(string Phase, string? Build, string? Version, string? Commit, string? Reason, string? Detail);
-
-/// <summary>Where an install's update stands, whole — what the banner renders and <c>UPDATE_STATE</c> carries.</summary>
-/// <param name="State"><see cref="UpdateStates"/>'s words.</param>
-/// <param name="Mode">The mode that holds for the staged build (<see cref="UpdateMode"/>), or null when none is staged.</param>
-/// <param name="Outcome">The last swap, said once at the start after it and kept until the banner's *Dismiss*.</param>
-/// <param name="Last">
-/// The last swap as the journal records it, told or not, on every state: what Settings → Updates' *Last update* row says
-/// and the terminal's plain <c>daoris update</c> says. Null with no journal, and while a swap is under way.
-/// </param>
-/// <param name="Since">
-/// When the drain for the staged build began, while it drains and as it applies: beside <paramref name="Driven"/> and
-/// <paramref name="Turns"/>, what lets the page say how long it has waited. No end is said, since the drain ends only when the work does.
-/// Null with no drain, and for *Update now* asked before any.
-/// </param>
-public sealed record UpdateState(
-    string State, UpdateBuild? Staged, string? Mode, int Driven, int Turns, UpdateProblem? Problem, UpdateOutcome? Outcome,
-    UpdateOutcome? Last, DateTimeOffset? Since = null)
-{
-    /// <summary>The plugin steps in flight the drain waits on (<see cref="UpdateWork.Steps"/>), while it drains and as it applies.</summary>
-    public int Steps { get; init; }
-
-    /// <summary>When the drain stops holding new work, by the machine's bound (<see cref="DrainSetting"/>); null with no drain.</summary>
-    public DateTimeOffset? Until { get; init; }
-}
-
-/// <summary>The states an update is in, as the page reads them.</summary>
-public static class UpdateStates
-{
-    /// <summary>Nothing staged, or no install at all.</summary>
-    public const string None = "none";
-
-    /// <summary>Staged, and the person said *Not now*: work goes on.</summary>
-    public const string Waiting = "waiting";
-
-    /// <summary>Staged and installed when idle: nothing new starts, and what runs is counted down.</summary>
-    public const string Draining = "draining";
-
-    /// <summary>Staged, its drain past its bound: new work starts again, and it installs at the first look nothing runs.</summary>
-    public const string Deferred = "deferred";
-
-    /// <summary>Checked, the launcher started, and the application closing for it.</summary>
-    public const string Applying = "applying";
-
-    /// <summary>The staged build failed its check, or the launcher would not start: nothing is replaced, and work goes on.</summary>
-    public const string Refused = "refused";
-}
-
 /// <summary>
-/// The application's half of an install's update: it watches what is staged and what the person
-/// said of it, holds the loop's starts while it drains, for the machine's bound at most (<see cref="Bound"/>, then deferred), and once
-/// no driven session runs a turn and no conversation's turn or plugin step is in flight — or at once on *Update now* — checks the build, starts the launcher
-/// with <c>--update --after &lt;pid&gt;</c> and closes the application the way the person's close does. At the next start it says once
-/// how the swap ended.
+/// The application's half of an install's update: one state (<see cref="UpdateFlow"/>) that a look moves, said once in the machine log
+/// as <c>update.state</c> with its why, to the page as <c>UPDATE_STATE</c> and to the terminal in <c>update/state.json</c>. It watches what is
+/// staged and what the person said of it, holds the loop's starts while it drains, for the machine's bound at most (<see cref="Bound"/>, then
+/// deferred), and once no driven session runs a turn and no conversation's turn or plugin step is in flight — or at once on *Update now* —
+/// it stops: checks the build, starts the launcher with <c>--update --after &lt;pid&gt;</c> and closes the application the way the person's
+/// close does. At the next start it says once how the swap ended.
 /// </summary>
 /// <remarks>
 /// <para><b>Every effect is handed in</b> — the work, the launcher, the close, the clock — so the tests drive it against a
-/// scratch install and close nothing. The loop looks every <see cref="Pace"/> and at every word, and the page hears each
-/// change once as <c>UPDATE_STATE</c>.</para>
+/// scratch install and close nothing.</para>
 ///
-/// <para><b>A look is awaited</b>: the launcher it may start goes through the start gate, off the thread
-/// that asked, the window's for *Update now*. What it decides, the drain and *applying* included, is decided before its
-/// first wait, and one relaunch is asked however many looks meet the moment.</para>
+/// <para><b>A look is quick and answers within <see cref="Look"/></b>. Looks are one at a time. The stop is its own task, started by the
+/// look that decides it, so a look never waits on the check: a word, a newer build in the staged folder and the stop's bound
+/// (<see cref="StopBound"/>, by the clock) are each judged at every look and end it at once, its check cancelled and the presses let go.
+/// While it stops the loop looks every <see cref="Tick"/>, so the page and the terminal hear each second what it waits on.</para>
 ///
-/// <para><b>Said in the window and the machine log</b>: <c>update.staged</c>, <c>update.draining</c>, <c>update.deferred</c>,
-/// <c>update.requested</c>, <c>update.applying</c>, <c>update.refused</c>, and at the next start <c>update.installed</c> or
-/// <c>update.rolled-back</c>. A name or a count each, never a path: the launcher writes no log, so its journal is turned into
-/// these lines here.</para>
+/// <para><b>Said in the window and the machine log</b>: <c>update.state</c> for every transition (from, to, why, build and what the
+/// moment held), <c>update.waiting</c> every ten seconds a stop waits, <c>update.requested</c> for a word, and at the next start
+/// <c>update.installed</c> or <c>update.rolled-back</c>. A name or a count each, never a path: the launcher writes no log, so its journal is
+/// turned into these lines here.</para>
 /// </remarks>
 public sealed class InstallUpdater(
     // The install's root, or null for a workspace build, which never updates this way.
@@ -105,8 +43,10 @@ public sealed class InstallUpdater(
     int? pid = null) : IDisposable
 {
     private readonly object _gate = new();
-    private readonly CancellationTokenSource _stopping = new();
+    private readonly SemaphoreSlim _look = new(1, 1);
+    private readonly CancellationTokenSource _disposed = new();
     private readonly SemaphoreSlim _poke = new(0);
+    private readonly UpdateFlow _flow = new();
 
     private UpdateState _state = new(UpdateStates.None, null, null, 0, 0, null, null, null);
     private UpdateOutcome? _outcome;
@@ -115,16 +55,25 @@ public sealed class InstallUpdater(
     private string? _seen;
     private string? _drainedFor;
     private DateTimeOffset? _drainSince;
-    private bool _deferred;
-    private bool _applying;
-    private UpdateRequest? _applyingAsked;
+    private Stop? _stop;
     private DateTimeOffset? _closingSince;
+    private UpdateRequest? _closeAsked;
+    private DateTimeOffset? _acted;
     private Task? _loop;
 
     /// <summary>How long the application waits for its own close: the launcher waits three minutes, so one not taken by then is not coming.</summary>
     public static readonly TimeSpan CloseBound = TimeSpan.FromMinutes(5);
 
-    /// <summary>How often the loop looks when nothing pokes it.</summary>
+    /// <summary>How long a stop may take, its check and the launcher's start together: past it the build is refused (<c>bound</c>) and work goes on.</summary>
+    public TimeSpan StopBound { get; init; } = TimeSpan.FromMinutes(3);
+
+    /// <summary>How long a look that has begun a stop waits for it before it answers that it stops: a word is answered within this.</summary>
+    public TimeSpan Look { get; init; } = TimeSpan.FromSeconds(2);
+
+    /// <summary>How often the loop looks while a stop or a close waits: each second says what it waits on.</summary>
+    public TimeSpan Tick { get; init; } = TimeSpan.FromSeconds(1);
+
+    /// <summary>How often the loop looks when nothing pokes it, while draining or deferred.</summary>
     public TimeSpan Pace { get; init; } = TimeSpan.FromSeconds(2);
 
     /// <summary>How long a drain may hold new work, read at each of its looks: the machine's <c>drain</c> (<see cref="DrainSetting"/>).</summary>
@@ -133,30 +82,35 @@ public sealed class InstallUpdater(
     /// <summary>The version this application runs, which a staged build below goes back from (<see cref="InstallRollback"/>).</summary>
     public string? Running { get; init; } = UpdateRefusal.Running;
 
-    public StagedProof? Proof { get; init; }
+    /// <summary>The build's start on a copy of the home, asked last of the check, and ended when the stop is (a word, a newer build, its bound).</summary>
+    public Func<string, string, string?, CancellationToken, (string Code, string Sentence)?>? Proof { get; init; }
 
     /// <summary>The refusal's code for a going back while a delivery is unresolved.</summary>
     public const string Deliveries = "deliveries";
 
+    /// <summary>The refusal's code for a stop that outlasted <see cref="StopBound"/>.</summary>
+    public const string BoundCode = "bound";
+
     private DateTimeOffset Now => (clock ?? (() => DateTimeOffset.UtcNow))();
+
     /// <summary>Hand the close its staged build before closing any window.</summary>
     public Action<string>? ClosingForUpdate { get; init; }
 
     /// <summary>
-    /// Whether the loop's starts are held for the update: the driver watch asks at every look. True while it drains and while
-    /// it applies, which <see cref="Applying"/> tells apart; once deferred, only while a look holds the presses to check it.
+    /// Whether the loop's starts are held for the update: the driver watch asks at every look. True while it drains, stops and applies; once
+    /// deferred, only while a stop holds the presses to check the build, which <see cref="Applying"/> tells apart.
     /// </summary>
     public bool Draining
     {
         get
         {
-            lock (_gate) return _applying || _state.State is UpdateStates.Draining or UpdateStates.Applying;
+            lock (_gate) return _flow.State is UpdateStates.Draining or UpdateStates.Stopping or UpdateStates.Applying;
         }
     }
 
     /// <summary>
-    /// Whether the drain is over and the application closes for the update: from the moment a look finds the work allows it,
-    /// before it says <see cref="UpdateStates.Applying"/>, until a swap that did not take is put away. The pipe holds every press from here,
+    /// Whether the application stops taking work for the update: from the moment a look finds the work allows it, or *Update now* is said, until
+    /// the stop is ended (a refusal, a word, a newer build or its bound) or the application has closed. The pipe holds every press from here,
     /// as at a close; while it only drains, it lets through what starts nothing the drain waits on. The build is checked and the work read
     /// again under this hold, and work begun since the first read withdraws it, the drain going on.
     /// </summary>
@@ -164,7 +118,7 @@ public sealed class InstallUpdater(
     {
         get
         {
-            lock (_gate) return _applying || _state.State is UpdateStates.Applying;
+            lock (_gate) return _flow.State is UpdateStates.Stopping or UpdateStates.Applying;
         }
     }
 
@@ -180,7 +134,7 @@ public sealed class InstallUpdater(
     /// <summary>
     /// At the application's start: a swap waiting for this start is confirmed, and said once as installed; a
     /// swap the launcher rolled back or refused, or one it finished without a word from the application, is said once and
-    /// marked told. Then it looks, as <see cref="LookAsync"/>: the confirmation and the drain are done before its first wait.
+    /// marked told. Then it looks, as <see cref="LookAsync"/>.
     /// </summary>
     public async Task StartedAsync()
     {
@@ -230,35 +184,65 @@ public sealed class InstallUpdater(
     }
 
     /// <summary>
-    /// One look: what is staged, what holds for it, what runs — and the update applied when its moment has come, its launcher
-    /// started through the start gate.
+    /// One look: what is staged, what holds for it, what runs — and a stop begun when its moment has come. It judges a stop under way (a
+    /// word, a newer build, its bound) and answers within <see cref="Look"/>; it never waits on the check.
     /// </summary>
     public async Task<UpdateState> LookAsync()
     {
-        if (install is null) return Publish(new UpdateState(UpdateStates.None, null, null, 0, 0, null, Outcome(), Last()));
+        await _look.WaitAsync(_disposed.Token).ConfigureAwait(false);
+        try
+        {
+            return await LookOnceAsync().ConfigureAwait(false);
+        }
+        finally
+        {
+            _look.Release();
+        }
+    }
 
-        bool holding;
-        DateTimeOffset? closingSince;
-        UpdateRequest? appliedFor;
-        lock (_gate)
+    private async Task<UpdateState> LookOnceAsync()
+    {
+        if (install is null) return Publish(Compose(null, null, null, null));
+
+        var manifest = StagedBuild.Read(install, out var unread);
+        var id = manifest is null ? unread is null ? null : $"unread:{unread.Code}" : manifest.Id;
+        var staged = manifest is null ? null : new UpdateBuild(manifest.Id, manifest.Version, manifest.Commit, manifest.At);
+        var request = InstallUpdate.Read(home);
+        if (request is not null) lock (_gate) _acted = request.At;
+
+        // A stop under way holds while it is for the build staged now, under the word that asked it, within its bound.
+        Stop? stop;
+        lock (_gate) stop = _stop;
+        if (stop is not null)
         {
-            holding = _applying && StagedBuild.IsStaged(install);
-            closingSince = _closingSince;
-            appliedFor = _applyingAsked;
+            if (stop.Run.IsCompleted)
+            {
+                lock (_gate) _stop = null;
+            }
+            else
+            {
+                var ended = StopEnded(stop, id, request);
+                if (ended is null)
+                {
+                    SayWaiting(stop);
+                    return Publish(Compose(staged, stop.Mode, null, null, drain: true));
+                }
+
+                await EndAsync(stop).ConfigureAwait(false);
+                if (ended == UpdateWhy.StopBound)
+                {
+                    var on = stop.On;
+                    return Refuse(stop.Build, staged, stop.Mode, stop.Asked, new UpdateProblem(
+                        BoundCode, $"the application waited {(int)StopBound.TotalSeconds} seconds on {WaitWords(on)} and gave up, so it stays open and nothing was replaced."),
+                        UpdateWhy.StopBound, on);
+                }
+
+                return await LookOnceAsync().ConfigureAwait(false);
+            }
         }
 
-        if (holding)
-        {
-            // Still here after asking: the close did not take. Held no longer once the launcher has moved the build aside, the person
-            // says another word, or the close has had its bound.
-            if (InstallUpdate.Read(home) is { } word && word != appliedFor) lock (_gate) _applying = false;
-            else if (closingSince is { } closing && Now - closing >= CloseBound) return GivenUp(closing, appliedFor);
-            else return State;
-        }
-        else
-        {
-            lock (_gate) _applying = false;
-        }
+        UpdateState? closing = Closing(staged, request);
+        if (closing is not null) return closing;
 
         // The build a finished swap left behind: the launcher cannot delete its own running launcher inside it.
         StagedBuild.ClearPrevious(install);
@@ -267,31 +251,28 @@ public sealed class InstallUpdater(
         var last = Ended(StagedBuild.ReadJournal(install));
         lock (_gate) _last = last;
 
-        var manifest = StagedBuild.Read(install, out var unread);
-        if (manifest is null && unread is null)
+        if (id is null) return Publish(NothingStaged());
+
+        UpdateProblem? known;
+        lock (_gate) known = _refused.For(id, request);
+        if (known is not null)
         {
-            lock (_gate)
+            Enter(UpdateStates.Refused, UpdateWhy.Refusal, id, staged, null, known.Code);
+            return Publish(Compose(staged, null, null, known));
+        }
+
+        if (unread is not null) return Refuse(id, staged, null, request, new UpdateProblem(unread.Code, unread.Sentence), UpdateWhy.Refusal, unread.Code);
+
+        bool restaged;
+        lock (_gate)
+        {
+            restaged = _seen is not null && !string.Equals(_seen, id, StringComparison.Ordinal);
+            _seen = id;
+            if (restaged || _drainedFor is not null && !string.Equals(_drainedFor, id, StringComparison.Ordinal))
             {
                 _drainedFor = null;
                 _drainSince = null;
             }
-
-            return Publish(new UpdateState(UpdateStates.None, null, null, 0, 0, null, Outcome(), Last()));
-        }
-
-        var id = manifest?.Id ?? $"unread:{unread!.Code}";
-        var staged = manifest is null ? null : new UpdateBuild(manifest.Id, manifest.Version, manifest.Commit, manifest.At);
-        var request = InstallUpdate.Read(home);
-        UpdateProblem? known;
-        lock (_gate) known = _refused.For(id, request);
-        if (known is not null) return Publish(new UpdateState(UpdateStates.Refused, staged, null, 0, 0, known, Outcome(), Last()));
-
-        if (unread is not null) return Refuse(id, staged, null, request, new UpdateProblem(unread.Code, unread.Sentence));
-
-        if (!string.Equals(_seen, id, StringComparison.Ordinal))
-        {
-            _seen = id;
-            log.Info("update.staged", ("build", manifest!.Id), ("version", manifest.Version));
         }
 
         var mode = InstallUpdate.ModeFor(request, manifest!.Id);
@@ -303,57 +284,45 @@ public sealed class InstallUpdater(
                 _drainSince = null;
             }
 
-            return Publish(new UpdateState(UpdateStates.Waiting, staged, mode, 0, 0, null, Outcome(), Last()));
+            Enter(UpdateStates.Staged, restaged ? UpdateWhy.Restaged : UpdateWhy.NotNow, id, staged, null);
+            return Publish(Compose(staged, mode, null, null));
         }
 
         var now = work();
-        if (mode == UpdateMode.Now) return await ApplyAsync(id, staged, mode, request, now, "now").ConfigureAwait(false);
+        if (mode == UpdateMode.Now) return await BeginStopAsync(id, staged, mode, request, now, "now", UpdateWhy.Now).ConfigureAwait(false);
 
+        var entering = restaged ? UpdateWhy.Restaged : request is null ? UpdateWhy.Seen : UpdateWhy.WhenIdle;
         lock (_gate)
         {
             if (!string.Equals(_drainedFor, id, StringComparison.Ordinal))
             {
                 _drainedFor = id;
                 _drainSince = Now;
-                _deferred = false;
-                log.Info("update.draining", ("build", id), ("driven", now.Driven), ("turns", now.Turns), ("steps", now.Steps));
             }
         }
 
         return now.Idle
-            ? await ApplyAsync(id, staged, mode, request, now, "idle").ConfigureAwait(false)
-            : Publish(Drains(staged, mode, now));
+            ? await BeginStopAsync(id, staged, mode, request, now, "idle", UpdateWhy.Idle).ConfigureAwait(false)
+            : Publish(Drains(id, staged, mode, now, entering));
     }
 
     /// <summary>The drain by the bound read now: holding new work until its <see cref="UpdateState.Until"/>, deferred from then on.</summary>
-    private UpdateState Drains(UpdateBuild? staged, string mode, UpdateWork now)
+    private UpdateState Drains(string id, UpdateBuild? staged, string mode, UpdateWork now, string entering)
     {
         var bound = Bound();
         DateTimeOffset? since;
-        bool deferred, said = false;
-        lock (_gate)
-        {
-            since = _drainSince;
-            deferred = since is { } began && Now - began >= bound;
-            if (deferred && !_deferred) _deferred = said = true;
-        }
-
-        if (said)
-        {
-            log.Info("update.deferred", ("build", staged?.Id), ("waitedSeconds", (long)(Now - since!.Value).TotalSeconds),
-                ("driven", now.Driven), ("turns", now.Turns), ("steps", now.Steps));
-        }
-
-        return new(deferred ? UpdateStates.Deferred : UpdateStates.Draining, staged, mode, now.Driven, now.Turns, null, Outcome(), Last(), since)
-        {
-            Steps = now.Steps,
-            Until = since + bound,
-        };
+        lock (_gate) since = _drainSince;
+        var deferred = since is { } began && Now - began >= bound;
+        var to = deferred ? UpdateStates.Deferred : UpdateStates.Draining;
+        string why;
+        lock (_gate) why = deferred && _flow.State == UpdateStates.Draining && _flow.Build == id ? UpdateWhy.Bound : entering;
+        Enter(to, why, id, staged, now, null, ("waitedSeconds", since is { } started ? (long)(Now - started).TotalSeconds : null));
+        return Compose(staged, mode, now, null, since: since, until: since + bound);
     }
 
     /// <summary>
     /// The person's word, from the screen, written to the request the terminal writes, for the build staged now,
-    /// and looked at at once — so *Update now* applies before this answers.
+    /// and looked at at once — so *Update now* is acted on before this answers.
     /// </summary>
     /// <exception cref="Shenora.Core.Ipc.ShenoraException">
     /// <see cref="Refusals.UpdateModeUnknown"/> for a mode this build does not take; <see cref="Refusals.UpdateNothingStaged"/>
@@ -420,12 +389,16 @@ public sealed class InstallUpdater(
 
         _loop ??= Task.Run(async () =>
         {
-            var ct = _stopping.Token;
+            var ct = _disposed.Token;
             while (!ct.IsCancellationRequested)
             {
                 try
                 {
                     await LookAsync().ConfigureAwait(false);
+                }
+                catch (OperationCanceledException) when (ct.IsCancellationRequested)
+                {
+                    break;
                 }
                 catch (Exception error) when (error is IOException or UnauthorizedAccessException or InvalidOperationException)
                 {
@@ -434,7 +407,10 @@ public sealed class InstallUpdater(
 
                 try
                 {
-                    await _poke.WaitAsync(Draining || State.State == UpdateStates.Deferred || _files is null ? Pace : Idle, ct).ConfigureAwait(false);
+                    var state = State.State;
+                    await _poke.WaitAsync(
+                        state is UpdateStates.Stopping or UpdateStates.Applying ? Tick
+                        : state is UpdateStates.Draining or UpdateStates.Deferred || _files is null ? Pace : Idle, ct).ConfigureAwait(false);
                 }
                 catch (OperationCanceledException)
                 {
@@ -445,14 +421,36 @@ public sealed class InstallUpdater(
     }
 
     /// <summary>Look now, rather than at the next pace.</summary>
-    public void Poke() => _poke.Release();
+    public void Poke()
+    {
+        try
+        {
+            _poke.Release();
+        }
+        catch (ObjectDisposedException)
+        {
+            // The updater is gone: a stop that ends after it has nothing to wake.
+        }
+    }
 
     public void Dispose()
     {
-        _stopping.Cancel();
+        _disposed.Cancel();
+        Stop? stop;
+        lock (_gate) stop = _stop;
+        try
+        {
+            stop?.Cts.Cancel();
+        }
+        catch (ObjectDisposedException)
+        {
+            // The stop has ended.
+        }
+
         try
         {
             _loop?.Wait(TimeSpan.FromSeconds(5));
+            stop?.Run.Wait(TimeSpan.FromSeconds(5));
         }
         catch (AggregateException)
         {
@@ -460,128 +458,258 @@ public sealed class InstallUpdater(
         }
 
         _files?.DisposeAsync().AsTask().GetAwaiter().GetResult();
-        _stopping.Dispose();
+        _disposed.Dispose();
         _poke.Dispose();
     }
 
-    /// <summary>The close did not come within <see cref="CloseBound"/>: the presses go on, and the update is refused for it.</summary>
-    private UpdateState GivenUp(DateTimeOffset closingSince, UpdateRequest? asked)
+    /// <summary>One stop: for a build, under the word that asked it, by what asked it, begun at a time; its task, and what it waits on now.</summary>
+    private sealed class Stop(string build, string mode, UpdateRequest? asked, string by, DateTimeOffset began, CancellationTokenSource cts)
     {
-        var manifest = StagedBuild.Read(install!, out var unread);
-        var id = manifest?.Id ?? $"unread:{unread?.Code}";
-        var staged = manifest is null ? null : new UpdateBuild(manifest.Id, manifest.Version, manifest.Commit, manifest.At);
-        lock (_gate) _applying = false;
-        var minutes = (int)Math.Round((Now - closingSince).TotalMinutes);
-        return Refuse(id, staged, null, null, new UpdateProblem(
-            "close", $"the application did not close for the update within {minutes} minutes, so it stays open and nothing was replaced."));
+        public string Build { get; } = build;
+
+        public string Mode { get; } = mode;
+
+        public UpdateRequest? Asked { get; } = asked;
+
+        public string By { get; } = by;
+
+        public DateTimeOffset Began { get; } = began;
+
+        public CancellationTokenSource Cts { get; } = cts;
+
+        public Task Run { get; set; } = Task.CompletedTask;
+
+        public volatile string On = UpdateWaits.Check;
+
+        public int Said;
     }
 
-    private async Task<UpdateState> ApplyAsync(string id, UpdateBuild? staged, string mode, UpdateRequest? asked, UpdateWork now, string by)
+    private string? StopEnded(Stop stop, string? id, UpdateRequest? request)
     {
-        lock (_gate)
-        {
-            // Another look met the moment first, and its relaunch is under way: one launcher, however many looks.
-            if (_applying) return _state;
-            // The presses are held from here (Applying), before the build is checked and the work read again.
-            _applying = true;
-            _applyingAsked = asked;
-            _closingSince = null;
-        }
+        if (!string.Equals(id, stop.Build, StringComparison.Ordinal)) return UpdateWhy.Restaged;
+        if (Withdrawn(stop, request, id)) return UpdateWhy.NotNow;
+        return Now - stop.Began >= StopBound ? UpdateWhy.StopBound : null;
+    }
 
-        UpdateProblem? refused = null;
+    /// <summary>
+    /// Whether a word said since the stop began ends it: a stop by idle holds through no word and the default's, ends on *Now* or *Not now*; one
+    /// by *Now* ends on any word other than the one that asked it.
+    /// </summary>
+    private static bool Withdrawn(Stop stop, UpdateRequest? request, string? id) =>
+        stop.By == "now" ? !SameWord(request, stop.Asked) : InstallUpdate.ModeFor(request, id) != UpdateMode.WhenIdle;
+
+    private static bool SameWord(UpdateRequest? a, UpdateRequest? b) => a?.Mode == b?.Mode && a?.Build == b?.Build;
+
+    /// <summary>Cancel the stop and let go of it: the unwind (a copy under way, the scratch's removal) finishes on its own, and waits no longer than one look.</summary>
+    private async Task EndAsync(Stop stop)
+    {
+        stop.Cts.Cancel();
+        lock (_gate) if (_stop == stop) _stop = null;
         try
         {
-            // Checked by the application before it closes for it, as `daoris update --now` checks it; the launcher checks again
-            // before it moves a file.
-            if (await Task.Run(() => UpdateRefusal.Of(install!, home, staged?.Version, Running, Proof)).ConfigureAwait(false) is var (code, why)) refused = new UpdateProblem(code, why);
-            // What began after the look read no work (a turn a press let through opened, a helper the look
-            // started, a conversation the window began, a plugin step a pass sent) is read again now that no press passes, and the drain
-            // goes on for it. *Update now* closes whatever runs, so it reads nothing.
-            else if (by == "idle" && work() is { Idle: false } again)
-            {
-                lock (_gate) _applying = false;
-                return Publish(Drains(staged, mode, again));
-            }
-        }
-        catch
-        {
-            // A check or a read that failed closes nothing, and the presses go on.
-            lock (_gate) _applying = false;
-            throw;
-        }
-
-        if (refused is not null)
-        {
-            lock (_gate) _applying = false;
-            return Refuse(id, staged, mode, asked, refused);
-        }
-
-        // The check takes a while: a word said meanwhile is the person's latest, so this close is withdrawn.
-        if (InstallUpdate.Read(home) is { } said && said != asked)
-        {
-            lock (_gate) _applying = false;
-            return await LookAsync().ConfigureAwait(false);
-        }
-
-        double waited;
-        DateTimeOffset? drained;
-        lock (_gate)
-        {
-            drained = _drainSince;
-            waited = drained is { } since ? Math.Max(0, (Now - since).TotalSeconds) : 0;
-        }
-
-        var applying = Publish(new UpdateState(UpdateStates.Applying, staged, mode, now.Driven, now.Turns, null, Outcome(), Last(), drained)
-        {
-            Steps = now.Steps,
-        });
-        bool started;
-        try
-        {
-            // Awaited through the start gate. *Update now*'s SET started it in its synchronous part, on the
-            // window's thread. Given up only as the application stops.
-            started = await relaunch(_stopping.Token).ConfigureAwait(false);
+            await Task.WhenAny(stop.Run, Task.Delay(Look, _disposed.Token)).ConfigureAwait(false);
         }
         catch (OperationCanceledException)
         {
-            lock (_gate) _applying = false;
-            throw;
+            // The application is stopping.
         }
-        catch (Exception error) when (error is IOException or UnauthorizedAccessException or InvalidOperationException)
+    }
+
+    /// <summary>Begin the stop: the presses are held from here, and the look answers `stopping` or, where it ends within <see cref="Look"/>, how it ended.</summary>
+    private async Task<UpdateState> BeginStopAsync(string id, UpdateBuild? staged, string mode, UpdateRequest? asked, UpdateWork now, string by, string why)
+    {
+        Stop stop;
+        double waited;
+        lock (_gate)
         {
-            // A start the runtime refused is a launcher that would not start: said, and the presses let go, not held for a close that never comes.
-            started = false;
+            if (_stop is { } under) return _state;
+            waited = _drainSince is { } since ? Math.Max(0, (Now - since).TotalSeconds) : 0;
+            stop = _stop = new Stop(id, mode, asked, by, Now, CancellationTokenSource.CreateLinkedTokenSource(_disposed.Token));
         }
 
-        if (!started)
-        {
-            lock (_gate) _applying = false;
-            return Refuse(id, staged, mode, asked, new UpdateProblem(
-                "launcher", "the launcher at the install's root would not start, so the application stays open and nothing was replaced."));
-        }
-
-        log.Info("update.applying", ("build", id), ("version", staged?.Version), ("by", by), ("waitedSeconds", (long)waited));
-        // Said and done with: a word that outlived its build would hold for the next one (InstallUpdate.ModeFor).
-        InstallUpdate.Clear(home);
-        log.StopBecause(StopReasons.Update, ("build", id), ("by", by));
-        lock (_gate) _closingSince = Now;
+        Enter(UpdateStates.Stopping, why, id, staged, now, null, ("by", by), ("waitedSeconds", (long)waited));
+        stop.Run = Task.Run(() => StopAsync(stop, staged, now));
         try
         {
-            ClosingForUpdate?.Invoke(id);
-            close();
+            await Task.WhenAny(stop.Run, Task.Delay(Look, _disposed.Token)).ConfigureAwait(false);
         }
-        catch (Exception error) when (error is IOException or UnauthorizedAccessException or InvalidOperationException or ObjectDisposedException)
+        catch (OperationCanceledException)
         {
-            // A close that threw closes nothing: the presses go on, said as a build refused for it.
-            lock (_gate) _applying = false;
-            return Refuse(id, staged, mode, null, new UpdateProblem("close", "the application could not close for the update, so it stays open and nothing was replaced."));
+            return State;
         }
 
-        return applying;
+        if (!stop.Run.IsCompleted) return Publish(Compose(staged, mode, now, null, drain: true));
+
+        // It ended within the look: how, is the state it left; one it left stopping a word withdrew, and is read again.
+        lock (_gate) if (_stop == stop) _stop = null;
+        bool stillStopping;
+        lock (_gate) stillStopping = _flow.State == UpdateStates.Stopping;
+        return stillStopping ? await LookOnceAsync().ConfigureAwait(false) : State;
+    }
+
+    /// <summary>
+    /// The stop: the build checked (its files, a going back, its start on a copy of the home), the work read again where idle
+    /// asked, the launcher started and the application closed. Each step says what it waits on; a refusal, a word read since, a newer build
+    /// or the bound ends it, and work goes on.
+    /// </summary>
+    private async Task StopAsync(Stop stop, UpdateBuild? staged, UpdateWork now)
+    {
+        var ct = stop.Cts.Token;
+        try
+        {
+            stop.On = UpdateWaits.Check;
+            var check = Task.Run(() => UpdateRefusal.Of(install!, home, staged?.Version, Running) ?? Proof?.Invoke(install!, home, staged?.Version, ct));
+            await Task.WhenAny(check, Task.Delay(Timeout.Infinite, ct)).ConfigureAwait(false);
+            ct.ThrowIfCancellationRequested();
+            var refused = await check.ConfigureAwait(false);
+            if (refused is var (code, why))
+            {
+                Fail(stop, staged, new UpdateProblem(code, why), UpdateWhy.Refusal, code);
+                return;
+            }
+
+            // What began after the look read no work (a turn a press let through opened, a helper the look started, a conversation the
+            // window began, a plugin step a pass sent) is read again now that no press passes, and the drain goes on for it. *Update now*
+            // closes whatever runs, so it reads nothing.
+            if (stop.By == "idle" && work() is { Idle: false } again)
+            {
+                if (!Holds(stop)) return;
+                var bound = Bound();
+                DateTimeOffset? since;
+                lock (_gate) since = _drainSince;
+                var deferred = since is { } began && Now - began >= bound;
+                Enter(deferred ? UpdateStates.Deferred : UpdateStates.Draining, UpdateWhy.WorkBegan, stop.Build, staged, again);
+                lock (_gate) _stop = null;
+                Publish(Compose(staged, stop.Mode, again, null, since: since, until: since + bound));
+                return;
+            }
+
+            // The check takes a while: a word said meanwhile is the person's latest, so this stop is withdrawn.
+            if (Withdrawn(stop, InstallUpdate.Read(home), stop.Build)) return;
+
+            stop.On = UpdateWaits.Launcher;
+            bool started;
+            try
+            {
+                // Awaited through the start gate. *Update now*'s SET started it in its synchronous part, on the window's thread.
+                started = await relaunch(ct).ConfigureAwait(false);
+            }
+            catch (Exception error) when (error is IOException or UnauthorizedAccessException or InvalidOperationException)
+            {
+                    started = false;
+            }
+
+            if (!started)
+            {
+                ct.ThrowIfCancellationRequested();
+                Fail(stop, staged, new UpdateProblem(
+                    "launcher", "the launcher at the install's root would not start, so the application stays open and nothing was replaced."),
+                    UpdateWhy.Launcher, null);
+                return;
+            }
+
+            // The launcher is running and waits for this process: the state is applying from this instant, in the block that ends the stop,
+            // so no look finds a stopping state with no stop. A look that ended the stop first has moved the state on; the launcher, too late
+            // to hold, waits three minutes for a close that does not come and puts the build aside, and the next start stages it again.
+            bool closing;
+            lock (_gate)
+            {
+                closing = Holds(stop);
+                if (closing)
+                {
+                    var waited = _drainSince is { } since ? Math.Max(0, (Now - since).TotalSeconds) : 0;
+                    _closingSince = Now;
+                    _closeAsked = stop.Asked;
+                    _stop = null;
+                    Enter(UpdateStates.Applying, UpdateWhy.Checked, stop.Build, staged, now, null, ("by", stop.By), ("waitedSeconds", (long)waited));
+                }
+            }
+
+            if (!closing) return;
+            // Said and done with: a word that outlived its build would hold for the next one (InstallUpdate.ModeFor).
+            InstallUpdate.Clear(home);
+            log.StopBecause(StopReasons.Update, ("build", stop.Build), ("by", stop.By));
+            Publish(Compose(staged, stop.Mode, now, null, drain: true));
+            try
+            {
+                ClosingForUpdate?.Invoke(stop.Build);
+                close();
+            }
+            catch (Exception error) when (error is IOException or UnauthorizedAccessException or InvalidOperationException or ObjectDisposedException)
+            {
+                // A close that threw closes nothing: the presses go on, said as a build refused for it.
+                lock (_gate) _closingSince = null;
+                Refuse(stop.Build, staged, null, null, new UpdateProblem(
+                    "close", "the application could not close for the update, so it stays open and nothing was replaced."), UpdateWhy.Close, "threw");
+            }
+        }
+        catch (OperationCanceledException)
+        {
+            // Ended by a look (a word, a newer build, the bound) or by the application's own close: that one says why.
+        }
+        catch (Exception error)
+        {
+            // A check or a read that failed closes nothing, the presses go on, and the build is refused until the person says another word.
+            Fail(stop, staged, new UpdateProblem("check", $"the staged build could not be checked: {error.Message}"), UpdateWhy.Refusal, "check");
+        }
+        finally
+        {
+            stop.Cts.Dispose();
+            Poke();
+        }
+    }
+
+    /// <summary>Whether this stop is still the one the updater holds, and not one a look ended.</summary>
+    private bool Holds(Stop stop)
+    {
+        lock (_gate) return _stop == stop && !stop.Cts.IsCancellationRequested;
+    }
+
+    /// <summary>The stop failed: refused for its build under the word that asked it, unless a look ended it first.</summary>
+    private void Fail(Stop stop, UpdateBuild? staged, UpdateProblem problem, string why, string? detail)
+    {
+        if (!Holds(stop)) return;
+        lock (_gate) _stop = null;
+        Refuse(stop.Build, staged, stop.Mode, stop.Asked, problem, why, detail);
+    }
+
+    /// <summary>The application, which closed for an update, did not within <see cref="CloseBound"/>; or a word said since ends the wait. Null where it still waits or never closed.</summary>
+    private UpdateState? Closing(UpdateBuild? staged, UpdateRequest? request)
+    {
+        DateTimeOffset? closing;
+        UpdateRequest? asked;
+        string? build;
+        lock (_gate)
+        {
+            if (_flow.State != UpdateStates.Applying) return null;
+            closing = _closingSince;
+            asked = _closeAsked;
+            build = _flow.Build;
+        }
+
+        // Still here after asking: the close did not take. Held no longer once the launcher has moved the build aside, the person
+        // says another word, or the close has had its bound.
+        if (staged is null) return null;
+        if (request is { } word && !SameWord(word, asked))
+        {
+            lock (_gate) _closingSince = null;
+            return null;
+        }
+
+        if (closing is { } since && Now - since >= CloseBound)
+        {
+            lock (_gate) _closingSince = null;
+            var minutes = (int)Math.Round((Now - since).TotalMinutes);
+            return Refuse(build ?? staged.Id, staged, null, null, new UpdateProblem(
+                "close", $"the application did not close for the update within {minutes} minutes, so it stays open and nothing was replaced."),
+                UpdateWhy.Close, "bound");
+        }
+
+        return Publish(Compose(staged, null, null, null, drain: true));
     }
 
     /// <param name="asked">The person's word it is refused under, which a new word replaces, trying again (<see cref="UpdateRefusals"/>).</param>
-    private UpdateState Refuse(string id, UpdateBuild? staged, string? mode, UpdateRequest? asked, UpdateProblem problem)
+    private UpdateState Refuse(string id, UpdateBuild? staged, string? mode, UpdateRequest? asked, UpdateProblem problem, string why, string? detail)
     {
         lock (_gate)
         {
@@ -590,19 +718,95 @@ public sealed class InstallUpdater(
             _drainSince = null;
         }
 
-        log.Warn("update.refused", ("build", staged?.Id), ("reason", problem.Code));
-        return Publish(new UpdateState(UpdateStates.Refused, staged, mode, 0, 0, problem, Outcome(), Last()));
+        Enter(UpdateStates.Refused, why, id, staged, null, detail ?? problem.Code, ("reason", problem.Code), ("sentence", UpdateRefusalWords.Logged(problem.Message, install, home)));
+        return Publish(Compose(staged, mode, null, problem));
     }
 
-    private UpdateOutcome? Outcome()
+    /// <summary>Nothing is staged: what the last swap left (installed, put back, refused) until it is put away, else none.</summary>
+    private UpdateState NothingStaged()
     {
-        lock (_gate) return _outcome;
+        lock (_gate)
+        {
+            _drainedFor = null;
+            _drainSince = null;
+            _seen = null;
+        }
+
+        UpdateOutcome? outcome;
+        lock (_gate) outcome = _outcome;
+        switch (outcome?.Phase)
+        {
+            case SwapPhase.Installed:
+                Enter(UpdateStates.Installed, UpdateWhy.Started, outcome.Build, null, null);
+                return Compose(null, null, null, null);
+            case SwapPhase.RolledBack or SwapPhase.Refused:
+                var problem = new UpdateProblem(outcome.Reason ?? outcome.Phase, outcome.Detail ?? "the swap did not take.");
+                Enter(UpdateStates.Refused, UpdateWhy.Swap, outcome.Build, null, null, outcome.Reason);
+                return Compose(null, null, null, problem);
+            default:
+                Enter(UpdateStates.None, _flow.State == UpdateStates.Installed ? UpdateWhy.Dismissed : UpdateWhy.Gone, null, null, null);
+                return Compose(null, null, null, null);
+        }
     }
 
-    private UpdateOutcome? Last()
+    /// <summary>The state moved to <paramref name="to"/>: the transition, if it is one, said once in the log.</summary>
+    private void Enter(string to, string why, string? build, UpdateBuild? staged, UpdateWork? now, string? detail = null, params (string Key, object? Value)[] more)
     {
-        lock (_gate) return _last;
+        UpdateTransition? made;
+        lock (_gate) made = _flow.Move(to, why, build, Now, detail);
+        if (made is null) return;
+        (string Key, object? Value)[] said =
+        [
+            ("from", made.From), ("to", made.To), ("why", made.Why), ("build", made.Build), ("version", staged?.Version), ("detail", made.Detail),
+            ("driven", now?.Driven), ("turns", now?.Turns), ("steps", now?.Steps), .. more,
+        ];
+        if (to == UpdateStates.Refused) log.Warn("update.state", said);
+        else log.Info("update.state", said);
     }
+
+    /// <summary>What a stop waits on, said in the log every ten seconds it waits, and each second to the page and the terminal.</summary>
+    private void SayWaiting(Stop stop)
+    {
+        var tens = (int)((Now - stop.Began).TotalSeconds / 10);
+        if (tens <= 0 || Interlocked.Exchange(ref stop.Said, tens) == tens) return;
+        log.Info("update.waiting", ("build", stop.Build), ("on", stop.On), ("seconds", tens * 10), ("bound", (int)StopBound.TotalSeconds));
+    }
+
+    private UpdateState Compose(UpdateBuild? staged, string? mode, UpdateWork? now, UpdateProblem? problem, DateTimeOffset? since = null, DateTimeOffset? until = null, bool drain = false)
+    {
+        lock (_gate)
+        {
+            // While it stops or applies the drain's since and the work the drain counted stay what they were.
+            if (drain && since is null) since = _drainSince;
+            var counted = now ?? (drain ? new UpdateWork(_state.Driven, _state.Turns) { Steps = _state.Steps } : null);
+            return new UpdateState(_flow.State, staged, mode, counted?.Driven ?? 0, counted?.Turns ?? 0, problem, _outcome, _last, since)
+            {
+                Steps = counted?.Steps ?? 0,
+                Until = until ?? (drain ? _state.Until : null),
+                Why = _flow.Why,
+                Entered = _flow.Since,
+                Transition = _flow.Last,
+                Waiting = WaitingNow(),
+            };
+        }
+    }
+
+    /// <summary>What a stop or a close waits on now; called under the gate.</summary>
+    private UpdateWaiting? WaitingNow() => _flow.State switch
+    {
+        UpdateStates.Stopping when _stop is { } stop => new UpdateWaiting(stop.On, Seconds(stop.Began), (int)StopBound.TotalSeconds),
+        UpdateStates.Applying when _closingSince is { } since => new UpdateWaiting(UpdateWaits.Close, Seconds(since), (int)CloseBound.TotalSeconds),
+        _ => null,
+    };
+
+    private int Seconds(DateTimeOffset since) => (int)Math.Max(0, (Now - since).TotalSeconds);
+
+    private static string WaitWords(string on) => on switch
+    {
+        UpdateWaits.Check => "the check of the staged build",
+        UpdateWaits.Launcher => "the launcher to start",
+        _ => "the close",
+    };
 
     private static UpdateOutcome Outcome(SwapRecord record) =>
         new(record.Phase, record.Id, record.Version, record.Commit, record.Reason, record.Detail);
@@ -622,7 +826,7 @@ public sealed class InstallUpdater(
 
     /// <summary>
     /// How the journal's swap ended, told or not: installed, rolled back or refused as written; confirmed by this
-    /// start, installed, as <see cref="Started"/> says it before the launcher finishes; and none while one is under way or
+    /// start, installed, as <see cref="StartedAsync"/> says it before the launcher finishes; and none while one is under way or
     /// there is no journal, since the page words only an ending.
     /// </summary>
     private static UpdateOutcome? Ended(SwapRecord? record) => record?.Phase switch
@@ -632,17 +836,41 @@ public sealed class InstallUpdater(
         _ => null,
     };
 
-    /// <summary>The state, kept, and told to the page when it changed.</summary>
+    /// <summary>The state, kept, told to the page when it changed and written for the terminal (<c>update/state.json</c>).</summary>
     private UpdateState Publish(UpdateState state)
     {
         bool changed;
         lock (_gate)
         {
+            // The outcome and the last swap are read at the look, never composed from the past.
+            state = state with { Last = _last };
             changed = state != _state;
             _state = state;
         }
 
         if (changed && bus is not null) _ = bus.EmitAsync("DAORIS", "UPDATE_STATE", state);
+        // Written at every look, not only a change: a word's answer is the file's next write, which a terminal waits for.
+        if (install is not null) UpdateStateFile.Write(install, Record(state));
         return state;
+    }
+
+    private static readonly long ThisStart = Started();
+
+    private static long Started()
+    {
+        using var self = Process.GetCurrentProcess();
+        return self.StartTime.ToUniversalTime().Ticks;
+    }
+
+    private UpdateStateRecord Record(UpdateState state) => new(
+        state.State, state.Why, state.Staged?.Id, state.Staged?.Version, state.Mode, state.Entered, state.Driven, state.Turns, state.Steps, state.Until,
+        state.Waiting is { } waiting ? new UpdateStateWait(waiting.On, waiting.Seconds, waiting.Bound) : null,
+        state.Problem?.Code, state.Problem?.Message,
+        state.Transition is { } t ? new UpdateStateStep(t.From, t.To, t.Why, t.At, t.Detail) : null,
+        pid ?? Environment.ProcessId, ThisStart, Now) { Word = Acted() };
+
+    private DateTimeOffset? Acted()
+    {
+        lock (_gate) return _acted;
     }
 }

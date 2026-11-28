@@ -17,7 +17,7 @@ internal static class StrayAgentFolders
         if (!Is(home, agents, name)) return false;
         var place = DaorisHome.Entry(home, HomeEntry.AgentHomes, name);
         if (!Directory.Exists(place)) return false;
-        HarnessAccountFolders.DeleteFolder(place);
+        FolderRemoval.Delete(place);
         return true;
     }
 }

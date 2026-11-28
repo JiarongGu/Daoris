@@ -6,7 +6,7 @@ namespace Daoris.Driver;
 
 /// <summary>
 /// What <c>daoris gate run</c> asks: one gate by name, or every heavy one (null); or, with <see cref="Look"/>, who holds
-/// the slot and who waits, running nothing; or, with <see cref="Command"/>, a command of the caller's own as a heavy run.
+/// the slot and who waits, running nothing; or, with <see cref="Command"/> (words) or <see cref="Line"/> (as written, the broker's), a command of the caller's own as a heavy run.
 /// </summary>
 public sealed record HeavyRunAsk(string? Gate)
 {
@@ -15,9 +15,10 @@ public sealed record HeavyRunAsk(string? Gate)
 
     /// <summary>
     /// <c>-- &lt;command…&gt;</c>: the words after it, a command the caller chose (a filtered <c>dotnet test</c>, a <c>vitest</c>
-    /// run) run as a heavy run: after the machine's admission, in the folder it runs from, no repository's slot taken and no gate read.
+    /// run) run as a heavy run: after the machine's admission, in the folder it runs from, no repository's slot taken and no gate read; <see cref="Line"/> is the broker's own, run as written.
     /// </summary>
     public IReadOnlyList<string>? Command { get; init; }
+    public string? Line { get; init; }
 }
 
 /// <summary>What a run hands its gates: the slot it holds, and the gates running, outermost first.</summary>
@@ -188,7 +189,8 @@ public static class HeavyRun
 
     private static async Task<int> RunCheckoutAsync(HeavyRunAsk ask, HeavyRunWorld world, TextWriter output, CancellationToken ct)
     {
-        if (ask.Command is { } command) return await RunCommandAsync(command, world, output, ct).ConfigureAwait(false);
+        if (ask.Line is { } asWritten) return await RunCommandAsync(asWritten, world, output, ct).ConfigureAwait(false);
+        if (ask.Command is { } command) return await RunCommandAsync(CommandText(command), world, output, ct).ConfigureAwait(false);
         if (HeavySlot.CheckoutOf(world.Directory) is not { } checkout)
         {
             throw new DriverException($"{world.Directory} is in no git checkout: `run-heavy` runs a checkout's own gates, from inside it.");
@@ -253,7 +255,7 @@ public static class HeavyRun
             // A session's run (its tree read from git's lock) never waits behind a verification.
             var waiter = new HeavyWaiter(pid, started, checkout, DateTimeOffset.UtcNow, session);
             var sessions = SessionLocks.HolderOf(checkout) is not null;
-            var admit = new HeavyAdmit(world.Rules, token => AcceptedSlots.OfRepositoryAsync(world.Home, keyedAs, checkout, token), () => written = new HeavyHolder(pid, started, checkout, gates, DateTimeOffset.UtcNow, session, null)) { Agent = session, Gate = string.Join('+', gates), Turn = world.Turn };
+            var admit = new HeavyAdmit(world.Rules, token => AcceptedSlots.OfRepositoryAsync(world.Home, keyedAs, checkout, token), () => written = new HeavyHolder(pid, started, checkout, gates, DateTimeOffset.UtcNow, session, null)) { Agent = session, Gates = gates, Turn = world.Turn };
             took = await HeavySlot.TakeUnlessAsync(
                 world.Home, key, repository, output, ct, world.Waiting, waiter, sessions ? holder => holder.Run is not null : null, admit).ConfigureAwait(false);
         }
@@ -328,7 +330,7 @@ public static class HeavyRun
             using (hold)
             {
                 return await RunGatesAsync(
-                    checkout, choice.Gates, key, [], job, output, ct, Keep, Inside(hold), steps: world.Steps, meter: new RunMeter(world.Home, key, LoadKind.Test, string.Join('+', gates), world.Admission.Clock)).ConfigureAwait(false);
+                    checkout, choice.Gates, key, [], job, output, ct, Keep, Inside(hold), steps: world.Steps, meter: new RunMeter(world.Home, key, LoadKind.Test, world.Admission.Clock)).ConfigureAwait(false);
             }
         }
     }
@@ -378,13 +380,12 @@ public static class HeavyRun
     /// go, and answers as a gate does: 0 passed, 1 failed (its exit said) or stopped. No repository's slot is taken and no gate is read: it is not a gate, and two
     /// sessions' focused runs may run side by side as far as the machine admits.
     /// </summary>
-    private static async Task<int> RunCommandAsync(IReadOnlyList<string> command, HeavyRunWorld world, TextWriter output, CancellationToken ct)
+    private static async Task<int> RunCommandAsync(string line, HeavyRunWorld world, TextWriter output, CancellationToken ct)
     {
         var folder = Path.GetFullPath(world.Directory);
         var checkout = HeavySlot.CheckoutOf(folder);
         var repository = world.Variable(RepositoryVariable)?.Trim() is { Length: > 0 } handed ? handed : checkout is null ? null : HeavySlot.RepositoryOf(checkout);
         var session = world.Variable(IntakeRoom.SessionVariable) is { Length: > 0 } ofSession ? ofSession : null;
-        var line = CommandText(command);
         AdmissionHold? hold;
         try
         {
@@ -397,6 +398,7 @@ public static class HeavyRun
             return 1;
         }
 
+        world.Admitted?.Invoke();
         using (hold)
         {
             var job = Job(OperatingSystem.IsWindows() ? $"Local\\daoris-heavy-{Guid.NewGuid():N}" : null);
@@ -491,10 +493,13 @@ public static class HeavyRun
                 var gateAt = at;
                 var gateName = current.Name;
                 keep?.Invoke(holder => holder with { Now = new HeavyGateNow(gateName, gateAt, DateTimeOffset.UtcNow) });
+                var gateRan = Stopwatch.StartNew();
                 step = HeavyStep.Start(job, bound.Run, folder, added, steps);
                 var code = await step.ExitAsync(ct).ConfigureAwait(false);
                 step.Dispose();
                 step = null;
+
+                meter?.Note(current.Name, job, gateRan.Elapsed, code == 0, code != 0, RunMeter.LogTail(steps?.Log));
                 HeavyGateLog.CopyTo(steps?.Log, output);
                 if (code == 0) continue;
 
@@ -521,7 +526,6 @@ public static class HeavyRun
             throw;
         }
 
-        meter?.Note(job, ran.Elapsed, !failed, failed, RunMeter.LogTail(steps?.Log));
         await EndAsync(job, output, sayLeft: true).ConfigureAwait(false);
         if (failed) return 1;
 

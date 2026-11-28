@@ -609,7 +609,8 @@ try
     {
         var exit = UpdateCommand.Run(
             updateArgs, DaorisHome.Resolve() ?? throw new DriverException(DaorisHome.Sentence), () => DateTimeOffset.UtcNow, log,
-            Environment.GetEnvironmentVariable(DriverChoicesCommand.SessionVariable), out var updateSaid, proof: HomeProbe.Refused);
+            Environment.GetEnvironmentVariable(DriverChoicesCommand.SessionVariable), out var updateSaid,
+            pause: step => Task.Delay(step, Daoris.Adapters.Clock.MachineClock.Time).GetAwaiter().GetResult());
         (exit == 2 ? Console.Error : Console.Out).Write(updateSaid);
         return exit;
     }

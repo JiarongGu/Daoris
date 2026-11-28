@@ -213,7 +213,7 @@ internal static class Program
             close: () => sp.GetRequiredService<MainForm>().CloseForGood(),
             bus: sp.GetRequiredService<Shenora.Core.Events.IEventBus>())
         {
-            Proof = Daoris.Driver.HomeProbe.Refused,
+            Proof = (proofInstall, proofHome, proofStaged, _) => Daoris.Driver.HomeProbe.Refused(proofInstall, proofHome, proofStaged, log),
             ClosingForUpdate = build => sp.GetRequiredService<DriverLoop>().Processes.Close = Daoris.Driver.ShellClose.Update(build),
             Bound =() => Daoris.Driver.DrainSetting.At(sp.GetRequiredService<DriverLoop>().ConfigPath),
         });
@@ -361,6 +361,7 @@ internal static class Program
             log.Info("app.started", ("version", version), ("installed", inInstallApp));
             var loop = app.Services.GetRequiredService<DriverLoop>();
             _ = Task.Run(() => Daoris.Driver.HomeStrays.Say(loop.Home, log));
+            _ = Task.Run(() => Daoris.Driver.HomeWeights.Say(loop.Home, log, DateTimeOffset.UtcNow));
             // Composed: a swap waiting for this start is confirmed here, so the launcher keeps this build, and
             // the last swap's outcome is said once. Then the drain watches what is staged, holding the loop's starts.
             var updater = app.Services.GetRequiredService<InstallUpdater>();

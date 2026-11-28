@@ -34,15 +34,16 @@ internal static class HandbackGates
 
     /// <summary>
     /// Whether <paramref name="ask"/> asked what <paramref name="gate"/> requires: its whole command, or its name where the gate's own run is the
-    /// requirement. A gate required by another command than its run is never met by a verdict of its run.
+    /// requirement. A gate required by another command is never met by its run; what a no-command check ran is on its state, read by <see cref="Verified"/>.
     /// </summary>
     internal static bool Matches(DeclaredGate gate, CheckAsk ask) =>
         ask.Command is { } command
             ? gate.Cwd is null && HeavyRun.CommandText(command) == ForHandback(gate).Run
             : ask.Gate == gate.Name && gate.HandbackRun is null && gate.Cwd is null;
 
-    /// <summary>Whether a check of the home's broker finished green at <paramref name="commit"/> for <paramref name="gate"/>: nothing runs it again.</summary>
+    /// <summary>Whether a check of the home's broker finished green at <paramref name="commit"/> for <paramref name="gate"/>, a no-command one only for the gates whose commands it ran.</summary>
     internal static bool Verified(CheckFiles files, DeclaredGate gate, string commit) =>
-        files.Asks().Any(ask => Matches(gate, ask) && files.ReadState(ask.Id) is { State: CheckStates.Reached, Tip: { } tip }
-            && string.Equals(tip, commit, StringComparison.OrdinalIgnoreCase));
+        files.Asks().Any(ask => files.ReadState(ask.Id) is { State: CheckStates.Reached, Tip: { } tip } state
+            && string.Equals(tip, commit, StringComparison.OrdinalIgnoreCase)
+            && (Matches(gate, ask) || (ask.Gate is null && ask.Command is null && gate.Handback && state.Ran?.Contains(ForHandback(gate).Run) == true)));
 }

@@ -27,6 +27,14 @@ public sealed class HeavyExecutorReachedProcessTests : IAsyncLifetime
             const [mode, folder, base] = process.argv.slice(2);
             appendFileSync(join(folder, 'reached-calls.log'), `${mode} ${base}\n`);
             const line = (outcome) => console.log(`reached-classes: ${JSON.stringify({ flaked: [], mainRed: [], red: [], ...outcome })}`);
+            if (mode === 'built') {
+              // Says its builds are done, then holds until the test lets it end.
+              console.log('reached-built: {}');
+              const { existsSync } = await import('node:fs');
+              while (!existsSync(join(folder, 'release'))) await new Promise((done) => setTimeout(done, 50));
+              line({ ran: 1, replayed: 0 });
+              process.exit(0);
+            }
             if (mode === 'pass') { line({ ran: 2, replayed: 7 }); process.exit(0); }
             if (mode === 'flake') { line({ ran: 2, replayed: 0, flaked: ['dotnet|A.B'] }); process.exit(0); }
             if (mode === 'red') { line({ ran: 2, replayed: 1, red: ['dotnet|X.Y'] }); process.exit(1); }
@@ -86,6 +94,29 @@ public sealed class HeavyExecutorReachedProcessTests : IAsyncLifetime
         Assert.Contains("2 classes run, 7 replayed, 0 red", result.Why);
         Assert.Equal("pass main", File.ReadAllText(At("reached-calls.log")).Trim());
         Assert.False(File.Exists(At("gate-calls.log")), "the gates did not run");
+    }
+
+    /// <summary>The runner's one line saying its builds are done reaches the run's record while the run still runs, so the admission stops counting it as starting.</summary>
+    [Fact]
+    public async Task A_runner_saying_its_builds_are_done_ends_its_starting_while_it_still_runs()
+    {
+        var repository = await RepositoryAsync(Declaring("built"));
+        var executor = new HeavyExecutor(Home, new VerifyWorld() with { Poll = TimeSpan.FromMilliseconds(50) });
+        _executors.Add(executor);
+        await executor.SendAsync(new VerifySend("v-0000000000000002", "i-b", "engine", repository.Checkout, repository.Commit, repository.Blob)
+        {
+            Tree = repository.Checkout + "-verify", Base = "main",
+        });
+        var key = HeavySlot.KeyOf(repository.Checkout)!;
+        var path = VerifyFiles.ResultOf(Home, "v-0000000000000002", "i-b");
+        await Poll.Until(() => HeavySlot.Holder(Home, key) is { Built: not null }, () => "the run's record never said its builds were done");
+
+        Assert.False(File.Exists(path), "the run was still running when its record said so");
+        Assert.False(CheckAdmission.Starting(HeavySlot.Holder(Home, key)!));
+
+        await File.WriteAllTextAsync(At("release"), "");
+        await Poll.Until(() => File.Exists(path), () => $"no result at {path}");
+        Assert.Equal(VerifyVerdicts.Reached, VerifyResult.Read(path)!.Verdict);
     }
 
     [Fact]

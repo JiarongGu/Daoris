@@ -889,16 +889,21 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     once. The judgement, the take of each slot and the write of each record happen under one lock (`locks/heavy/admitting.lock`), so two
     starts never both see no holder. The machine setting `checks` (`daoris settings checks <n>|auto`, the window's `SET_CHECKS`) pins a
     number, never more than the machine's heavy-run admission holds. **The room is measured, never a number** (ADMITDYNAMIC1, D362; the
-    judgement is `RoomJudge`, its state `RoomLedger`, in `Review/Room/`). A run's need is learned per repository, kind and gate from its
-    own runs on this machine (`LearnedNeeds`, `admission/learned.json`: the job's peak memory and mean cores, a tenth over the larger
-    of the newest five peaks, kept by `RunMeter` as a run ends); until a gate has run twice its kind's declared cost stands
-    (`LoadKind.Declared`, the merge tool's 8 GB for a test run). The person's share is the machine's use outside Daoris's processes,
+    judgement is `RoomJudge`, its state `RoomLedger`, in `Review/Room/`). A gate's need is learned per repository, kind and one gate from its
+    own runs on this machine (`LearnedNeeds`, `admission/learned.json`, D369: keyed by the repository's key, `HeavySlot.KeyOf`, so every
+    tree of it and its landing line read one history, never by a tree or folder; the job's peak memory so far and the cores the gate
+    kept busy, a tenth over the larger of the newest five peaks, kept by `RunMeter` as each gate ends, in a session's `run-heavy` and in a
+    check's gates alike); a run of several gates asks the largest of its gates, since they run one after another, never their sum
+    (`LearnedNeeds.OfGates`), and a check's unit is its one `reached` gate, kept whole. Until a gate has run twice its kind's declared
+    cost stands (`LoadKind.Declared`, the merge tool's 8 GB for a test run), and a need with a declared gate in it is said `declared`:
+    a memory wait names `learned` or `declared` after its number (`CheckWait` `source`, `workflow.wait.basis.*`). The person's share is the machine's use outside Daoris's processes,
     sampled at most every five seconds by the desktop's own admissions (a terminal's `daoris gate run` reads the samples and takes none) into `admission/room.json` (`PersonMeasure`), the machine's use less the resident memory of Daoris's processes (`DaorisShare.ReadResident`), both physical: their headroom is how far it stood above its
     present in the last ten minutes, plus 2 % of the memory (1 GB at least). What is kept free is the larger of that and the person's
     floor, the setting `reserve` (`reserveGb` in `driver.json`, `daoris settings reserve <gb>|auto`, the window's `SET_RESERVE`,
     `ReserveSetting`; `auto`, the default, no floor, 0 the same). A run is admitted while the free commit, less what the runs still
     starting will take (their need, counted while their first gate has not ended; a Daoris check's one `reached` gate holds its build and
-    its suites, so it counts for its whole run) and less what is kept, holds its learned need, and the lower of free physical memory and
+    its suites, so it counts from its start until its runner says its builds are done: one `reached-built: {}` line in its log, read by
+    `BuiltWatch` into the holder's record, `HeavyHolder.Built`, CHECKSTART1b; the line waits for a build started ahead of the plan, and a load rerun clears `Built` and is watched on its own log) and less what is kept, holds its learned need, and the lower of free physical memory and
     free commit holds it less the starting runs' need; the first run asks only the floor, so a machine with none of Daoris's runs on it
     never starves, and a pinned `checks` keeps only the floor. A wait says the number that held it (`CheckWait.Reserve`, `Memory`,
     `slot-reserve` on a check's step); memory that cannot be read runs one. The concurrency limit starts at the ceiling (a quarter of

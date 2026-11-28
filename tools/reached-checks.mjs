@@ -15,11 +15,12 @@
  * real dependency runs only where a changed path is that dependency's code (`tiers` in `daoris.gates.json`); the others are
  * left to the nightly run, and said. The fast tier runs the end-to-end specs nearest the change too (`merge/heavy-tier.ts`).
  *
- *   node tools/reached-checks.mjs [--plan] [--unbounded] [--tier fast|heavy|all] [--paths <path>[,<path>…]] [--base <ref>] [--classes <name>[,<name>…]] [--halt-file <path>]
+ *   node tools/reached-checks.mjs [--plan] [--unbounded] [--tier fast|heavy|all] [--paths <path>[,<path>…]] [--ranges <base>..<commit>[,…]] [--base <ref>] [--classes <name>[,<name>…]] [--halt-file <path>]
  * `--tier fast` is a merge's, `--tier heavy` the run after its landing's (`merge/heavy-tier.ts`); with none, both.
  *
  * The changed paths are the checkout's since `--base` (HEAD where none is named: an open merge's); a committed tree's need its base,
- * which the merge tool hands its gate in `{base}`. `--paths` names them, `--plan` runs nothing. With nothing changed nothing is reached.
+ * which the merge tool hands its gate in `{base}`. `--paths` names them, `--ranges` takes what each `<base>..<commit>` changed,
+ * `--plan` runs nothing. With nothing changed nothing is reached.
  *
  * A builder's own checks: `--base main` takes what its branch changed, `--classes` names classes (`--measure` times them whatever a
  * standing pass says, recording none); each pass is recorded as its group ends, for the merge and the next check to replay. A failed class runs again alone once (a pass alone is a FLAKE); the last line, `reached-classes: {…}`, is the record's.
@@ -110,6 +111,18 @@ export function changedPaths(root, base = 'HEAD') {
   return [...new Set([...changed, ...added])];
 }
 
+/** The paths each `<base>..<commit>` range changed, joined: the heavy tier's reach, which leaves out the main line between its ranges. */
+export function pathsOfRanges(root, ranges) {
+  const changed = new Set();
+  for (const range of ranges) {
+    const [from, to] = range.split('..');
+    const ran = spawnSync('git', ['--no-optional-locks', 'diff', '--name-only', '--no-renames', '-z', from, to], { cwd: root, windowsHide: true, encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 });
+    if (!from || !to || ran.status !== 0) throw new Error(`git could not read what the range ${range} changed: ${String(ran.stderr).trim()}`);
+    for (const path of ran.stdout.split('\0').filter(Boolean)) changed.add(path);
+  }
+  return [...changed];
+}
+
 export const storeFile = (root) => storeIn(verdictsHome(root));
 
 /** The plan for `paths` over the tree at `root` (its key context `world`), what it replays and leaves to the night, and each unit's key. */
@@ -167,7 +180,8 @@ async function main(argv) {
   const base = valueOf(argv, '--base') ?? 'HEAD';
   const classes = (valueOf(argv, '--classes') ?? '').split(',').filter(Boolean);
   const named = valueOf(argv, '--paths');
-  const paths = named !== null ? named.split(',').filter(Boolean) : changedPaths(root, base);
+  const ranged = valueOf(argv, '--ranges');
+  const paths = named !== null ? named.split(',').filter(Boolean) : ranged !== null ? pathsOfRanges(root, ranged.split(',').filter(Boolean)) : changedPaths(root, base);
   // One store for every worktree, the main checkout's, so a builder's passes are the ones its merge replays.
   const measure = argv.includes('--measure');
   const store = new PassedClasses(measure ? join(root, '_fixtures', 'no-standing-passes.json') : storeFile(verdictsHome(root)));

@@ -192,7 +192,7 @@ built, but nothing outside tests makes, takes or ends one; `LinePlaces` answers 
 21. A tree opens with its hooks held and is marked `unworked` in the home's files record (`work/files/trees/`); a failed open, like
     every other end of a tree, removes the tree, its branch and its record. The `files` run stage, after `open` and before `hand`
     (and the same step at a conversation's open and a go-on), is the one way a tree gets its dependencies: in an unworked tree it
-    keeps, places from the store (`work/deps/<key>`, copied, never linked) or installs each effective `dependency` rule in order,
+    keeps, places from the store (`work/deps/<key>`, each file a hard link to the entry's own, read-only, the folder itself never a link; the files at its top and any a volume will not link are copied, `FileLinks`) or installs each effective `dependency` rule in order,
     under its key's lock and the machine's admission (`npm ci --ignore-scripts` where the lockfile marks no install script; a package
     whose `os` leaves this system out, fsevents' shape, runs none here, `NpmPlatform`, so the repository's own `prepare`, which writes
     beside the folder, does not keep the install out of the store, SESSIONOPEN2). Its keys
@@ -511,7 +511,8 @@ built, but nothing outside tests makes, takes or ends one; `LinePlaces` answers 
 ### States and the end
 
 36. A session record moves forward only: `Queued`, `Starting`, `Working`, `AwaitingPerson` or `AwaitingStep`, then `Completed`,
-    `Declined`, `StoodDown`, `Failed` or `Stopped`. Every live state may be stopped by the person, at *Stop…* and `session stop <id>` (one
+    `Declined`, `StoodDown`, `Failed` or `Stopped`; each create and move also appends its witnessed fact to the session's journal, which
+    the fold reads in shadow (rule 36a). Every live state may be stopped by the person, at *Stop…* and `session stop <id>` (one
     implementation, `SessionsEnding.StopAsync`; `SessionStopCensusTests` holds every state the page counts active): a process here
     stopped, a start or a working record nothing here runs ended as an orphan, a parked one stopped unanswered, and one awaiting its
     run's step stopped with that run (D316, `RunWaitStops`): every step of the run a stop reaches is stopped through the run's node door
@@ -535,6 +536,34 @@ built, but nothing outside tests makes, takes or ends one; `LinePlaces` answers 
     step's kind reads a failed attempt (a push refused, or one its holder says was pushed outside), it is still observed at each look and
     a reach governs the run again too (`FailedHeldRuns`, its record's end read again whenever a word lifts it). A run whose quests all
     closed asks nothing: its end (`quest-closed`) ends any session that waits on it as stopped by Daoris, with the reason in their note.
+36a. A session's state is also folded from its journal of witnessed facts, in shadow beside the stored status, and nothing acts on the
+    fold yet (D368). **The facts.** Each create and move appends one fact in its own transaction (`SessionJournal`, the service's
+    `session_facts`), in a closed vocabulary spelled once (`Vocabulary<T>`) and refused at read where a row holds a spelling or a time this
+    build does not read, said once with its row: its kind, its witness (the door, a closed `WitnessDoor`, and its note's code), the holder
+    (a closed `HolderKind` with its subject: the machine room, a check slot, memory, an account, a reviewer, a landing, a step of its run,
+    a person's or the steward's question, none), the step and attempt (an open's from its quest's node, a wait's from `waits.step`), the
+    time, and the generation its writer sends (`Daoris-Generation`, which the driver's every request carries: `WritingGeneration`), never
+    one the store stamps; a mirror appends none. **The census.** The trigger-written `event_journal` keeps every raw transition, bounded,
+    for the change stream and the history; each of its sessions' `opened` and `state` rows names the fact that witnessed it (`minted`),
+    and `SessionFactCensusTests` and the baseline count the rows none does. The stored status and those two kinds of row end with the
+    switch to the fold, after which the facts are a session's one record of its life. **Generations and leases.** Only the start that holds
+    the home's lease begins a generation (`SessionFolds.BeginAsync`, before the look's sweep moves a record); a driver beside it
+    (`drive --share`) writes in the holder's, which each audit answers. A session's marker names its process, the generation it started
+    in and its owner, the driver that started it (`SessionMarker`, the one reader and writer of a marker, the driver's and the baseline's
+    alike); a lease is live while its owner runs, so a process that outlived its driver's restart is void and never adopted, and one a
+    running terminal's driver owns is never voided by another start. **The fold.** `SessionFold` reads a session's last fact against its
+    leases: working with a live lease, waiting on its named holder, needs you on an open question or a breach of the invariant (a closed
+    `BreachCode`, which the window's catalogue words), ended with its outcome; a stored start whose process runs is the start under way,
+    no difference. **The audit.** Each tick of the watch audits it (`POST /api/session-life/audit`, `SessionShadow`): every record the
+    status or the journal says is live, folded from its last fact, the writer's generation marked seen; each difference is said once as
+    `session.fold-differs` with the session's whole journal, again only when it changes, and what is remembered is bounded by the sessions
+    that differ (once per host process: a restart says them again). The list reads the last audit (`GET /api/session-life/fold`) and
+    folds nothing: `SESSION_GROUPS` and `daoris session list` carry `fold` (state, outcome, holder, subject, since, breach) on a row,
+    null where it agrees, the terminal's line saying it `in shadow`. **The buckets.** The same reading gives each session's time buckets
+    (`SessionBuckets`: a turn is working until the next start after it began and still after; down from a generation's last sign, its
+    newest fact or tick, to the next start; they sum to its wall time; fixing failed checks reads zero until a fact names a verdict).
+    **The baseline.** The host's `session-life baseline` reads a store read only (its append timed on an in-memory copy, against the median
+    span between a session's moves), folding a record from before its journal from its status, which ends with the switch.
 37. The end is observed, never self-reported. Done ends completed and a decline ends declined, except in a run bound to a graph version,
     where the agent's done or its submission ends its turn and waits on the run's next step (`StepWaits`: a first start's bind, which names the run and the commit
     its submission handed, a later turn's own `waits.step`), a fix turn whose quest closed before it included. A clean exit holding its own quest
@@ -561,11 +590,20 @@ built, but nothing outside tests makes, takes or ends one; `LinePlaces` answers 
     admission's lock) holds the rest; a run's own (memory, its repository's slots) lets the next try, as the executor's pass does
     (`CheckAdmission.EndsPass`). An ask waiting is `queued` with what it waits for in its state (`wait`, by code and values) and `running` once its slots are
     held; a command of the asker's own takes no repository slot and waits first come for the machine's places until ADMITDYNAMIC1 joins
-    it to the room. One broker
+    it to the room, `queued` until its place is given (`HeavyRunWorld.Admitted`). One broker
     seat per home (`checks/broker.lock`, held while the broker has asks to look over) keeps a second Daoris process from starting again a run the first
     holds; a run cut off by the driver's end before its slots is `queued` again, never a verdict; every check log is opened in `CheckFiles` only, shared with its reader. A check Daoris could not run (its log, its
     process, a missing tree or a wrapper's tool-error exit) ends `errored`, held on the check with its error, said in the run's log as `look.said` and never to
-    the session, and asked again after a minute; only a gate that ran is a verdict said to the session. The check log includes the gate's standard output and error before the wrapper's verdict. Every verdict is said to the
+    the session, and asked again after a minute; only a gate that ran is a verdict said to the session. A check asked with no gate and no
+    command runs what `CheckPlans` reads in its tree: the declaration's required `handback` commands, one after another each as written in its
+    folder with the first failure ending it, else its heavy gates (its own or this machine's mapping), and where neither exists it ends `refused`
+    with what the agent may run instead. That is judged when the broker takes the ask (`CheckBroker.RunOneAsync`), before its place in the order and the
+    admission, and every due ask starts at once, so an empty ask is said to the session at the look that takes it and never after a slot; a `refused` ask is finished, said, never retried.
+    Required commands are commands: an ask that runs them leaves the order once its plan is read, is `running` once the first has its place,
+    and each command waits first come for the machine's places as a command of the asker's own does, so it never holds a turn it does not ask at.
+    A required command that holds a `{base}` or `{tier}` nothing fills, or whose `cwd` is no folder of the tree, ends the ask `refused`, naming the
+    gate. Such a check keeps the commands it began on its state (`CheckState.Ran`, a red's words naming the last, the one it failed at); one that reached meets exactly the required gates whose commands those are at its tip
+    (`HandbackGates.Verified`): no admission gate that is not required, and none from a state an older build wrote. (CHECKRUNCMD1) The check log includes the gate's standard output and error before the wrapper's verdict. Every verdict is said to the
     session that asked, whatever its quest's state: Daoris asks no check of its own, so no verdict is owed to the person. An ask Daoris wrote
     for a hand-back before D293 ("by": "daoris") is deleted with its state and log when the files are read (`CheckFiles.Asks`). (CHECKLOCK1)
 41. The sweep, at every look, stops a record that says it runs with nothing running it, as interrupted, so one left `working`
@@ -854,7 +892,9 @@ Each row names the place and the registration; the rule behind it is in the tabl
 
 ## Open
 
-- **TREEPOOL1** (D214): rooms first with an optimised fallback for a session's tree; round 5's reads owed.
+- **TREELIFE1** (D371): a few leased slots per repository under one keeper, saved before every clean and reset in place,
+  replacing the per-session tree and its sweeps; **ROOMS1** (D214 round 5): rooms in place where a repository's rooms share no build.
+- **SESSIONLIFE2** (D368): a session's state as a fold of its witnessed facts.
 - **REPOCONFIG1**: the declarations' one store (`docs/2026-11-09-repo-config-design.md`); round 6's reads owed.
 - **SESSWATCH1d, 1e, 1f**: the record of quiet episodes, an automatic end only where it shows quiet is not work, each pass asked
   for its own minutes.
