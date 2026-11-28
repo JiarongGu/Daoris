@@ -53,7 +53,7 @@ public sealed class RoomAdmissionTests : IDisposable
             () => new HeavyHolder(Environment.ProcessId, 1, at, ["reached"], Fixed, agent, null) { Run = run, Now = new HeavyGateNow("build", 1, Fixed) })
         {
             Check = () => new VerifyHolder(Environment.ProcessId, 1, run, "i-" + run, "Daoris", Fixed),
-            Gate = "reached",
+            Gates = ["reached"],
             Agent = agent,
         };
     }

@@ -30,18 +30,19 @@ public static class UpdateCommand
     /// <param name="session">The terminal's <c>DAORIS_SESSION_ID</c>: a session's reads, and its verb is refused as the person's.</param>
     /// <param name="said">Everything the door said, for the caller to print.</param>
     /// <param name="fetch">How <c>--fetch</c> reaches the releases: the network and this machine's build, unless a test names its own.</param>
+    /// <param name="pause">Waits a step for the application's answer to a word (its next write of the state), at most <see cref="Answers"/> times; none, and the state is printed as it stands.</param>
     public static int Run(
         string[] args, string home, Func<DateTimeOffset> clock, MachineLog? log, string? session, out string said, ReleaseFetch? fetch = null,
-        StagedProof? proof = null)
+        Action<TimeSpan>? pause = null)
     {
         var output = new StringBuilder();
-        var code = Run(args, home, clock, log, session, output, fetch, proof);
+        var code = Run(args, home, clock, log, session, output, fetch, pause);
         said = output.ToString();
         return code;
     }
 
     private static int Run(
-        string[] args, string home, Func<DateTimeOffset> clock, MachineLog? log, string? session, StringBuilder output, ReleaseFetch? fetch, StagedProof? proof)
+        string[] args, string home, Func<DateTimeOffset> clock, MachineLog? log, string? session, StringBuilder output, ReleaseFetch? fetch, Action<TimeSpan>? pause)
     {
         string? mode = null;
         string? install = null;
@@ -95,7 +96,7 @@ public static class UpdateCommand
                 return 2;
             }
 
-            Status(install, home, manifest, InstallUpdate.Read(home), output, proof);
+            Status(install, home, manifest, InstallUpdate.Read(home), output);
             return 0;
         }
 
@@ -113,12 +114,13 @@ public static class UpdateCommand
         }
 
         var build = manifest?.Id;
-        InstallUpdate.Write(home, new UpdateRequest(mode, build, clock()));
+        var written = clock();
+        InstallUpdate.Write(home, new UpdateRequest(mode, build, written));
         log?.Info("update.requested", ("mode", mode), ("door", "terminal"), ("build", build));
 
         var what = build is null ? "whatever is staged" : $"build {build}";
-        // The application's own refusal, checked here as it checks it, so the word is never answered as taken when nothing will close.
-        if (mode == UpdateMode.Now && install is not null && UpdateRefusal.Of(install, home, manifest?.Version, UpdateRefusal.Running, proof) is var (_, why))
+        // Only what needs no copy of the home and no hash of the build is checked here; the application's state, printed below, says the rest.
+        if (mode == UpdateMode.Now && GoingBackRefusals.Current.Refused(home, manifest?.Version, UpdateRefusal.Running) is var (_, why))
         {
             output.AppendLine($"update: {what} is not installed now: {why}");
             output.AppendLine("  Nothing closes. `daoris update --now` tries again once that has moved.");
@@ -129,9 +131,10 @@ public static class UpdateCommand
         if (install is null)
         {
             output.AppendLine("  No install beside this home to read: the desktop running on it takes the word for whatever is staged there.");
+            return 0;
         }
 
-        return 0;
+        return Standing(install, written, pause, output) is { State: "refused" } ? 1 : 0;
     }
 
     private static int Fetch(string? install, string home, MachineLog? log, string? session, StringBuilder output, ReleaseFetch? fetch)
@@ -183,9 +186,36 @@ public static class UpdateCommand
         }
     }
 
-    private static void Status(string install, string home, StagedManifest? manifest, UpdateRequest? request, StringBuilder output, StagedProof? proof)
+    public const int Answers = 50;
+
+    /// <summary>What the application says of where the update stands, printed whole; after a word, once a look of the application has read it. The state printed.</summary>
+    private static UpdateStateRecord? Standing(string install, DateTimeOffset word, Action<TimeSpan>? pause, StringBuilder output)
+    {
+        var state = UpdateStateFile.Read(install);
+        if (state is not null && pause is not null && UpdateStateFile.Running(state))
+        {
+            var read = new DateTimeOffset(word.Ticks - word.Ticks % TimeSpan.TicksPerSecond, word.Offset);
+            for (var step = 0; step < Answers && !(state.Word >= read); step++)
+            {
+                pause(TimeSpan.FromMilliseconds(100));
+                state = UpdateStateFile.Read(install) ?? state;
+            }
+        }
+
+        if (state is null)
+        {
+            output.AppendLine("update: the application has not said where the update stands (it keeps its state beside the install, and none is there yet).");
+            return null;
+        }
+
+        foreach (var line in UpdateStateFile.Said(state, UpdateStateFile.Running(state))) output.AppendLine(line);
+        return state;
+    }
+
+    private static void Status(string install, string home, StagedManifest? manifest, UpdateRequest? request, StringBuilder output)
     {
         output.AppendLine(Installed(InstalledVersion(install)));
+        Standing(install, DateTimeOffset.MinValue, null, output);
         if (!StagedBuild.IsStaged(install))
         {
             output.AppendLine($"update: nothing is staged beside {install}.");
@@ -201,7 +231,7 @@ public static class UpdateCommand
             var at = manifest.At is { } staged ? $", staged {Moment(staged)}" : "";
             output.AppendLine($"update: Daoris {manifest.Version}{commit} is staged beside {install}, build {manifest.Id}{at}.");
             var mode = InstallUpdate.ModeFor(request, manifest.Id);
-            if (mode == UpdateMode.Now && UpdateRefusal.Of(install, home, manifest.Version, UpdateRefusal.Running, proof) is var (_, why))
+            if (mode == UpdateMode.Now && GoingBackRefusals.Current.Refused(home, manifest.Version, UpdateRefusal.Running) is var (_, why))
             {
                 output.AppendLine($"  Asked to install now, and refused: {why}");
                 output.AppendLine("  Nothing closes. `daoris update --now` tries again once that has moved.");

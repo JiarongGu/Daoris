@@ -137,7 +137,7 @@ public static class InstanceDoor
         var (code, message, why) = Refusal(answer);
         return new(InstanceFound.Refused, code switch
         {
-            "stopping" when why == "update" => "Daoris is updating; run this again once it is back.",
+            "stopping" when why == "update" => "Daoris is updating; run this again once it is back. `daoris update` says what it waits on, and `daoris update --cancel` ends the wait.",
             "stopping" => "Daoris is closing; run this again once it is back.",
             "protocol" => $"Daoris on this home speaks another version of the terminal's pipe ({message}); nothing was done: run this "
                           + "from the same build as the desktop.",

@@ -1669,8 +1669,8 @@ if (!done.ok) throw new Error(done.text);
   await sleep(8000);
   check('a quest published while it drains does not start', Boolean(secondQuest) && !(await sessionFor(secondQuest)),
     JSON.stringify(await sessionFor(secondQuest)));
-  check('the machine log says it was staged and is draining',
-    logged('update.staged').some((line) => line.build === stagedManifest?.id) && logged('update.draining').length > 0);
+  check('the machine log says it drains',
+    logged('update.state').some((line) => line.to === 'draining' && line.build === stagedManifest?.id));
 
   // 9d. The session ends; the work allows it; the launcher swaps and the new build starts and confirms.
   writeFileSync(releaseOf(heldQuest), '');
@@ -1695,7 +1695,7 @@ if (!done.ok) throw new Error(done.text);
     Boolean(await waitFor(async () => (!existsSync(join(install, ...STAGED)) && !existsSync(join(install, ...STAGE, 'previous')) ? true : null), 30)),
     readdirSync(join(install, ...STAGE)).join(', '));
   check('the machine log says it applied when idle and was installed',
-    logged('update.applying').some((line) => line.by === 'idle' && line.build === stagedManifest?.id)
+    logged('update.state').some((line) => line.to === 'applying' && line.by === 'idle' && line.build === stagedManifest?.id)
       && logged('update.installed').some((line) => line.build === stagedManifest?.id && line.confirmed === true));
   check('…and the window says so once, with nothing left staged',
     (await waitFor(async () => {

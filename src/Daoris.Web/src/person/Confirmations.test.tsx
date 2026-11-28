@@ -381,7 +381,7 @@ describe("the window's confirmation of a terminal's press", () => {
     expect(onSayUpdate).toHaveBeenCalledWith('not-now');
 
     // Once the drain ends, the held sentence goes and Confirm can be pressed again.
-    view.rerender(<Confirmations waiting={[STOP]} onAnswer={HELD} update={{ ...DRAIN, state: 'waiting', since: null, mode: 'not-now' }} onSayUpdate={onSayUpdate} />);
+    view.rerender(<Confirmations waiting={[STOP]} onAnswer={HELD} update={{ ...DRAIN, state: 'staged', since: null, mode: 'not-now' }} onSayUpdate={onSayUpdate} />);
     expect(screen.queryByText(waits)).not.toBeInTheDocument();
     expect(screen.queryByRole('alert')).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: later })).not.toBeInTheDocument();

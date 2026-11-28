@@ -39,6 +39,15 @@ describe("Settings' update row", () => {
     expect(screen.queryByRole('button', { name: /Update|Not now/ })).toBeNull();
   });
 
+  it('stopping, says what it waits on with its seconds and bound, and offers Not now alone', () => {
+    draw(standing({ state: 'stopping', staged: STAGED, mode: 'now', waiting: { on: 'check', seconds: 42, bound: 180 } }));
+
+    expect(screen.getByText('stopping')).toBeTruthy();
+    expect(screen.getByText(/Waiting on the check of the staged build: 42 s of at most 180 s\./)).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Not now' })).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Update now' })).toBeNull();
+  });
+
   it('refused by a check it has no words for, keeps the driver\'s own sentence', () => {
     draw(standing({ state: 'refused', staged: STAGED, problem: { code: 'elsewhere', message: 'a check this page is older than.' } }));
 
@@ -46,7 +55,7 @@ describe("Settings' update row", () => {
   });
 
   it('names a build with no commit by its version alone, and leaves out a time it was not given', () => {
-    draw(standing({ state: 'waiting', staged: { id: 'b1', version: '0.0.2', commit: null, at: null }, mode: 'not-now' }));
+    draw(standing({ state: 'staged', staged: { id: 'b1', version: '0.0.2', commit: null, at: null }, mode: 'not-now' }));
 
     expect(screen.getByText('0.0.2')).toBeTruthy();
     expect(screen.queryByText('Commit')).toBeNull();
@@ -133,7 +142,7 @@ describe("Settings' update row", () => {
   it('speaks 中文: waiting after Not now, and a swap refused', async () => {
     await i18n.changeLanguage('zh');
     draw(standing({
-      state: 'waiting', staged: STAGED, mode: 'not-now',
+      state: 'staged', staged: STAGED, mode: 'not-now',
       last: { phase: 'refused', build: 'x', version: '0.0.1', commit: 'abc1234', reason: 'size' },
     }));
 
