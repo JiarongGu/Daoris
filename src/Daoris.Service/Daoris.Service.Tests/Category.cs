@@ -11,4 +11,7 @@ internal static class Category
     public const string Name = "Category";
 
     public const string Process = "Process";
+
+    /// <summary>A class that reads the service's sources by text: run with <c>--filter Category=Census</c>, as the desktop's censuses are.</summary>
+    public const string Census = "Census";
 }

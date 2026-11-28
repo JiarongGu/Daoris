@@ -140,7 +140,8 @@ public sealed class SessionRoutes(HostWiring host) : IRouteModule
             unbindAsk: request.UnbindAsk == true, expect: request.Expect?.OfType<string>().ToList(),
             turns: SessionAnswers.TurnsOf(request.Turns),
             holdsPlace: request.HoldsPlace?.OfType<string>().Where(path => path.Length > 0).ToList(),
-            spent: request.Spent is { } spent ? new TurnSpent(spent.Input, spent.Output) : null);
+            spent: request.Spent is { } spent ? new TurnSpent(spent.Input, spent.Output) : null,
+            witness: WitnessDoor.Advance);
 
         return outcome.Refusal switch
         {

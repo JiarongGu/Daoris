@@ -512,7 +512,8 @@ built, but nothing outside tests makes, takes or ends one; `LinePlaces` answers 
 ### States and the end
 
 36. A session record moves forward only: `Queued`, `Starting`, `Working`, `AwaitingPerson` or `AwaitingStep`, then `Completed`,
-    `Declined`, `StoodDown`, `Failed` or `Stopped`. Every live state may be stopped by the person, at *Stop…* and `session stop <id>` (one
+    `Declined`, `StoodDown`, `Failed` or `Stopped`; each create and move also appends its witnessed fact to the session's journal, which
+    the fold reads in shadow (rule 36a). Every live state may be stopped by the person, at *Stop…* and `session stop <id>` (one
     implementation, `SessionsEnding.StopAsync`; `SessionStopCensusTests` holds every state the page counts active): a process here
     stopped, a start or a working record nothing here runs ended as an orphan, a parked one stopped unanswered, and one awaiting its
     run's step stopped with that run (D316, `RunWaitStops`): every step of the run a stop reaches is stopped through the run's node door
@@ -536,6 +537,34 @@ built, but nothing outside tests makes, takes or ends one; `LinePlaces` answers 
     step's kind reads a failed attempt (a push refused, or one its holder says was pushed outside), it is still observed at each look and
     a reach governs the run again too (`FailedHeldRuns`, its record's end read again whenever a word lifts it). A run whose quests all
     closed asks nothing: its end (`quest-closed`) ends any session that waits on it as stopped by Daoris, with the reason in their note.
+36a. A session's state is also folded from its journal of witnessed facts, in shadow beside the stored status, and nothing acts on the
+    fold yet (D368). **The facts.** Each create and move appends one fact in its own transaction (`SessionJournal`, the service's
+    `session_facts`), in a closed vocabulary spelled once (`Vocabulary<T>`) and refused at read where a row holds a spelling or a time this
+    build does not read, said once with its row: its kind, its witness (the door, a closed `WitnessDoor`, and its note's code), the holder
+    (a closed `HolderKind` with its subject: the machine room, a check slot, memory, an account, a reviewer, a landing, a step of its run,
+    a person's or the steward's question, none), the step and attempt (an open's from its quest's node, a wait's from `waits.step`), the
+    time, and the generation its writer sends (`Daoris-Generation`, which the driver's every request carries: `WritingGeneration`), never
+    one the store stamps; a mirror appends none. **The census.** The trigger-written `event_journal` keeps every raw transition, bounded,
+    for the change stream and the history; each of its sessions' `opened` and `state` rows names the fact that witnessed it (`minted`),
+    and `SessionFactCensusTests` and the baseline count the rows none does. The stored status and those two kinds of row end with the
+    switch to the fold, after which the facts are a session's one record of its life. **Generations and leases.** Only the start that holds
+    the home's lease begins a generation (`SessionFolds.BeginAsync`, before the look's sweep moves a record); a driver beside it
+    (`drive --share`) writes in the holder's, which each audit answers. A session's marker names its process, the generation it started
+    in and its owner, the driver that started it (`SessionMarker`, the one reader and writer of a marker, the driver's and the baseline's
+    alike); a lease is live while its owner runs, so a process that outlived its driver's restart is void and never adopted, and one a
+    running terminal's driver owns is never voided by another start. **The fold.** `SessionFold` reads a session's last fact against its
+    leases: working with a live lease, waiting on its named holder, needs you on an open question or a breach of the invariant (a closed
+    `BreachCode`, which the window's catalogue words), ended with its outcome; a stored start whose process runs is the start under way,
+    no difference. **The audit.** Each tick of the watch audits it (`POST /api/session-life/audit`, `SessionShadow`): every record the
+    status or the journal says is live, folded from its last fact, the writer's generation marked seen; each difference is said once as
+    `session.fold-differs` with the session's whole journal, again only when it changes, and what is remembered is bounded by the sessions
+    that differ (once per host process: a restart says them again). The list reads the last audit (`GET /api/session-life/fold`) and
+    folds nothing: `SESSION_GROUPS` and `daoris session list` carry `fold` (state, outcome, holder, subject, since, breach) on a row,
+    null where it agrees, the terminal's line saying it `in shadow`. **The buckets.** The same reading gives each session's time buckets
+    (`SessionBuckets`: a turn is working until the next start after it began and still after; down from a generation's last sign, its
+    newest fact or tick, to the next start; they sum to its wall time; fixing failed checks reads zero until a fact names a verdict).
+    **The baseline.** The host's `session-life baseline` reads a store read only (its append timed on an in-memory copy, against the median
+    span between a session's moves), folding a record from before its journal from its status, which ends with the switch.
 37. The end is observed, never self-reported. Done ends completed and a decline ends declined, except in a run bound to a graph version,
     where the agent's done or its submission ends its turn and waits on the run's next step (`StepWaits`: a first start's bind, which names the run and the commit
     its submission handed, a later turn's own `waits.step`), a fix turn whose quest closed before it included. A clean exit holding its own quest

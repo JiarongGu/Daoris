@@ -24,7 +24,7 @@ internal sealed class SessionWrites(SessionStore store)
         string? serves = null, string? from = null, string? fromWhy = null, string? fromBy = null,
         string? entryOrigin = null, string? entryPart = null, bool ownEntry = false, string? helpMode = null,
         IReadOnlyDictionary<string, string>? access = null, string? piece = null, string? actor = null, string? decides = null,
-        string? performs = null, string? node = null, int? attempt = null) => _db.RunAsync<Session>(async () =>
+        string? performs = null, string? node = null, int? attempt = null, WitnessDoor? witness = null) => WithFactAsync<Session>(async inside =>
     {
         // A why or an asker with no session continued is no link: the three are kept together or not at all.
         var continues = Blank(from);
@@ -100,10 +100,16 @@ internal sealed class SessionWrites(SessionStore store)
         command.Parameters.AddWithValue("$state", session.State.ToString());
         command.Parameters.AddWithValue("$created", Moments.Write(session.Created));
         command.Parameters.AddWithValue("$updated", Moments.Write(session.Updated));
-        await command.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
+        await command.ExecuteNonQueryAsync(inside).ConfigureAwait(false);
+        await store.Journal.AppendAsync(session, witness ?? WitnessDoor.Store, minted: session.Origin is null, inside, step: Blank(node), attempt: attempt)
+            .ConfigureAwait(false);
 
         return session;
     }, ct);
+
+    /// <summary>A write and its fact as one transaction: the one the flow holds, joined, else one begun for it.</summary>
+    private Task<T> WithFactAsync<T>(Func<CancellationToken, Task<T>> work, CancellationToken ct) =>
+        _db.InTransactionAsync((_, inside) => work(inside), ct);
 
     /// <summary>
     /// Move a session and attach what the move carries. An attachment left null keeps its old value:
@@ -120,11 +126,13 @@ internal sealed class SessionWrites(SessionStore store)
     /// The note's parts, written with the note: a note written without them clears the record's, so an older
     /// driver's note never sits beside stale parts; a move that writes no note keeps both.
     /// </param>
+    /// <param name="witness">Who witnessed the move, appended as its fact in the same transaction (<see cref="SessionJournal"/>).</param>
     public Task<Session?> SetStateAsync(
         string id, SessionState state, string? note, string? evidence, string? transcript,
         DateTimeOffset now, CancellationToken ct = default, bool interrupted = false, bool limit = false,
-        bool clearSaid = false, bool forgive = false, string? noteParts = null) => _db.RunAsync<Session?>(async () =>
+        bool clearSaid = false, bool forgive = false, string? noteParts = null, WitnessDoor? witness = null) => WithFactAsync<Session?>(async inside =>
     {
+        ct = inside;
         var session = await store.FindAsync(id, ct).ConfigureAwait(false);
         if (session is null) return null;
 
@@ -162,6 +170,8 @@ internal sealed class SessionWrites(SessionStore store)
         command.Parameters.AddWithValue("$updated", Moments.Write(moved.Updated));
         command.Parameters.AddWithValue("$id", id);
         await command.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
+        await store.Journal.AppendAsync(moved, witness ?? WitnessDoor.Store, minted: session.State != state && session.Origin is null, ct, noted: note is not null)
+            .ConfigureAwait(false);
 
         return moved;
     }, ct);
@@ -170,7 +180,7 @@ internal sealed class SessionWrites(SessionStore store)
     /// Copy another machine's session record into this store, whole. The judgement already ran
     /// where the process lived — the ledger's rules governed the original — so a fed record upserts
     /// verbatim and is never re-judged. The caller keys it by origin + id and names the origin; the
-    /// transcript never arrives, because no wire has a field for a machine path.
+    /// transcript never arrives, because no wire has a field for a machine path. It appends no fact: its own machine witnessed them.
     /// </summary>
     public Task MirrorAsync(Session record, CancellationToken ct = default) => _db.RunAsync(async () =>
     {
