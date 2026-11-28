@@ -47,6 +47,23 @@ internal static class FileLinks
         }
     }
 
+    /// <summary>The record <paramref name="path"/> names and its count of names; null where none is read, a file of one name to a reader of sizes.</summary>
+    internal static (string Identity, uint Names)? RecordOf(string path)
+    {
+        if (!OperatingSystem.IsWindows()) return null;
+        try
+        {
+            using var handle = CreateFileW(Prefixed(path), ReadAttributes, ShareAll, IntPtr.Zero, OpenExisting, OpenReparsePoint, IntPtr.Zero);
+            return !handle.IsInvalid && GetFileInformationByHandle(handle, out var info)
+                ? ($"{info.VolumeSerialNumber:x}:{info.FileIndexHigh:x}:{info.FileIndexLow:x}", info.Links)
+                : null;
+        }
+        catch (Exception error) when (error is DllNotFoundException or EntryPointNotFoundException or Win32Exception)
+        {
+            return null;
+        }
+    }
+
     /// <summary>
     /// A read-only file's name removed with the record's mark left as it is, as Node's own delete does: the removal is POSIX-semantic
     /// and ignores the mark, so the other names of a linked file stay read-only. <paramref name="names"/> is how many names the record had

@@ -219,7 +219,20 @@ built, but nothing outside tests makes, takes or ends one; `LinePlaces` answers 
     found layer is written only at registration, when the line or toolchain moves past what it reads, and when a line finishes.
     (D51, D214)
 23. A session commits on its tree's branch as it goes. An agent that moves its tree onto a branch of its own is followed there.
-    (D164)
+    (D164) A tree's save (`Workplace/Saves/TreeSaves`) pins its head under `refs/daoris/saves/<branch>/<n>` and commits onto it its
+    staged, unstaged and untracked-not-ignored files and the ignored paths named as work, through indexes of its own, so the tree's
+    index and files are never written: the save commit's tree is the files as git reads them, its parents the head, the index as
+    staged and the files' bytes as written. Its record (each file's SHA-256, bytes and blob) is the desktop store's `tree_saves`; a
+    save that cannot be made is a typed refusal that holds the tree. A restore writes a save into an empty folder and proves its
+    head, index and every listed file identical by hash. A save is landed by content (`TreeSaveLanded`): every commit on the line
+    by patch id with nothing beyond its head, else the line's tree unchanged by merging the line into the save; anything git cannot
+    answer is unlanded. The tree ledger (`TreeLedger`, `tree_moves` and `tree_days`) keeps each repository's copies per day: their
+    bytes, a hard link counted once, the copies made, reused and removed, the bytes written and freed, take to ready, saves pending
+    and the drive's free space at the day's first and last reading; a reading writes one notice a day for a budget breached
+    (`treeBudgetGb`), the floor crossed (`treeFloorGb`, 30 GB by default) and copies made with none reused in 24 hours. The doors
+    are `daoris trees save | restore | remove <tree> --saved | ledger [--days n] [--record]`; `--saved` removes a tree through
+    the one remover, its branch kept, only while its newest save reads it as it is. No session, look or sweep calls them yet.
+    (D371)
 24. One decision says how a line goes on after any trigger (words kept, an answer, a limit, a transient bound, a carry-on, a
     hand-over): resume, a new part, wait, hold or refuse. (D137, D189, D206, D212)
 25. The agent's own conversation is resumed only by the id Daoris kept, where its agent, account and tree still hold. Otherwise a

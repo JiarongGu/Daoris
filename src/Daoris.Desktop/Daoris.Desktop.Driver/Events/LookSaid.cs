@@ -184,11 +184,17 @@ public sealed class LookSaid(string? home, Func<MachineLog?> log, Action? notice
     /// <summary>A step every holder failed, at the owner's final exit (<see cref="FinalExits"/>): one notice, keyed by <see cref="FinalExits.Key"/>.</summary>
     public const string FinalExit = "final-exit";
 
+    public const string TreesBudget = "trees-budget";
+
+    public const string TreesFloor = "trees-floor";
+
+    public const string TreesNoReuse = "trees-no-reuse";
+
     /// <summary>Every news code, which the page's words cover in both languages.</summary>
     public static readonly IReadOnlyList<string> NewsCodes =
         [HandOverRefused, HandOverElsewhere, HandOverDropped, HandOverAskRefused, HandOverFailed, HandedBack, LostClaim, LostToReopen,
          MeetingCut, BrainstormCut, Swept, MeetingFailed, BrainstormFailed, HelperAskerGone, ReopenUnrecorded, ReopenTreeGone,
-         PluginUnsound, LimitWaits, LimitWentOn, LimitResumed, OpinionSettled, FinalExit];
+         PluginUnsound, LimitWaits, LimitWentOn, LimitResumed, OpinionSettled, FinalExit, TreesBudget, TreesFloor, TreesNoReuse];
 
     private readonly Func<DateTimeOffset> _clock = clock ?? (() => DateTimeOffset.UtcNow);
 

@@ -822,5 +822,6 @@ internal static class DesktopStoreSteps
         BusLogStoreStep.Timers,
         BusLogStoreStep.Queue,
         BusLogStoreStep.Correlation,
+        TreeLedgerStoreStep.Migration,
     ];
 }

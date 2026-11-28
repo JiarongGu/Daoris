@@ -15,7 +15,13 @@ internal static class TreesUsage
         Console.Error.WriteLine("                           | state [--entries]");
         Console.Error.WriteLine("                           | state <session|branch> [--repository <name>]");
         Console.Error.WriteLine("                           | sync [--repository <name>] [--workspace <name>] [--all] [--yes]");
-        Console.Error.WriteLine("                           | build <path>]");
+        Console.Error.WriteLine("                           | build <path>");
+        Console.Error.WriteLine("                           | save <tree> [--work <ignored path>]... | restore <save> <empty folder>");
+        Console.Error.WriteLine("                           | remove <tree> --saved | ledger [--days <1-90>] [--record]]");
+        Console.Error.WriteLine("  save pins a tree's head under refs/daoris/saves/<branch>/<n> and commits its staged, unstaged, untracked");
+        Console.Error.WriteLine("  and named ignored files onto it, with a record of each file's hash; restore puts a save into an empty");
+        Console.Error.WriteLine("  folder and proves every file by hash; remove --saved removes a tree only while its save reads it as it is;");
+        Console.Error.WriteLine("  ledger prints the copies' days, --record taking a reading first (TREELIFE1a, D371).");
         Console.Error.WriteLine("  build releases a kept output that is the previous line's build: it builds its project, sets aside what");
         Console.Error.WriteLine("  that build does not own, and removes the marker the runners refuse by; a failed build releases nothing.");
         Console.Error.WriteLine("  A session's worktree (D51). Removal refuses while the tree holds");
