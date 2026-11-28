@@ -462,7 +462,7 @@ public sealed class InstanceDoorTests : IAsyncLifetime
     [InlineData("protocol", "close", "another version of the terminal's pipe")]
     [InlineData("home", "close", "another home")]
     [InlineData("stopping", "close", "Daoris is closing; run this again once it is back.")]
-    [InlineData("stopping", "update", "Daoris is updating; run this again once it is back.")]
+    [InlineData("stopping", "update", "Daoris is updating; run this again once it is back. `daoris update` says what it waits on, and `daoris update --cancel` ends the wait.")]
     public async Task A_hello_refused_refuses_the_press_saying_which(string code, string why, string said)
     {
         if (!OperatingSystem.IsWindows()) return;

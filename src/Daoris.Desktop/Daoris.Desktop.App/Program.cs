@@ -213,7 +213,7 @@ internal static class Program
             close: () => sp.GetRequiredService<MainForm>().CloseForGood(),
             bus: sp.GetRequiredService<Shenora.Core.Events.IEventBus>())
         {
-            Proof = (proofInstall, proofHome, proofStaged) => Daoris.Driver.HomeProbe.Refused(proofInstall, proofHome, proofStaged, log),
+            Proof = (proofInstall, proofHome, proofStaged, _) => Daoris.Driver.HomeProbe.Refused(proofInstall, proofHome, proofStaged, log),
             ClosingForUpdate = build => sp.GetRequiredService<DriverLoop>().Processes.Close = Daoris.Driver.ShellClose.Update(build),
             Bound =() => Daoris.Driver.DrainSetting.At(sp.GetRequiredService<DriverLoop>().ConfigPath),
         });

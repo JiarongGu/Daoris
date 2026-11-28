@@ -22,6 +22,8 @@ internal sealed class VerifyExecution(string home, VerifySend send, CandidateJob
 {
     private readonly string _folder = VerifyFiles.AttemptFolder(home, send.Run, send.Invocation);
 
+    private readonly RunMeter _meter = new(home, key, LoadKind.Test, world.Clock.GetUtcNow);
+
     private string _at = send.Commit;
 
     private string? _ran = send.Accepted;
@@ -297,6 +299,7 @@ internal sealed class VerifyExecution(string home, VerifySend send, CandidateJob
                 }
 
                 if (exit is null) return Ended([.. ran, new VerifyGate(gate.Name, RunnerVerdicts.Ended) { Log = log, WallSeconds = wall.Elapsed.TotalSeconds }, .. rest, .. kept]);
+                _meter.Note(gate.Name, job.Job, wall.Elapsed, exit == 0, exit != 0, RunMeter.LogTail(log));
                 ran.Add(new VerifyGate(gate.Name, exit == 0 ? RunnerVerdicts.Pass : RunnerVerdicts.Fail, exit)
                 {
                     Log = log, WallSeconds = wall.Elapsed.TotalSeconds, Command = VerifyGate.CommandOf(gate),

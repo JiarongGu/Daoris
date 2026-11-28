@@ -21,7 +21,11 @@ type Story = StoryObj<typeof meta>;
 
 export const Draining: Story = { args: { update: state({ state: 'draining', staged: STAGED, mode: 'when-idle', driven: 2, turns: 1 }) } };
 
-export const Waiting: Story = { args: { update: state({ state: 'waiting', staged: STAGED, mode: 'not-now' }) } };
+export const Waiting: Story = { args: { update: state({ state: 'staged', staged: STAGED, mode: 'not-now' }) } };
+
+export const Stopping: Story = {
+  args: { update: state({ state: 'stopping', staged: STAGED, mode: 'now', why: 'now', waiting: { on: 'check', seconds: 42, bound: 180 } }) },
+};
 
 export const Applying: Story = { args: { update: state({ state: 'applying', staged: STAGED, mode: 'now' }) } };
 

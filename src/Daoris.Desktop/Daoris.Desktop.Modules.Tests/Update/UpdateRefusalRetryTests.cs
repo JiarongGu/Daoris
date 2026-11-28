@@ -51,7 +51,7 @@ public sealed class UpdateRefusalRetryTests : Bridge, IDisposable
 
         store.Settle(claim, DeliverySettlements.Stopped, "stopped by the person");
         Assert.Equal(UpdateStates.Refused, (await updater.LookAsync()).State);
-        Assert.Single(Logged("update.refused", "warn"));
+        Assert.Single(UpdateLines.To(DataHome, "refused"));
         Assert.Equal(0, _closed);
 
         _now = Now.AddMinutes(1);

@@ -81,6 +81,24 @@ public sealed class UpdateWatchTests : IDisposable
         await Until(() => updater.State.Staged?.Id == "b1", "the staged build was never looked at");
     }
 
+    /// <summary>A build restaged over the staged one is read when the staged folder moves: the updater then holds the new build.</summary>
+    [Fact]
+    public async Task A_build_restaged_over_the_staged_one_is_heard_when_the_folder_moves()
+    {
+        Stage("b1");
+        using var updater = Updater(TimeSpan.FromHours(1));
+        updater.Start();
+        await Until(() => _source.Opened.Count > 0, "the watch never opened");
+        await Until(() => updater.State.Staged?.Id == "b1", "the first build was never looked at");
+
+        Stage("b2");
+        _source.Say(Path.Combine(_install, "update"), "staged/build.json", ChangeKind.Renamed);
+
+        await Until(() => updater.State.Staged?.Id == "b2", "the restaged build was never looked at");
+        Assert.Equal(UpdateWhy.Restaged, updater.State.Why);
+        Assert.Equal(UpdateStates.Draining, updater.State.State);
+    }
+
     /// <summary>The terminal's request, written to the home with no word from the source, is found at the topic's deadline.</summary>
     [Fact]
     public async Task A_staged_build_is_found_by_its_deadline_when_the_source_is_silent()
@@ -114,7 +132,7 @@ public sealed class UpdateWatchTests : IDisposable
         // A terminal's word, written by another process, is no mark of ours: the same hint is heard.
         File.WriteAllText(InstallUpdate.PathOf(Data), "{\"mode\":\"not-now\",\"build\":\"b3\",\"at\":\"2026-10-03T12:00:00Z\"}\n");
         _source.Say(Data, "update.json", ChangeKind.Renamed);
-        await Until(() => updater.State.State == UpdateStates.Waiting, "a terminal's request was not heard");
+        await Until(() => updater.State.State == UpdateStates.Staged, "a terminal's request was not heard");
     }
 
     private int _looks;

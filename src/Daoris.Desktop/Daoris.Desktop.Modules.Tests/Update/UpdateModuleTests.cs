@@ -66,9 +66,27 @@ public sealed class UpdateModuleTests : Bridge
 
         var state = await AnswerAsync(module, "SET", new { mode = "not-now" });
 
-        Assert.Equal("waiting", state.GetProperty("state").GetString());
+        Assert.Equal("staged", state.GetProperty("state").GetString());
         Assert.Equal(new UpdateRequest(UpdateMode.NotNow, "b1", Now), InstallUpdate.Read(DataHome));
         Assert.Equal(0, _closed);
+    }
+
+    /// <summary>The state says why it holds, its last transition whole and what it waits on (null where it waits on nothing): the page words them.</summary>
+    [Fact]
+    public async Task State_answers_why_it_holds_its_last_transition_and_what_it_waits_on()
+    {
+        Stage("b1");
+        var (module, updater) = Module();
+        using var _ = updater;
+
+        var state = await AnswerAsync(module, "SET", new { mode = "not-now" });
+
+        Assert.Equal("not-now", state.GetProperty("why").GetString());
+        var transition = state.GetProperty("transition");
+        Assert.Equal(("none", "staged", "not-now", "b1"), (
+            transition.GetProperty("from").GetString(), transition.GetProperty("to").GetString(), transition.GetProperty("why").GetString(),
+            transition.GetProperty("build").GetString()));
+        Assert.Equal(JsonValueKind.Null, state.GetProperty("waiting").ValueKind);
     }
 
     [Fact]

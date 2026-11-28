@@ -66,7 +66,7 @@ public sealed record HeavyAdmit(Func<CheckRules> Rules, Func<CancellationToken, 
     /// <summary>The driven session (the agent) whose run it is: its fair share of its project's places.</summary>
     public string? Agent { get; init; }
 
-    public string Gate { get; init; } = CheckAdmission.DefaultGate;
+    public IReadOnlyList<string> Gates { get; init; } = [CheckAdmission.DefaultGate];
 
     /// <summary>The run's place in its queue's order (<see cref="AdmissionOrder"/>): it asks the admission only when it is the turn's, and tells the turn what came of it; null asks at each look.</summary>
     public AdmissionTurn? Turn { get; init; }
@@ -242,7 +242,7 @@ public sealed class HeavySlot : IDisposable
                 }
                 else
                 {
-                    (var taken, wait) = CheckAdmission.TryTake(home, admit.Rules(), new HeavyAsk(key, repository, await admit.Declared(ct).ConfigureAwait(false), admit.Holder) { Agent = admit.Agent, Gate = admit.Gate });
+                    (var taken, wait) = CheckAdmission.TryTake(home, admit.Rules(), new HeavyAsk(key, repository, await admit.Declared(ct).ConfigureAwait(false), admit.Holder) { Agent = admit.Agent, Gates = admit.Gates });
                     slot = taken?.Repository;
                     if (slot is null && wait is not null) admit.Turn?.Refused(wait);
                 }

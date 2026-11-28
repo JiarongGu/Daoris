@@ -6,7 +6,7 @@ import type { UpdateMode, UpdateOutcome, UpdateState } from '../../update/Update
 
 /** The pill a drain's state wears: in progress in taken's hue, a refusal an outcome in declined's, a held word neutral. */
 const STATE_TONE: Record<string, string> = {
-  draining: 'taken', deferred: 'neutral', applying: 'taken', waiting: 'neutral', refused: 'declined',
+  draining: 'taken', deferred: 'neutral', stopping: 'taken', applying: 'taken', staged: 'neutral', refused: 'declined',
 };
 
 /** The pill a swap's ending wears: each an outcome, so installed is done's and the rest declined's. */
@@ -14,7 +14,7 @@ const OUTCOME_TONE: Record<string, string> = { installed: 'done', 'rolled-back':
 
 /** The words each state offers, the move first, as the banner offers them. */
 const WORDS: Record<string, readonly UpdateMode[]> = {
-  waiting: ['when-idle', 'now'], draining: ['now', 'not-now'], deferred: ['now', 'not-now'], refused: ['now'],
+  staged: ['when-idle', 'now'], draining: ['now', 'not-now'], deferred: ['now', 'not-now'], stopping: ['not-now'], refused: ['now'],
 };
 
 const WORD_KEY: Record<UpdateMode, string> = { 'when-idle': 'update.whenIdle', now: 'update.now', 'not-now': 'update.notNow' };
@@ -65,7 +65,10 @@ export function UpdateSection({ update, busy = false, onSay }: {
         first: t('settings.update.join', { first: t('settings.update.deferred'), second: waits() }),
         second: update.since ? t('settings.update.since', { time: clockOf(update.since, new Date(), i18n.language) }) : '',
       }).trim();
-      case 'waiting': return t('settings.update.waiting');
+      case 'staged': return t('settings.update.waiting');
+      case 'stopping': return t('settings.update.stopping', {
+        what: t(`update.waits.${update.waiting?.on ?? 'check'}`), seconds: update.waiting?.seconds ?? 0, bound: update.waiting?.bound ?? 0,
+      });
       case 'applying': return t('settings.update.applying');
       case 'refused': return t('settings.update.refused', { why: why(problem?.code, problem?.message) });
       default: return t('settings.update.none');

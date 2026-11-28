@@ -327,7 +327,7 @@ public sealed class HeavyExecutor(string home, VerifyWorld? world = null) : IAsy
             () => new HeavyHolder(Environment.ProcessId, _started, send.Checkout, [], DateTimeOffset.UtcNow, null, JobName(home, send.Invocation)) { Run = send.Run })
         {
             Check = () => new VerifyHolder(Environment.ProcessId, _started, send.Run, send.Invocation, send.Repository, now),
-            Gate = "reached",
+            Gates = ["reached"],
         };
         var (taken, wait) = CheckAdmission.TryTake(home, _world.Rules(), ask);
         queued.Refused = wait;
@@ -425,7 +425,7 @@ public sealed class HeavyExecutor(string home, VerifyWorld? world = null) : IAsy
             {
                 // What the run took is read from its job while the job still holds it, then it is emptied before either slot goes.
                 var whole = !stop.IsCancellationRequested && !_ends.IsCancellationRequested && !busy && result is { Verdict: VerifyVerdicts.Reached } done && done.Gates.All(gate => gate.Verdict != VerifyGate.Kept);
-                new RunMeter(home, key, LoadKind.Test, "reached", _world.Clock.GetUtcNow).Note(candidate.Job, ran.Elapsed, whole, result is { Verdict: VerifyVerdicts.Failed }, result?.Why);
+                new RunMeter(home, key, LoadKind.Test, _world.Clock.GetUtcNow).Note("reached", candidate.Job, ran.Elapsed, whole, result is { Verdict: VerifyVerdicts.Failed }, result?.Why);
                 await candidate.DisposeAsync().ConfigureAwait(false);
             }
 
