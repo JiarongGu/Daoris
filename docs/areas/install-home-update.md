@@ -187,7 +187,7 @@ Each type is in a file of its name; `docs/index/README.md` says where a seam, ve
     loop's starts and the presses go on, the mode stays *when idle*, and the build installs at the first look that reads the work
     idle, or at the person's word; a newer build, read at the next look after the staged folder changes, drains anew. The banner
     says until when a drain holds new work, and of a deferred build that it waits, on what and since when, with *Update now* and
-    *Not now*. (from D139, D327, D369)
+    *Not now*. (from D139, D327, D370)
 39. Idle is no driven session with a turn running, no conversation's turn in flight and no run's plugin step in flight: an attempt a plugin
     performs that is recorded, sent or unknown on a run that goes on, which the runtime governs at a node its graph declares while
     its plugin's process is up, and whose step waits on no role's act (`PluginStepsInFlight`), so a release or a deploy is never
@@ -212,18 +212,18 @@ Each type is in a file of its name; `docs/index/README.md` says where a seam, ve
     for its build until the person's next word, from the banner, Settings or the terminal, which checks again. The presses a stop or a close
     holds go on at once when the update is refused, a word is said (a cancel), a build other than the one stopped for is staged, the stop has
     run out of `InstallUpdater.StopBound` (three minutes, its check and the launcher's start together: refused as `bound`), or the close has not
-    taken within `InstallUpdater.CloseBound` (five minutes, past the launcher's three: refused as `close`); a refusal is kept until the next word. (from D139, D215, HOMEPROOF2, D369)
+    taken within `InstallUpdater.CloseBound` (five minutes, past the launcher's three: refused as `close`); a refusal is kept until the next word. (from D139, D215, HOMEPROOF2, D370)
 41. *Update now* is the person closing Daoris: nothing new starts or is answered from the moment it is said (state `stopping`), the build is
     checked, the launcher started and the application closed, and it says what it waits on with the seconds and the bound (rule 41a). The
     wait is bounded and a word or a restage ends it; driven sessions are recorded stopped for the update (`update.closed`) and carried on at the
-    next start. (from D139, D363, D369)
+    next start. (from D139, D363, D370)
 41a. The update is one state: `none`, `staged`, `draining`, `deferred`, `stopping`, `applying`, `refused` or `installed` (`UpdateFlow`: every state
     may follow every other, `applying` only `stopping`). A look moves it, says each change once in the machine log (`update.state`: from, to,
     why, the build and the moment's counts; `update.waiting` every ten seconds a stop waits) and to the page (`UPDATE_STATE`: `state`, `why`,
     `transition`, `waiting`), and keeps it in `update/state.json` for the terminal, which prints it, its why, what it waits on and the last
     transition without asking the application. Looks are one at a time and answer within `InstallUpdater.Look`; the stop is its own task, so a
     word, a restage and the bound are judged at every look while the check runs. `installed` is a swap this start confirmed and `refused` also a
-    swap the launcher put back, each until *Dismiss*; a build staged meanwhile is the state. (from D369)
+    swap the launcher put back, each until *Dismiss*; a build staged meanwhile is the state. (from D370)
 42. The application starts `Daoris.exe --update --after <pid>` followed by its own start arguments, keeping any debug port
     through the swap and restart, and closes. The launcher waits up to three minutes for it and for everything running
     from `app/`. (from D139)
@@ -249,7 +249,7 @@ Each type is in a file of its name; `docs/index/README.md` says where a seam, ve
     (`UpdateRefusalWords`): the install's and the home's paths are said as `<install>` and `<home>` where a separator or the path's end
     follows them, in either slash and in the long form, an email as `<email>`, and the rest as the build said it, which may name another
     path; so a refusal reads again from the log alone. A home proof that passes logs `update.probe.copied`, what its copy read and did not,
-    counted. (from D94, D139, D369, HOMEPROBECOPY1)
+    counted. (from D94, D139, D370, HOMEPROBECOPY1)
 47a. A staged build starts clean on a copy of the home before it is swapped in (`HomeProbe`, the last of `UpdateRefusal.Of`'s checks, asked in the
     stop by the application's `InstallUpdater.Proof`, never by the terminal; the stop lets go of it when a word, a restage or the stop's bound ends the stop). The running build copies the home
     into `update/probe/<id>/` (`HomeCopy`), and the copy is never vacuous: the Daoris folder, its `data` folder and every folder and record the
@@ -287,7 +287,7 @@ Each type is in a file of its name; `docs/index/README.md` says where a seam, ve
     0.0.39's copies the home's own folder whole, about 8 GB with the line trees, fails on the first file it cannot read or that vanishes, and
     logs no sentence, so an install running it is updated only while no check waits or runs and the line trees are idle, from the CLI
     (`daoris update --now`) with a long wait (`HomeProbeAt0039`, a test copy of it, proves a newer build passes it then, and is deleted once
-    the install runs a build with this probe). (from UPGRADEPROOF1, HOMEPROBECOPY1, FIX-LOG 2026-11-20, D369)
+    the install runs a build with this probe). (from UPGRADEPROOF1, HOMEPROBECOPY1, FIX-LOG 2026-11-20, D370)
 48. A build that confirms and fails later is not rolled back. A launcher refuses a `build.json` schema it does not read. (from D139)
 48a. Daoris publishes its own releases: GitHub releases of its public repository, each carrying `Daoris-<version>-win-x64.zip`, one staged build
     (the launcher, `app/`, `INSTALLED.md`, `build.json`), and `Daoris-<version>-win-x64.zip.sha256` beside it. `desktop-release.yml` makes them and runs only
