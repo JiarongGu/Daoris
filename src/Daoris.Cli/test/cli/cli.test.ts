@@ -104,8 +104,9 @@ test('every registered command has its usage lines, and --help prints them in th
     assert.match(command.usage[0]!, new RegExp(`^ {2}${command.name}(?: |$)`),
       `\`${command.name}\`'s first usage line does not name it`);
     for (const line of command.usage.slice(1)) {
-      // A continuation sits under the description column, so it can never read as another verb.
-      assert.match(line, /^ {23}/, `\`${command.name}\` has a usage line that could read as a verb: ${line}`);
+      // A continuation sits under the description column and another form names the verb, so neither reads as another verb.
+      assert.match(line, new RegExp(`^(?: {23}| {2}${command.name} )`),
+        `\`${command.name}\` has a usage line that could read as another verb: ${line}`);
     }
 
     const block = `\n${command.usage.join('\n')}\n`;

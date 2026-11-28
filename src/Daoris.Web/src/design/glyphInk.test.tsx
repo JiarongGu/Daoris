@@ -7,7 +7,7 @@ import { Mark } from './Mark';
 
 /**
  * 🔴 **A glyph wears the neutral inks, never the accent** (FIX-LOG 2026-11-20). An icon draws in `currentColor`, so it takes its
- * container's colour; the role set's codemod moved every `text-accent` to the blue `accent-ink`, and every icon inside a link, an
+ * container's colour; the role set's codemod moved every word in the accent to the blue `accent-ink`, and every icon inside a link, an
  * accent word, the chosen place of the activity bar and the strip's mark turned blue with it. A word that acts keeps the blue; the
  * glyph beside it wears `ink-soft`, and a chosen place says so by its rail and its field. Every story's render is held to it
  * (`test/composeStories.ts`); this file holds the reader, and the sources for a glyph given the accent by its own class.

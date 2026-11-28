@@ -5,7 +5,7 @@ import { rooted } from '../test/sources';
 
 /**
  * 🔴 **A variable no rule declares draws nothing, and says nothing**. When the role set renamed every token at once, a page that
- * still asked for an old name (`var(--ink-taken)`, `duration-(--speed)`) would take the property's initial value: a word in the
+ * still asked for a name gone with it (`var(--ink-gone)`, `duration-(--pace)`) would take the property's initial value: a word in the
  * default black, a transition with no time. `tokens.test.ts` reads the classes; this reads every variable a source or a stylesheet
  * asks for, in `var(…)` or Tailwind's `-(…)`, against those `tokens.css` declares and the few a component sets at runtime.
  */
@@ -48,10 +48,10 @@ const stylesheets = Object.keys(rooted(import.meta.glob('/src/**/*.css')))
 describe('the variables', () => {
   it('catches a variable no rule declares, in a var(), a Tailwind shorthand and a stylesheet, and leaves the rest', () => {
     const asks = (source: string) => undeclaredVariables([['./work/frame/frame.tsx', source]], tokensCss);
-    expect(asks('<span className="text-[color:var(--ink-taken)]" />'))
-      .toEqual(['./work/frame/frame.tsx asks for --ink-taken, which tokens.css does not declare']);
-    expect(asks("'transition-colors duration-(--speed)'")).toHaveLength(1);
-    expect(asks('.hljs-string { color: var(--ink-done); }')).toHaveLength(1);
+    expect(asks('<span className="text-[color:var(--ink-gone)]" />'))
+      .toEqual(['./work/frame/frame.tsx asks for --ink-gone, which tokens.css does not declare']);
+    expect(asks("'transition-colors duration-(--pace)'")).toHaveLength(1);
+    expect(asks('.hljs-string { color: var(--ink-old); }')).toHaveLength(1);
     expect(asks([
       "'duration-(--duration-quick) border-t-[length:var(--frame-rule)]' color: var(--accent-ink);",
       "top-[calc(var(--session-head,0px)-0.75rem)] var(--text-caption--line-height) `var(--leading-${step})`",

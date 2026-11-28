@@ -36,14 +36,14 @@ internal static class StoreShape
         await using var fresh = new SqliteConnection("Data Source=:memory:");
         await fresh.OpenAsync().ConfigureAwait(false);
         await open(fresh).ConfigureAwait(false);
-        var current = Shape(fresh);
+        var current = await ShapeAsync(fresh).ConfigureAwait(false);
 
         await using var home = new SqliteConnection(new SqliteConnectionStringBuilder
         {
             DataSource = path, Mode = SqliteOpenMode.ReadOnly, Pooling = false,
         }.ToString());
         await home.OpenAsync().ConfigureAwait(false);
-        var held = Shape(home);
+        var held = await ShapeAsync(home).ConfigureAwait(false);
 
         var missing = new List<string>();
         foreach (var (table, columns) in current)
@@ -55,10 +55,17 @@ internal static class StoreShape
         if (missing.Count > 0) throw new OlderStoreException(path, missing);
     }
 
-    private static Dictionary<string, HashSet<string>> Shape(SqliteConnection connection)
+    /// <summary>Each table's columns, read inside the connection's gate, as every command on a connection is.</summary>
+    private static Task<Dictionary<string, HashSet<string>>> ShapeAsync(SqliteConnection connection)
+    {
+        var gate = ConnectionGate.For(connection);
+        return gate.RunAsync(() => Task.FromResult(Shape(gate)), CancellationToken.None);
+    }
+
+    private static Dictionary<string, HashSet<string>> Shape(ConnectionGate gate)
     {
         var tables = new List<string>();
-        using (var list = connection.CreateCommand())
+        using (var list = gate.Command())
         {
             list.CommandText = "SELECT name FROM sqlite_master WHERE type = 'table' AND name NOT LIKE 'sqlite_%'";
             using var reader = list.ExecuteReader();
@@ -68,7 +75,7 @@ internal static class StoreShape
         var shape = new Dictionary<string, HashSet<string>>(StringComparer.Ordinal);
         foreach (var table in tables)
         {
-            using var info = connection.CreateCommand();
+            using var info = gate.Command();
             info.CommandText = "SELECT name FROM pragma_table_info($table)";
             info.Parameters.AddWithValue("$table", table);
             using var reader = info.ExecuteReader();

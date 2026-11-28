@@ -103,9 +103,12 @@ export const REACH: readonly Rule[] = Object.freeze<Rule[]>([
   },
   { paths: ['tools/stage-package.mjs'], gates: ['rehearse', 'deployment'], why: "every pack runs it: the release rehearsal's, and the install's doctrine tool" },
   {
-    paths: ['tools/family-rehearsal.mjs', 'tools/rehearsal-apart.mjs', 'tools/stub-two.mjs', 'tools/usage-report.mjs', 'tools/usage-report/**'],
+    paths: [
+      'tools/family-rehearsal.mjs', 'tools/family-gates.mjs', 'tools/family-pins.mjs', 'tools/rehearsal-apart.mjs', 'tools/stub-two.mjs',
+      'tools/usage-report.mjs', 'tools/usage-report/**',
+    ],
     gates: ['rehearse-family'],
-    why: 'the family rehearsal, its parts: among them the workflow verbs it sets a place\'s work apart with',
+    why: 'the family rehearsal, its parts: among them its pin and gate stages and the workflow verbs it sets a place\'s work apart with',
   },
   // The stand-ins' reader, which its own tool test and the family rehearsal import.
   { paths: ['tools/stand-ins.mjs'], gates: ['tool-tests', 'rehearse-family'], why: "the stand-ins' reader: its tool test (stand-ins.test.ts) and the family rehearsal, which finds the providers' stand-ins by it (AGENTPROVIDER1b)" },
@@ -114,14 +117,19 @@ export const REACH: readonly Rule[] = Object.freeze<Rule[]>([
   ...reachRows(DRIVER_READERS),
   { paths: ['tools/setup-kit.mjs'], gates: ['tool-tests', 'rehearse-family'], why: "the family rehearsal's set-up kit, and its tool-tests, which run it for real in a scratch repository (GATESLIM1)" },
   {
-    paths: ['tools/desktop-publish.mjs', 'tools/desktop-publish/**', 'tools/ci-background.mjs', 'tools/test-failures.mjs'],
+    paths: ['tools/desktop-publish.mjs', 'tools/desktop-publish/**', 'tools/ci-background.mjs', 'tools/test-failures.mjs', 'tools/contracts.mjs'],
     gates: ['tool-tests', 'deployment', 'rehearse-family'],
-    why: 'the publish the deployment rehearsal drives, and what it imports (the background run\'s records, CISCOPE1d, and the failure reader they import, CISCOPE1c, both of which the merge tool imports too); the family rehearsal runs usage-report, which imports it; and its tool-tests (GATESLIM1)',
+    why: 'the publish the deployment rehearsal drives, and what it imports (the background run\'s records, CISCOPE1d, the failure reader they import, CISCOPE1c, both of which the merge tool imports too, and the contracts\' writer it regenerates stale contracts with, PUBLISHCONTRACTS1); the family rehearsal runs usage-report, which imports it; and its tool-tests (GATESLIM1)',
   },
   {
     paths: ['tools/processes.mjs'],
     gates: ['tool-tests', 'deployment', 'rehearse-family', 'rehearse'],
     why: "what the publish imports (the rule above), and what the rehearsals' kit ends a timed-out command's leftovers with, so all three rehearsals (FAMILYFAIL1)",
+  },
+  {
+    paths: ['tools/port-listeners.mjs', 'tools/machine-read.mjs', 'tools/machine-read/**', 'tools/run-lock.mjs'],
+    gates: ['tool-tests', 'deployment', 'rehearse-family', 'rehearse'],
+    why: "the one reader of the process table and the program it builds and starts (WMICOST1): the rehearsals' kit names a port's holder by it, and processes.mjs reads it, so all three rehearsals; and its tool-tests",
   },
   { paths: ['tools/deployment-rehearsal.mjs', 'tools/desktop.mjs', 'tools/desktop/**'], gates: ['deployment'], why: 'the deployment rehearsal and what it imports' },
   { paths: ['src/Daoris.Devkit/**'], gates: ['devkit', 'layers'], why: 'its own suite, and the layers census, which counts its tests; it is also the universal gates and the code map, which every merge runs' },
