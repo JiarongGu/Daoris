@@ -481,7 +481,6 @@ public sealed class InstallUpdater(
 
         public volatile string On = UpdateWaits.Check;
 
-        public int Said;
     }
 
     private string? StopEnded(Stop stop, string? id, UpdateRequest? request)
@@ -772,9 +771,8 @@ public sealed class InstallUpdater(
     /// <summary>What a stop waits on, said in the log every ten seconds it waits, and each second to the page and the terminal.</summary>
     private void SayWaiting(Stop stop)
     {
-        var tens = (int)((Now - stop.Began).TotalSeconds / 10);
-        if (tens <= 0 || Interlocked.Exchange(ref stop.Said, tens) == tens) return;
-        log.Info("update.waiting", ("build", stop.Build), ("on", stop.On), ("seconds", tens * 10), ("bound", stop.Place.Waiting(stop.On, Now).Bound));
+        if (stop.Place.ToSay(stop.On, Now) is not { } said) return;
+        log.Info("update.waiting", ("build", stop.Build), ("on", said.On), ("seconds", said.Seconds), ("bound", said.Bound));
     }
 
     private UpdateState Compose(UpdateBuild? staged, string? mode, UpdateWork? now, UpdateProblem? problem, DateTimeOffset? since = null, DateTimeOffset? until = null, bool drain = false)

@@ -222,6 +222,41 @@ public sealed class UpdateStopBoundTests : Bridge
         await Until(() => MachineAdmission.Look(DataHome, now: _now).Waits.Count == 0, "the wait for a place was left standing");
     }
 
+    [Fact]
+    public async Task A_stop_cancelled_once_it_has_its_place_never_starts_the_check_and_lets_the_place_go()
+    {
+        using var cancelled = new CancellationTokenSource();
+        var place = new StopPlace(DataHome, Now, new CheckPlacing(StopBounds.Floor, null, 1));
+        var ran = false;
+
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => place.RunAsync(
+            () => Now, () => { }, cancelled.Cancel, () => ran = true, cancelled.Token));
+
+        Assert.False(ran);
+        Assert.Empty(MachineAdmission.Look(DataHome, now: Now).Holds);
+    }
+
+    [Fact]
+    public async Task The_log_says_the_seconds_of_the_check_and_not_the_wait_for_its_place_beside_the_bound_it_is_held_to()
+    {
+        Measured(88, 147);
+        var other = await MachineAdmission.TakeAsync(DataHome, new AdmissionRequest("a gate"), TextWriter.Null, CancellationToken.None, capacity: 1);
+        _proof = Slow;
+        using var updater = Updater();
+        await updater.SayAsync(UpdateMode.Now, "terminal");
+        _now = Now.AddSeconds(100);
+        await updater.LookAsync();
+        other.Dispose();
+        await Until(() => _proofRunning.IsSet, "the check did not start once the place was free");
+        _now = Now.AddSeconds(300);
+        await updater.LookAsync();
+
+        var said = UpdateLines.Of(DataHome, "update.waiting").Where(line => line["on"]!.GetValue<string>() == UpdateWaits.Check).ToList();
+        Assert.All(said, line => Assert.True(line["seconds"]!.GetValue<int>() <= line["bound"]!.GetValue<int>()));
+        Assert.Equal((200, 294), (said.Last()["seconds"]!.GetValue<int>(), said.Last()["bound"]!.GetValue<int>()));
+        _release.Set();
+    }
+
     private static async Task<string> StateAsync(InstallUpdater updater, string state)
     {
         await Until(() => updater.State.State == state, $"the state never reached {state}");

@@ -17,10 +17,11 @@ public sealed record CheckPlacing(TimeSpan Floor, AdmissionWaiting? Waiting = nu
 /// which are heavy runs: it takes one place as every heavy run does, so it does not compete with them. Waiting for the place is the machine's
 /// and not the check's, so it is held only to the floor; the learned bound (<see cref="StopBounds"/>) counts from the moment the place is taken.
 /// </summary>
-internal sealed class StopPlace(string home, DateTimeOffset began, CheckPlacing placing)
+public sealed class StopPlace(string home, DateTimeOffset began, CheckPlacing placing)
 {
     private readonly object _gate = new();
     private DateTimeOffset? _placed;
+    private int _said;
 
     /// <summary>The bound the machine's history says, read as the stop began.</summary>
     public StopBound Bound { get; } = StopBounds.Read(home, placing.Floor);
@@ -41,7 +42,8 @@ internal sealed class StopPlace(string home, DateTimeOffset began, CheckPlacing 
             home, new AdmissionRequest("the check of the staged build"), new Said(waits), ct, placing.Waiting, placing.Capacity).ConfigureAwait(false);
         lock (_gate) _placed = now();
         placed();
-        return await Task.Run(check, CancellationToken.None).ConfigureAwait(false);
+        ct.ThrowIfCancellationRequested();
+        return await Task.Run(check, ct).ConfigureAwait(false);
     }
 
     /// <summary>What the stop waits on at <paramref name="now"/>, for how long, and the bound it is held to.</summary>
@@ -49,6 +51,15 @@ internal sealed class StopPlace(string home, DateTimeOffset began, CheckPlacing 
     {
         var (since, limit) = Held();
         return new UpdateWaiting(on, (int)Math.Max(0, (now - since).TotalSeconds), (int)limit.TotalSeconds);
+    }
+
+    /// <summary>What the log says now, once each ten seconds of a wait (the place's and the check's counted apart), else null: seconds and bound from one reading.</summary>
+    public UpdateWaiting? ToSay(string on, DateTimeOffset now)
+    {
+        var waiting = Waiting(on, now);
+        var key = waiting.Seconds / 10 * 2 + (on == UpdateWaits.Place ? 0 : 1);
+        if (waiting.Seconds < 10 || Interlocked.Exchange(ref _said, key) == key) return null;
+        return waiting with { Seconds = waiting.Seconds / 10 * 10 };
     }
 
     /// <summary>The stop ended on its own: its time from the place is kept for the bound the next one is held to.</summary>
