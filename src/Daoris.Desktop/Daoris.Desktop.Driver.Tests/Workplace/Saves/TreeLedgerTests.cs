@@ -19,7 +19,7 @@ public sealed class TreeLedgerTests : IDisposable
 
     public TreeLedgerTests() => Directory.CreateDirectory(_home);
 
-    public void Dispose() => Directory.Delete(_home, recursive: true);
+    public void Dispose() => GitSeed.Discard(_home);
 
     private string Tree(string name) => Path.Combine(DaorisHome.Entry(_home, HomeEntry.Trees), "aurora", "engine", name);
 
@@ -50,7 +50,7 @@ public sealed class TreeLedgerTests : IDisposable
         _now = _now.AddHours(2);
         _free -= 400;
         Write("s-c", "built.bin", 500);
-        Directory.Delete(Tree("s-a"), recursive: true);
+        GitSeed.Remove(Tree("s-a"));
         TreeLedgerReadings.Record(World());
 
         var row = new TreeLedger(_home).Days(new DateOnly(2026, 11, 27)).Single();

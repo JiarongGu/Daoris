@@ -55,6 +55,7 @@ public sealed partial class CheckoutWritersCensusTests
         ["TreeSquashes.cs"] = (Refs, "a squash's advance, from the recorded tip of a branch checked out in no tree; a delivery's is TreeDeliveries' transaction instead", ["update-ref@root"]),
         ["RecoveryDropping.cs"] = (Refs, "a recovery ref dropped verified at its commit", ["update-ref@root"]),
         ["PartnerActRunner.cs"] = (Refs, "a discarded piece's ref dropped verified at the commit it was frozen as, then its copy removed", ["update-ref@root"]),
+        ["TreeSaves.cs"] = (Refs, "a tree's save: its head pinned under a ref of its own made only where absent, its commits staged in private indexes (GIT_INDEX_FILE) beside the tree's own, never that index; a restore's tree made with no checkout in an empty folder, its files and index written there alone", ["add@?", "read-tree@?", "read-tree@full", "update-index@?", "update-ref@listing.Tree", "worktree@save.Root"]),
         ["PieceKeeper.cs"] = (Refs, "a kept piece: read and staged in a private index (GIT_INDEX_FILE), its ref made only where absent; its copy checked out", ["checkout@copy", "read-tree@root", "update-index@root", "update-ref@root"]),
         ["OnlyHereProof.cs"] = (Refs, "git's record of gone trees pruned before its branch is deleted through the journal's act (JournaledDeletes)", ["worktree@root"]),
         ["TreeReturns.cs"] = (Refs, "a session's tree made again on its branch, through git's record of the trees", ["worktree@root"]),

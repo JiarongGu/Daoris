@@ -280,10 +280,10 @@ public sealed class TreeSaves(string home, TimeProvider clock)
                 continue;
             }
 
-            var bytes = await GitRuns.GitBytesAsync(full, ["cat-file", "blob", file.Blob!], (int)Math.Min(file.Bytes + 1, int.MaxValue), ct).ConfigureAwait(false);
-            if (bytes is not { } read) continue;
+            var read = await GitObjectReads.ReadAsync(full, file.Blob!, (int)Math.Min(file.Bytes + 1, int.MaxValue), ct).ConfigureAwait(false);
+            if (read is not { Answer.Missing: false } blob) continue;
             Directory.CreateDirectory(Path.GetDirectoryName(at)!);
-            await File.WriteAllBytesAsync(at, read.Bytes.AsMemory(0, read.Count).ToArray(), ct).ConfigureAwait(false);
+            await File.WriteAllBytesAsync(at, blob.Bytes.AsMemory(blob.Answer.Start, blob.Answer.Count), ct).ConfigureAwait(false);
         }
 
         var differ = await DifferAsync(save, full, ct).ConfigureAwait(false);
