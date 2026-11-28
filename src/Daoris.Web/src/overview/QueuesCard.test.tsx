@@ -75,4 +75,9 @@ describe('the queues card', () => {
     render(<QueuesCard rows={undefined} onSet={() => {}} />);
     expect(screen.queryByText('Nothing waits in the machine\'s queues.')).toBeNull();
   });
+
+  it('says the driver\'s refusal of the read where its rows would be', () => {
+    render(<QueuesCard rows={undefined} refused="Daoris is coming up." onSet={() => {}} />);
+    expect(screen.getByRole('alert').textContent).toBe('Daoris is coming up.');
+  });
 });

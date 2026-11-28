@@ -122,10 +122,11 @@ export function OverviewView({ onNavigate, onOpenQuest, notify, presses = [], on
       </div>
 
       {/* What waits for a place on this machine, and the press that orders it: a driver's, so a browser draws none. */}
-      {queues.data !== undefined || queues.isLoading ? (
+      {queues.data !== undefined || queues.isLoading || queues.error ? (
         <div className="mb-4">
           <QueuesCard
             rows={queues.data}
+            refused={queues.error ? sentence(queues.error) : undefined}
             busy={setPriority.isPending}
             onSet={(change, answered) => setPriority.mutate(change, {
               onSuccess: () => answered.done(),

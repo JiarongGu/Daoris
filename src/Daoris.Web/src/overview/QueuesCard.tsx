@@ -112,8 +112,10 @@ function SetPriority({ row, busy, onSet }: { row: QueueRow; busy: boolean; onSet
  *
  * A molecule: every state is reached by its props (`rows` undefined while not read yet), and every press goes out.
  */
-export function QueuesCard({ rows, busy = false, onSet }: {
+export function QueuesCard({ rows, refused, busy = false, onSet }: {
   rows: readonly QueueRow[] | undefined;
+  /** The driver's refusal of the read, in its words, said where the rows would be. */
+  refused?: string;
   busy?: boolean;
   onSet: (change: PriorityChange, answered: Answered) => void;
 }) {
@@ -124,7 +126,8 @@ export function QueuesCard({ rows, busy = false, onSet }: {
     <Card>
       <CardHeader title={t('overview.queues.title')} />
       <p className="m-0 mb-2 text-small text-ink-faint"><Inline text={t('overview.queues.hint')} /></p>
-      {rows === undefined && <SkeletonRows />}
+      {rows === undefined && refused !== undefined && <p role="alert" className="m-0 text-small text-ink-soft">{refused}</p>}
+      {rows === undefined && refused === undefined && <SkeletonRows />}
       {rows !== undefined && spots.length === 0 && <EmptyState icon="check" headline={t('overview.queues.empty')} body="" />}
       {queues.map((queue) => (
         <section key={`queue:${queue}`} aria-label={t(`overview.queues.queue.${queue}`, { defaultValue: queue })}>
