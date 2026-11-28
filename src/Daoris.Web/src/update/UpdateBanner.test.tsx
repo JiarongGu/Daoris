@@ -93,12 +93,43 @@ describe('the update banner', () => {
   });
 
   it('waiting after Not now, offers Update when idle and Update now', async () => {
-    const { onSay } = draw(state({ state: 'waiting', staged: STAGED, mode: 'not-now' }));
+    const { onSay } = draw(state({ state: 'staged', staged: STAGED, mode: 'not-now' }));
 
     expect(screen.getByRole('status')).toHaveTextContent('Daoris 0.0.1 (abc1234) is ready to install.');
     await userEvent.click(screen.getByRole('button', { name: 'Update when idle' }));
     expect(onSay).toHaveBeenCalledWith('when-idle');
     expect(screen.queryByRole('button', { name: 'Not now' })).toBeNull();
+  });
+
+  it('stopping, says what Daoris waits on with its seconds and bound, and Not now ends the wait', async () => {
+    const { onSay } = draw(state({
+      state: 'stopping', staged: STAGED, mode: 'now', why: 'now', waiting: { on: 'check', seconds: 42, bound: 180 },
+    }));
+
+    expect(screen.getByRole('status')).toHaveTextContent(
+      'Daoris 0.0.1 (abc1234) is about to install: nothing new starts, and Daoris waits on the check of the staged build (42 s of at most 180 s).');
+    await userEvent.click(screen.getByRole('button', { name: 'Not now' }));
+    expect(onSay).toHaveBeenCalledWith('not-now');
+    expect(screen.queryByRole('button', { name: 'Update now' })).toBeNull();
+  });
+
+  it('stopping speaks 中文, each thing it can wait on in its own words', async () => {
+    await i18n.changeLanguage('zh');
+    const { unmount } = draw(state({ state: 'stopping', staged: STAGED, waiting: { on: 'launcher', seconds: 3, bound: 180 } }));
+    expect(await screen.findByText(/正在等待启动器启动（已等 3 秒，最多 180 秒）/)).toBeTruthy();
+    unmount();
+    draw(state({ state: 'stopping', staged: STAGED, waiting: { on: 'close', seconds: 9, bound: 300 } }));
+    expect(await screen.findByText(/正在等待Daoris 关闭（已等 9 秒，最多 300 秒）/)).toBeTruthy();
+  });
+
+  it('installed is said by the outcome alone, with Dismiss, and no second row', () => {
+    draw(state({
+      state: 'installed',
+      outcome: { phase: 'installed', build: 'b1', version: '0.0.2', commit: 'def5678', reason: null, detail: null },
+    }));
+
+    expect(screen.getByRole('status')).toHaveTextContent('Daoris was updated to 0.0.2 (def5678).');
+    expect(screen.getAllByRole('button')).toHaveLength(1);
   });
 
   it('applying, says Daoris starts again and offers nothing to press', () => {

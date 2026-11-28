@@ -3,7 +3,7 @@ using System.Text.RegularExpressions;
 namespace Daoris.Driver;
 
 /// <summary>
-/// A refusal's sentence as the machine log keeps it beside <c>update.refused</c>, so a refusal reads again from the log alone, its code
+/// A refusal's sentence as the machine log keeps it in the <c>update.state</c> line into refused, so a refusal reads again from the log alone, its code
 /// saying too little to act on. The install's and the home's paths are said as <c>&lt;install&gt;</c> and <c>&lt;home&gt;</c>, in either
 /// slash and in the long form, where a separator or the path's end follows them, and what lies under them keeps its relative name; an
 /// email is said as <c>&lt;email&gt;</c>; the rest is kept as the build said it, on one line of at most <see cref="Longest"/> characters.

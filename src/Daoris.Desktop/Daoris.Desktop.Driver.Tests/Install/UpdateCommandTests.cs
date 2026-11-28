@@ -136,67 +136,91 @@ public sealed class UpdateCommandTests : IDisposable
         (code, said) = Run("--now");
         Assert.Equal(0, code);
         Assert.Contains("the desktop closes", said);
-
-        File.WriteAllText(Path.Combine(Install, "update", "staged", "Daoris.exe"), "another launcher");
-        (code, said) = Run("--now");
-        Assert.Equal(1, code);
-        Assert.Contains(StagedBuild.Check(Install)!.Sentence, said);
     }
 
+    private static readonly long ThisStart = System.Diagnostics.Process.GetCurrentProcess().StartTime.ToUniversalTime().Ticks;
+
+    // A state the application at `pid` kept at `at`: this test's own process runs, int.MaxValue is gone.
+    private static UpdateStateRecord Kept(string state, DateTimeOffset at, int pid, UpdateStateWait? waiting = null, string? problem = null) =>
+        new(state, "now", "b1", "0.0.1", "now", at.AddMinutes(-3), 2, 0, 0, null, waiting, problem is null ? null : "home", problem,
+            new UpdateStateStep("deferred", state, "now", at.AddMinutes(-3), null), pid, pid == Environment.ProcessId ? ThisStart : 0, at) { Word = at };
+
     [Fact]
-    public void Update_now_asks_the_staged_build_s_proof_and_a_refusal_closes_nothing_until_it_reads_clean()
+    public void The_plain_update_prints_the_state_its_why_what_it_waits_on_and_the_last_transition()
     {
         Stage("b1");
-        var asked = 0;
-        var clean = false;
-        StagedProof proof = (_, _, _) =>
-        {
-            asked++;
-            return clean ? null : (HomeProbe.Code, "the staged build did not start clean on a copy of this home: the account `claude-code/acct-b` is no longer listed. Nothing was replaced and this build keeps running.");
-        };
+        UpdateStateFile.Write(Install, Kept("stopping", Now, Environment.ProcessId, new UpdateStateWait("check", 42, 180)));
 
-        var code = UpdateCommand.Run(["--now"], Home, () => Now, null, null, out var said, proof: proof);
+        var (code, said) = Run();
 
-        Assert.Equal(1, code);
-        Assert.Contains("build b1 is not installed now", said);
-        Assert.Contains("claude-code/acct-b", said);
-        Assert.Contains("keeps running", said);
-        Assert.Contains("Nothing closes", said);
-
-        clean = true;
-        code = UpdateCommand.Run(["--now"], Home, () => Now, null, null, out said, proof: proof);
         Assert.Equal(0, code);
-        Assert.Contains("the desktop closes", said);
-        Assert.Equal(2, asked);
-
-        // A word that closes nothing (when idle, not now) starts no proof: it copies the home only for a close.
-        UpdateCommand.Run(["--when-idle"], Home, () => Now, null, null, out _, proof: proof);
-        Assert.Equal(2, asked);
+        Assert.Contains("state stopping (now), since 2026-10-03 12:27:00 UTC", said);
+        Assert.Contains("Waiting on the check of the staged build", said);
+        Assert.Contains("42 s of at most 180 s", said);
+        Assert.Contains("The last transition: deferred -> stopping at 2026-10-03 12:27:00 UTC: now.", said);
+        Assert.DoesNotContain("is not running", said);
     }
 
     [Fact]
-    public void The_status_of_a_build_asked_for_now_says_a_refusal_and_its_words_instead_of_installed_now()
+    public void A_state_kept_by_an_application_that_is_gone_says_so_and_none_kept_says_that()
     {
         Stage("b1");
-        Assert.Equal(0, UpdateCommand.Run(["--now"], Home, () => Now, null, null, out _));
-        const string words = "the staged build did not start clean on a copy of this home: run `q1` binds the workflow `ghost`, which the home does not hold. Nothing was replaced and this build keeps running.";
+        Assert.Contains("the application has not said where the update stands", Run().Said);
 
-        var refused = UpdateCommand.Run([], Home, () => Now, null, null, out var said, proof: (_, _, _) => (HomeProbe.Code, words));
+        UpdateStateFile.Write(Install, Kept("draining", Now, int.MaxValue));
 
-        Assert.Equal(0, refused);
-        Assert.Contains("refused", said);
-        Assert.Contains(words, said);
-        Assert.DoesNotContain("the desktop closes", said);
+        var said = Run().Said;
 
-        UpdateCommand.Run([], Home, () => Now, null, null, out said, proof: (_, _, _) => null);
-        Assert.Contains("the desktop closes", said);
-        Assert.DoesNotContain("refused", said);
+        Assert.Contains("state draining", said);
+        Assert.Contains("is not running", said);
+    }
 
-        UpdateCommand.Run(["--cancel"], Home, () => Now, null, null, out _);
-        var asked = 0;
-        UpdateCommand.Run([], Home, () => Now, null, null, out said, proof: (_, _, _) => { asked++; return null; });
-        Assert.Equal(0, asked);
-        Assert.DoesNotContain("refused", said);
+    [Fact]
+    public void A_word_waits_for_the_application_s_answer_prints_its_state_and_a_refusal_exits_1()
+    {
+        Stage("b1");
+        UpdateStateFile.Write(Install, Kept("draining", Now.AddMinutes(-1), Environment.ProcessId));
+        var pauses = 0;
+
+        var code = UpdateCommand.Run(["--now"], Home, () => Now, null, null, out var said, pause: _ =>
+        {
+            if (++pauses == 3) UpdateStateFile.Write(Install, Kept("refused", Now.AddSeconds(1), Environment.ProcessId, problem: "the account `claude-code/acct-b` is no longer listed."));
+        });
+
+        Assert.Equal((1, 3), (code, pauses));
+        Assert.Contains("state refused", said);
+        Assert.Contains("claude-code/acct-b", said);
+        Assert.Equal(new UpdateRequest(UpdateMode.Now, "b1", Now), InstallUpdate.Read(Home));
+    }
+
+    [Fact]
+    public void A_state_written_after_the_word_by_a_look_that_read_an_older_one_is_not_its_answer()
+    {
+        Stage("b1");
+        var pauses = 0;
+        UpdateStateFile.Write(Install, Kept("refused", Now.AddSeconds(5), Environment.ProcessId, problem: "an old refusal") with { Word = Now.AddMinutes(-1) });
+
+        var code = UpdateCommand.Run(["--now"], Home, () => Now, null, null, out _, pause: _ => pauses++);
+
+        Assert.Equal((UpdateCommand.Answers, 1), (pauses, code));
+    }
+
+    [Fact]
+    public void A_word_waits_a_bounded_number_of_steps_and_none_for_an_application_that_is_gone()
+    {
+        Stage("b1");
+        var pauses = 0;
+        UpdateStateFile.Write(Install, Kept("draining", Now.AddMinutes(-1), Environment.ProcessId));
+
+        UpdateCommand.Run(["--when-idle"], Home, () => Now, null, null, out _, pause: _ => pauses++);
+        Assert.Equal(UpdateCommand.Answers, pauses);
+
+        pauses = 0;
+        UpdateStateFile.Write(Install, Kept("draining", Now.AddMinutes(-1), int.MaxValue));
+        var code = UpdateCommand.Run(["--when-idle"], Home, () => Now, null, null, out var said, pause: _ => pauses++);
+
+        Assert.Equal((0, 0), (code, pauses));
+        Assert.Contains("is not running", said);
     }
 
     [Fact]

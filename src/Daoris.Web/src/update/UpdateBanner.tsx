@@ -12,7 +12,7 @@ export type UpdateOutcome = {
 
 /** Where an install's update stands, as the shell's `InstallUpdater` answers it: no path of this machine's. */
 export type UpdateState = {
-  state: 'none' | 'waiting' | 'draining' | 'deferred' | 'applying' | 'refused';
+  state: 'none' | 'staged' | 'draining' | 'deferred' | 'stopping' | 'applying' | 'refused' | 'installed';
   staged: { id: string; version: string; commit?: string | null; at?: string | null } | null;
   mode: UpdateMode | null;
   /** Driven sessions still running, conversations with a turn in flight and runs' plugin steps in flight: what the drain waits on. */
@@ -32,6 +32,10 @@ export type UpdateState = {
   /** When the drain began, and when it stops holding new work (`drain`, then `deferred`). Null with no drain; absent where unanswered. */
   since?: string | null;
   until?: string | null;
+  why?: string | null;
+  transition?: { from: string; to: string; why: string; at: string; build?: string | null; detail?: string | null } | null;
+  /** What a stopping Daoris waits on, how long, and the bound it is held to; null in every other state. */
+  waiting?: { on: 'check' | 'launcher' | 'close'; seconds: number; bound: number } | null;
 };
 
 /**
@@ -61,8 +65,9 @@ export function UpdateBanner({ update, busy = false, onSay, onDismiss }: {
 }) {
   const { t, i18n } = useTranslation();
   if (!update) return null;
-  const { state, staged, outcome, problem } = update;
+  const { state, staged, outcome, problem, waiting } = update;
   if (state === 'none' && !outcome) return null;
+  const stateRow = state !== 'none' && state !== 'installed' && !(state === 'refused' && !staged && outcome);
 
   const named = (version?: string | null, commit?: string | null) =>
     `${version ?? ''}${commit ? ` (${commit})` : ''}`.trim();
@@ -86,10 +91,10 @@ export function UpdateBanner({ update, busy = false, onSay, onDismiss }: {
           <Button variant="ghost" onClick={onDismiss}>{t('common.dismiss')}</Button>
         </div>
       )}
-      {state !== 'none' && (
+      {stateRow && (
         <div className="flex flex-wrap items-center gap-2 px-3 py-1.5">
           <span className="min-w-0 flex-1">
-            {state === 'waiting' && t('update.waiting', { version })}
+            {state === 'staged' && t('update.waiting', { version })}
             {(state === 'draining' || state === 'deferred') && (
               <>
                 {state === 'draining'
@@ -100,10 +105,13 @@ export function UpdateBanner({ update, busy = false, onSay, onDismiss }: {
                 {steps > 0 && <> {t('update.steps', { count: steps })}</>}
               </>
             )}
+            {state === 'stopping' && t('update.stopping', {
+              version, what: t(`update.waits.${waiting?.on ?? 'check'}`), seconds: waiting?.seconds ?? 0, bound: waiting?.bound ?? 0,
+            })}
             {state === 'applying' && t('update.applying', { version })}
             {state === 'refused' && t('update.refused', { version, why: why(problem?.code, problem?.message) })}
           </span>
-          {state === 'waiting' && (
+          {state === 'staged' && (
             <>
               <Button disabled={busy} onClick={() => onSay('when-idle')}>{t('update.whenIdle')}</Button>
               <Button variant="primary" disabled={busy} onClick={() => onSay('now')}>{t('update.now')}</Button>
@@ -114,6 +122,9 @@ export function UpdateBanner({ update, busy = false, onSay, onDismiss }: {
               <Button variant="primary" disabled={busy} onClick={() => onSay('now')}>{t('update.now')}</Button>
               <Button variant="ghost" disabled={busy} onClick={() => onSay('not-now')}>{t('update.notNow')}</Button>
             </>
+          )}
+          {state === 'stopping' && (
+            <Button variant="ghost" disabled={busy} onClick={() => onSay('not-now')}>{t('update.notNow')}</Button>
           )}
           {/* A new word checks the build again: what refused it, an unresolved delivery among them, may have moved. */}
           {state === 'refused' && (
