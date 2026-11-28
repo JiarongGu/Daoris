@@ -49,12 +49,11 @@ public sealed record ListSessionChanges(string? Since = null) : IRoute<SessionCh
 /// <param name="UnbindAsk">An intake's end lets its ask go in the same step, for the next intake.</param>
 /// <param name="Expect">The exact supervisor words a move to working admits; none admits none.</param>
 /// <param name="Turns">The usage history's turn lines of each session a commit point releases memory for, by session.</param>
-/// <param name="Witness">Who saw what the move says: the caller's site, journalled as the move's fact; none reads as the door's own.</param>
 public sealed record AdvanceSession(
     string Id, string? State, string? Note, string? Evidence, string? Transcript, bool? Interrupted = null, bool? Limit = null,
     JsonElement? NoteParts = null, string? Expected = null, bool? UnbindAsk = null, IReadOnlyList<string>? Expect = null,
     Dictionary<string, MemoryTurnsRequest>? Turns = null, IReadOnlyList<string>? HoldsPlace = null,
-    TurnSpentRequest? Spent = null, string? Witness = null) : IRoute<SessionActionResponse>
+    TurnSpentRequest? Spent = null) : IRoute<SessionActionResponse>
 {
     public static string Method => "POST";
     public static string Path => "/api/sessions/{id}/state";
@@ -181,8 +180,9 @@ public sealed record MoveSaid(string Id, string? Word, string? To = null) : IRou
 [JsonSerializable(typeof(OpenHelp))]
 [JsonSerializable(typeof(BeginGeneration))]
 [JsonSerializable(typeof(GenerationResponse))]
-[JsonSerializable(typeof(FoldSessions))]
-[JsonSerializable(typeof(FoldSessionsResponse))]
+[JsonSerializable(typeof(AuditSessions))]
+[JsonSerializable(typeof(ReadFold))]
+[JsonSerializable(typeof(FoldReadingResponse))]
 [JsonSerializable(typeof(ReleasePlace))]
 [JsonSerializable(typeof(KeepHelpMode))]
 [JsonSerializable(typeof(KeepAccess))]

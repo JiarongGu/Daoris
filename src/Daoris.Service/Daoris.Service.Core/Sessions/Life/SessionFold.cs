@@ -3,13 +3,13 @@ namespace Daoris.Knowledge;
 /// <summary>The four states a session folds to: the list's groups are filters over them, and archived is a shelf.</summary>
 public enum FoldedState
 {
-    /// <summary>A live lease: its process runs in this start of the application.</summary>
+    /// <summary>A live lease: a process of it runs, owned by a driver that runs.</summary>
     Working,
 
-    /// <summary>A named holder: the machine room's start, its run's step, its own check.</summary>
+    /// <summary>A named holder (<see cref="HolderKind"/>).</summary>
     Waiting,
 
-    /// <summary>An open question for a person, or a breach of the invariant, said with its facts.</summary>
+    /// <summary>An open question for a person or the steward, or a breach of the invariant, said with its facts.</summary>
     NeedsYou,
 
     /// <summary>Ended, with its outcome.</summary>
@@ -17,76 +17,106 @@ public enum FoldedState
 }
 
 /// <summary>
-/// A process that works on a session, as its marker proves it alive, named by the application's generation it started in
-/// (<see cref="AppGenerations.Of"/>): a lease of an earlier generation survived a restart and is void, never adopted.
+/// Why a session not ended has not exactly one of a live lease, a named holder and an open question: a closed set of codes, which the
+/// window's catalogue words. A breach is <see cref="FoldedState.NeedsYou"/>, never working.
 /// </summary>
-/// <param name="Session">The session its process works on.</param>
-/// <param name="Generation">The generation in which its process started; 0 before any generation.</param>
-public sealed record SessionLease(string Session, long Generation);
+public enum BreachCode
+{
+    /// <summary>Its turn began and no process of it is alive.</summary>
+    TurnWithoutLease,
+
+    /// <summary>Its turn began and its only process outlived the driver that owned it: a void lease, never adopted.</summary>
+    TurnOnVoidLease,
+
+    /// <summary>A question stands open while a process of it is alive.</summary>
+    QuestionWithLease,
+
+    /// <summary>It waits and names nothing that holds it.</summary>
+    WaitWithoutHolder,
+
+    /// <summary>It waits on a holder while a process of it is alive.</summary>
+    WaitWithLease,
+}
+
+/// <summary>What a session's processes amount to: none, only void ones (their owner gone), or a live one.</summary>
+public enum Leasing
+{
+    None,
+    Void,
+    Live,
+}
+
+/// <summary>
+/// A process that works on a session, as its marker proves it alive: the generation it started in, and whether the driver that owns
+/// it still runs. It is live only while its owner runs, so a process that outlived its driver's restart is void and never adopted, and one
+/// a running terminal's driver owns is never voided by another driver's start.
+/// </summary>
+public sealed record SessionLease(string Session, long Generation, bool OwnerRuns);
 
 /// <summary>What the fold says of one session: its state, the outcome of an end, its holder, since when, and the invariant's breach.</summary>
 /// <param name="State">One of the four.</param>
 /// <param name="Outcome">How it ended, for <see cref="FoldedState.Ended"/>.</param>
-/// <param name="Holder">What holds it: <c>lease</c>, <c>person</c>, or the wait's named holder; null for an end or a breach that names none.</param>
+/// <param name="Holder">What holds it, where it waits or a question stands; null for working, an end, or a breach that names none.</param>
 /// <param name="Since">When it came to this state: the fact that put it there.</param>
-/// <param name="Breach">
-/// Why a session not ended has not exactly one of a live lease, a named holder and an open question, in words of the facts; null where
-/// the invariant holds. A breach is <see cref="FoldedState.NeedsYou"/>, never working.
-/// </param>
-public sealed record SessionFolded(FoldedState State, SessionOutcome? Outcome, string? Holder, DateTimeOffset Since, string? Breach);
+/// <param name="Breach">The invariant's breach; null where it holds.</param>
+public sealed record SessionFolded(FoldedState State, SessionOutcome? Outcome, SessionHolder? Holder, DateTimeOffset Since, BreachCode? Breach);
 
 /// <summary>
-/// The fold: one pure function of a session's journal, the clock and the live leases, giving one of four states, its holder
-/// and since when, and auditing the invariant (a session not ended has exactly one of a live lease, a named holder, an open question; a
-/// breach is <see cref="FoldedState.NeedsYou"/> with its facts). Reads no store and keeps nothing.
+/// The fold: one pure function of a session's last fact, the clock and the live leases, giving one of four states, its holder and since
+/// when, and auditing the invariant (a session not ended has exactly one of a live lease, a named holder, an open question; a breach is
+/// <see cref="FoldedState.NeedsYou"/> with its facts). Its reading of a fact (<see cref="Reading"/>) is the one classification the time
+/// buckets read too (<see cref="SessionBuckets"/>). Reads no store and keeps nothing.
 /// </summary>
 public static class SessionFold
 {
-    /// <summary>The holder a live lease names.</summary>
-    public const string LeaseHolder = "lease";
-
-    /// <summary>The holder an open question names.</summary>
-    public const string PersonHolder = "person";
-
     /// <summary>
-    /// The fold of <paramref name="journal"/> (one session's facts, in journal order) at <paramref name="now"/>, against the leases
-    /// proved alive for it, in the application's <paramref name="generation"/>; null for an empty journal, which witnessed nothing.
+    /// The fold of a session whose journal ends in <paramref name="last"/>, at <paramref name="now"/>, against the leases proved alive
+    /// for it; null for no fact, which witnessed nothing.
     /// </summary>
     /// <remarks>
     /// The clock bounds nothing yet (stillness is part c): it only keeps <see cref="SessionFolded.Since"/> from reading after it, as a
     /// fact written on a clock ahead of the reader's would.
     /// </remarks>
-    public static SessionFolded? Of(
-        IReadOnlyList<SessionFact> journal, DateTimeOffset now, IReadOnlyList<SessionLease> leases, long generation)
+    public static SessionFolded? Of(SessionFact? last, DateTimeOffset now, IReadOnlyList<SessionLease> leases)
     {
-        if (journal.Count == 0) return null;
-        var last = journal[^1];
-        var since = last.At > now ? now : last.At;
-        if (last.Kind == SessionFactKind.Ended) return new(FoldedState.Ended, last.Outcome, null, since, null);
-
-        var live = leases.Any(lease => lease.Generation == generation);
-        var voided = leases.Where(lease => lease.Generation != generation).Select(lease => lease.Generation).Distinct().ToList();
-        return last.Kind switch
-        {
-            SessionFactKind.TurnBegan => live
-                ? new(FoldedState.Working, null, LeaseHolder, since, null)
-                : Breach(since, voided.Count > 0
-                    ? $"its turn began and its only lease is of generation {string.Join(", ", voided)}, before this start's {generation}"
-                    : "its turn began and no process of it is alive"),
-            SessionFactKind.QuestionOpened => live
-                ? Breach(since, "a question stands open while a process of it is alive", PersonHolder)
-                : new(FoldedState.NeedsYou, null, PersonHolder, since, null),
-            // A start's holder is released once its process runs: the lease is then what holds it, until its turn's fact comes.
-            SessionFactKind.Opened or SessionFactKind.Starting => live
-                ? new(FoldedState.Working, null, LeaseHolder, since, null)
-                : new(FoldedState.Waiting, null, last.Holder ?? SessionFact.StartHolder, since, null),
-            _ => last.Holder is null
-                ? Breach(since, "it awaits a step and names nothing that holds it")
-                : live
-                    ? Breach(since, $"it awaits {last.Holder} while a process of it is alive", last.Holder)
-                    : new(FoldedState.Waiting, null, last.Holder, since, null),
-        };
+        if (last is null) return null;
+        var (state, holder, breach) = Reading(last, LeasingOf(leases));
+        return new(state, state == FoldedState.Ended ? last.Outcome : null, holder, last.At > now ? now : last.At, breach);
     }
+
+    /// <summary>The fold of a whole journal: of its last fact.</summary>
+    public static SessionFolded? Of(IReadOnlyList<SessionFact> journal, DateTimeOffset now, IReadOnlyList<SessionLease> leases) =>
+        Of(journal.Count == 0 ? null : journal[^1], now, leases);
+
+    /// <summary>A live lease where any owner runs, void ones alone where none does, else none.</summary>
+    public static Leasing LeasingOf(IReadOnlyList<SessionLease> leases) =>
+        leases.Any(lease => lease.OwnerRuns) ? Leasing.Live : leases.Count > 0 ? Leasing.Void : Leasing.None;
+
+    /// <summary>
+    /// What a session's last fact says against its leasing: its state, what holds it, and a breach. A start's holder is released once
+    /// its process runs, the lease then holding it until its turn's fact comes; an end is ended whatever runs.
+    /// </summary>
+    public static (FoldedState State, SessionHolder? Holder, BreachCode? Breach) Reading(SessionFact last, Leasing leasing) => last.Kind switch
+    {
+        SessionFactKind.Ended => (FoldedState.Ended, null, null),
+        SessionFactKind.TurnBegan => leasing switch
+        {
+            Leasing.Live => (FoldedState.Working, null, null),
+            Leasing.Void => (FoldedState.NeedsYou, null, BreachCode.TurnOnVoidLease),
+            _ => (FoldedState.NeedsYou, null, BreachCode.TurnWithoutLease),
+        },
+        SessionFactKind.QuestionOpened => leasing == Leasing.Live
+            ? (FoldedState.NeedsYou, Named(last.Holder, SessionHolder.Person), BreachCode.QuestionWithLease)
+            : (FoldedState.NeedsYou, Named(last.Holder, SessionHolder.Person), null),
+        SessionFactKind.Opened or SessionFactKind.Starting => leasing == Leasing.Live
+            ? (FoldedState.Working, null, null)
+            : (FoldedState.Waiting, Named(last.Holder, SessionHolder.MachineRoom), null),
+        _ => last.Holder.Kind == HolderKind.None
+            ? (FoldedState.NeedsYou, null, BreachCode.WaitWithoutHolder)
+            : leasing == Leasing.Live
+                ? (FoldedState.NeedsYou, last.Holder, BreachCode.WaitWithLease)
+                : (FoldedState.Waiting, last.Holder, null),
+    };
 
     /// <summary>The state a stored status reads as, with its outcome: what the fold is compared with while it runs in shadow.</summary>
     public static (FoldedState State, SessionOutcome? Outcome) OfStored(SessionState stored) => stored switch
@@ -97,29 +127,13 @@ public static class SessionFold
         _ => (FoldedState.Ended, SessionFact.OutcomeOf(stored)),
     };
 
-    /// <summary>Whether the fold says other than the stored status: another state, or another outcome of an end.</summary>
+    /// <summary>
+    /// Whether the fold says other than the stored status: another state, or another outcome of an end. A stored start whose process
+    /// already runs folds working, which is the start under way, not a difference.
+    /// </summary>
     public static bool Differs(SessionFolded folded, SessionState stored) =>
-        OfStored(stored) is var (state, outcome) && (folded.State != state || folded.Outcome != outcome);
+        !(stored == SessionState.Starting && folded is { State: FoldedState.Working, Breach: null })
+        && OfStored(stored) is var (state, outcome) && (folded.State != state || folded.Outcome != outcome);
 
-    /// <summary>The state's spelling on the wire: <c>working</c>, <c>waiting</c>, <c>needs-you</c>, <c>ended</c>.</summary>
-    public static string Spell(FoldedState state) => state switch
-    {
-        FoldedState.Working => "working",
-        FoldedState.Waiting => "waiting",
-        FoldedState.NeedsYou => "needs-you",
-        _ => "ended",
-    };
-
-    /// <summary>An outcome's spelling on the wire: <c>done</c>, <c>declined</c>, <c>stood-down</c>, <c>failed</c>, <c>stopped</c>.</summary>
-    public static string Spell(SessionOutcome outcome) => outcome switch
-    {
-        SessionOutcome.Done => "done",
-        SessionOutcome.Declined => "declined",
-        SessionOutcome.StoodDown => "stood-down",
-        SessionOutcome.Failed => "failed",
-        _ => "stopped",
-    };
-
-    private static SessionFolded Breach(DateTimeOffset since, string why, string? holder = null) =>
-        new(FoldedState.NeedsYou, null, holder, since, why);
+    private static SessionHolder Named(SessionHolder holder, SessionHolder otherwise) => holder.Kind == HolderKind.None ? otherwise : holder;
 }

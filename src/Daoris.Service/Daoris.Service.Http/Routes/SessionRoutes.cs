@@ -141,7 +141,7 @@ public sealed class SessionRoutes(HostWiring host) : IRouteModule
             turns: SessionAnswers.TurnsOf(request.Turns),
             holdsPlace: request.HoldsPlace?.OfType<string>().Where(path => path.Length > 0).ToList(),
             spent: request.Spent is { } spent ? new TurnSpent(spent.Input, spent.Output) : null,
-            witness: request.Witness is { Length: > 0 } site ? $"advance {(site.Length > 96 ? site[..96] : site)}" : "advance");
+            witness: WitnessDoor.Advance);
 
         return outcome.Refusal switch
         {

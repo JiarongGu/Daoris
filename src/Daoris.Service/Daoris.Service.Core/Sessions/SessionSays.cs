@@ -322,7 +322,7 @@ internal sealed class SessionSays(QuestStore quests, SessionStore sessions, AskS
             if (taken.Count > 0) await sessions.TakeSaidAsync(id, taken, inside).ConfigureAwait(false);
             var restored = await sessions
                 .SetStateAsync(id, SessionState.AwaitingPerson, note, evidence: null, transcript: null, now, inside, noteParts: noteParts,
-                    witness: "go-on-restore")
+                    witness: WitnessDoor.GoOnRestore)
                 .ConfigureAwait(false);
             return new SessionAdvanceOutcome(
                 SessionAdvanceRefusal.None,

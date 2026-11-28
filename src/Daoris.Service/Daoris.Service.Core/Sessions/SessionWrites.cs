@@ -24,7 +24,7 @@ internal sealed class SessionWrites(SessionStore store)
         string? serves = null, string? from = null, string? fromWhy = null, string? fromBy = null,
         string? entryOrigin = null, string? entryPart = null, bool ownEntry = false, string? helpMode = null,
         IReadOnlyDictionary<string, string>? access = null, string? piece = null, string? actor = null, string? decides = null,
-        string? performs = null, string? node = null, int? attempt = null, string? witness = null) => WithFactAsync<Session>(async inside =>
+        string? performs = null, string? node = null, int? attempt = null, WitnessDoor? witness = null) => WithFactAsync<Session>(async inside =>
     {
         // A why or an asker with no session continued is no link: the three are kept together or not at all.
         var continues = Blank(from);
@@ -101,21 +101,15 @@ internal sealed class SessionWrites(SessionStore store)
         command.Parameters.AddWithValue("$created", Moments.Write(session.Created));
         command.Parameters.AddWithValue("$updated", Moments.Write(session.Updated));
         await command.ExecuteNonQueryAsync(inside).ConfigureAwait(false);
-        await store.Journal.AppendAsync(session, Witnessed(witness, "open"), inside).ConfigureAwait(false);
+        await store.Journal.AppendAsync(session, witness ?? WitnessDoor.Store, minted: session.Origin is null, inside, step: Blank(node), attempt: attempt)
+            .ConfigureAwait(false);
 
         return session;
     }, ct);
 
-    /// <summary>The witness a door named, else the store's own word for the write, which the census finds no production door leaving to it.</summary>
-    private static string Witnessed(string? witness, string write) => Blank(witness) ?? $"store {write}";
-
-    /// <summary>A write and its fact as one: in the transaction the connection holds, else in one begun for it.</summary>
-    private Task<T> WithFactAsync<T>(Func<CancellationToken, Task<T>> work, CancellationToken ct) => _db.RunAsync(async () =>
-    {
-        bool open;
-        await using (var probe = _db.Command()) open = probe.Transaction is not null;
-        return open ? await work(ct).ConfigureAwait(false) : await _db.InTransactionAsync((_, inside) => work(inside), ct).ConfigureAwait(false);
-    }, ct);
+    /// <summary>A write and its fact as one transaction: the one the flow holds, joined, else one begun for it.</summary>
+    private Task<T> WithFactAsync<T>(Func<CancellationToken, Task<T>> work, CancellationToken ct) =>
+        _db.InTransactionAsync((_, inside) => work(inside), ct);
 
     /// <summary>
     /// Move a session and attach what the move carries. An attachment left null keeps its old value:
@@ -136,7 +130,7 @@ internal sealed class SessionWrites(SessionStore store)
     public Task<Session?> SetStateAsync(
         string id, SessionState state, string? note, string? evidence, string? transcript,
         DateTimeOffset now, CancellationToken ct = default, bool interrupted = false, bool limit = false,
-        bool clearSaid = false, bool forgive = false, string? noteParts = null, string? witness = null) => WithFactAsync<Session?>(async inside =>
+        bool clearSaid = false, bool forgive = false, string? noteParts = null, WitnessDoor? witness = null) => WithFactAsync<Session?>(async inside =>
     {
         ct = inside;
         var session = await store.FindAsync(id, ct).ConfigureAwait(false);
@@ -176,7 +170,8 @@ internal sealed class SessionWrites(SessionStore store)
         command.Parameters.AddWithValue("$updated", Moments.Write(moved.Updated));
         command.Parameters.AddWithValue("$id", id);
         await command.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
-        await store.Journal.AppendAsync(moved, Witnessed(witness, "move"), ct, noted: note is not null).ConfigureAwait(false);
+        await store.Journal.AppendAsync(moved, witness ?? WitnessDoor.Store, minted: session.State != state && session.Origin is null, ct, noted: note is not null)
+            .ConfigureAwait(false);
 
         return moved;
     }, ct);

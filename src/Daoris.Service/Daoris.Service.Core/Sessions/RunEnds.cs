@@ -47,7 +47,7 @@ internal sealed class RunEnds(QuestStore quests, SessionStore sessions, SessionA
             {
                 var advanced = await advances.AdvanceAsync(
                     id, state, note, null, null, now, inside, noteParts: note is null ? null : noteParts,
-                    expected: Session.Spell(SessionState.AwaitingStep), witness: $"run-end {run}").ConfigureAwait(false);
+                    expected: Session.Spell(SessionState.AwaitingStep), witness: WitnessDoor.RunEnd).ConfigureAwait(false);
                 if (advanced.Refusal == SessionAdvanceRefusal.None) moved.Add(advanced.Session!);
             }
 

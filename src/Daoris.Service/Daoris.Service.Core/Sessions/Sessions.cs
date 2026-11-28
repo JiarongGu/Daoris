@@ -90,7 +90,7 @@ public sealed class SessionStore
         string? serves = null, string? from = null, string? fromWhy = null, string? fromBy = null,
         string? entryOrigin = null, string? entryPart = null, bool ownEntry = false, string? helpMode = null,
         IReadOnlyDictionary<string, string>? access = null, string? piece = null, string? actor = null, string? decides = null,
-        string? performs = null, string? node = null, int? attempt = null, string? witness = null) =>
+        string? performs = null, string? node = null, int? attempt = null, WitnessDoor? witness = null) =>
         writes.CreateAsync(
             quest, repository, adapter, now, workspace, kind, doorVersion, profile, tree, baseCommit, ct, ask, opinion, serves, from,
             fromWhy, fromBy, entryOrigin, entryPart, ownEntry, helpMode, access, piece, actor, decides, performs, node, attempt, witness);
@@ -99,7 +99,7 @@ public sealed class SessionStore
     public Task<Session?> SetStateAsync(
         string id, SessionState state, string? note, string? evidence, string? transcript,
         DateTimeOffset now, CancellationToken ct = default, bool interrupted = false, bool limit = false,
-        bool clearSaid = false, bool forgive = false, string? noteParts = null, string? witness = null) =>
+        bool clearSaid = false, bool forgive = false, string? noteParts = null, WitnessDoor? witness = null) =>
         writes.SetStateAsync(id, state, note, evidence, transcript, now, ct, interrupted, limit, clearSaid, forgive, noteParts, witness);
 
     /// <summary>Copy another machine's session record into this store, whole; see <see cref="SessionWrites.MirrorAsync"/>.</summary>

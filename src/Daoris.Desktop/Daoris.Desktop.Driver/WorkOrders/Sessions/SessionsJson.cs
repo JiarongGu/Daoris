@@ -164,6 +164,7 @@ internal static class SessionsJson
                     writer.WriteString("state", fold.State);
                     writer.WriteString("outcome", fold.Outcome);
                     writer.WriteString("holder", fold.Holder);
+                    writer.WriteString("subject", fold.Subject);
                     writer.WriteString("since", fold.Since);
                     writer.WriteString("breach", fold.Breach);
                     writer.WriteEndObject();

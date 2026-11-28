@@ -50,6 +50,33 @@ internal sealed class WatchRun(
     private bool _swept;
     private bool _begun;
 
+    // What the shadow's begin and audit last said went wrong, by event: said once until it changes, never each tick.
+    private readonly Dictionary<string, string> _lifeSaid = new(StringComparer.Ordinal);
+
+    /// <summary>
+    /// Each tick's audit of the fold in shadow: every live session folded against the leases the markers prove, each breach and
+    /// difference said once in the service's log, and kept there as the last audit the list reads. A refusal is said once, never thrown.
+    /// </summary>
+    private async Task AuditAsync()
+    {
+        try
+        {
+            await SessionFolds.AuditAsync(Service, DaorisHome.Entry(Home, HomeEntry.SessionPids), HomeLease.HeldHere(Home), ct).ConfigureAwait(false);
+            _lifeSaid.Remove("session-life.unaudited");
+        }
+        catch (Exception error) when (error is not OperationCanceledException)
+        {
+            SayLifeOnce("session-life.unaudited", error.Message);
+        }
+    }
+
+    private void SayLifeOnce(string @event, string said)
+    {
+        if (_lifeSaid.TryGetValue(@event, out var before) && before == said) return;
+        _lifeSaid[@event] = said;
+        Log?.Warn(@event, ("said", said));
+    }
+
     private readonly LandingOnce _landed = new();
 
     // Once, as the loop starts: every repository with a checkout here registered from its line, since a line the person
@@ -350,9 +377,15 @@ internal sealed class WatchRun(
         // A home whose staffing the store holds no import of yet is imported by a look, waiting for no lock.
         _staffing?.Check(StaffingCheckAt.Look);
 
-        if (!_begun) _begun = await SessionFolds.BeginAsync(Service, SessionFolds.ApplicationStarted, ct).ConfigureAwait(false);
+        // The holder's start begins its generation before the sweep moves a record, so every fact after names it; one beside it begins none.
+        if (!_begun)
+        {
+            _begun = await SessionFolds.BeginAsync(
+                Service, SessionFolds.ApplicationStarted, HomeLease.HeldHere(Home), said => SayLifeOnce("session-life.unbegun", said), ct).ConfigureAwait(false);
+        }
 
         var orphans = await Stages.TimeAsync("sweep", () => Orphans.EndAsync(Service, watch.Processes, ct: ct, held: Running.Holds, now: Now)).ConfigureAwait(false);
+        await Stages.TimeAsync("audit", AuditAsync).ConfigureAwait(false);
         // An end nobody pressed and nobody must answer: news.
         foreach (var ended in orphans)
         {

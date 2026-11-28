@@ -384,16 +384,14 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
     public Task<string> AdvanceAsync(
         string id, string state, string? note = null, string? evidence = null, string? transcript = null,
         CancellationToken ct = default, bool interrupted = false, bool limit = false, IReadOnlyList<NotePart>? parts = null,
-        string? expected = null, bool unbindAsk = false, IReadOnlyList<string>? expect = null,
-        [System.Runtime.CompilerServices.CallerMemberName] string caller = "", [System.Runtime.CompilerServices.CallerFilePath] string file = "") =>
-        Moves.AdvanceAsync(id, state, note, evidence, transcript, ct, interrupted, limit, parts, expected, unbindAsk, expect, caller, file);
+        string? expected = null, bool unbindAsk = false, IReadOnlyList<string>? expect = null) =>
+        Moves.AdvanceAsync(id, state, note, evidence, transcript, ct, interrupted, limit, parts, expected, unbindAsk, expect);
 
     public Task<string> AdvanceAsync(
         string id, string state, Noted noted, string? evidence = null, string? transcript = null,
         CancellationToken ct = default, bool interrupted = false, bool limit = false, string? expected = null,
-        IReadOnlyList<string>? expect = null,
-        [System.Runtime.CompilerServices.CallerMemberName] string caller = "", [System.Runtime.CompilerServices.CallerFilePath] string file = "") =>
-        Moves.AdvanceAsync(id, state, noted, evidence, transcript, ct, interrupted, limit, expected, expect, caller, file);
+        IReadOnlyList<string>? expect = null) =>
+        Moves.AdvanceAsync(id, state, noted, evidence, transcript, ct, interrupted, limit, expected, expect);
 
     public Task RestoreParkAsync(string id, IReadOnlyList<string> takeBack, Noted? noted, CancellationToken ct = default) => Moves.RestoreParkAsync(id, takeBack, noted, ct);
 

@@ -199,6 +199,7 @@ public static class PersonDoors
         new("GET", "/api/sessions", DoorClass.Open),
         new("GET", "/api/sessions/{id}", DoorClass.Open),
         new("GET", "/api/sessions/changes", DoorClass.Open),
+        new("GET", "/api/session-life/fold", DoorClass.Open),
         new("GET", "/api/sessions/{id}/deletable", DoorClass.Open),
         new("GET", "/api/sessions/{id}/record", DoorClass.Open),
         new("GET", "/api/sessions/{id}/memory", DoorClass.Open),
@@ -256,7 +257,7 @@ public static class PersonDoors
         new("POST", "/api/sessions/help", DoorClass.Driver, "Ask Daoris's record"),
         new("POST", "/api/sessions/{id}/state", DoorClass.Driver, "a session's state"),
         new("POST", "/api/session-life/generations", DoorClass.Driver, "the application's generation at its start"),
-        new("POST", "/api/session-life/fold", DoorClass.Driver, "the fold in shadow, against the leases the driver proved"),
+        new("POST", "/api/session-life/audit", DoorClass.Driver, "the tick's audit of the fold in shadow, against the leases the driver proved"),
         new("POST", "/api/sessions/{id}/taken", DoorClass.Driver, "the words a session took"),
         // What a line read, rechecked for the brief of the part that continues it, and kept as read at what it answers.
         new("POST", "/api/sessions/{id}/memory/read", DoorClass.Driver, "a line's memory, rechecked for its brief"),

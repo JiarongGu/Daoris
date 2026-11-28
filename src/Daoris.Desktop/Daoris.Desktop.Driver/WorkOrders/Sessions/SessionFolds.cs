@@ -1,112 +1,110 @@
 using System.Globalization;
 using Daoris.Contracts.Sessions;
+using Daoris.Ports.Processes;
 
 namespace Daoris.Driver;
 
-/// <summary>What the fold says of a session where it differs from its stored status: its state, outcome, holder, since and breach, as the wire spells them.</summary>
-public sealed record FoldShown(string State, string? Outcome, string? Holder, string Since, string? Breach);
+/// <summary>
+/// What the fold in shadow says of a session where it differs from its stored status, as the wire spells it: its state, outcome, the
+/// kind of what holds it and its subject, since when, and its breach's code (the window's catalogue words it).
+/// </summary>
+public sealed record FoldShown(string State, string? Outcome, string? Holder, string? Subject, string Since, string? Breach);
 
 /// <summary>
-/// The fold in shadow, the driver's half: each start of the application begins its generation (<see cref="BeginAsync"/>), and a look
-/// at the sessions reads where the fold differs from the stored status (<see cref="ReadAsync"/>) against the leases its session markers
-/// prove (<see cref="Leases"/>), which the list's rows carry beside their state. Nothing acts on it; a service that does not answer
-/// (a shared host, an older one) leaves every row as it stands.
+/// The fold in shadow, the driver's half. The start of the application that holds the home's lease begins its generation
+/// (<see cref="BeginAsync"/>); each tick of the watch audits the fold against the leases its session markers prove
+/// (<see cref="AuditAsync"/>, <see cref="Leases"/>); and a look at the sessions reads the last audit (<see cref="ReadAsync"/>), which the
+/// list's rows carry beside their state. Nothing acts on it.
 /// </summary>
 /// <remarks>
-/// The watch begins the generation at each look until the service has answered once, before the look's sweep moves a record, so the
-/// sweep's facts and every later one are stamped with it and a process older than the application's start holds a void lease.
+/// A driver beside the holder (<c>drive --share</c>) begins no generation: it writes in the holder's, which each audit answers, so
+/// neither voids the other's leases; a lease is live while the driver that owns it runs (<see cref="ProvenLease.OwnerRuns"/>).
 /// </remarks>
 public static class SessionFolds
 {
     /// <summary>
-    /// The live leases <paramref name="markers"/> (the home's <c>run/sessions</c>) prove: each marker whose process is alive as the one
-    /// it marked (<see cref="SessionProcesses.IsRunning"/>), with its session and its start. An opener's mark is no process of the
-    /// session's, and a marker that cannot be read proves nothing.
+    /// The session processes <paramref name="markers"/> (the home's <c>run/sessions</c>) prove alive, each with its generation and
+    /// whether its owner runs, through the one marker reader (<see cref="SessionMarker.Prove"/>) and this driver's look at a process.
     /// </summary>
-    public static IReadOnlyList<LeaseRequest> Leases(string? markers)
+    public static IReadOnlyList<LeaseRequest> Leases(string? markers) =>
+        [.. SessionMarker.Prove(markers, SessionProcesses.IsRunning).Select(lease => new LeaseRequest(lease.Session, lease.Generation, lease.OwnerRuns))];
+
+    /// <summary>
+    /// Begin the generation of an application whose process started at <paramref name="started"/>, where this process holds the home's
+    /// lease (<paramref name="holds"/>), and write in it from then on: true once nothing is left to begin (begun, or not the holder's to
+    /// begin), false where the service did not answer it, said through <paramref name="said"/>, so the next look asks again.
+    /// </summary>
+    public static async Task<bool> BeginAsync(
+        ServiceClient service, DateTimeOffset started, bool holds, Action<string>? said, CancellationToken ct)
     {
-        List<string> files;
+        if (!holds) return true;
         try
         {
-            if (markers is null || !Directory.Exists(markers)) return [];
-            files = [.. Directory.EnumerateFiles(markers, "*.pid")];
+            var sent = await service.SendAsync(new BeginGeneration(Moment(started)), ct).ConfigureAwait(false);
+            if (sent.Answer is { } begun)
+            {
+                WritingGeneration.Set(begun.Generation);
+                return true;
+            }
+
+            said?.Invoke(sent.Refusal);
         }
-        catch (Exception error) when (error is IOException or UnauthorizedAccessException)
+        catch (Exception error) when (error is not OperationCanceledException)
         {
-            return [];
+            said?.Invoke(error.Message);
         }
 
-        var leases = new List<LeaseRequest>();
-        foreach (var marker in files)
-        {
-            string[] fields;
-            try
-            {
-                fields = AtomicFile.ReadText(marker).Trim().Split(' ');
-            }
-            catch (Exception error) when (error is IOException or UnauthorizedAccessException)
-            {
-                continue;
-            }
-
-            if (fields.Length != 2 || !int.TryParse(fields[0], CultureInfo.InvariantCulture, out var pid)
-                || !long.TryParse(fields[1], CultureInfo.InvariantCulture, out var started) || !SessionProcesses.IsRunning(pid, started))
-            {
-                continue;
-            }
-
-            leases.Add(new LeaseRequest(Path.GetFileNameWithoutExtension(marker), Moment(new DateTimeOffset(started, TimeSpan.Zero))));
-        }
-
-        return leases;
+        return false;
     }
 
     /// <summary>
-    /// Begin the generation of an application whose process started at <paramref name="started"/>: true once the service answered,
-    /// whatever it said (a host that serves no generations answers too), false where it could not be reached, so the next look asks again.
+    /// The tick's audit of the fold against the leases <paramref name="markers"/> prove; a driver that does not hold the home's lease
+    /// writes in the generation it answers from then on. A refusal is thrown as a refused read's is, for the tick to say.
     /// </summary>
-    public static async Task<bool> BeginAsync(ServiceClient service, DateTimeOffset started, CancellationToken ct)
+    /// <exception cref="DriverException">The service refused the audit.</exception>
+    public static async Task<FoldReadingResponse> AuditAsync(ServiceClient service, string? markers, bool holds, CancellationToken ct)
+    {
+        var audit = (await service.SendAsync(new AuditSessions(Leases(markers)), ct).ConfigureAwait(false)).Answered();
+        if (!holds && audit.Generation > 0) WritingGeneration.Set(audit.Generation);
+        return audit;
+    }
+
+    /// <summary>
+    /// Where the last audit found the fold differing from the stored status, by session; none where nothing has audited yet, and none
+    /// where the service does not answer, which is said through <paramref name="said"/>, never passed over.
+    /// </summary>
+    public static async Task<IReadOnlyDictionary<string, FoldShown>> ReadAsync(ServiceClient service, Action<string>? said, CancellationToken ct)
     {
         try
         {
-            await service.SendAsync(new BeginGeneration(Moment(started)), ct).ConfigureAwait(false);
-            return true;
+            var sent = await service.SendAsync(new ReadFold(), ct).ConfigureAwait(false);
+            if (sent.Answer is { } reading) return Shown(reading);
+            said?.Invoke(sent.Refusal);
         }
         catch (Exception error) when (error is not OperationCanceledException)
         {
-            return false;
+            said?.Invoke(error.Message);
         }
+
+        return None;
     }
 
-    /// <summary>Where the fold differs from the stored status, by session, against the leases <paramref name="markers"/> prove; none where the service does not answer.</summary>
-    public static async Task<IReadOnlyDictionary<string, FoldShown>> ReadAsync(ServiceClient service, string? markers, CancellationToken ct)
-    {
-        Sent<FoldSessionsResponse> sent;
-        try
-        {
-            sent = await service.SendAsync(new FoldSessions(Leases(markers)), ct).ConfigureAwait(false);
-        }
-        catch (Exception error) when (error is not OperationCanceledException)
-        {
-            return None;
-        }
+    /// <summary>The rows an audit's differences lay on the list, by session.</summary>
+    public static IReadOnlyDictionary<string, FoldShown> Shown(FoldReadingResponse reading) =>
+        reading.Differences
+            .DistinctBy(difference => difference.Session, StringComparer.Ordinal)
+            .ToDictionary(
+                difference => difference.Session,
+                difference => new FoldShown(difference.State, difference.Outcome, difference.Holder, difference.Subject, difference.Since, difference.Breach),
+                StringComparer.Ordinal);
 
-        return sent.Answer is not { } answer
-            ? None
-            : answer.Differences
-                .GroupBy(difference => difference.Session, StringComparer.Ordinal)
-                .ToDictionary(
-                    group => group.Key,
-                    group => new FoldShown(group.First().State, group.First().Outcome, group.First().Holder, group.First().Since, group.First().Breach),
-                    StringComparer.Ordinal);
-    }
-
-    /// <summary>What a row's line says of a fold that differs: <i>the fold says needs-you, held by person, since …</i>, and its breach.</summary>
+    /// <summary>What a row's line says of a fold that differs: <i>in shadow: needs-you, held by person, since …</i>, and its breach's code.</summary>
     public static string Words(FoldShown fold) =>
-        $"the fold says {fold.State}{(fold.Outcome is { } outcome ? $" ({outcome})" : "")}"
-        + $"{(fold.Holder is { } holder ? $", held by {holder}" : "")} since {fold.Since}{(fold.Breach is { } breach ? $": {breach}" : "")}";
+        $"in shadow: {fold.State}{(fold.Outcome is { } outcome ? $" ({outcome})" : "")}"
+        + $"{(fold.Holder is { } holder ? $", held by {holder}{(fold.Subject is { } subject ? $" {subject}" : "")}" : "")} since {fold.Since}"
+        + $"{(fold.Breach is { } breach ? $": {breach}" : "")}";
 
-    /// <summary>When this application's process started: what its generation is begun with, since every process it starts starts after it.</summary>
+    /// <summary>When this application's process started: what its generation is begun with.</summary>
     public static DateTimeOffset ApplicationStarted { get; } = StartOfThisProcess();
 
     private static DateTimeOffset StartOfThisProcess()

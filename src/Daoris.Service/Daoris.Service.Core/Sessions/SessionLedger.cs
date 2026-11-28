@@ -235,7 +235,7 @@ public sealed class SessionLedger(
         DateTimeOffset now, CancellationToken ct = default, bool interrupted = false, bool limit = false, string? noteParts = null,
         string? expected = null, bool unbindAsk = false, IReadOnlyCollection<string>? expect = null,
         IReadOnlyDictionary<string, MemoryTurns>? turns = null, IReadOnlyList<string>? holdsPlace = null, TurnSpent? spent = null,
-        string? witness = null) =>
+        WitnessDoor? witness = null) =>
         spent is null
             ? advances.AdvanceAsync(id, state, note, evidence, transcript, now, ct, interrupted, limit, noteParts, expected, unbindAsk, expect, turns, holdsPlace, witness)
             : AdvanceSpentAsync(id, state, note, evidence, transcript, now, ct, interrupted, limit, noteParts, expected, unbindAsk, expect, turns, holdsPlace, spent, witness);
@@ -244,7 +244,7 @@ public sealed class SessionLedger(
     private async Task<SessionAdvanceOutcome> AdvanceSpentAsync(
         string id, string state, string? note, string? evidence, string? transcript, DateTimeOffset now, CancellationToken ct, bool interrupted,
         bool limit, string? noteParts, string? expected, bool unbindAsk, IReadOnlyCollection<string>? expect,
-        IReadOnlyDictionary<string, MemoryTurns>? turns, IReadOnlyList<string>? holdsPlace, TurnSpent spent, string? witness)
+        IReadOnlyDictionary<string, MemoryTurns>? turns, IReadOnlyList<string>? holdsPlace, TurnSpent spent, WitnessDoor? witness)
     {
         var outcome = await advances.AdvanceAsync(id, state, note, evidence, transcript, now, ct, interrupted, limit, noteParts, expected, unbindAsk, expect, turns, holdsPlace, witness)
             .ConfigureAwait(false);

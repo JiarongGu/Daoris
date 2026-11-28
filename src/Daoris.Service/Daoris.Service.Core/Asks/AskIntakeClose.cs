@@ -20,7 +20,7 @@ internal sealed class AskIntakeClose(AskStore asks, SessionStore sessions)
         await sessions.SetStateAsync(
                 waiting.Id, SessionState.Stopped, $"{line} {reason}", null, null, now, inside,
                 noteParts: NoteParts.After(null, null, [NoteLine.Coded(LedgerNoteCodes.IntakeClosed, line, ("ask", id)), NoteLine.Said(reason, "person")]),
-                witness: "ask-close")
+                witness: WitnessDoor.AskClose)
             .ConfigureAwait(false);
         return true;
     }, ct);

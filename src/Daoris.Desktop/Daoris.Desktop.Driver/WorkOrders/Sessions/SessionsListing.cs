@@ -25,7 +25,7 @@ internal static class SessionsListing
             RunWaits = times.Time("runWaits", () => WorkOrdersWorkflows.Current.PersonWaits(world.Home)),
             Passages = times.Time("passages", () => WorkOrdersWorkflows.Current.Passages(world.Home)),
             Folds = await times.TimeAsync(
-                "fold", () => SessionFolds.ReadAsync(world.Service, DaorisHome.Entry(world.Home, HomeEntry.SessionPids), ct)).ConfigureAwait(false),
+                "fold", () => SessionFolds.ReadAsync(world.Service, said => Console.Error.WriteLine($"the fold in shadow was not read: {said}"), ct)).ConfigureAwait(false),
         };
         var trees = new SessionTrees(world.Home);
         var listed = await ListedTrees.JudgeAsync(
