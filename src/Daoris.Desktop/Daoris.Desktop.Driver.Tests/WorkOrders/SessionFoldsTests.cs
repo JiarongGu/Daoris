@@ -3,7 +3,7 @@ using System.Text.Json;
 using System.Text.Json.Nodes;
 using Daoris.Contracts.Sessions;
 using Daoris.Driver;
-using Daoris.Ports.Processes;
+using Daoris.Ports.Sessions;
 
 namespace Daoris.Desktop.Driver.Tests;
 

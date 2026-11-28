@@ -1,6 +1,6 @@
 using System.Globalization;
 
-namespace Daoris.Ports.Processes;
+namespace Daoris.Ports.Sessions;
 
 /// <summary>
 /// A session's marker, <c>run/sessions/&lt;session&gt;.pid</c>, in its one spelling: the process that works on the session (its id and
