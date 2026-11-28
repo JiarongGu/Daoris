@@ -18,7 +18,7 @@ namespace Daoris.Driver;
 /// <para>Exit codes are the CLI's, case by case: 0 said or set · 1 the person's refusal in the window, its two minutes' end, or a
 /// session's terminal · 2 the usage, a refusal of the words, the operation or the route.</para>
 /// </remarks>
-[CommandGroup("settings", "notify", "cooloff", "quiet", "drain", "keep", "cap", "manifest", "handover", "growth", "brainstorms", "terminal", "risk", "cast", "checks", "vacancy", "reserve", Bare = true)]
+[CommandGroup("settings", "notify", "cooloff", "quiet", "drain", "keep", "cap", "manifest", "handover", "growth", "brainstorms", "terminal", "risk", "cast", "checks", "vacancy", "reserve", "trees", Bare = true)]
 [CommandGroup("role", "set", "remove", "default", "policy", "rules", "brief", Takes = "[<id>]")]
 public static class DriverChoicesCommand
 {
@@ -26,7 +26,7 @@ public static class DriverChoicesCommand
     public static IReadOnlyList<string> Verbs { get; } =
     [
         "list", "drive", "undrive", "hold", "resume", "notify", "cap", "retry", "cooloff", "quiet", "drain", "manifest", "line", "across", "standing", "language", "review", "opinion", "helpers", "handover", "growth", "commits",
-        "brainstorms", "workflow", "keep", "role", "terminal", "risk", "cast", "checks", "vacancy", "reserve", MachineSettingsSaid.Every,
+        "brainstorms", "workflow", "keep", "role", "terminal", "risk", "cast", "checks", "vacancy", "reserve", TreeBudgetSetting.Key, MachineSettingsSaid.Every,
     ];
 
     public const string Usage =
@@ -39,6 +39,7 @@ public static class DriverChoicesCommand
                daoris settings reserve <gb>|auto  (the floor of the memory kept free for your own work: a heavy run starts only while the larger of it and what your own work is measured to take back stays free after its need; auto, the default, no floor)
                daoris settings checks <repository> [pin|memoryGb|alone|timeoutMs|treeBaseline|devkit|localInputs|patternsFile …]  (a repository's budgets on this machine: no word says them)
                daoris settings vacancy <hours>  (how long a step nobody's session answers stands before Daoris gives it up; 24 by default)
+               daoris settings trees [budget <gb>|none]  (the most a repository's trees hold before the tree ledger says so; none by default)
                daoris settings risk [<workspace>|machine] [--repository <name>] [low|medium|high] [--mark <marks>] [--unmark <marks>]
                daoris settings risk why <run> [<step>]  (what the risk policy said at each hold of a run, beside what happened)
                daoris settings risk set <place> <act> none|role|owner|remove [--by <role>] [--mode full|restricted]  (your own terminal sets the row at once on the revision it read; an agent's set is a proposal that changes nothing)
@@ -121,7 +122,7 @@ public static class DriverChoicesCommand
             "risk" => PlaceRiskVerb.Changes(args),
             "brainstorms" => args.Any(arg => arg is "--clear" or "--mode" or "--agents" || ChoiceGrammar.BrainstormMinuteFlags.Contains(arg)),
             // `keep` naming no kind says each rule, a read.
-            "keep" => args.Count > 1,
+            "keep" or TreeBudgetSetting.Key => args.Count > 1,
             // `role` naming one role, or none, says it, a read.
             "role" => args.Count > 1 && args[1] is "set" or "remove" or "default" or "policy" or "rules",
             _ when Readings.TryGetValue(verb, out var reading) => reading(args),

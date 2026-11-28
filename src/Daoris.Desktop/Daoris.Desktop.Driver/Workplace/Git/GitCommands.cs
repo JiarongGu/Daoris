@@ -185,7 +185,7 @@ internal static class GitCommands
         foreach (var local in new[]
                  {
                      "update-index", "read-tree", "write-tree", "mktree", "commit-tree", "mktag", "add", "rm", "mv", "apply", "init", "unpack-objects",
-                     "prune", "repack", "pack-refs", "multi-pack-index", "commit-graph", "merge-file",
+                     "prune", "repack", "pack-refs", "multi-pack-index", "commit-graph", "merge-file", "unpack-file",
                  })
         {
             rows[local] = new(Local: true);

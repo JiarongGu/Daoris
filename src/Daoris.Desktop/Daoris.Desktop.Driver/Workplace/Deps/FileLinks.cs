@@ -30,18 +30,20 @@ internal static class FileLinks
     }
 
     /// <summary>
-    /// Which file record <paramref name="path"/> is a name of: equal for the names of one record, so a reader of sizes counts a link once;
-    /// null where the platform names none or the file cannot be opened.
+    /// Which file record <paramref name="path"/> is a name of, equal for the names of one record, and its count of names: so a reader of
+    /// sizes counts a link once. Null where the platform names none or the file cannot be opened, a file of one name to that reader.
     /// </summary>
-    internal static string? IdentityOf(string path)
+    internal static (string Identity, uint Names)? RecordOf(string path)
     {
         if (!OperatingSystem.IsWindows()) return null;
         try
         {
-            using var stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete, 1);
-            return GetFileInformationByHandle(stream.SafeFileHandle, out var info) ? $"{info.VolumeSerialNumber:x}:{info.FileIndexHigh:x}:{info.FileIndexLow:x}" : null;
+            using var handle = CreateFileW(Prefixed(path), ReadAttributes, ShareAll, IntPtr.Zero, OpenExisting, OpenReparsePoint, IntPtr.Zero);
+            return !handle.IsInvalid && GetFileInformationByHandle(handle, out var info)
+                ? ($"{info.VolumeSerialNumber:x}:{info.FileIndexHigh:x}:{info.FileIndexLow:x}", info.Links)
+                : null;
         }
-        catch (Exception error) when (error is IOException or UnauthorizedAccessException)
+        catch (Exception error) when (error is DllNotFoundException or EntryPointNotFoundException or Win32Exception)
         {
             return null;
         }

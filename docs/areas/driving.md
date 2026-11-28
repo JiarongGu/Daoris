@@ -232,6 +232,37 @@ built, but nothing outside tests makes, takes or ends one; `LinePlaces` answers 
     (D51, D214)
 23. A session commits on its tree's branch as it goes. An agent that moves its tree onto a branch of its own is followed there.
     (D164)
+23a. No file a person or agent made is lost to a tree's removal behind a save (D371 point 3). A save (`Workplace/Saves/TreeSaves`)
+    pins the tree's head under `refs/daoris/saves/<name>/<n>` (the branch, or a detached tree's folder, every `/` and other
+    character a ref folder could collide on as `-`; two saves at once take the next number) and commits onto it its staged, unstaged
+    and untracked-not-ignored files and the ignored paths `--work` names, read literally and refused where one names no ignored file,
+    through indexes of its own, so the tree's index and files are never written: the save commit's tree is the files as git reads them,
+    its parents the head, the index as staged and the files' bytes as written with their modes. It refuses, naming each, what it cannot
+    carry: an unresolved index, a merge, cherry-pick, revert, rebase or bisect under way, the tree's own refs, a submodule's git folder,
+    a path marked assume-unchanged or skip-worktree, a link, a nested repository, a name with a line break. A refusal, a stop or a
+    file it could not write is typed and leaves the tree as it was and no pin. Its record (each file's SHA-256, bytes and blob, and the
+    session) is the desktop store's `tree_saves`, keyed by its repository and its ref. A restore makes a tree in an empty folder and
+    applies the save (`TreeRestores`; applying alone takes a tree of the repository holding no work of its own), a file in a folder's
+    place and a folder in a file's included, each file written by git's `unpack-file`, and proves its head, index and every listed file
+    identical by hash; one that does not prove removes the tree it made. `daoris trees remove <tree> --saved` is the one remover's
+    forced removal, its branch kept, asked through `TreeSaveGate` once the remover holds the tree's landing hold and its lock and the
+    service says no session holds it: the tree stays while a quest served in it is open or taken (a resume rebuilds from the branch and
+    reads no save yet), while the save's ref no longer resolves to its commit or its commits are missing, while the tree's head, its
+    index (written as a tree from a copy) or any listed file differs from the save, and while it holds an ignored file only it has
+    (the content holds' own, scratch and too-large folders included) that no `--work` named; until the repository's file names its
+    work (part b), the person or the steward names it. Landed is a landed proof's answer, a port (`ILandedProof`) chosen by the
+    repository's declared landing kind (D367 point 4; `LandedProofKinds`, a local landing for every repository until the declaration
+    is read): merge-tree is its one proof, landed where merging the line into the save leaves the line's tree as it is, so a merge's own
+    resolution and a change of whitespace alone read unlanded. It answers landed, unlanded or unknown with its evidence; a hard
+    condition code checks, never an agent's word: only a proof's landed answer marks a save landed, and unknown never counts as landed.
+    `daoris trees drop <save>` gives a save up, its ref deleted at its commit and its record marked dropped. The tree ledger
+    (`TreeLedger`, `tree_moves` and `tree_days`) keeps each repository's trees per day by the one walk every measure of bytes shares
+    (`PlacesWalk`), a hard link counted once a repository: their bytes, those set aside under `.tidied` apart and removed only once
+    purged, the trees made, removed and restored, the bytes written and freed, saves pending, and the drive's free space at the day's
+    first and last reading beside the space keeping's one floor (`keep.floor`); a reading writes one notice a day for a repository's
+    trees over their budget (`daoris settings trees budget <gb>|none`). Reuse and the take to ready are noted from part b. The doors
+    are `daoris trees save | restore | remove <tree> --saved | drop | ledger [--days n] [--record]`; no session, look or sweep calls them
+    yet. (D371)
 24. One decision says how a line goes on after any trigger (words kept, an answer, a limit, a transient bound, a carry-on, a
     hand-over): resume, a new part, wait, hold or refuse. (D137, D189, D206, D212)
 25. The agent's own conversation is resumed only by the id Daoris kept, where its agent, account and tree still hold. Otherwise a

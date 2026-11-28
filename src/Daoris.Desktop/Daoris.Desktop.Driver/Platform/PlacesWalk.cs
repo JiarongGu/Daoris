@@ -9,7 +9,11 @@ public sealed record WiringBudget(int Files, TimeSpan Time)
 }
 
 /// <summary>One kind's places walked (<see cref="PlacesWalk.Measure"/>): bytes, files, why it stopped short (null where whole), each group's bytes.</summary>
-public sealed record PlacesMeasure(long Bytes, int Files, string? Partial, IReadOnlyDictionary<string, long> Groups);
+public sealed record PlacesMeasure(long Bytes, int Files, string? Partial, IReadOnlyDictionary<string, long> Groups)
+{
+    /// <summary>The bytes among <see cref="Bytes"/> of files of more than one name, each record counted once (<see cref="FileRecords"/>); none where no records were handed.</summary>
+    public long Linked { get; init; }
+}
 
 /// <summary>The bounded walk of places that every measure of bytes shares, owned at the platform so a home's own reader can size what it finds.</summary>
 public static class PlacesWalk
@@ -28,11 +32,13 @@ public static class PlacesWalk
     /// joined by <c>/</c>: the set-aside kind's folders, which its <i>next</i> reads.
     /// </summary>
     public static PlacesMeasure Measure(
-        IReadOnlyList<string> places, IReadOnlyCollection<string> skip, WiringBudget budget, CancellationToken cancellationToken, int groupDepth = 0)
+        IReadOnlyList<string> places, IReadOnlyCollection<string> skip, WiringBudget budget, CancellationToken cancellationToken, int groupDepth = 0,
+        FileRecords? once = null)
     {
         var skipped = new HashSet<string>(skip.Select(Key), StringComparer.Ordinal);
         var walk = new FolderWalk(budget, cancellationToken) { Skip = path => skipped.Contains(Key(path)) };
         var bytes = 0L;
+        var linked = 0L;
         var groups = new Dictionary<string, long>(StringComparer.Ordinal);
         var failed = false;
         foreach (var place in places)
@@ -61,6 +67,12 @@ public static class PlacesWalk
 
             walk.Files(place, (parts, size) =>
             {
+                if (once?.Of(Path.Combine([place, .. parts])) is { } record)
+                {
+                    if (!record.Counts) return;
+                    if (record.Linked) linked += size;
+                }
+
                 bytes += size;
                 if (groupDepth > 0 && parts.Length > groupDepth)
                 {
@@ -70,7 +82,7 @@ public static class PlacesWalk
             }, _ => failed = true);
         }
 
-        return new(bytes, walk.Counted, walk.Stopped ?? (failed ? "unreadable" : null), groups);
+        return new(bytes, walk.Counted, walk.Stopped ?? (failed ? "unreadable" : null), groups) { Linked = linked };
     }
 }
 

@@ -5,7 +5,7 @@ namespace Daoris.Driver;
 
 /// <summary>
 /// A session tree's removal: only a tree under the trees home, unforced only behind the clean-up's proof, its branch
-/// deleted only while it is the commit judged. The tidy, the landing's tidy and abandon's discard take it.
+/// deleted only while it is the commit judged. The tidies, abandon's discard and a save's removal (<see cref="TreeSaveGate"/>) take it.
 /// </summary>
 internal sealed class TreeRemovals(TreeContext context, TreeFollows follows, ContentHolds content, TreeSquashes squashes)
 {
@@ -22,8 +22,10 @@ internal sealed class TreeRemovals(TreeContext context, TreeFollows follows, Con
     /// <param name="force">The person saying it again, meaning it: work and branch go too.</param>
     /// <param name="service">The person's door supplies the local ledger: a held tree stays, and force can lift an ended session's own lock.</param>
     /// <param name="landing">A landing's own tidy, which holds the tree's landing hold already.</param>
+    /// <param name="verify">Asked under the landing hold and the tree's lock, which need the service: a clause it answers keeps the tree.</param>
     internal async Task<TreeRemoval> RemoveAsync(
-        string path, bool force = false, CancellationToken ct = default, ServiceClient? service = null, bool landing = false, bool treeOnly = false)
+        string path, bool force = false, CancellationToken ct = default, ServiceClient? service = null, bool landing = false, bool treeOnly = false,
+        Func<CancellationToken, Task<string?>>? verify = null)
     {
         var full = Path.GetFullPath(path);
         if (!context.Holds(full))
@@ -72,9 +74,14 @@ internal sealed class TreeRemovals(TreeContext context, TreeFollows follows, Con
             if (removing is null) return new(false, TreeLock.Starting(owner.Repository, TreeLock.RefusedBy(context.Home, full), TreeLock.HeldFor(context.Home, full)));
             if ((await service.ActiveSessionsAsync(ct).ConfigureAwait(false)).Any(session => session.Tree is { Length: > 0 } tree && SamePath(tree, full)))
                 return new(false, SessionBranchDiscard.Held(owner.Repository, follows.BranchOfTree(full)?.Branch ?? Path.GetFileName(full)));
+            if (verify is not null && await verify(ct).ConfigureAwait(false) is { } unverified) return new(false, $"the tree at {path} stays: {unverified}.");
             if (force && SessionLocks.HolderOf(full) is { } holder
                 && await service.RecordAsync(holder, ct).ConfigureAwait(false) is { Tree: { Length: > 0 } heldTree } record && SamePath(heldTree, full))
                 await SessionLocks.LetGoEndedAsync(record).ConfigureAwait(false);
+        }
+        else if (verify is not null)
+        {
+            return new(false, $"the tree at {path} stays: with no service answering, Daoris cannot read whether a session or an open quest still holds it.");
         }
 
         if (here.Code != 0)
@@ -261,7 +268,7 @@ internal sealed class TreeRemovals(TreeContext context, TreeFollows follows, Con
 
         // A tree past Windows' 260 characters is removed with long paths, which every git call here says:
         // without them git let go of the tree, then failed deleting its files (2026-09-28).
-        var freed = TreeUse.Bytes(full);
+        var freed = PlacesWalk.Measure([full], [], WiringBudget.Default, ct).Bytes;
         var removed = await MachinePorts.Repository.RemoveTreeAsync(root, full, force, ct).ConfigureAwait(false);
         string? left = null;
         if (!removed.Ok)

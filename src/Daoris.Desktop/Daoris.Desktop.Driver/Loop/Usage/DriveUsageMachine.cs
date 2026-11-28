@@ -50,6 +50,11 @@ internal static class DriveUsageMachine
               unit of work's milestone, as `work state` does (FABRIC-MILESTONE1a). build releases a kept output
               that is the previous line's build: it builds its project and removes the marker the runners refuse
               by; a failed build releases nothing.
+          tree save <path> [--work <path>]...  ·  tree restore <save> <folder> [--repository <name>]
+          tree remove <path> --saved  ·  tree drop <save> [--repository <name>]  ·  tree ledger [--days <n>]
+              save keeps a tree's head, index and every file it holds on a kept ref before anything is cleaned;
+              restore puts a save back into a folder and proves it by hash; remove --saved takes the tree only once
+              its save still matches it; drop lets a save go; ledger says each day's trees made, reused and removed.
           update [--install <folder>]  ·  update --when-idle | --now | --cancel [--install <folder>]
               what is staged beside the install and how the last swap ended; or install it when idle (the
               default), now (ending what runs as a close does), or not now, as the window's banner does.

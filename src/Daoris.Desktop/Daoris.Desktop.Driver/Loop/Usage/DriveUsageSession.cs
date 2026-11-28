@@ -75,6 +75,7 @@ internal static class DriveUsageSession
           settings manifest files|minutes|copy <n>  ·  settings terminal ask|act  ·  settings keep [<kind> <rule>]
           settings handover …  ·  settings brainstorms …  ·  settings growth <workspace> [--repository <name>] [mode|asked|off]
           settings risk …  ·  settings cast …  ·  settings drain <minutes>  ·  settings checks <n>|auto  ·  settings vacancy <hours>  ·  settings reserve <gb>|auto
+          settings trees budget <gb>|none
               this machine's standing choices: whether a park or an end you did not ask for is said, how long an account
               cools, how long a silent session runs before it is looked in on, the cap, a folder's manifest bounds, whether a
               terminal's press asks or acts, how many checks run at once (auto: as many as the memory admits), how many hours

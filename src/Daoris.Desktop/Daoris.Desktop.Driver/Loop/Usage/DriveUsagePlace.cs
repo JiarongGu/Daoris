@@ -81,6 +81,9 @@ internal static class DriveUsagePlace
               say the class standing and where it comes from. A quest with none of its own reads its ask's, else
               normal. Urgent ends at --until, else in a day, and a workspace holds two at once. The check queue
               of the machine's heavy-run admission waits by class, then by when each run first asked.
+          queue [--json]
+              every item waiting in the machine's queues, with its place, its class and where it comes from, its
+              stage, why it waits and the items ahead: the running Daoris's last look, else a fresh plan here.
           quest pause <id>  ·  quest resume <id>  ·  quest abandon <id> [--reason "…" --yes]
               the same for one quest's work: stop it and start nothing of it until you resume it, or list what
               abandoning it would decline, discard and archive, and with --reason and --yes give it up.
