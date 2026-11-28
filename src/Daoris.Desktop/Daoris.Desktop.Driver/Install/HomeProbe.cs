@@ -7,16 +7,19 @@ namespace Daoris.Driver;
 public delegate (string Code, string Sentence)? StagedProof(string install, string home, string? staged);
 
 /// <summary>
-/// A staged build starts clean on a copy of the real home before it is swapped in. The running build reads the home
-/// (<see cref="HomeProof.Read"/>), copies it into a scratch beside the staged build, and has the staged build's own driver read the copy
-/// (<c>daoris home proof</c>); the swap is refused, the old build keeps running and the sentence says why, unless every account the
-/// running build lists is still listed and the staged build finds nothing amiss the running build does not (<see cref="Novel"/>).
+/// A staged build starts clean on a copy of the real home before it is swapped in. The running build copies the home into a scratch
+/// beside the staged build (<see cref="HomeCopy"/>), reads the copy itself (<see cref="HomeProof.Read"/>) and has the staged build's own
+/// driver read the same copy (<c>daoris home proof</c>); the swap is refused, the old build keeps running and the sentence says why, unless
+/// every account the running build lists of the copy is still listed and the staged build finds nothing amiss in it the running build
+/// does not (<see cref="Novel"/>).
 /// </summary>
 /// <remarks>
-/// <para>The source is read and never written. The copy holds the home's own folder whole (its files above
-/// <see cref="HomeCopy.MaxFile"/> as empty files) and, of every other folder of the Daoris folder, its names to
-/// <see cref="HomeCopy.Depth"/> levels as empty files and folders, which is all a reading of accounts and of paths no entry names
-/// needs. It is removed when the proof ends.</para>
+/// <para>Both builds read one copy, so a stand-in or a folder kept by its names is read alike by both and is never the staged build's
+/// fault; what differs is the builds. The copy itself is guarded: the accounts the home lists now, a listing of folders, must be the ones
+/// the reading of its copy lists, else the refusal says it is the copy's fault. Each step's failure has its own sentence (the copy could not
+/// be made, the staged build gave no report, this build could not read the copy), and a refusal's sentence counts what the copy did not
+/// read, as a pass's log line does (<see cref="Copied"/>). The source is read and never written, and the copy is removed when the proof
+/// ends.</para>
 /// <para>A staged build that cannot read the proof (it carries no driver, its driver has no such verb, or it does not end within
 /// <see cref="Bound"/>) is refused as one that found the home amiss: the swap is of builds that show they start.</para>
 /// </remarks>
@@ -34,25 +37,49 @@ public static class HomeProbe
     /// <summary>Runs the staged build's reading of <paramref name="copy"/> (a home): its exit code and everything it said.</summary>
     public delegate (int Exit, string Output) ProofRun(string staged, string copy);
 
-    /// <summary>The proof as the application asks it: the staged build's own driver reads the copy.</summary>
-    public static (string Code, string Sentence)? Refused(string install, string home, string? staged) => Refused(install, home, staged, StartStaged);
+    /// <summary>The event a pass is logged as: what the copy read and did not, counted.</summary>
+    public const string Copied = "update.probe.copied";
 
-    /// <param name="run">How the staged build reads the copy; the staged build's driver by <see cref="Refused(string, string, string?)"/>.</param>
-    public static (string Code, string Sentence)? Refused(string install, string home, string? staged, ProofRun run)
+    /// <summary>The proof as the application asks it: the staged build's own driver reads the copy; a pass is said in <paramref name="log"/>.</summary>
+    public static (string Code, string Sentence)? Refused(string install, string home, string? staged, MachineLog? log = null) =>
+        Refused(install, home, staged, StartStaged, log);
+
+    /// <param name="run">How the staged build reads the copy; the staged build's driver by <see cref="Refused(string, string, string?, MachineLog?)"/>.</param>
+    /// <param name="log">Where a pass says what the copy did not read; a refusal says it in its sentence.</param>
+    public static (string Code, string Sentence)? Refused(string install, string home, string? staged, ProofRun run, MachineLog? log = null)
     {
-        var running = HomeProof.Read(home);
         var scratch = Path.Combine(install, StagedBuild.Folder, Scratch);
         HomeCopy.Sweep(scratch);
         var made = Path.Combine(scratch, Guid.NewGuid().ToString("N")[..12]);
         using var held = HomeCopy.Hold(made);
         try
         {
-            var copy = HomeCopy.Make(home, made);
-            var (exit, output) = run(StagedBuild.StagedOf(install), copy);
+            var started = Stopwatch.GetTimestamp();
+            HomeCopyMade copy;
+            try
+            {
+                copy = HomeCopy.Make(home, made, HomeProof.Reads);
+            }
+            catch (Exception error) when (error is IOException or UnauthorizedAccessException)
+            {
+                return Refuse($"the copy of the home could not be made: {error.Message}");
+            }
+
+            var (exit, output) = run(StagedBuild.StagedOf(install), copy.Home);
             if (HomeProof.Parse(output) is not { } proof)
             {
                 var said = output.Trim();
-                return Refuse($"it gave no readable report of the copy (exit {exit}{(said.Length == 0 ? "" : $": {First(said)}")})");
+                return Refuse($"it gave no readable report of the copy (exit {exit}{(said.Length == 0 ? "" : $": {First(said)}")}); {copy.Said}");
+            }
+
+            HomeProofReport running;
+            try
+            {
+                running = HomeProof.Read(copy.Home);
+            }
+            catch (Exception error) when (error is not OperationCanceledException)
+            {
+                return Refuse($"this build could not read the copy of the home: {error.Message}; {copy.Said}");
             }
 
             var reasons = new List<string>();
@@ -62,12 +89,12 @@ public static class HomeProbe
                 reasons.AddRange(accounts.Where(account => !listed.Contains(account, StringComparer.Ordinal)).Select(account => $"the account `{agent}/{account}` is no longer listed"));
             }
 
-            reasons.AddRange(Novel(proof.Problems, running.Problems, copy, home));
-            return reasons.Count == 0 ? null : Refuse(string.Join("; ", reasons.Take(Said)) + (reasons.Count > Said ? $"; and {reasons.Count - Said} more" : ""));
-        }
-        catch (Exception error) when (error is IOException or UnauthorizedAccessException)
-        {
-            return Refuse($"the copy of the home could not be made: {error.Message}");
+            reasons.AddRange(Novel(proof.Problems, running.Problems, copy.Home));
+            reasons.AddRange(Missed(HomeProof.Accounts(home), running.Accounts));
+            if (reasons.Count > 0) return Refuse(string.Join("; ", reasons.Take(Said)) + (reasons.Count > Said ? $"; and {reasons.Count - Said} more" : "") + $"; {copy.Said}");
+            log?.Info(Copied, ("files", copy.Files), ("bytes", copy.Bytes), ("standIns", copy.StandIns), ("leftOut", copy.LeftOut), ("unlisted", copy.Unlisted),
+                ("content", copy.Content), ("seats", copy.Seats), ("ms", (long)Stopwatch.GetElapsedTime(started).TotalMilliseconds));
+            return null;
         }
         finally
         {
@@ -75,10 +102,31 @@ public static class HomeProbe
         }
     }
 
-    internal static IReadOnlyList<string> Novel(IEnumerable<string> staged, IEnumerable<string> running, string copy, string home)
+    /// <summary>
+    /// The copy's fault, never the build's: each account the home lists now that the reading of its copy does not, and each the other way. The
+    /// home's are listed by folder, so the guard costs a listing.
+    /// </summary>
+    private static IEnumerable<string> Missed(IReadOnlyDictionary<string, IReadOnlyList<string>> home, IReadOnlyDictionary<string, IReadOnlyList<string>> copy)
     {
-        string Key(string problem) =>
-            problem.Replace(Path.GetFullPath(copy), "<home>", StringComparison.OrdinalIgnoreCase).Replace(Path.GetFullPath(home), "<home>", StringComparison.OrdinalIgnoreCase);
+        static IEnumerable<string> Each(IReadOnlyDictionary<string, IReadOnlyList<string>> accounts) =>
+            accounts.SelectMany(agent => agent.Value.Select(account => $"{agent.Key}/{account}"));
+        var held = Each(home).ToHashSet(StringComparer.Ordinal);
+        var copied = Each(copy).ToHashSet(StringComparer.Ordinal);
+        foreach (var missing in held.Where(account => !copied.Contains(account)).Order(StringComparer.Ordinal))
+        {
+            yield return $"the copy of the home does not hold the account `{missing}` the home does, which is the copy's fault and not the build's";
+        }
+
+        foreach (var extra in copied.Where(account => !held.Contains(account)).Order(StringComparer.Ordinal))
+        {
+            yield return $"the copy of the home holds the account `{extra}` the home does not, which is the copy's fault and not the build's";
+        }
+    }
+
+    /// <summary>What the staged build finds amiss in <paramref name="copy"/> that the running build's reading of it does not, the copy's path in either however it is written.</summary>
+    internal static IReadOnlyList<string> Novel(IEnumerable<string> staged, IEnumerable<string> running, string copy)
+    {
+        string Key(string problem) => problem.Replace(Path.GetFullPath(copy), "<home>", StringComparison.OrdinalIgnoreCase);
         var known = running.Select(Key).ToHashSet(StringComparer.Ordinal);
         return [.. staged.Where(problem => !known.Contains(Key(problem)))];
     }
@@ -119,145 +167,5 @@ public static class HomeProbe
         if (!run.Started) return (-1, run.Error?.Message ?? "it did not start");
         if (run.TimedOut || run.ExitCode is not { } exit) return (-1, $"it did not end within {(int)Bound.TotalSeconds} seconds");
         return (exit, run.Stdout + run.Stderr);
-    }
-}
-
-/// <summary>The copy of a home a proof is made on, and its removal.</summary>
-internal static class HomeCopy
-{
-    /// <summary>A file above this is copied as an empty one: a record that large is read in no start.</summary>
-    internal const long MaxFile = 64L * 1024 * 1024;
-
-    /// <summary>How many folders deep a folder outside the home's own is named in the copy.</summary>
-    internal const int Depth = 5;
-
-    /// <summary>What the copy names of each folder outside the home's own, at most.</summary>
-    private const int Names = 200_000;
-
-    /// <summary>The copy of <paramref name="home"/> in <paramref name="into"/>, laid out as the source is (an install, or a home that is its own folder); the copy's home.</summary>
-    internal static string Make(string home, string into)
-    {
-        var folder = DaorisHome.FolderOf(home);
-        var own = Path.GetFullPath(home).TrimEnd(Path.DirectorySeparatorChar);
-        var root = Path.GetFullPath(folder).TrimEnd(Path.DirectorySeparatorChar);
-        Directory.CreateDirectory(into);
-        File.WriteAllText(Path.Combine(into, DaorisHome.InstallMarker), "# Daoris — installed desktop\n");
-        var inside = !string.Equals(own, root, StringComparison.OrdinalIgnoreCase) && own.StartsWith(root + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase);
-        var copyHome = inside ? Path.Combine(into, Path.GetRelativePath(root, own)) : into;
-        if (inside) Copy(own, copyHome);
-        foreach (var child in Directory.EnumerateFileSystemEntries(root))
-        {
-            var name = Path.GetFileName(child);
-            if (IsTheInstalls(name) || string.Equals(Path.GetFullPath(child), own, StringComparison.OrdinalIgnoreCase)) continue;
-            // A budget of its own for each folder: a large cache's names never use up what `profiles` needs, which the accounts are read from.
-            var left = Names;
-            Mirror(child, Path.Combine(into, name), 1, ref left);
-        }
-
-        if (!inside) Copy(own, copyHome);
-        return copyHome;
-    }
-
-    /// <summary>The folders of an install that are its own, not the home's (<see cref="HomeStrays"/> passes them too).</summary>
-    private static bool IsTheInstalls(string name) =>
-        new[] { DaorisHome.InstallApp, DaorisHome.InstallMarker, "purged", DaorisHome.InstallUpdate, DaorisHome.InstallLauncher }
-            .Any(own => string.Equals(name, own, StringComparison.OrdinalIgnoreCase));
-
-    /// <summary>The home's own folder, whole: each file as it is, one above <see cref="MaxFile"/> as an empty one. A link is not followed.</summary>
-    private static void Copy(string from, string to)
-    {
-        Directory.CreateDirectory(to);
-        foreach (var entry in Directory.EnumerateFileSystemEntries(from))
-        {
-            var target = Path.Combine(to, Path.GetFileName(entry));
-            if (Directory.Exists(entry))
-            {
-                if (IsLink(entry)) Directory.CreateDirectory(target);
-                else Copy(entry, target);
-            }
-            else if (!Skipped(from, entry))
-            {
-                if (new FileInfo(entry).Length <= MaxFile) CopyShared(entry, target);
-                else File.WriteAllBytes(target, []);
-            }
-        }
-    }
-
-    /// <summary>A file the copy leaves out: what only a running application holds, so a copy of it would hold nothing true.</summary>
-    private static bool Skipped(string folder, string file) =>
-        string.Equals(Path.GetFileName(file), "home.lease", StringComparison.OrdinalIgnoreCase);
-
-    /// <summary>A file copied reading beside its writers: a store the running application holds open is read as it stands.</summary>
-    private static void CopyShared(string from, string to)
-    {
-        using var source = new FileStream(from, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete);
-        using var target = new FileStream(to, FileMode.Create, FileAccess.Write, FileShare.None);
-        source.CopyTo(target);
-    }
-
-    private static void Mirror(string from, string to, int depth, ref int left)
-    {
-        if (left-- <= 0) return;
-        if (!Directory.Exists(from))
-        {
-            File.WriteAllBytes(to, []);
-            return;
-        }
-
-        Directory.CreateDirectory(to);
-        if (depth >= Depth || IsLink(from)) return;
-        IEnumerable<string> children;
-        try
-        {
-            children = Directory.EnumerateFileSystemEntries(from).ToList();
-        }
-        catch (Exception error) when (error is IOException or UnauthorizedAccessException)
-        {
-            return;
-        }
-
-        foreach (var child in children) Mirror(child, Path.Combine(to, Path.GetFileName(child)), depth + 1, ref left);
-    }
-
-    private static bool IsLink(string folder) => new DirectoryInfo(folder).Attributes.HasFlag(FileAttributes.ReparsePoint);
-
-    /// <summary>Removes a copy this proof made.</summary>
-    internal static void Remove(string made)
-    {
-        try
-        {
-            if (Directory.Exists(made)) Directory.Delete(made, recursive: true);
-        }
-        catch (Exception error) when (error is IOException or UnauthorizedAccessException)
-        {
-            // Left for the next proof's sweep.
-        }
-    }
-
-    private const string Live = ".live";
-
-    /// <summary>Marks <paramref name="made"/> as a proof's in progress: a file beside it, held open for as long as the proof lasts.</summary>
-    internal static IDisposable Hold(string made)
-    {
-        Directory.CreateDirectory(Path.GetDirectoryName(made)!);
-        return new FileStream(made + Live, FileMode.Create, FileAccess.ReadWrite, FileShare.None, 1, FileOptions.DeleteOnClose);
-    }
-
-    /// <summary>Removes the copies an earlier proof left: those whose mark no proof holds any more (one that ended, or died).</summary>
-    internal static void Sweep(string scratch)
-    {
-        if (!Directory.Exists(scratch)) return;
-        foreach (var old in Directory.GetDirectories(scratch))
-        {
-            try
-            {
-                using var _ = new FileStream(old + Live, FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.None, 1, FileOptions.DeleteOnClose);
-                Remove(old);
-            }
-            catch (IOException)
-            {
-                // A proof under way holds it.
-            }
-        }
     }
 }

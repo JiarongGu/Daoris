@@ -15,6 +15,11 @@ internal interface IHomeProofReading
 {
     /// <summary>The build's reading of <paramref name="home"/>; it changes nothing under it.</summary>
     HomeProofReport Read(string home);
+
+    IReadOnlyDictionary<string, IReadOnlyList<string>> Accounts(string home);
+
+    /// <summary>The places the reading reads, as the home's table writes a place: each folder one passes through or names is listed, each file it names read.</summary>
+    IReadOnlyList<string> Reads { get; }
 }
 
 /// <summary>
@@ -34,6 +39,11 @@ public static class HomeProof
 
     /// <summary>The build's reading of <paramref name="home"/>.</summary>
     public static HomeProofReport Read(string home) => Reading.Read(home);
+
+    /// <summary>The accounts the reading lists of <paramref name="home"/>, a listing of folders and nothing else of it.</summary>
+    public static IReadOnlyDictionary<string, IReadOnlyList<string>> Accounts(string home) => Reading.Accounts(home);
+
+    public static IReadOnlyList<string> Reads => Reading.Reads;
 
     /// <summary>The report as one line, for a verb to print and <see cref="Parse"/> to read back.</summary>
     public static string Say(HomeProofReport report) => JsonSerializer.Serialize(report, Options);
