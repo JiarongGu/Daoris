@@ -1,22 +1,15 @@
+using System.Text.Json;
+
 namespace Daoris.Driver;
 
-/// <summary>The copies' floor and budget in GB (<see cref="TreeLedgerSettings"/>), kept in a part of their own beside the record's.</summary>
-public sealed partial record DriverConfig
-{
-    /// <summary>The copies' drive floor in GB; null is <see cref="TreeLedgerSettings.DefaultFloorGb"/>.</summary>
-    public int? TreeFloorGb { get; init; }
-
-    /// <summary>The most a repository's copies may hold, in GB; null is none.</summary>
-    public int? TreeBudgetGb { get; init; }
-}
-
 /// <summary>
-/// The copies' floor and budget on this machine, in <c>driver.json</c>: <c>treeFloorGb</c>, the free space under which the ledger's
-/// reading writes its floor notice, 30 GB where absent; <c>treeBudgetGb</c>, the most a repository's copies may hold before it writes its
-/// budget notice, none where absent. Whole GB from 1 to 4096; a value outside reads as absent. Written only when set. A repository's own
-/// file narrows the budget once the keeper reads one.
+/// The copies' floor and budget on this machine, two fields of <c>driver.json</c> read by this unit alone: <c>treeFloorGb</c>, the free
+/// space under which the ledger's reading writes its floor notice, 30 GB where absent; <c>treeBudgetGb</c>, the most a repository's
+/// copies may hold before it writes its budget notice, none where absent. Whole GB from 1 to 4096; a value outside, or a file that does
+/// not read, reads as absent. The choices' writer edits the file as it stands, so a field set here by hand stays across its saves. A
+/// repository's own file narrows the budget once the keeper reads one.
 /// </summary>
-public static class TreeLedgerSettings
+public sealed record TreeLedgerSettings(int? FloorGb, int? BudgetGb)
 {
     public const string FloorFile = "treeFloorGb";
 
@@ -26,10 +19,29 @@ public static class TreeLedgerSettings
 
     private const long Gb = 1L << 30;
 
-    /// <summary>A stored value as it reads: a whole number of GB in range, else null.</summary>
-    public static int? Read(long? stored) => stored is >= 1 and <= 4096 ? (int)stored.Value : null;
+    public long FloorBytes => (FloorGb ?? DefaultFloorGb) * Gb;
 
-    public static long FloorBytes(DriverConfig config) => (config.TreeFloorGb ?? DefaultFloorGb) * Gb;
+    public long? BudgetBytes => BudgetGb * Gb;
 
-    public static long? BudgetBytes(DriverConfig config) => config.TreeBudgetGb * Gb;
+    /// <summary>The two fields of the <c>driver.json</c> at <paramref name="path"/>; both absent where it is missing or does not read.</summary>
+    public static TreeLedgerSettings Of(string path)
+    {
+        try
+        {
+            if (!File.Exists(path)) return new(null, null);
+            using var document = JsonDocument.Parse(File.ReadAllText(path));
+            return document.RootElement.ValueKind == JsonValueKind.Object
+                ? new(Field(document.RootElement, FloorFile), Field(document.RootElement, BudgetFile))
+                : new(null, null);
+        }
+        catch (Exception error) when (error is IOException or UnauthorizedAccessException or JsonException)
+        {
+            return new(null, null);
+        }
+    }
+
+    private static int? Field(JsonElement root, string name) =>
+        root.TryGetProperty(name, out var value) && value.ValueKind == JsonValueKind.Number && value.TryGetInt64(out var gb) && gb is >= 1 and <= 4096
+            ? (int)gb
+            : null;
 }

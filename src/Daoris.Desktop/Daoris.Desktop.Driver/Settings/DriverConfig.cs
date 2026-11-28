@@ -14,7 +14,7 @@ namespace Daoris.Driver;
 /// Whether this machine interrupts the person when a session parks or ends unasked. <b>On by default</b>: a driver that ran
 /// silently would leave parked sessions sitting until somebody thinks to look.
 /// </param>
-public sealed partial record DriverConfig(
+public sealed record DriverConfig(
     IReadOnlyList<string> Drivable,
     IReadOnlyList<string> Holds,
     int Cap,

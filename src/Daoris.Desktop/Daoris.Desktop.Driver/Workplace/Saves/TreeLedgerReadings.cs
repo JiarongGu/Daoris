@@ -5,8 +5,8 @@ namespace Daoris.Driver;
 public sealed record LedgerWorld(string Home, Func<DateTimeOffset> Clock, Func<string, VolumeReading?> Volume, long FloorBytes, long? BudgetBytes)
 {
     /// <summary>This machine's: its clock, its volumes and its settings (<see cref="TreeLedgerSettings"/>).</summary>
-    public static LedgerWorld OfThisMachine(string home, DriverConfig config, TimeProvider clock) =>
-        new(home, clock.GetUtcNow, SpaceVolumes.Read, TreeLedgerSettings.FloorBytes(config), TreeLedgerSettings.BudgetBytes(config));
+    public static LedgerWorld OfThisMachine(string home, TreeLedgerSettings settings, TimeProvider clock) =>
+        new(home, clock.GetUtcNow, SpaceVolumes.Read, settings.FloorBytes, settings.BudgetBytes);
 }
 
 /// <summary>One alert a reading found: its notice's code and what it says of the figures.</summary>

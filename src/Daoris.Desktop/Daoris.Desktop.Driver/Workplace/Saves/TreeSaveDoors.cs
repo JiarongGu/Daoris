@@ -139,7 +139,7 @@ public static class TreeSaveDoors
 
         try
         {
-            var reading = TreeLedgerReadings.Record(LedgerWorld.OfThisMachine(trees.Context.Home, trees.Context.Config(), clock));
+            var reading = TreeLedgerReadings.Record(LedgerWorld.OfThisMachine(trees.Context.Home, TreeLedgerSettings.Of(DriverConfig.ResolvePath(trees.Context.Home)), clock));
             foreach (var alert in reading.Alerts) output.WriteLine($"trees ledger: {alert.Said}.");
         }
         catch (DriverException failed)

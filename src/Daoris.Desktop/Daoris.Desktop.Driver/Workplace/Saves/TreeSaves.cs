@@ -108,7 +108,7 @@ public sealed class TreeSaves(string home, TimeProvider clock)
 
         var branch = await GitRuns.GitAsync(full, ["symbolic-ref", "--short", "-q", "HEAD"], ct).ConfigureAwait(false);
         var status = await GitRuns.GitAsync(
-            full, ["-c", "core.quotePath=false", "status", "--porcelain=v1", "-z", "--untracked-files=all", "--no-renames", "--ignore-submodules=none"], ct).ConfigureAwait(false);
+            full, ["--no-optional-locks", "-c", "core.quotePath=false", "status", "--porcelain=v1", "-z", "--untracked-files=all", "--no-renames", "--ignore-submodules=none"], ct).ConfigureAwait(false);
         if (status.Code != 0) return (null, SaveOutcome.No(SaveRefusal.Unread, $"git could not say what the tree holds: {FirstLine(status.Stderr)}"));
         var entries = status.Stdout.Split('\0', StringSplitOptions.RemoveEmptyEntries).Where(entry => entry.Length > 3).ToList();
         var unresolved = entries.Where(entry => Unmerged.Contains(entry[..2])).Select(entry => entry[3..]).ToList();
