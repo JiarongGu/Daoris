@@ -111,13 +111,18 @@ public static class SessionBaseline
         return connection;
     }
 
-    /// <summary>Read <paramref name="store"/> (open) at <paramref name="now"/>, against the leases proved alive, timing a list of <paramref name="count"/>.</summary>
+    /// <summary>
+    /// Read <paramref name="store"/> (open) at <paramref name="now"/>, against the leases proved alive, timing a list of
+    /// <paramref name="count"/> and <paramref name="appends"/> appends (none times none).
+    /// </summary>
     public static async Task<SessionBaselineReading> ReadAsync(
-        SqliteConnection store, IReadOnlyList<SessionLease> leases, DateTimeOffset now, int count = 50, CancellationToken ct = default)
+        SqliteConnection store, IReadOnlyList<SessionLease> leases, DateTimeOffset now, int count = 50, CancellationToken ct = default,
+        int appends = Appends)
     {
         var gate = ConnectionGate.For(store);
         var reading = await gate.RunAsync(() => ReadAsync(gate, leases, now, count, ct), ct).ConfigureAwait(false);
-        var (append, appended) = await AppendCostAsync(store, ct).ConfigureAwait(false);
+        if (appends <= 0) return reading;
+        var (append, appended) = await AppendCostAsync(store, appends, ct).ConfigureAwait(false);
         return reading with { Append = append, Appended = appended };
     }
 
@@ -193,7 +198,7 @@ public static class SessionBaseline
     /// The median time of one append (<see cref="SessionJournal.AppendAsync"/>, the fact's insert and the census's lookup), timed on an
     /// in-memory copy of <paramref name="store"/>, so the store is never written.
     /// </summary>
-    private static async Task<(TimeSpan? Median, int Count)> AppendCostAsync(SqliteConnection store, CancellationToken ct)
+    private static async Task<(TimeSpan? Median, int Count)> AppendCostAsync(SqliteConnection store, int appends, CancellationToken ct)
     {
         await using var copy = new SqliteConnection("Data Source=:memory:");
         await copy.OpenAsync(ct).ConfigureAwait(false);
@@ -208,8 +213,8 @@ public static class SessionBaseline
         }, ct).ConfigureAwait(false);
         if (id is null || await sessions.FindAsync(id, ct).ConfigureAwait(false) is not { } record) return (null, 0);
 
-        var times = new List<TimeSpan>(Appends);
-        for (var each = 0; each < Appends; each++)
+        var times = new List<TimeSpan>(appends);
+        for (var each = 0; each < appends; each++)
         {
             var began = Stopwatch.GetTimestamp();
             await gate.InTransactionAsync((_, inside) => sessions.Journal.AppendAsync(record, WitnessDoor.Store, minted: false, inside), ct).ConfigureAwait(false);

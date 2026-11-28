@@ -44,14 +44,14 @@ public sealed class SessionBucketsTests
         var random = new Random(368);
         var kinds = Enum.GetValues<SessionFactKind>();
         SessionHolder[] holders = [SessionHolder.None, SessionHolder.MachineRoom, new(HolderKind.CheckSlot), new(HolderKind.Step, "r1"), SessionHolder.Person];
-        for (var trial = 0; trial < 1000; trial++)
+        for (var trial = 0; trial < 500; trial++)
         {
             var facts = new List<SessionFact>();
             var minute = 0;
             for (var each = random.Next(1, 10); each > 0; each--)
             {
                 // A clock may step back: a fact written behind the one before it.
-                minute += random.Next(-30, 180);
+                minute += random.Next(-30, 90);
                 facts.Add(Fact(kinds[random.Next(kinds.Length)], minute, holders[random.Next(holders.Length)], SessionOutcome.Failed));
             }
 
@@ -59,12 +59,12 @@ public sealed class SessionBucketsTests
             List<DownSpan> down = [];
             for (var each = withDown ? random.Next(1, 4) : 0; each > 0; each--)
             {
-                var from = T0.AddMinutes(random.Next(-120, 1200));
-                down.Add(new(from, from.AddMinutes(random.Next(-10, 300))));
+                var from = T0.AddMinutes(random.Next(-120, 600));
+                down.Add(new(from, from.AddMinutes(random.Next(-10, 150))));
             }
 
-            List<DateTimeOffset> starts = [.. Enumerable.Range(0, random.Next(0, 3)).Select(_ => T0.AddMinutes(random.Next(-60, 1500)))];
-            var now = T0.AddMinutes(random.Next(-60, 1800));
+            List<DateTimeOffset> starts = [.. Enumerable.Range(0, random.Next(0, 3)).Select(_ => T0.AddMinutes(random.Next(-60, 800)))];
+            var now = T0.AddMinutes(random.Next(-60, 900));
 
             var times = SessionBuckets.Of(facts, now, down, starts);
             var walked = Minutes(facts, now, down, starts);

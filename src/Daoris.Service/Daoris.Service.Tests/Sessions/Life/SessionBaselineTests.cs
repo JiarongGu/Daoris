@@ -57,7 +57,7 @@ public sealed class SessionBaselineTests : IAsyncLifetime
         // A state written past the journal's door, which the census finds.
         await ExecuteAsync($"UPDATE sessions SET state = 'Stopped' WHERE id = '{ended}'");
 
-        var reading = await SessionBaseline.ReadAsync(_connection, [new SessionLease(alive, 1, true), new SessionLease(survived, 0, false)], Now, count: 50);
+        var reading = await SessionBaseline.ReadAsync(_connection, [new SessionLease(alive, 1, true), new SessionLease(survived, 0, false)], Now, count: 50, appends: 5);
 
         Assert.Equal((7, 6), (reading.Records, reading.NotEnded));
         Assert.Equal((3, 2, 1), (reading.ByState["working"], reading.ByState["awaiting-step"], reading.ByState["awaiting-person"]));
@@ -71,7 +71,7 @@ public sealed class SessionBaselineTests : IAsyncLifetime
         // The opened rows of the forgotten record and the move past the door.
         Assert.Equal(3, reading.Unwitnessed);
         Assert.Equal(7, reading.Folded);
-        Assert.Equal(SessionBaseline.Appends, reading.Appended);
+        Assert.Equal(5, reading.Appended);
         Assert.NotNull(reading.Append);
         Assert.NotNull(reading.MoveSpan);
         Assert.Contains(reading.Lines(), line => line.StartsWith("differ: 3", StringComparison.Ordinal));
@@ -85,7 +85,7 @@ public sealed class SessionBaselineTests : IAsyncLifetime
         await MovedAsync(SessionState.Working, TimeSpan.FromMinutes(10));
         await ExecuteAsync("DROP TABLE session_facts; DROP TABLE app_generations;");
 
-        var reading = await SessionBaseline.ReadAsync(_connection, [], Now, count: 50);
+        var reading = await SessionBaseline.ReadAsync(_connection, [], Now, count: 50, appends: 0);
 
         Assert.Equal((1, 1, 1, 0), (reading.NotEnded, reading.Seeded, reading.Differ, reading.Unwitnessed));
     }
@@ -96,7 +96,7 @@ public sealed class SessionBaselineTests : IAsyncLifetime
         await MovedAsync(SessionState.Working, TimeSpan.FromMinutes(10));
         await ExecuteAsync("DROP TABLE app_generations;");
 
-        var reading = await SessionBaseline.ReadAsync(_connection, [], Now, count: 50);
+        var reading = await SessionBaseline.ReadAsync(_connection, [], Now, count: 50, appends: 0);
 
         Assert.Equal((1, 0, 1), (reading.Journalled, reading.Seeded, reading.Differ));
         Assert.Equal(TimeSpan.Zero, reading.Buckets[TimeBucket.Down]);
@@ -120,7 +120,8 @@ public sealed class SessionBaselineTests : IAsyncLifetime
             var before = SHA256.HashData(await File.ReadAllBytesAsync(file));
             await using (var store = await SessionBaseline.OpenReadOnlyAsync(file))
             {
-                var reading = await SessionBaseline.ReadAsync(store, [], Now, count: 50);
+                // Its append is timed on a copy in memory: the file's own bytes prove it is never written.
+                var reading = await SessionBaseline.ReadAsync(store, [], Now, count: 50, appends: 2);
                 Assert.Equal(1, reading.NotEnded);
                 await using var write = store.CreateCommand();
                 write.CommandText = "DELETE FROM sessions";
