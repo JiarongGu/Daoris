@@ -84,11 +84,13 @@ public static class CheckSlotWaits
             {
                 values["free"] = said!.Values.GetValueOrDefault("free") ?? "?";
                 values["need"] = said.Values.GetValueOrDefault("need") ?? "?";
+                Carry(values, said);
             }
             else if (code == Reserve)
             {
                 values["free"] = said!.Values.GetValueOrDefault("free") ?? "?";
                 values["need"] = said.Values.GetValueOrDefault("need") ?? "?";
+                Carry(values, said);
                 values["reserve"] = said.Values.GetValueOrDefault("reserve") ?? "?";
             }
             else if (code == Repository)
@@ -101,6 +103,16 @@ public static class CheckSlotWaits
 
         return waits;
     }
+
+    private static void Carry(Dictionary<string, string> values, CheckWait said)
+    {
+        if (said.Values.GetValueOrDefault("source") is { } source) values["basis"] = source;
+        if (said.Values.GetValueOrDefault("starting") is { } starting) values["starting"] = starting;
+    }
+
+    private static string Basis(WorkflowRunWait wait) => wait.Values.TryGetValue("basis", out var basis) ? $" ({basis})" : "";
+
+    private static string Starting(WorkflowRunWait wait) => wait.Values.TryGetValue("starting", out var starting) ? $" with {starting} still starting" : "";
 
     private static void Place(Dictionary<string, string> values, string prefix, VerifyWaiter waiter)
     {
@@ -132,8 +144,8 @@ public static class CheckSlotWaits
         return wait.Code switch
         {
             Full => $"Waits for a check slot: {Value("running")} of {Value("slots")} run; {queue}.",
-            Memory => $"Waits for memory: {Value("free")} GB free, the next check needs {Value("need")} GB; {queue}.",
-            Reserve => $"Waits for the reserve kept for your own work: {Value("free")} GB free, the next check needs {Value("need")} GB and {Value("reserve")} GB stays free; {queue}.",
+            Memory => $"Waits for memory: {Value("free")} GB free, the next check needs {Value("need")} GB{Basis(wait)}{Starting(wait)}; {queue}.",
+            Reserve => $"Waits for the reserve kept for your own work: {Value("free")} GB free, the next check needs {Value("need")} GB{Basis(wait)} and {Value("reserve")} GB stays free{Starting(wait)}; {queue}.",
             Repository => $"Waits for a heavy-run slot of {Value("repository")}: its other heavy runs hold every one it has; {queue}.",
             Admitting => $"Waits for the admission's lock, which another start holds; {queue}.",
             _ => $"Waits for a check slot: {queue}.",

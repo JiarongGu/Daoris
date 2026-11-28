@@ -255,7 +255,7 @@ public static class HeavyRun
             // A session's run (its tree read from git's lock) never waits behind a verification.
             var waiter = new HeavyWaiter(pid, started, checkout, DateTimeOffset.UtcNow, session);
             var sessions = SessionLocks.HolderOf(checkout) is not null;
-            var admit = new HeavyAdmit(world.Rules, token => AcceptedSlots.OfRepositoryAsync(world.Home, keyedAs, checkout, token), () => written = new HeavyHolder(pid, started, checkout, gates, DateTimeOffset.UtcNow, session, null)) { Agent = session, Gate = string.Join('+', gates), Turn = world.Turn };
+            var admit = new HeavyAdmit(world.Rules, token => AcceptedSlots.OfRepositoryAsync(world.Home, keyedAs, checkout, token), () => written = new HeavyHolder(pid, started, checkout, gates, DateTimeOffset.UtcNow, session, null)) { Agent = session, Gates = gates, Turn = world.Turn };
             took = await HeavySlot.TakeUnlessAsync(
                 world.Home, key, repository, output, ct, world.Waiting, waiter, sessions ? holder => holder.Run is not null : null, admit).ConfigureAwait(false);
         }
@@ -330,7 +330,7 @@ public static class HeavyRun
             using (hold)
             {
                 return await RunGatesAsync(
-                    checkout, choice.Gates, key, [], job, output, ct, Keep, Inside(hold), steps: world.Steps, meter: new RunMeter(world.Home, key, LoadKind.Test, string.Join('+', gates), world.Admission.Clock)).ConfigureAwait(false);
+                    checkout, choice.Gates, key, [], job, output, ct, Keep, Inside(hold), steps: world.Steps, meter: new RunMeter(world.Home, key, LoadKind.Test, world.Admission.Clock)).ConfigureAwait(false);
             }
         }
     }
@@ -493,10 +493,13 @@ public static class HeavyRun
                 var gateAt = at;
                 var gateName = current.Name;
                 keep?.Invoke(holder => holder with { Now = new HeavyGateNow(gateName, gateAt, DateTimeOffset.UtcNow) });
+                var gateRan = Stopwatch.StartNew();
                 step = HeavyStep.Start(job, bound.Run, folder, added, steps);
                 var code = await step.ExitAsync(ct).ConfigureAwait(false);
                 step.Dispose();
                 step = null;
+
+                meter?.Note(current.Name, job, gateRan.Elapsed, code == 0, code != 0, RunMeter.LogTail(steps?.Log));
                 HeavyGateLog.CopyTo(steps?.Log, output);
                 if (code == 0) continue;
 
@@ -523,7 +526,6 @@ public static class HeavyRun
             throw;
         }
 
-        meter?.Note(job, ran.Elapsed, !failed, failed, RunMeter.LogTail(steps?.Log));
         await EndAsync(job, output, sayLeft: true).ConfigureAwait(false);
         if (failed) return 1;
 

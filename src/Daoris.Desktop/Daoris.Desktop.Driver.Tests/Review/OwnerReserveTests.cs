@@ -46,7 +46,7 @@ public sealed class OwnerReserveTests : IDisposable
         Assert.Equal("24.0", wait.Values["free"]);
         Assert.Equal("8", wait.Values["need"]);
         Assert.Equal("20", wait.Values["reserve"]);
-        Assert.Equal("the reserve for your own work: 24.0 GB free, a check needs 8 GB and 20 GB stays free", wait.Sentence);
+        Assert.Equal("the reserve for your own work: 24.0 GB free, a check needs 8 GB (declared) and 20 GB stays free", wait.Sentence);
         Assert.Empty(VerifySlot.Look(_fixture.Home, (_, _) => true).Holders);
     }
 

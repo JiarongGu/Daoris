@@ -3,12 +3,13 @@ using System.Text.RegularExpressions;
 namespace Daoris.Driver;
 
 /// <summary>
-/// What a run's gates took, read from its job as it ends and kept under its repository, kind and gate (<see cref="LearnedNeeds"/>): the
-/// job's peak memory, the cores it kept busy (its CPU time over its wall time) and whether a test of it timed out beside the load.
-/// Where there is no job (off Windows) the run learns nothing and its declared cost stands.
+/// What each gate of a run took, read from its job as the gate ends and kept under the repository, kind and that one gate: the job's
+/// peak memory so far (never less than the gate took) and the cores the gate kept busy. Off Windows there is no job and nothing is learned.
 /// </summary>
-internal sealed partial record RunMeter(string Home, string Key, string Kind, string Gate, Func<DateTimeOffset> Clock)
+internal sealed partial class RunMeter(string home, string key, string kind, Func<DateTimeOffset> clock)
 {
+    private TimeSpan _cpu = TimeSpan.Zero;
+
     /// <summary>Said by a failed gate's own output when a test hit its time bound: the runners' words for it.</summary>
     [GeneratedRegex(@"\bTest timed out in \d+\s?ms\b|\btimeout of \d+\s?ms exceeded\b|\bExceeded timeout of \d+\s?ms\b", RegexOptions.IgnoreCase)]
     private static partial Regex TimeoutWords();
@@ -33,19 +34,24 @@ internal sealed partial record RunMeter(string Home, string Key, string Kind, st
         }
     }
 
+    public void Note(string gate, ProcessJob? job, TimeSpan took, bool whole, bool failed, string? output) =>
+        Note(gate, job?.PeakMemory, job?.Cpu, took, whole, failed, output);
+
     /// <summary>
-    /// Keep the run: its peak memory and cores from <paramref name="job"/> (before it is ended), its wall time <paramref name="took"/>. Only a
-    /// <paramref name="whole"/> run (every gate ran to its end) teaches a need, since a cut-off, busy or partly kept run peaked short of one;
-    /// a failed run is kept only for the timeouts its words show, which the limit backs off on.
+    /// Keep <paramref name="gate"/>'s run: the job's <paramref name="peak"/> and cumulative <paramref name="cpu"/> as it ended, and its wall
+    /// time <paramref name="took"/>. Only a <paramref name="whole"/> gate (it ran to its end) teaches a need, since a cut-off, busy or
+    /// partly kept one peaked short of one; a failed gate is kept only for the timeouts its words show, which the limit backs off on.
     /// </summary>
-    public void Note(ProcessJob? job, TimeSpan took, bool whole, bool failed, string? output)
+    internal void Note(string gate, long? peak, TimeSpan? cpu, TimeSpan took, bool whole, bool failed, string? output)
     {
+        var busy = cpu is { } now ? now - _cpu : (TimeSpan?)null;
+        if (cpu is { } total) _cpu = total;
         var timedOut = TimedOut(failed, output);
-        if ((!whole && !timedOut) || job?.PeakMemory is not { } peak || peak <= 0 || took <= TimeSpan.Zero) return;
-        var cores = job.Cpu is { } cpu ? cpu.TotalSeconds / took.TotalSeconds : 0;
+        if ((!whole && !timedOut) || peak is not { } held || held <= 0 || took <= TimeSpan.Zero) return;
+        var cores = busy is { } spent ? spent.TotalSeconds / took.TotalSeconds : 0;
         try
         {
-            LearnedNeeds.Record(Home, LearnedNeeds.KeyOf(Key, Kind, Gate), new RunSample(Clock(), peak, Math.Round(cores, 1), Math.Round(took.TotalSeconds, 1), timedOut));
+            LearnedNeeds.Record(home, LearnedNeeds.KeyOf(key, kind, gate), new RunSample(clock(), held, Math.Round(cores, 1), Math.Round(took.TotalSeconds, 1), timedOut));
         }
         catch (Exception error) when (error is IOException or UnauthorizedAccessException or TimeoutException)
         {
