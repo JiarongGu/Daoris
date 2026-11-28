@@ -41,7 +41,7 @@ public sealed class UpdateHomeProofTests : Bridge, IDisposable
     {
         Running = "0.0.1",
         ClosingForUpdate = _ => { },
-        Proof = (_, _, _) =>
+        Proof = (_, _, _, _) =>
         {
             _proofs++;
             return _clean ? null : (HomeProbe.Code, Why);

@@ -452,7 +452,7 @@ describe("Updates: the install's update", () => {
   it('while draining, names the build, its version, commit and when, what the drain waits on, and offers Update now and Not now', async () => {
     invoke.mockImplementation(answer(
       update({ state: 'draining', staged: STAGED, mode: 'when-idle', driven: 2, turns: 1 }),
-      update({ state: 'waiting', staged: STAGED, mode: 'not-now' }),
+      update({ state: 'staged', staged: STAGED, mode: 'not-now' }),
     ));
     show(<SettingsView notify={() => {}} section="driver" />);
     const row = await section();
@@ -483,7 +483,7 @@ describe("Updates: the install's update", () => {
   });
 
   it('waiting after Not now, says work goes on and offers Update when idle and Update now', async () => {
-    invoke.mockImplementation(answer(update({ state: 'waiting', staged: STAGED, mode: 'not-now' })));
+    invoke.mockImplementation(answer(update({ state: 'staged', staged: STAGED, mode: 'not-now' })));
     show(<SettingsView notify={() => {}} section="driver" />);
     const row = await section();
 
@@ -502,7 +502,7 @@ describe("Updates: the install's update", () => {
       if (module === 'DAORIS.UPDATE' && type === 'SET') {
         throw Object.assign(new Error('nothing is staged'), { code: 'UPDATE_NOTHING_STAGED' });
       }
-      return answer(update({ state: 'waiting', staged: STAGED, mode: 'not-now' }))(module, type);
+      return answer(update({ state: 'staged', staged: STAGED, mode: 'not-now' }))(module, type);
     });
     show(<SettingsView notify={notify} section="driver" />);
     const row = await section();

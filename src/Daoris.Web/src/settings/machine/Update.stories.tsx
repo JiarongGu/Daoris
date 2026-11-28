@@ -44,10 +44,15 @@ export const DrainingDark: Story = { args: { update: DRAINING }, decorators: [(S
 export const DrainingIdle: Story = { args: { update: standing({ state: 'draining', staged: STAGED, mode: 'when-idle' }) } };
 
 /** The person said Not now: work goes on and the build waits for their word. */
-export const WaitingAfterNotNow: Story = { args: { update: standing({ state: 'waiting', staged: STAGED, mode: 'not-now' }) } };
+export const WaitingAfterNotNow: Story = { args: { update: standing({ state: 'staged', staged: STAGED, mode: 'not-now' }) } };
 
 /** A word on its way: the words held until the shell answers. */
 export const Saying: Story = { args: { update: DRAINING, busy: true } };
+
+/** *Update now* said or the work idle: the check of the staged build runs, said each second. */
+export const Stopping: Story = {
+  args: { update: standing({ state: 'stopping', staged: STAGED, mode: 'now', waiting: { on: 'check', seconds: 42, bound: 180 } }) },
+};
 
 /** Checked, the launcher started, and Daoris closing for it. */
 export const Applying: Story = { args: { update: standing({ state: 'applying', staged: STAGED, mode: 'now' }) } };

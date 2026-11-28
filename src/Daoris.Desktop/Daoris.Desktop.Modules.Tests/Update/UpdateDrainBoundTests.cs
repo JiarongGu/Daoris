@@ -80,7 +80,7 @@ public sealed class UpdateDrainBoundTests : Bridge
 
         _now = Now.AddMinutes(30);
         Assert.Equal(UpdateStates.Deferred, (await updater.LookAsync()).State);
-        var said = Logged("update.deferred").Single();
+        var said = UpdateLines.To(DataHome, "deferred").Single();
         Assert.Equal("b1", said["build"]!.GetValue<string>());
         Assert.Equal(600, said["waitedSeconds"]!.GetValue<long>());
     }
@@ -100,7 +100,7 @@ public sealed class UpdateDrainBoundTests : Bridge
         Assert.Equal(UpdateStates.Applying, applying.State);
         Assert.Equal(1, _closed);
         Assert.Equal(Now, applying.Since);
-        Assert.Equal("idle", Logged("update.applying").Single()["by"]!.GetValue<string>());
+        Assert.Equal("idle", UpdateLines.To(DataHome, "applying").Single()["by"]!.GetValue<string>());
     }
 
     /// <summary>
@@ -147,7 +147,7 @@ public sealed class UpdateDrainBoundTests : Bridge
         Assert.Equal(UpdateStates.Applying, applying.State);
         Assert.Equal(1, _closed);
         Assert.True(_now - Now < _bound);
-        Assert.Equal("idle", Logged("update.applying").Single()["by"]!.GetValue<string>());
+        Assert.Equal("idle", UpdateLines.To(DataHome, "applying").Single()["by"]!.GetValue<string>());
     }
 
     /// <summary>The bound is the machine's setting, read at each look.</summary>
@@ -172,7 +172,7 @@ public sealed class UpdateDrainBoundTests : Bridge
         _now = Now.AddMinutes(10);
         await updater.LookAsync();
 
-        Assert.Equal(UpdateStates.Waiting, (await updater.SayAsync(UpdateMode.NotNow, "screen")).State);
+        Assert.Equal(UpdateStates.Staged, (await updater.SayAsync(UpdateMode.NotNow, "screen")).State);
 
         StagedInstalls.Stage(_install, "b2");
         _now = Now.AddMinutes(12);
