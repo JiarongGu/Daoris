@@ -72,8 +72,11 @@ public static class QueueRows
     /// <summary>The queues in the order they are shown.</summary>
     public static IReadOnlyList<string> Queues { get; } = [Starts, Checks];
 
-    /// <summary>A repository-busy start that is not waiting for a place: its quest is being worked on or opening, or its landing is owed.</summary>
-    private static readonly string[] InFlight = [SittingFact.Serving, SittingFact.Opening, SittingFact.LandingOwed];
+    /// <summary>
+    /// A repository-busy start that is not waiting for a place: its quest is being worked on or opening, its landing is owed, or it is
+    /// held, which stands it aside with no place and no turn.
+    /// </summary>
+    private static readonly string[] Aside = [SittingFact.Serving, SittingFact.Opening, SittingFact.LandingOwed, SittingFact.HoldWaiting];
 
     /// <summary>The waiting items of a plan and the check slots as they stand: the starts in the walk's order, then the checks in the slots'.</summary>
     public static IReadOnlyList<QueueRow> Read(IReadOnlyList<Consideration> plan, VerifyLook slots)
@@ -85,13 +88,13 @@ public static class QueueRows
             if (Waits(each) && each.Place is { } place) rows.Add(Start(each, place, order++));
         }
 
-        rows.AddRange(slots.Waiters.Select((waiter, at) => Check(waiter, at)));
+        rows.AddRange(slots.Waiters.Where(waiter => !waiter.Held).Select((waiter, at) => Check(waiter, at)));
         return rows;
     }
 
     private static bool Waits(Consideration each) =>
         each.Verdict == StartVerdict.AtCapacity
-        || (each.Verdict == StartVerdict.RepositoryBusy && each.Said is { Code: { } code } && !InFlight.Contains(code));
+        || (each.Verdict == StartVerdict.RepositoryBusy && each.Said is { Code: { } code } && !Aside.Contains(code));
 
     private static QueueRow Start(Consideration each, QueuePlace place, int order)
     {

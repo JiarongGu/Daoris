@@ -93,6 +93,12 @@ public static class PriorityCommand
             var now = world.Clock();
             if (asked.Hold is { } hold)
             {
+                if (world.Session is { } session && Judged(world, session, target, hold ? "hold" : "lift", now) is { } refused)
+                {
+                    said.WriteLine($"priority: {refused}");
+                    return 1;
+                }
+
                 var word = new HoldEvent(now, target.Target, target.Id, target.Workspace, hold, asked.Why ?? "lifted", world.By) { Run = target.Run };
                 if (HoldBook.Set(world.Home, word) is { } notHeld)
                 {
@@ -139,10 +145,11 @@ public static class PriorityCommand
 
     private static string Nothing(string id) => $"`{id}` names no ask or quest here.";
 
-    private static string? Judged(PriorityWorld world, string session, PriorityTarget target, string @class, DateTimeOffset now)
+    /// <summary>A session's class, hold or lift judged as <c>priority.set</c> and journaled; null where it passes, else why it waits.</summary>
+    private static string? Judged(PriorityWorld world, string session, PriorityTarget target, string change, DateTimeOffset now)
     {
         var actor = AgentVersionAct.PipeSessionActor(session);
-        var subject = $"priority {target.Target} #{target.Id} {@class}";
+        var subject = $"priority {target.Target} #{target.Id} {change}";
         var workspace = target.Workspace is { Length: > 0 } named ? named : null;
         var verdict = world.Risk.Verdict(world.Home, RiskActs.PrioritySet, workspace, actor, subject);
         var passed = verdict.Outcome == RiskVerdict.Pass;

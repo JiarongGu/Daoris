@@ -73,7 +73,6 @@ public static class CheckSlotWaits
         return waits;
     }
 
-    /// <summary>Why a waiter waits, as its code and the facts its words name: the step's wait and the queues' row (<see cref="QueueRows"/>) both read it.</summary>
     public static (string Code, Dictionary<string, string> Values) Reason(VerifyWaiter waiter)
     {
         var said = waiter.Wait;

@@ -105,6 +105,24 @@ public sealed class QueueRowsTests
     }
 
     [Fact]
+    public void A_held_start_and_a_held_check_stand_aside_with_no_place_and_count_ahead_of_none()
+    {
+        var hold = new HoldEvent(Now.AddMinutes(-2), PriorityBook.Quest, "held", "games", true, "make room", "the person");
+        var snapshot = new Snapshot([Open("top", 1), Open("held", 60), Open("behind", 10)], [new RepoView("Game", true, Root)], [])
+        {
+            Priority = new PriorityLook([], PriorityRules.Default, Now) { Holds = [hold] },
+        }.Apart("Game");
+        var plan = Planner.Plan(snapshot, DriverConfig.Empty with { Drivable = ["Game"], Cap = 1 });
+        var look = new VerifyLook([], [Waiter("h", 30) with { Held = true, For = "held by the person: make room" }, Waiter("c", 10)]);
+
+        var spots = QueueRows.Placed(QueueRows.Read(plan, look));
+
+        Assert.Contains(plan, each => each.Quest.Id == "held" && each.Said?.Code == SittingFact.HoldWaiting);
+        Assert.Equal([("top", 1, 1), ("c", 1, 1)], spots.Select(spot => (spot.Row.Item, spot.Position, spot.Of)));
+        Assert.All(spots, spot => Assert.Empty(spot.Ahead));
+    }
+
+    [Fact]
     public void A_row_reads_back_as_the_route_answers_it()
     {
         var plan = Plan(1, [Open("old", 30), Open("asked", 5, "ask #cafee7")], Set(PriorityBook.Ask, "cafee7", PriorityClasses.Urgent, "the fix"));

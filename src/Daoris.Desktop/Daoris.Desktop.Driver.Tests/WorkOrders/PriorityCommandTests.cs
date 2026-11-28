@@ -141,6 +141,25 @@ public sealed class PriorityCommandTests : IDisposable
     }
 
     [Fact]
+    public async Task A_session_s_hold_and_lift_are_judged_as_the_same_act_and_one_gated_holds_nothing()
+    {
+        var gating = new StandInRisk(RiskVerdict.Gate);
+
+        var (exit, said) = await RunAsync(World("session s-1") with { Session = "s-1", Risk = gating }, "second", "hold", "--why", "mine first");
+
+        Assert.Equal(1, exit);
+        Assert.Contains("`priority.set` `role` at the `games` workspace", said);
+        Assert.Empty(HoldBook.Read(_home));
+        Assert.Equal((RiskActs.PrioritySet, "games", "session s-1"), Assert.Single(gating.Asked));
+
+        var passing = new StandInRisk(RiskVerdict.Pass);
+        Assert.Equal(0, (await RunAsync(World("session s-1") with { Session = "s-1", Risk = passing }, "second", "hold", "--why", "w")).Exit);
+        Assert.Equal(0, (await RunAsync(World("session s-1") with { Session = "s-1", Risk = passing }, "second", "lift")).Exit);
+        Assert.Equal(2, passing.Lines.Count);
+        Assert.Equal(2, HoldBook.Read(_home).Count);
+    }
+
+    [Fact]
     public async Task The_window_s_press_sets_through_the_same_operation_and_a_refusal_is_its_words()
     {
         var said = await PriorityCommand.SetAsync(World(), "#e27fc2", PriorityClasses.High, "the release", null, CancellationToken.None);
