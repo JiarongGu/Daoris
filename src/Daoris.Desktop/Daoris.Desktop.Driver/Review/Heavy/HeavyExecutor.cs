@@ -64,6 +64,7 @@ public sealed class HeavyExecutor(string home, VerifyWorld? world = null) : IAsy
         public int Busy { get; set; }
         public string? For { get; set; }
         public CheckWait? Wait { get; set; }
+        public bool Held { get; set; }
         public CancellationTokenSource Stop { get; } = new();
 
         public string? StopWhy { get; set; }
@@ -357,9 +358,11 @@ public sealed class HeavyExecutor(string home, VerifyWorld? world = null) : IAsy
             var word = HoldBook.Reading(look.Holds, each.Send.Run, each.Send.Ask);
             var held = word is { Held: true } ? $"{HoldBook.Said(word)}: it is tried again once the hold is lifted" : null;
             if (held is null) standing.Add(each);
-            if (priority == each.Priority && (held is null || each.For == held)) continue;
+            if (priority == each.Priority && (held is not null) == each.Held && (held is null || each.For == held)) continue;
             each.Priority = priority;
             if (held is not null) (each.For, each.Wait) = (held, null);
+            else if (each.Held) (each.For, each.Wait) = (null, null);
+            each.Held = held is not null;
             lock (_gate)
             {
                 if (_queue.Contains(each)) Waiting(each);
@@ -372,7 +375,7 @@ public sealed class HeavyExecutor(string home, VerifyWorld? world = null) : IAsy
     private void Waiting(Queued queued) => VerifySlot.Wait(
         home, new VerifyWaiter(Environment.ProcessId, _started, queued.Send.Run, queued.Send.Invocation, queued.Send.Repository, queued.Since, queued.Order)
         {
-            For = queued.For, Wait = queued.Wait,
+            For = queued.For, Wait = queued.Wait, Held = queued.Held,
             Class = queued.Priority.Class, Source = queued.Priority.Source, By = queued.Priority.Event?.By, Why = queued.Priority.Event?.Why,
             Arrived = queued.Arrived,
         });

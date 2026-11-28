@@ -635,6 +635,25 @@ try
         return exit;
     }
 
+    // The machine's queues from a terminal: the Overview's queues card is the other door to the same reader. Through the running
+    // Daoris, its last look's plan; alone, this process's plan over a fresh snapshot.
+    if (args is ["queue", .. var queueArgs])
+    {
+        var queueConfigPath = DriverConfig.ResolvePath();
+        var queueConfig = DriverConfig.Load(queueConfigPath);
+        var queueHome = DriverConfig.HomeOf(queueConfigPath);
+        using var queueService = ServiceClient.FromEnvironment();
+        var queueWorld = new QueueWorld(queueHome, token => SessionGroups.VerdictsAsync(
+            queueService, queueConfig, SetupWorld.Unadopted(queueConfig, queueHome), lastLook: null, token, queueHome))
+        {
+            Instance = Daoris.Driver.Host.InstanceHost.World(queueHome, "queue"),
+        };
+        using var queueSaid = new StringWriter();
+        var exit = await QueueCommand.RunAsync(queueArgs, queueWorld, queueSaid, closing.Token);
+        (exit == 2 ? Console.Error : Console.Out).Write(queueSaid.ToString());
+        return exit;
+    }
+
     // Free up space from a terminal: the Disk space card's *Free up space…* is the other door to the same
     // list and run. Listed first and changing nothing; with --yes, the client of a running Daoris (confirmed in its window), or alone
     // under the home's run lock, refused from a session's terminal.

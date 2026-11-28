@@ -65,54 +65,48 @@ public static class CheckSlotWaits
                 Place(values, prefix, ahead);
             }
 
-            var said = at.waiter.Wait;
-            var code = said?.Code switch
-            {
-                CheckWait.Slots => Full,
-                CheckWait.Memory => Memory,
-                CheckWait.Reserve => Reserve,
-                CheckWait.Repository => Repository,
-                CheckWait.Admitting => Admitting,
-                _ => Queued,
-            };
-            if (code == Full)
-            {
-                values["running"] = said!.Values.GetValueOrDefault("running") ?? "?";
-                values["slots"] = said.Values.GetValueOrDefault("of") ?? "?";
-            }
-            else if (code == Memory)
-            {
-                values["free"] = said!.Values.GetValueOrDefault("free") ?? "?";
-                values["need"] = said.Values.GetValueOrDefault("need") ?? "?";
-                Carry(values, said);
-            }
-            else if (code == Reserve)
-            {
-                values["free"] = said!.Values.GetValueOrDefault("free") ?? "?";
-                values["need"] = said.Values.GetValueOrDefault("need") ?? "?";
-                Carry(values, said);
-                values["reserve"] = said.Values.GetValueOrDefault("reserve") ?? "?";
-            }
-            else if (code == Repository)
-            {
-                values["repository"] = said!.Values.GetValueOrDefault("repository") ?? at.waiter.Repository;
-            }
-
+            var (code, reason) = Reason(at.waiter);
+            foreach (var (name, value) in reason) values[name] = value;
             waits[node.Id] = new WorkflowRunWait(code, values, at.waiter.Since);
         }
 
         return waits;
     }
 
-    private static void Carry(Dictionary<string, string> values, CheckWait said)
+    public static (string Code, Dictionary<string, string> Values) Reason(VerifyWaiter waiter)
     {
-        if (said.Values.GetValueOrDefault("source") is { } source) values["basis"] = source;
-        if (said.Values.GetValueOrDefault("starting") is { } starting) values["starting"] = starting;
+        var said = waiter.Wait;
+        var values = new Dictionary<string, string>(StringComparer.Ordinal);
+        string Value(string name) => said!.Values.GetValueOrDefault(name) ?? "?";
+        var code = said?.Code switch
+        {
+            CheckWait.Slots => Full,
+            CheckWait.Memory => Memory,
+            CheckWait.Reserve => Reserve,
+            CheckWait.Repository => Repository,
+            CheckWait.Admitting => Admitting,
+            _ => Queued,
+        };
+        if (code == Full)
+        {
+            values["running"] = Value("running");
+            values["slots"] = Value("of");
+        }
+        else if (code is Memory or Reserve)
+        {
+            values["free"] = Value("free");
+            values["need"] = Value("need");
+            if (said!.Values.GetValueOrDefault("source") is { } source) values["basis"] = source;
+            if (said.Values.GetValueOrDefault("starting") is { } starting) values["starting"] = starting;
+            if (code == Reserve) values["reserve"] = Value("reserve");
+        }
+        else if (code == Repository)
+        {
+            values["repository"] = said!.Values.GetValueOrDefault("repository") ?? waiter.Repository;
+        }
+
+        return (code, values);
     }
-
-    private static string Basis(WorkflowRunWait wait) => wait.Values.TryGetValue("basis", out var basis) ? $" ({basis})" : "";
-
-    private static string Starting(WorkflowRunWait wait) => wait.Values.TryGetValue("starting", out var starting) ? $" with {starting} still starting" : "";
 
     private static void Place(Dictionary<string, string> values, string prefix, VerifyWaiter waiter)
     {
@@ -141,14 +135,22 @@ public static class CheckSlotWaits
             ? ""
             : "; ahead: " + string.Join("; ", Enumerable.Range(1, count).Select(at => $"run {Value($"ahead.{at}.run")}, {Class(wait, $"ahead.{at}.")}"));
         var queue = $"{Value("position")} of {Value("of")} in its queue{own}{before}";
-        return wait.Code switch
+        return $"{Why(wait.Code, wait.Values)}{(wait.Code == Queued ? ":" : ";")} {queue}.";
+    }
+
+    public static string Why(string code, IReadOnlyDictionary<string, string> values)
+    {
+        string Value(string name) => values.GetValueOrDefault(name) ?? "?";
+        var basis = values.TryGetValue("basis", out var source) ? $" ({source})" : "";
+        var starting = values.TryGetValue("starting", out var count) ? $" with {count} still starting" : "";
+        return code switch
         {
-            Full => $"Waits for a check slot: {Value("running")} of {Value("slots")} run; {queue}.",
-            Memory => $"Waits for memory: {Value("free")} GB free, the next check needs {Value("need")} GB{Basis(wait)}{Starting(wait)}; {queue}.",
-            Reserve => $"Waits for the reserve kept for your own work: {Value("free")} GB free, the next check needs {Value("need")} GB{Basis(wait)} and {Value("reserve")} GB stays free{Starting(wait)}; {queue}.",
-            Repository => $"Waits for a heavy-run slot of {Value("repository")}: its other heavy runs hold every one it has; {queue}.",
-            Admitting => $"Waits for the admission's lock, which another start holds; {queue}.",
-            _ => $"Waits for a check slot: {queue}.",
+            Full => $"Waits for a check slot: {Value("running")} of {Value("slots")} run",
+            Memory => $"Waits for memory: {Value("free")} GB free, the next check needs {Value("need")} GB{basis}{starting}",
+            Reserve => $"Waits for the reserve kept for your own work: {Value("free")} GB free, the next check needs {Value("need")} GB{basis} and {Value("reserve")} GB stays free{starting}",
+            Repository => $"Waits for a heavy-run slot of {Value("repository")}: its other heavy runs hold every one it has",
+            Admitting => "Waits for the admission's lock, which another start holds",
+            _ => "Waits for a check slot",
         };
     }
 }

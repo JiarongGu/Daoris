@@ -15,6 +15,8 @@ public sealed record VerifyWaiter(int Pid, long Started, string Run, string Invo
 
     public CheckWait? Wait { get; init; }
 
+    public bool Held { get; init; }
+
     public string Class { get; init; } = PriorityClasses.Normal;
 
     public string Source { get; init; } = PriorityReading.Unset;
@@ -143,6 +145,7 @@ public sealed class VerifySlot : IDisposable
                 if (waiter.Why is { } why) writer.WriteString("why", why);
                 if (waiter.Arrived is { } arrived) writer.WriteString("arrived", arrived.ToUniversalTime().ToString("O", CultureInfo.InvariantCulture));
                 if (waiter.For is { } what) writer.WriteString("for", what);
+                if (waiter.Held) writer.WriteBoolean("held", true);
                 if (waiter.Wait is { } wait)
                 {
                     writer.WriteString("wait", wait.Code);
@@ -175,7 +178,7 @@ public sealed class VerifySlot : IDisposable
             ? new VerifyWaiter(id, ticks, run, invocation, Text(root, "repository") ?? "", at,
                 root.TryGetProperty("order", out var order) && order.TryGetInt32(out var number) ? number : 0)
             {
-                For = Text(root, "for"), Wait = WaitOf(root),
+                For = Text(root, "for"), Wait = WaitOf(root), Held = root.TryGetProperty("held", out var held) && held.ValueKind == JsonValueKind.True,
                 Class = PriorityClasses.Parse(Text(root, "class")) ?? PriorityClasses.Normal, Source = Text(root, "source") ?? PriorityReading.Unset,
                 By = Text(root, "by"), Why = Text(root, "why"),
                 Arrived = root.TryGetProperty("arrived", out var arrived) && arrived.TryGetDateTimeOffset(out var first) ? first : null,

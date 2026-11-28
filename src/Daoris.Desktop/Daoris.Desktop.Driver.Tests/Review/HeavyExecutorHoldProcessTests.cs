@@ -56,6 +56,7 @@ public sealed class HeavyExecutorHoldProcessTests : IAsyncLifetime
         Assert.True(executor.Holds("i1"));
         var row = Assert.Single(VerifySlot.Look(Home).Waiters, waiter => waiter.Run == "r1");
         Assert.Contains("held by the person: make room", row.For);
+        Assert.True(row.Held);
 
         Assert.Null(HoldBook.Set(Home, new HoldEvent(At, PriorityBook.Quest, "r1", "games", false, "lifted", "the person")));
         await SettledAsync("r1", "i1");

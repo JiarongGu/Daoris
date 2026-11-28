@@ -366,7 +366,7 @@ where a seam, route, verb or fixture is. Which folder owns which job:
     managed `claude` it runs reads `claude-code`'s pin. On Windows an npm-installed agent starts as the node and script its `.cmd`
     shim would run (`PackageStarts`). A pin names an exact version (`PinInstall.Plan` refuses a tag or a range). (D57, D121)
     A version move (`daoris agent pin` and `update`, the window's *Pin* and *Update*) is the risk policy's act `agent.version` at the
-    pin's place, the workspace it names or else the machine, `none` by the seed (`AgentVersionAct`). A session's terminal acting alone
+    pin's place, the workspace it names or else the machine, `none` by the seed (`AgentVersionAct`, judged through `ITerminalRisk`). A session's terminal acting alone
     takes the move where the verdict passes, saying the verdict; where a row classes it `role` or `owner` it says whom it waits on and
     the rule, and fetches and pins nothing. Either way one `risk.judged` line naming the act is the move's end, since nothing is held there. The person's own terminal is not
     judged. A proved session's press to the running Daoris reads the same verdict (roles-and-supervision rule 56's working tier). (D354)

@@ -1,0 +1,74 @@
+{
+  "about": "The places of the machine's waiting items, composed from the rows the queues' reader gives (QueueRows) by the one comparator: class, then stage, then first arrival, then the queue's own order; the queues apart, starts first. Read row for row by the driver's QueueRowsTwinTests and the page's queuePlaces.test.ts.",
+  "cases": [
+    {
+      "name": "an urgent check takes the next freed slot, and each check behind names it",
+      "rows": [
+        { "queue": "checks", "item": "a", "class": "normal", "stage": "first-checks", "arrived": "2026-11-26T10:00:00.0000000+00:00", "order": 0 },
+        { "queue": "checks", "item": "b", "class": "normal", "stage": "first-checks", "arrived": "2026-11-26T10:05:00.0000000+00:00", "order": 1 },
+        { "queue": "checks", "item": "c", "class": "normal", "stage": "first-checks", "arrived": "2026-11-26T10:10:00.0000000+00:00", "order": 2 },
+        { "queue": "checks", "item": "u", "class": "urgent", "stage": "first-checks", "arrived": "2026-11-26T10:20:00.0000000+00:00", "order": 3, "source": "quest", "by": "the person", "why": "the fix" }
+      ],
+      "places": [
+        { "queue": "checks", "item": "u", "position": 1, "of": 4, "ahead": [] },
+        { "queue": "checks", "item": "a", "position": 2, "of": 4, "ahead": ["u"] },
+        { "queue": "checks", "item": "b", "position": 3, "of": 4, "ahead": ["u", "a"] },
+        { "queue": "checks", "item": "c", "position": 4, "of": 4, "ahead": ["u", "a", "b"] }
+      ]
+    },
+    {
+      "name": "a higher class first, then a resume before a new start of its class, then first arrival",
+      "rows": [
+        { "queue": "starts", "item": "n1", "class": "normal", "stage": "new-start", "arrived": "2026-11-26T09:00:00.0000000+00:00", "order": 0 },
+        { "queue": "starts", "item": "r1", "class": "normal", "stage": "resume", "arrived": "2026-11-26T11:00:00.0000000+00:00", "order": 1 },
+        { "queue": "starts", "item": "h1", "class": "high", "stage": "new-start", "arrived": "2026-11-26T11:30:00.0000000+00:00", "order": 2, "agedFrom": "normal" },
+        { "queue": "starts", "item": "l1", "class": "low", "stage": "resume", "arrived": "2026-11-26T08:00:00.0000000+00:00", "order": 3 }
+      ],
+      "places": [
+        { "queue": "starts", "item": "h1", "position": 1, "of": 4, "ahead": [] },
+        { "queue": "starts", "item": "r1", "position": 2, "of": 4, "ahead": ["h1"] },
+        { "queue": "starts", "item": "n1", "position": 3, "of": 4, "ahead": ["h1", "r1"] },
+        { "queue": "starts", "item": "l1", "position": 4, "of": 4, "ahead": ["h1", "r1", "n1"] }
+      ]
+    },
+    {
+      "name": "an arrival not known sorts after every known one of its class and stage, the queue's own order kept among those",
+      "rows": [
+        { "queue": "starts", "item": "x", "class": "normal", "stage": "new-start", "order": 0 },
+        { "queue": "starts", "item": "y", "class": "normal", "stage": "new-start", "arrived": "2026-11-26T10:00:00.0000000+00:00", "order": 1 },
+        { "queue": "starts", "item": "z", "class": "normal", "stage": "new-start", "arrived": null, "order": 2 }
+      ],
+      "places": [
+        { "queue": "starts", "item": "y", "position": 1, "of": 3, "ahead": [] },
+        { "queue": "starts", "item": "x", "position": 2, "of": 3, "ahead": ["y"] },
+        { "queue": "starts", "item": "z", "position": 3, "of": 3, "ahead": ["y", "x"] }
+      ]
+    },
+    {
+      "name": "equal in class, stage and arrival, the queue's own order decides",
+      "rows": [
+        { "queue": "checks", "item": "second", "class": "high", "stage": "first-checks", "arrived": "2026-11-26T10:00:00.0000000+00:00", "order": 1 },
+        { "queue": "checks", "item": "first", "class": "high", "stage": "first-checks", "arrived": "2026-11-26T10:00:00.0000000+00:00", "order": 0 }
+      ],
+      "places": [
+        { "queue": "checks", "item": "first", "position": 1, "of": 2, "ahead": [] },
+        { "queue": "checks", "item": "second", "position": 2, "of": 2, "ahead": ["first"] }
+      ]
+    },
+    {
+      "name": "the queues are placed apart, starts first, and a class no row names, or none of the four, is normal",
+      "rows": [
+        { "queue": "checks", "item": "k", "class": "urgent", "stage": "first-checks", "arrived": "2026-11-26T12:00:00.0000000+00:00", "order": 0 },
+        { "queue": "starts", "item": "s2", "stage": "new-start", "arrived": "2026-11-26T09:00:00.0000000+00:00", "order": 0 },
+        { "queue": "starts", "item": "s1", "class": "pressing", "stage": "new-start", "arrived": "2026-11-26T08:00:00.0000000+00:00", "order": 1 },
+        { "queue": "starts", "item": "s0", "class": "low", "stage": "new-start", "arrived": "2026-11-26T07:00:00.0000000+00:00", "order": 2 }
+      ],
+      "places": [
+        { "queue": "starts", "item": "s1", "position": 1, "of": 3, "ahead": [] },
+        { "queue": "starts", "item": "s2", "position": 2, "of": 3, "ahead": ["s1"] },
+        { "queue": "starts", "item": "s0", "position": 3, "of": 3, "ahead": ["s1", "s2"] },
+        { "queue": "checks", "item": "k", "position": 1, "of": 1, "ahead": [] }
+      ]
+    }
+  ]
+}

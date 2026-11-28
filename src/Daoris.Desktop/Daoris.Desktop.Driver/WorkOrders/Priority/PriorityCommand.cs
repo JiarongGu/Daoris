@@ -17,6 +17,11 @@ public sealed record PriorityWorld(string Home, Func<string, CancellationToken, 
     /// <summary>The workspace's cap and urgent life; Daoris's defaults until a workspace sets its own.</summary>
     public PriorityRules Rules { get; init; } = PriorityRules.Default;
 
+    /// <summary>The session whose terminal sets it, whose <c>priority.set</c> the risk policy judges; null for the person's own terminal and window.</summary>
+    public string? Session { get; init; }
+
+    public ITerminalRisk Risk { get; init; } = TerminalRisk.Current;
+
     /// <summary>
     /// This terminal's: the home, an id found among the service's quests and then its asks, the machine's clock, and the session whose
     /// terminal this is (<see cref="ChildMarks.SessionVariable"/>), else the person.
@@ -25,12 +30,18 @@ public sealed record PriorityWorld(string Home, Func<string, CancellationToken, 
     {
         variable ??= Environment.GetEnvironmentVariable;
         var session = variable(ChildMarks.SessionVariable);
-        return new PriorityWorld(home, FindAsync, clock.GetUtcNow, string.IsNullOrWhiteSpace(session) ? "the person" : $"session {session.Trim()}");
+        var own = string.IsNullOrWhiteSpace(session) ? null : session.Trim();
+        return new PriorityWorld(home, async (id, ct) =>
+        {
+            using var service = ServiceClient.FromEnvironment();
+            return await FindIn(service)(id, ct).ConfigureAwait(false);
+        }, clock.GetUtcNow, own is null ? "the person" : AgentVersionAct.PipeSessionActor(own)) { Session = own };
     }
 
-    private static async Task<PriorityTarget?> FindAsync(string id, CancellationToken ct)
+    public static Func<string, CancellationToken, Task<PriorityTarget?>> FindIn(ServiceClient service) => (id, ct) => FindAsync(service, id, ct);
+
+    private static async Task<PriorityTarget?> FindAsync(ServiceClient service, string id, CancellationToken ct)
     {
-        using var service = ServiceClient.FromEnvironment();
         if (await service.FindQuestAsync(id, ct).ConfigureAwait(false) is { } quest)
         {
             var chain = new Dictionary<string, QuestView>(StringComparer.Ordinal) { [quest.Id] = quest };
@@ -71,44 +82,85 @@ public static class PriorityCommand
             return 2;
         }
 
-        if (await world.Find(asked.Id, ct).ConfigureAwait(false) is not { } target)
+        if (asked.Class is null)
         {
-            said.WriteLine($"priority: `{asked.Id}` names no ask or quest here.");
-            return 1;
-        }
-
-        var now = world.Clock();
-        if (asked.Hold is { } hold)
-        {
-            var word = new HoldEvent(now, target.Target, target.Id, target.Workspace, hold, asked.Why ?? "lifted", world.By) { Run = target.Run };
-            if (HoldBook.Set(world.Home, word) is { } notHeld)
+            if (await world.Find(asked.Id, ct).ConfigureAwait(false) is not { } target)
             {
-                said.WriteLine($"priority: not set: {notHeld}");
+                said.WriteLine($"priority: {Nothing(asked.Id)}");
                 return 1;
             }
 
-            said.WriteLine(HoldStanding(target, HoldBook.Read(world.Home)));
-            return 0;
-        }
+            var now = world.Clock();
+            if (asked.Hold is { } hold)
+            {
+                if (world.Session is { } session && Judged(world, session, target, hold ? "hold" : "lift", now) is { } refused)
+                {
+                    said.WriteLine($"priority: {refused}");
+                    return 1;
+                }
 
-        if (asked.Class is not { } @class)
-        {
+                var word = new HoldEvent(now, target.Target, target.Id, target.Workspace, hold, asked.Why ?? "lifted", world.By) { Run = target.Run };
+                if (HoldBook.Set(world.Home, word) is { } notHeld)
+                {
+                    said.WriteLine($"priority: not set: {notHeld}");
+                    return 1;
+                }
+
+                said.WriteLine(HoldStanding(target, HoldBook.Read(world.Home)));
+                return 0;
+            }
+
             var (events, holds) = PriorityBook.Load(world.Home);
             said.WriteLine(Standing(target, events, now));
             if (HoldStanding(target, holds) is { Length: > 0 } held && held != NotHeld(target)) said.WriteLine(held);
             return 0;
         }
 
-        var until = asked.Until ?? (@class == PriorityClasses.Urgent ? now + world.Rules.UrgentLife : null);
-        var change = new PriorityEvent(now, target.Target, target.Id, target.Workspace, @class, asked.Why!, world.By) { Until = until, Run = target.Run };
-        if (PriorityBook.Set(world.Home, change, now, world.Rules) is { } refused)
+        try
         {
-            said.WriteLine($"priority: not set: {refused}");
+            said.WriteLine(await SetAsync(world, asked.Id, asked.Class, asked.Why!, asked.Until, ct).ConfigureAwait(false));
+            return 0;
+        }
+        catch (PriorityRefused refused)
+        {
+            said.WriteLine($"priority: {refused.Message}");
             return 1;
         }
+    }
 
-        said.WriteLine(Standing(target, PriorityBook.Read(world.Home), now));
-        return 0;
+    /// <summary>Set a class and say it standing: the one way the terminal and the window's press (<c>PRIORITY_SET</c>) set one; a session's is judged as <c>priority.set</c>.</summary>
+    public static async Task<string> SetAsync(PriorityWorld world, string id, string @class, string why, DateTimeOffset? until, CancellationToken ct)
+    {
+        id = id.Trim().TrimStart('#');
+        if (await world.Find(id, ct).ConfigureAwait(false) is not { } target) throw new PriorityRefused(Nothing(id));
+        var now = world.Clock();
+        if (world.Session is { } session && Judged(world, session, target, @class, now) is { } held) throw new PriorityRefused(held);
+        var change = new PriorityEvent(now, target.Target, target.Id, target.Workspace, @class, why, world.By)
+        {
+            Until = until ?? (@class == PriorityClasses.Urgent ? now + world.Rules.UrgentLife : null), Run = target.Run,
+        };
+        if (PriorityBook.Set(world.Home, change, now, world.Rules) is { } refused) throw new PriorityRefused($"not set: {refused}");
+        return Standing(target, PriorityBook.Read(world.Home), now);
+    }
+
+    private static string Nothing(string id) => $"`{id}` names no ask or quest here.";
+
+    /// <summary>A session's class, hold or lift judged as <c>priority.set</c> and journaled; null where it passes, else why it waits.</summary>
+    private static string? Judged(PriorityWorld world, string session, PriorityTarget target, string change, DateTimeOffset now)
+    {
+        var actor = AgentVersionAct.PipeSessionActor(session);
+        var subject = $"priority {target.Target} #{target.Id} {change}";
+        var workspace = target.Workspace is { Length: > 0 } named ? named : null;
+        var verdict = world.Risk.Verdict(world.Home, RiskActs.PrioritySet, workspace, actor, subject);
+        var passed = verdict.Outcome == RiskVerdict.Pass;
+        world.Risk.Journal(world.Home, RiskActs.PrioritySet, workspace, verdict, new RiskLine(
+            $"priority:{actor}/{subject}#{now.UtcTicks}", Release: true, actor, subject,
+            passed ? "set: passed by the risk policy" : "nothing set here: it waits on its holder's yes", !passed, now));
+        return passed
+            ? null
+            : $"not set: this terminal is a session's, and the risk policy classes `{RiskActs.PrioritySet}` `{verdict.Class}` at "
+              + $"{(workspace is null ? "this machine" : $"the `{workspace}` workspace")}: it waits on {AgentVersionAct.Holder(verdict)}'s yes — "
+              + $"{verdict.Why}. Set it in Daoris's window, or from the owner's own terminal.";
     }
 
     /// <summary>The class standing on an ask or a quest, and where it comes from: <c>quest #q is high, from its ask #a, set by the person: why.</c></summary>
@@ -176,7 +228,7 @@ public static class PriorityCommand
     }
 
     /// <summary>A time as given: a moment (ISO 8601, UTC where it names no offset), or minutes, hours or days from now.</summary>
-    private static DateTimeOffset? Time(string word, DateTimeOffset now)
+    public static DateTimeOffset? Time(string word, DateTimeOffset now)
     {
         var unit = word.Length > 1 ? word[^1] : ' ';
         if (unit is 'm' or 'h' or 'd' && int.TryParse(word[..^1], NumberStyles.None, CultureInfo.InvariantCulture, out var count) && count > 0)
@@ -187,3 +239,6 @@ public static class PriorityCommand
         return word.Contains('T') && DateTimeOffset.TryParse(word, CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal | DateTimeStyles.AdjustToUniversal, out var at) ? at : null;
     }
 }
+
+/// <summary>A class not set, with the words that say why: the id names nothing, the risk policy holds it, or the book refused it.</summary>
+public sealed class PriorityRefused(string message) : DriverException(message);
