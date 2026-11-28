@@ -38,15 +38,14 @@ with the version and date at release.
   takes the next freed slot. A waiting check's line names its class and each check ahead of it with its class and who set it.
   Starts and resumes take the same order: by class, then a session going on before a new start, then by how long it has waited, so an
   urgent quest takes the next free place under the cap; a normal quest that has waited over two hours is ordered as high, and a low one
-  over eight as normal, and its reason says "aged from normal".
-  `daoris queue` lists every item waiting in the machine's queues (the starts and resumes waiting for a place, and the checks waiting
-  for a slot) with its place, its class and where that comes from, its stage, why it waits and each item ahead; the Overview's new
-  queues card shows the same places in English and Chinese, and sets an item's class with one press and a why. A class a session sets
-  from its terminal is the risk policy's act `priority.set`, which a workspace may hold for a role's or the owner's yes.
   over eight as normal, and its reason says "aged from normal". The landing line and the asks for a helper go by the same order, so
   an urgent quest's landing forms before an older normal one. `daoris priority <ask|quest> hold --why "…"` stands a quest's or an
   ask's queued starts, checks, landings and helper asks aside while what is running finishes and keeps its result, and `lift`
   returns them at their first arrival.
+  `daoris queue` lists every item waiting in the machine's queues (the starts and resumes waiting for a place, and the checks waiting
+  for a slot) with its place, its class and where that comes from, its stage, why it waits and each item ahead; the Overview's new
+  queues card shows the same places in English and Chinese, and sets an item's class with one press and a why. A class, hold or lift a
+  session sets from its terminal is the risk policy's act `priority.set`, which a workspace may hold for a role's or the owner's yes.
 - A family member's gates build against the commits it pins, never a sibling checkout as it stands. `daoris family materialize` writes
   each pin of the repository's own `daoris.family.lock` as its producer's files at the pinned commit into `pinned/<producer>` (`--into`
   names another folder inside the repository), read from git's own files with no process. Wherever `family check` would refuse, or an
