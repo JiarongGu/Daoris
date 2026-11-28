@@ -67,6 +67,17 @@ public sealed class CheckQueueOrderTests : IDisposable
     }
 
     [Fact]
+    public void A_held_waiter_reads_back_held_and_one_never_held_reads_not()
+    {
+        VerifySlot.Wait(_home, Waiter("held", 1) with { Held = true, For = "held by the person: make room" });
+        VerifySlot.Wait(_home, Waiter("free", 2));
+
+        var waiters = VerifySlot.Look(_home, (_, _) => true).Waiters;
+
+        Assert.Equal([("held", true), ("free", false)], waiters.Select(waiter => (waiter.Run, waiter.Held)));
+    }
+
+    [Fact]
     public void A_waiter_with_no_class_set_reads_normal_arriving_when_it_was_sent()
     {
         VerifySlot.Wait(_home, new VerifyWaiter(1, 1, "old", "i-old", "Daoris", At, 1));

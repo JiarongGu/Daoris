@@ -24,12 +24,13 @@ public static class RiskActs
     public const string HistoryRewrite = "history.rewrite";
     public const string DataDelete = "data.delete";
     public const string PolicyChange = "policy.change";
+    public const string PrioritySet = "priority.set";
 
     /// <summary>Every kind, in the census's order: what <c>daoris settings risk</c> prints, row for row.</summary>
     public static IReadOnlyList<string> All { get; } =
     [
         WorkDone, WorkAccept, TaskApprove, WorkRecover, LineLand, RemotePush, ReleaseStart, PublishOutside, SpendMoney, DirectionSet, CheckNarrow,
-        ReachWiden, CommandChange, AgentVersion, HistoryRewrite, DataDelete, PolicyChange,
+        ReachWiden, CommandChange, AgentVersion, PrioritySet, HistoryRewrite, DataDelete, PolicyChange,
     ];
 
     /// <summary>Whether <paramref name="kind"/> is one of the census, unqualified.</summary>

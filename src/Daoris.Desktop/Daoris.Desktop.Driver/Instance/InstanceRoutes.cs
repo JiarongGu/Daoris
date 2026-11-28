@@ -28,6 +28,9 @@ public static class OpenRoutes
     /// <summary><c>sessions</c>' list.</summary>
     public static InstanceRoute SessionGroups { get; } = Open("SESSION_GROUPS");
 
+    /// <summary><c>queue</c>: every item waiting in the machine's queues, each with its place (<c>QueueRows</c>).</summary>
+    public static InstanceRoute Queues { get; } = Open("QUEUES");
+
     /// <summary><c>sessions supervise &lt;id&gt;</c>'s read of the course decisions on a session's referred points.</summary>
     public static InstanceRoute Supervised { get; } = Open("SESSION_SUPERVISOR");
 
@@ -74,6 +77,10 @@ public static class OpenRoutes
         ("trees land --entry <id> --plan", EntryLanding, "the plan; the press is the person's and acts alone until its client path is built"),
         ("trees land --ask <id> --plan", AskLanding, "the plan; the press is the person's and acts alone until its client path is built"),
         ("sessions", SessionGroups, "the list"),
+        ("queue", Queues, "the list of the instance's last look; `--json` prints the route's own rows"),
+        ("priority <ask|quest> <class>", null,
+            "alone: a change kept in this machine's home under its keeping lock, which the window's PRIORITY_SET writes through the same operation; "
+            + "a session's is judged as `priority.set` here"),
         ("sessions at-work <session>", AtWork, "the read, asked again once a second while it is pending"),
         ("ask at-work <ask>", AtWork, "the read keyed by the ask, asked again once a second while the slices are pending; an ask the window does not hold is refused at once"),
         ("notices", Notifications, "the read; alone, the notices' record, the live groups said not read"),

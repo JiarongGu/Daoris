@@ -50,9 +50,9 @@ public sealed class RiskGateTests
     }
 
     [Fact]
-    public void The_census_is_closed_seventeen_kinds_and_a_kind_outside_it_is_refused()
+    public void The_census_is_closed_eighteen_kinds_and_a_kind_outside_it_is_refused()
     {
-        Assert.Equal(17, RiskActs.All.Count);
+        Assert.Equal(18, RiskActs.All.Count);
         Assert.Throws<ArgumentException>(() => RiskAct.Of("work.vanish"));
         Assert.Equal(("release.start", "production"), (RiskAct.Of("release.start/production").Kind, RiskAct.Of("release.start/production").Qualifier));
     }

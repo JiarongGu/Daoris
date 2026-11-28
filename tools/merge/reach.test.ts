@@ -132,6 +132,7 @@ const cases: [string, string[], string[]][] = [
     // The usage curve's table, among the driver's fixtures, which its twin reads, and the
     // page's twin.
     ['the usage curve table', ['src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/fixtures/usage-curves.json'], [...BASE, driver, modules, webUnit]],
+    ['the queue places table', ['src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/fixtures/queue-places.json'], [...BASE, driver, webUnit]],
     // A park's question as each reader takes it, the driver's QuestionFilesTests and the page's parkQuestion.test.ts.
     ['the park question table', ['src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/fixtures/park-question.json'], [...BASE, driver, webUnit]],
     // The provider census's exceptions the four censuses share: the driver's ProviderCensusTests, the service's, the

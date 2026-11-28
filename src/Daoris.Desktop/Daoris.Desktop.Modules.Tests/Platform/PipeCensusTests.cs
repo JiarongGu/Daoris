@@ -284,6 +284,7 @@ public sealed class PipeCensusTests
             "help delete <id>", "place --workspace <name> --adoption",
             // A session's pieces, read off the box under the home, which says the same with or without the instance.
             "sessions partner <id> --list",
+            "priority <ask|quest> <class>",
         ];
 
         var left = Daoris.Driver.OpenRoutes.Verbs.Where(each => each.Route is null).ToList();
@@ -360,6 +361,8 @@ public sealed class PipeCensusTests
     // Which checks a repository's sessions run is the person's standing choice, and light lowers their part.
     [InlineData("DAORIS.DRIVER", "SET_SESSION_CHECKS", PipeClass.Person)]
     [InlineData("DAORIS.DRIVER", "SET_CHECK_BUDGETS", PipeClass.Person)]
+    [InlineData("DAORIS.DRIVER", "QUEUES", PipeClass.Open)]
+    [InlineData("DAORIS.DRIVER", "PRIORITY_SET", PipeClass.Person)]
     // What only a window does: the pickers, the file manager, Daoris's browser, its frame, its shells.
     [InlineData("DAORIS.DRIVER", "TOOLS_PICK", PipeClass.Window)]
     [InlineData("DAORIS.DRIVER", "SESSION_OPEN_FOLDER", PipeClass.Window)]
