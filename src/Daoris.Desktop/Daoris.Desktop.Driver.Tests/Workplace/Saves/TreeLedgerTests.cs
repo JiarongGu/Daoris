@@ -94,7 +94,8 @@ public sealed class TreeLedgerTests : IDisposable
     [Fact]
     public void The_floor_and_budget_set_by_hand_in_the_machines_choices_stay_across_their_writers_edit()
     {
-        var path = Path.Combine(_home, "driver.json");
+        var path = DaorisHome.Entry(_home, HomeEntry.DriverConfig);
+        Directory.CreateDirectory(Path.GetDirectoryName(path)!);
         File.WriteAllText(path, """{ "drivable": [], "holds": [], "cap": 2, "pollSeconds": 15, "treeFloorGb": 50, "treeBudgetGb": 9000 }""");
         Assert.Equal((50L << 30, (long?)null), (TreeLedgerSettings.Of(path).FloorBytes, TreeLedgerSettings.Of(path).BudgetBytes));
 
@@ -102,7 +103,7 @@ public sealed class TreeLedgerTests : IDisposable
 
         Assert.Equal(3, DriverConfig.Load(path).Cap);
         Assert.Equal(50, TreeLedgerSettings.Of(path).FloorGb);
-        Assert.Equal(30L << 30, TreeLedgerSettings.Of(Path.Combine(_home, "none.json")).FloorBytes);
+        Assert.Equal(30L << 30, TreeLedgerSettings.Of(path + ".absent").FloorBytes);
     }
 
     [Fact]

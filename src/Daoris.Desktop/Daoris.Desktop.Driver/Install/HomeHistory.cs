@@ -74,6 +74,7 @@ public static class HomeHistory
         "store_version", "store_revisions", "store_runs", "imports", "roles", "role_revisions", "role_staffing",
         "role_policy", "role_policy_revisions", "supervisor_rules", "supervisor_rule_revisions", "repository_workspaces",
         "kept_trees", "tree_claims", "tree_visits", "line_ends", "tree_hand_offs", "git_acts", "git_act_steps", "act_effects", "bus_measures",
+        "tree_saves", "tree_moves", "tree_days",
     ];
 
     /// <summary>
