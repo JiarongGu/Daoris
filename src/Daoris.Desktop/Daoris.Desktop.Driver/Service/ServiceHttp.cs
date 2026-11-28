@@ -75,6 +75,11 @@ public sealed class ServiceHttp : IServiceDoors
                 ?? throw new DriverException(unanswered ? why : $"{NoService} {why}");
         }
 
+        if (environment(ChildMarks.SessionVariable) is { Length: > 0 } session && DaorisHome.Resolve(environment, baseDirectory) is { } sessionHome)
+        {
+            WritingGeneration.FromMarker(DaorisHome.Entry(sessionHome, HomeEntry.SessionPids), session);
+        }
+
         return new ServiceHttp(url, environment(ServiceClient.KeyVariable));
     }
 
@@ -91,16 +96,17 @@ public sealed class ServiceHttp : IServiceDoors
     public TimeSpan? RetryAfter { get; init; }
 
     public Task<string> GetAsync(string path, CancellationToken ct) =>
-        Attempt(read: true, path, () => DriverHttp.GetAsync(_http, $"{BaseUrl}{path}", ct), ct);
+        Attempt(read: true, path, () => DriverHttp.GetAsync(_http, $"{BaseUrl}{path}", ct, WritingGeneration.Dress), ct);
 
     public Task<string> PostAsync(string path, string json, CancellationToken ct) =>
-        Attempt(read: false, path, () => DriverHttp.PostAsync(_http, $"{BaseUrl}{path}", json, ct), ct);
+        Attempt(read: false, path, () => DriverHttp.PostAsync(_http, $"{BaseUrl}{path}", json, ct, WritingGeneration.Dress), ct);
 
     public Task<ServiceReply> SendAsync(ServiceVerb verb, string path, string? json, CancellationToken ct) =>
         Attempt(read: verb == ServiceVerb.Get, path, async () =>
         {
             using var request = new HttpRequestMessage(Method(verb), $"{BaseUrl}{path}");
             if (json is not null) request.Content = new StringContent(json, Encoding.UTF8, "application/json");
+            WritingGeneration.Dress(request);
             using var response = await _http.SendAsync(request, ct).ConfigureAwait(false);
             return new ServiceReply((int)response.StatusCode, await response.Content.ReadAsStringAsync(ct).ConfigureAwait(false))
             {

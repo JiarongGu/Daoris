@@ -114,6 +114,8 @@ if (args is ["keys", .. var keyArgs])
     return await KeysConsole.RunAsync(keyArgs, options);
 }
 
+if (args is ["session-life", .. var lifeArgs]) return await SessionLifeConsole.RunAsync(lifeArgs, database);
+
 // The machine log: this host's start and stop, the framework's warnings and errors, every
 // exception nothing caught, what a request's route threw, and each request that failed or ran
 // slow — by route and status, never its query or body. In a file of its own beside the desktop's; with no
@@ -468,7 +470,7 @@ if (mode == ServiceMode.Shared)
 // Each domain's routes, declared in Daoris.Contracts and mapped by its module (Routes/), found by reflection.
 var wiring = new HostWiring(
     composed, mode, hostRun, homeId, personKey, personGate, confirmations, changes, hostWorkspace, options.RepositoryRoot,
-    app.Lifetime.ApplicationStopping);
+    app.Lifetime.ApplicationStopping) { Log = log };
 RouteModules.MapAll(app, wiring);
 
 log.Info("app.started",

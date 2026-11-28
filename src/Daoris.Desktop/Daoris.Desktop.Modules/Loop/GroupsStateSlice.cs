@@ -154,6 +154,7 @@ public static class GroupsStateSlice
         {
             Waits = loop.Look.Waits, Calls = RunningCalls.Of(loop.Events).Now(), SupervisorHeld = loop.Supervisor.HeldSessions(), RunWaits = loop.PersonWaits,
             Passages = loop.Passages,
+            Folds = await times.TimeAsync("fold", () => SessionFolds.ReadAsync(service, said: null, ct)).ConfigureAwait(false),
         };
         if (only is null) loop.SessionsLooked.Keep(look, at);
         if (walked) return look;

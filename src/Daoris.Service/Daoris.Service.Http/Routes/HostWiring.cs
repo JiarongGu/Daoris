@@ -16,6 +16,9 @@ public sealed record HostWiring(
     ComposedService Service, ServiceMode Mode, string Run, string? Home, PersonKey? PersonKey, PersonGate Gate,
     PersonConfirmations Confirmations, ChangeStream? Changes, string? Workspace, string RepositoryRoot, CancellationToken Stopping)
 {
+    /// <summary>The host's machine log, where a route says what no answer carries (a shadow fold's difference); none in a test's host.</summary>
+    public MachineLog? Log { get; init; }
+
     /// <summary>
     /// Whether <paramref name="http"/> is a caller on a local host's own machine, the only caller a machine path is answered to. A
     /// shared host answers no one: structural absence, not a policed permission. No remote address is the in-process server's call.

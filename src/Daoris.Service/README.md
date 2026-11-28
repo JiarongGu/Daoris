@@ -444,6 +444,20 @@ newest 50,000, so a writer that never trims still bounds the table. A `position`
 is `AUTOINCREMENT`). The store's identity (`store_identity`, the journal's epoch) is written by the sessions
 schema; the change stream's observer reads it and keeps an existing stamp.
 
+**A session's life in shadow** (SESSIONLIFE2, D368): `session_facts` is each session's append-only journal of
+witnessed facts, one row per create and move, written in the move's own transaction (its kind, door and note
+code, holder and subject, step and attempt, outcome, time, and the application's generation its writer names
+in the `Daoris-Generation` header), each naming in `minted` the `event_journal` `opened` or `state` row its
+write minted, so a row no fact names is a write past the journal (the census). `app_generations` keeps each
+start of the application the home lease's holder began (`started`, `begun`, and `seen`, its newest tick's
+audit). A local host alone answers `POST /api/session-life/generations` (the holder's start begins one),
+`POST /api/session-life/audit` (the watch's tick: the fold of every live session against the leases its
+markers prove, each difference said once in the machine log as `session.fold-differs`) and
+`GET /api/session-life/fold` (the last audit, which the session list reads). The serving binary's
+`session-life baseline [--store <file>] [--markers <folder>] [--count N]` reads a store read only for the
+fold's trial. The stored status, and the sessions' `opened` and `state` rows of `event_journal`, end with the
+switch to the fold.
+
 Part 2 (FOUNDATION1k, D212) adds the other three tables' triggers in the same shape, each in its own store's
 schema after the table's own creation (every one makes `event_journal` if it is not there, so a store opened
 alone never has a trigger writing to a missing table): a `quest-op` row for each operation appended to

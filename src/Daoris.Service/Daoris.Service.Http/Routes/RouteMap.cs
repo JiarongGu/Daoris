@@ -42,7 +42,10 @@ public sealed class RouteMap(IEndpointRouteBuilder app)
                 return;
             }
 
-            await answered(request, http);
+            using (FactWriter.As(FactWriter.Read(http.Request.Headers[Daoris.Contracts.Sessions.SessionLifeHeaders.Generation])))
+            {
+                await answered(request, http);
+            }
         };
         // The declaration rides as the endpoint's metadata, so a confirmation reads what the door binds from it (DoorContracts).
         return app.MapMethods(route.Path, [route.Method], answer).WithMetadata(route);

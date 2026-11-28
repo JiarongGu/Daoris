@@ -98,6 +98,7 @@ internal sealed class ConnectionGate
         {
             var outside = OpenTransaction();
             if (outside is null) RollBackOrphan();
+            else hold.Transaction = outside;
 
             T result;
             try
@@ -135,8 +136,8 @@ internal sealed class ConnectionGate
     /// <para>The wait honours the caller; the transaction does not. Once <c>BEGIN</c> has run, a cancelled request (a
     /// client that went away) must not throw halfway, so the work is handed a token nobody cancels.</para>
     ///
-    /// <para>Asked for inside work that already holds one, the work is part of that transaction: SQLite does not nest
-    /// them, and the outer one commits or rolls back for both.</para>
+    /// <para>Asked for inside work that already holds one, its own or one a caller holds outside every gate, the work is part of
+    /// that transaction: SQLite does not nest them, and the outer one commits or rolls back for both.</para>
     ///
     /// <para>🔴 A write with a <c>RETURNING</c> clause runs in one. The driver waits out a lock another
     /// host holds only at a statement's first step, and on its own such a write commits when its reader ends: where the file

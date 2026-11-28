@@ -133,7 +133,7 @@ public sealed class OpinionDesk(OpinionStore opinions, SessionStore sessions, bo
             var reviewer = await sessions.CreateAsync(
                     quest: null, repository, ask.Reviewer.Door.Trim(), now, working.Workspace, SessionKind.Chat,
                     doorVersion: ask.DoorVersion, profile: ask.Reviewer.Account, tree: tree, baseCommit: ask.Candidate.Tip.ToLowerInvariant(),
-                    ct: inside, opinion: id, ownEntry: true, actor: "opinion", serves: working.Id)
+                    ct: inside, opinion: id, ownEntry: true, actor: "opinion", serves: working.Id, witness: WitnessDoor.OpinionOpen)
                 .ConfigureAwait(false);
             var opinion = new Opinion(
                 id, ask.Occasion, ask.Pass, working.Id, reviewer.Id,

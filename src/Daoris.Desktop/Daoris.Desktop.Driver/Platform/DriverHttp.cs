@@ -29,21 +29,21 @@ internal static class DriverHttp
         return http;
     }
 
-    public static Task<string> GetAsync(HttpClient http, string url, CancellationToken ct) =>
-        SendAsync(http, HttpMethod.Get, url, null, ct);
+    public static Task<string> GetAsync(HttpClient http, string url, CancellationToken ct, Action<HttpRequestMessage>? dress = null) =>
+        SendAsync(http, HttpMethod.Get, url, null, ct, dress);
 
     /// <returns>What the host answered — the quest sync reads it; a feed ignores it.</returns>
-    public static Task<string> PostAsync(HttpClient http, string url, string json, CancellationToken ct) =>
-        SendAsync(http, HttpMethod.Post, url, json, ct);
+    public static Task<string> PostAsync(HttpClient http, string url, string json, CancellationToken ct, Action<HttpRequestMessage>? dress = null) =>
+        SendAsync(http, HttpMethod.Post, url, json, ct, dress);
 
     public static Task<string> DeleteAsync(HttpClient http, string url, CancellationToken ct) =>
-        SendAsync(http, HttpMethod.Delete, url, null, ct);
+        SendAsync(http, HttpMethod.Delete, url, null, ct, null);
 
     /// <summary>The one send: the payload on success, the refusal sentence thrown otherwise.</summary>
     private static async Task<string> SendAsync(
-        HttpClient http, HttpMethod method, string url, string? json, CancellationToken ct)
+        HttpClient http, HttpMethod method, string url, string? json, CancellationToken ct, Action<HttpRequestMessage>? dress)
     {
-        var (response, payload) = await ExchangeAsync(http, method, url, json, ct).ConfigureAwait(false);
+        var (response, payload) = await ExchangeAsync(http, method, url, json, ct, dress).ConfigureAwait(false);
         using (response)
         {
             if (!response.IsSuccessStatusCode) throw Refused(url, response, payload);
@@ -52,10 +52,11 @@ internal static class DriverHttp
     }
 
     private static async Task<(HttpResponseMessage Response, string Payload)> ExchangeAsync(
-        HttpClient http, HttpMethod method, string url, string? json, CancellationToken ct)
+        HttpClient http, HttpMethod method, string url, string? json, CancellationToken ct, Action<HttpRequestMessage>? dress)
     {
         using var request = new HttpRequestMessage(method, url);
         if (json is not null) request.Content = new StringContent(json, Encoding.UTF8, "application/json");
+        dress?.Invoke(request);
         var response = await http.SendAsync(request, ct).ConfigureAwait(false);
         var payload = await response.Content.ReadAsStringAsync(ct).ConfigureAwait(false);
         return (response, payload);
@@ -82,7 +83,7 @@ internal static class DriverHttp
     public static async Task<string?> PostInformableAsync(
         HttpClient http, string url, string json, CancellationToken ct)
     {
-        var (response, payload) = await ExchangeAsync(http, HttpMethod.Post, url, json, ct).ConfigureAwait(false);
+        var (response, payload) = await ExchangeAsync(http, HttpMethod.Post, url, json, ct, null).ConfigureAwait(false);
         using (response)
         {
             if (response.IsSuccessStatusCode) return null;

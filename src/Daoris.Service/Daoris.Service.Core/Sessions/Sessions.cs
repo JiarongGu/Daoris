@@ -29,6 +29,8 @@ public sealed class SessionStore
         _db = ConnectionGate.For(connection);
         Opens = new SessionOpens(_db);
         Memory = new MemoryOpStore(_db);
+        Journal = new SessionJournal(_db);
+        Generations = new AppGenerations(_db);
         reads = new SessionReads(this);
         writes = new SessionWrites(this);
         said = new SessionSaidStore(this);
@@ -43,12 +45,19 @@ public sealed class SessionStore
     /// <summary>The memory coordinator's log of record, whose rows a session's commit point moves inside the ledger's step.</summary>
     public MemoryOpStore Memory { get; }
 
+    /// <summary>The sessions' journals of witnessed facts, each appended with the move it witnesses.</summary>
+    public SessionJournal Journal { get; }
+
+    /// <summary>The application's generations, which every fact is stamped with and every lease is named by.</summary>
+    public AppGenerations Generations { get; }
+
     public static async Task<SessionStore> OpenAsync(SqliteConnection connection, CancellationToken ct = default)
     {
         var store = new SessionStore(connection);
         await store._db.RunAsync(async () =>
         {
             await SessionSchema.EnsureAsync(store._db, ct).ConfigureAwait(false);
+            await store.Journal.EnsureAsync(ct).ConfigureAwait(false);
             await store.Opens.EnsureAsync(ct).ConfigureAwait(false);
             await store.Memory.EnsureAsync(ct).ConfigureAwait(false);
         }, ct).ConfigureAwait(false);
@@ -81,17 +90,17 @@ public sealed class SessionStore
         string? serves = null, string? from = null, string? fromWhy = null, string? fromBy = null,
         string? entryOrigin = null, string? entryPart = null, bool ownEntry = false, string? helpMode = null,
         IReadOnlyDictionary<string, string>? access = null, string? piece = null, string? actor = null, string? decides = null,
-        string? performs = null, string? node = null, int? attempt = null) =>
+        string? performs = null, string? node = null, int? attempt = null, WitnessDoor? witness = null) =>
         writes.CreateAsync(
             quest, repository, adapter, now, workspace, kind, doorVersion, profile, tree, baseCommit, ct, ask, opinion, serves, from,
-            fromWhy, fromBy, entryOrigin, entryPart, ownEntry, helpMode, access, piece, actor, decides, performs, node, attempt);
+            fromWhy, fromBy, entryOrigin, entryPart, ownEntry, helpMode, access, piece, actor, decides, performs, node, attempt, witness);
 
     /// <summary>Move a session and attach what the move carries; see <see cref="SessionWrites.SetStateAsync"/>.</summary>
     public Task<Session?> SetStateAsync(
         string id, SessionState state, string? note, string? evidence, string? transcript,
         DateTimeOffset now, CancellationToken ct = default, bool interrupted = false, bool limit = false,
-        bool clearSaid = false, bool forgive = false, string? noteParts = null) =>
-        writes.SetStateAsync(id, state, note, evidence, transcript, now, ct, interrupted, limit, clearSaid, forgive, noteParts);
+        bool clearSaid = false, bool forgive = false, string? noteParts = null, WitnessDoor? witness = null) =>
+        writes.SetStateAsync(id, state, note, evidence, transcript, now, ct, interrupted, limit, clearSaid, forgive, noteParts, witness);
 
     /// <summary>Copy another machine's session record into this store, whole; see <see cref="SessionWrites.MirrorAsync"/>.</summary>
     public Task MirrorAsync(Session record, CancellationToken ct = default) => writes.MirrorAsync(record, ct);

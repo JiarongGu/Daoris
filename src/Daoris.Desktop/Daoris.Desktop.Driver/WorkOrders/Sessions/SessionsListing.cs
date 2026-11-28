@@ -24,6 +24,8 @@ internal static class SessionsListing
         {
             RunWaits = times.Time("runWaits", () => WorkOrdersWorkflows.Current.PersonWaits(world.Home)),
             Passages = times.Time("passages", () => WorkOrdersWorkflows.Current.Passages(world.Home)),
+            Folds = await times.TimeAsync(
+                "fold", () => SessionFolds.ReadAsync(world.Service, said => Console.Error.WriteLine($"the fold in shadow was not read: {said}"), ct)).ConfigureAwait(false),
         };
         var trees = new SessionTrees(world.Home);
         var listed = await ListedTrees.JudgeAsync(
@@ -231,6 +233,7 @@ internal static class SessionsListing
         }
 
         if (row.Lands is { } lands) yield return LandingHint.Of(row, lands);
+        if (row.Fold is { } fold) yield return SessionFolds.Words(fold);
 
         // Commits the line holds by content are never offered to land again; the door that discards the tree is, with the ref its
         // commits stay at, or why the tree stays.

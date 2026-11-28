@@ -44,7 +44,7 @@ public sealed class SuperviseDesk(SessionStore sessions, bool local = true)
             var turn = await sessions.CreateAsync(
                     quest: null, repository, open.Door.Trim(), now, workspace, SessionKind.Chat, doorVersion: open.DoorVersion,
                     profile: open.Account, tree: tree, ct: inside, serves: open.Serves, ownEntry: true, actor: open.Role.Trim(),
-                    decides: open.Decides.Trim())
+                    decides: open.Decides.Trim(), witness: WitnessDoor.SuperviseOpen)
                 .ConfigureAwait(false);
             return new HelperOutcome(HelperRefusal.None, $"Session `{turn.Id}` reads a copy of its own to decide for attempt `{open.Decides.Trim()}`.")
             {

@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using Daoris.Ports.Sessions;
 
 namespace Daoris.Driver;
 
@@ -624,22 +625,17 @@ public sealed class SessionProcesses(string? markers = null)
     /// <summary>Whether the process a marker names is alive, as the one it marked: its id and its start time.</summary>
     internal static bool MarkerAlive(string marker)
     {
-        string[] fields;
+        SessionMarker? read;
         try
         {
-            fields = AtomicFile.ReadText(marker).Trim().Split(' ');
+            read = SessionMarker.Parse(AtomicFile.ReadText(marker));
         }
         catch (Exception error) when (error is IOException or UnauthorizedAccessException)
         {
             return true;
         }
 
-        if (fields.Length != 2 || !int.TryParse(fields[0], out var pid) || !long.TryParse(fields[1], out var started))
-        {
-            return false;
-        }
-
-        return IsRunning(pid, started);
+        return read is { Opening: false } && IsRunning(read.Pid, read.Started);
     }
 
     /// <summary>Whether the process with this id is alive as the one that started at <paramref name="started"/> (UTC ticks): what a marker names.</summary>
@@ -654,7 +650,7 @@ public sealed class SessionProcesses(string? markers = null)
         try
         {
             using var process = Process.GetProcessById(pid);
-            if (Math.Abs(process.StartTime.ToUniversalTime().Ticks - started) >= TimeSpan.TicksPerSecond) return false;
+            if (!SessionMarker.SameStart(started, process.StartTime.ToUniversalTime().Ticks)) return false;
             return then?.Invoke(process) ?? true;
         }
         catch (ArgumentException)
@@ -692,7 +688,7 @@ public sealed class SessionProcesses(string? markers = null)
         if (MarkerOf(sessionId) is not { } marker) return;
         try
         {
-            var line = $"{opener.Id} {opener.StartTime.ToUniversalTime().Ticks} {OpeningWord}";
+            var line = new SessionMarker(opener.Id, opener.StartTime.ToUniversalTime().Ticks, 0, 0, 0, Opening: true).Line();
             Directory.CreateDirectory(markers!);
             AtomicFile.WriteText(marker, line);
         }
@@ -702,9 +698,6 @@ public sealed class SessionProcesses(string? markers = null)
             // Unmarked, the start is left as before this mark: only the person's stop ends it.
         }
     }
-
-    /// <summary>The third field of an opener's mark.</summary>
-    private const string OpeningWord = "opening";
 
     /// <summary>
     /// Whether the process that opened this record and started it has gone: its opener's mark is kept, no process of
@@ -732,20 +725,18 @@ public sealed class SessionProcesses(string? markers = null)
     /// <summary>The opener a mark names, or null where the file is none, cannot be read, or is no opener's mark.</summary>
     private static (int Pid, long Started)? OpenerOf(string marker)
     {
-        string[] fields;
+        SessionMarker? read;
         try
         {
             if (!File.Exists(marker)) return null;
-            fields = AtomicFile.ReadText(marker).Trim().Split(' ');
+            read = SessionMarker.Parse(AtomicFile.ReadText(marker));
         }
         catch (Exception error) when (error is IOException or UnauthorizedAccessException)
         {
             return null;
         }
 
-        return fields.Length == 3 && fields[2] == OpeningWord && int.TryParse(fields[0], out var pid) && long.TryParse(fields[1], out var started)
-            ? (pid, started)
-            : null;
+        return read is { Opening: true } ? (read.Pid, read.Started) : null;
     }
 
     private static bool Gone(int pid, long started) => !IsRunning(pid, started);
@@ -758,13 +749,22 @@ public sealed class SessionProcesses(string? markers = null)
             ? null
             : Path.Combine(markers, sessionId + ".pid");
 
-    /// <summary>Written beside, then renamed (atomic); best-effort, since the process runs either way.</summary>
+    private static (int Pid, long Started) Owner { get; } = OwnerOf();
+
+    private static (int, long) OwnerOf()
+    {
+        using var self = Process.GetCurrentProcess();
+        return (self.Id, self.StartTime.ToUniversalTime().Ticks);
+    }
+
+    /// <summary>Written beside, then renamed (atomic), naming this driver as its owner; best-effort, since the process runs either way.</summary>
     private void Mark(string sessionId, Process process)
     {
         if (MarkerOf(sessionId) is not { } marker) return;
         try
         {
-            var line = $"{process.Id} {process.StartTime.ToUniversalTime().Ticks}";
+            var line = new SessionMarker(
+                process.Id, process.StartTime.ToUniversalTime().Ticks, WritingGeneration.Current, Owner.Pid, Owner.Started).Line();
             Directory.CreateDirectory(markers!);
             AtomicFile.WriteText(marker, line);
         }

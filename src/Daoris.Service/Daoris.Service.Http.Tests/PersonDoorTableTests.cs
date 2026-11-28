@@ -46,6 +46,7 @@ public sealed class PersonDoorTableTests
         ("GET", "/api/sessions", Open),
         ("GET", "/api/sessions/{id}", Open),
         ("GET", "/api/sessions/changes", Open),
+        ("GET", "/api/session-life/fold", Open),
         ("GET", "/api/sessions/{id}/deletable", Open),
         ("GET", "/api/sessions/{id}/record", Open),
         // A session's memory changes for its record's page; a local host's read.
@@ -92,6 +93,8 @@ public sealed class PersonDoorTableTests
         ("POST", "/api/sessions/intake", Driver),
         ("POST", "/api/sessions/help", Driver),
         ("POST", "/api/sessions/{id}/state", Driver),
+        ("POST", "/api/session-life/generations", Driver),
+        ("POST", "/api/session-life/audit", Driver),
         ("POST", "/api/sessions/{id}/taken", Driver),
         // What a line read, rechecked for its brief and kept as read at the revision answered.
         ("POST", "/api/sessions/{id}/memory/read", Driver),
@@ -200,11 +203,11 @@ public sealed class PersonDoorTableTests
         Assert.Equal(Routes, PersonDoors.Table.Select(door => (door.Method, door.Pattern, door.Class)));
         Assert.Equal(PersonDoors.Table.Count, PersonDoors.Table.Select(door => (door.Method, door.Pattern)).Distinct().Count());
 
-        Assert.Equal(41, Routes.Count(route => route.Class == Open));
+        Assert.Equal(42, Routes.Count(route => route.Class == Open));
         // An outside agent's read, post and leave, the person's admission of it, and every door no workflow step waits on.
         Assert.Equal(25, Routes.Count(route => route.Class == Agent));
         // The listing of a channel's members, which holds the ids only the key may read.
-        Assert.Equal(37, Routes.Count(route => route.Class == Driver));
+        Assert.Equal(39, Routes.Count(route => route.Class == Driver));
         Assert.Equal(25, Routes.Count(route => route.Class == Person));
         // A shared host's two channel doors, a feed and a page, and its retirement of a machine.
         Assert.Equal(10, Routes.Count(route => route.Class == Shared));

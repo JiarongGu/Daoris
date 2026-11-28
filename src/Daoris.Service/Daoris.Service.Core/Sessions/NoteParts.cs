@@ -186,6 +186,31 @@ public static class NoteParts
         && list.EnumerateArray().Any(part =>
             part.ValueKind == JsonValueKind.Object && string.Equals(Text(part, "code"), code, StringComparison.Ordinal));
 
+    /// <summary>
+    /// The values of the first coded line of <paramref name="code"/>, each as its text (a number as written); null where the parts carry
+    /// no such line.
+    /// </summary>
+    public static IReadOnlyDictionary<string, string>? Values(string? parts, string code)
+    {
+        if (Parse(parts) is not { } list) return null;
+        foreach (var part in list.EnumerateArray())
+        {
+            if (part.ValueKind != JsonValueKind.Object || !string.Equals(Text(part, "code"), code, StringComparison.Ordinal)) continue;
+            var values = new Dictionary<string, string>(StringComparer.Ordinal);
+            if (part.TryGetProperty("values", out var given) && given.ValueKind == JsonValueKind.Object)
+            {
+                foreach (var value in given.EnumerateObject())
+                {
+                    if (value.Value.ValueKind is JsonValueKind.String or JsonValueKind.Number) values[value.Name] = value.Value.ToString();
+                }
+            }
+
+            return values;
+        }
+
+        return null;
+    }
+
     /// <summary>The parts' codes in order, an uncoded line left out; none for no parts.</summary>
     public static IReadOnlyList<string> Codes(string? parts) =>
         Parse(parts) is { } list

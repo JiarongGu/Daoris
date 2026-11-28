@@ -116,4 +116,7 @@ public sealed record SessionGrouping(string Session, string Group, string Shown)
 
     /// <summary>Where the run it stands for is in its bound workflow version, which its row draws as steps passed, current and to come; null for none.</summary>
     public RunPassage? Passage { get; init; }
+
+    /// <summary>What the fold says where it differs from the stored status, shown beside it while the fold runs in shadow; null where they agree.</summary>
+    public FoldShown? Fold { get; init; }
 }

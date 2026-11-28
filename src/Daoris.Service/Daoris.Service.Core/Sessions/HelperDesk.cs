@@ -117,7 +117,7 @@ public sealed class HelperDesk(SessionStore sessions, bool local = true)
             var helper = await sessions.CreateAsync(
                     quest: null, repository, open.Door.Trim(), now, asker.Workspace, SessionKind.Chat,
                     doorVersion: open.DoorVersion, profile: open.Account, tree: tree, baseCommit: open.BaseCommit?.ToLowerInvariant(),
-                    ct: inside, serves: asker.Id, ownEntry: true, actor: "helper")
+                    ct: inside, serves: asker.Id, ownEntry: true, actor: "helper", witness: WitnessDoor.HelperOpen)
                 .ConfigureAwait(false);
             return new HelperOutcome(
                 HelperRefusal.None,

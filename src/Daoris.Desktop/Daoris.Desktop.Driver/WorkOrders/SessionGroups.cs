@@ -44,7 +44,9 @@ public static class SessionGroups
         var facts = new SessionStateReader(look);
         var passages = RunPassageSessions.Of(look);
         var rows = LineStandings.With(
-            [.. look.Records.Select(facts.Place).Select(row => passages.TryGetValue(row.Session, out var passage) ? row with { Passage = passage } : row)],
+            [.. look.Records.Select(facts.Place)
+                .Select(row => passages.TryGetValue(row.Session, out var passage) ? row with { Passage = passage } : row)
+                .Select(row => look.Folds.TryGetValue(row.Session, out var fold) ? row with { Fold = fold } : row)],
             look.Records);
         var placed = look.Records.Zip(rows, (record, row) => (Record: record, Row: row))
             .Where(each => only is null || only.Contains(each.Record.Id, StringComparer.Ordinal))
